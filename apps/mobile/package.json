@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "expo start",
     "start": "expo start",
+    "build": "expo build:web",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",

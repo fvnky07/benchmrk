@@ -15,19 +15,28 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "outputs": []
     },
     "start": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "outputs": []
     },
     "android": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "outputs": []
     },
     "ios": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "outputs": []
+    },
+    "web": {
+      "cache": false,
+      "persistent": true,
+      "outputs": []
     }
   }
 }
