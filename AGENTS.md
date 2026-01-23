@@ -77,9 +77,9 @@ prettier --write "apps/website/**/*.{ts,tsx}"
 Example:
 
 ```typescript
-import type { Metadata } from "next";
-import { Button } from "@repo/ui";
-import { helper } from "../utils";
+import type { Metadata } from 'next';
+import { Button } from '@repo/ui';
+import { helper } from '../utils';
 ```
 
 ### TypeScript & Typing
@@ -171,7 +171,7 @@ export async function fetchData(id: string) {
     }
     return await response.json();
   } catch (error) {
-    console.error("Failed to fetch data:", error);
+    console.error('Failed to fetch data:', error);
     throw error;
   }
 }
@@ -194,7 +194,7 @@ Example:
  */
 function validateInput(input: string): boolean {
   // NOTE: Email validation is intentionally lenient to match backend rules
-  return input.length > 0 && input.includes("@");
+  return input.length > 0 && input.includes('@');
 }
 ```
 
