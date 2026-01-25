@@ -94,3 +94,38 @@
     color: var(--foreground);
   }
 }
+
+/* Debug utility classes for development */
+@layer utilities {
+  .debug {
+    @apply border-2;
+  }
+
+  .debug-1 {
+    @apply border-red-1 border-2;
+  }
+
+  .debug-2 {
+    @apply border-orange-1 border-2;
+  }
+
+  .debug-3 {
+    @apply border-yellow-1 border-2;
+  }
+
+  .debug-4 {
+    @apply border-green-1 border-2;
+  }
+
+  .debug-5 {
+    @apply border-cyan-1 border-2;
+  }
+
+  .debug-6 {
+    @apply border-blue-1 border-2;
+  }
+
+  .debug-7 {
+    @apply border-purple-1 border-2;
+  }
+}
