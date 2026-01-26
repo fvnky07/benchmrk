@@ -22,18 +22,18 @@ export default function Hero() {
         {/* Your content goes here */}
         <div className="debug-2 relative z-10 flex h-full w-full items-center p-12 lg:flex-row">
           <div className="bg-black-2 flex h-full flex-2 flex-col rounded-4xl">
-            <div className="flex h-full flex-col items-center justify-center gap-12 px-8 text-center">
+            <div className="flex h-full flex-col items-start justify-center gap-12 px-8 text-left">
               <h1 className="text-8xl">
                 Tired of Guessing if your Training is Working?
               </h1>
-              <div className="flex flex-row gap-2">
-                <GlassSurface width={250} height={200} borderRadius={24}>
+              <div className="flex h-[200px] w-full flex-row gap-2">
+                <GlassSurface className="flex-1" borderRadius={24}>
                   <h2>Glass Surface Content</h2>
                 </GlassSurface>
-                <GlassSurface width={200} height={200} borderRadius={24}>
-                  <h2>Glass Surface Content</h2>
+                <GlassSurface className="flex-1" borderRadius={24}>
+                  <h2>highlight 2</h2>
                 </GlassSurface>
-                <GlassSurface width={200} height={200} borderRadius={24}>
+                <GlassSurface className="flex-1" borderRadius={24}>
                   <h2>Glass Surface Content</h2>
                 </GlassSurface>
               </div>
