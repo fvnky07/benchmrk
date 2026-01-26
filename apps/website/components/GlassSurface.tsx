@@ -60,8 +60,8 @@ const useDarkMode = () => {
 
 const GlassSurface: React.FC<GlassSurfaceProps> = ({
   children,
-  width = 200,
-  height = 80,
+  width = '100%',
+  height = '100%',
   borderRadius = 20,
   borderWidth = 0.07,
   brightness = 50,
