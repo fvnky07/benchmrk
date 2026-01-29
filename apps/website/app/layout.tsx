@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
 const geistSans = Geist({
@@ -12,8 +13,30 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const clashGrotesk = localFont({
+  src: [
+    {
+      path: '../public/fonts/ClashGrotesk-Variable.woff2',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-clash-grotesk',
+  display: 'swap',
+});
+
+const nippo = localFont({
+  src: [
+    {
+      path: '../public/fonts/Nippo-Variable.woff2',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-nippo',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'benchmrk ai fitness',
+  title: 'Benchmrk',
   description: 'benchmrk agentic fitness tracker',
 };
 
@@ -25,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${clashGrotesk.variable} ${nippo.variable} antialiased`}
       >
         {children}
       </body>

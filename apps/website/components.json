@@ -18,8 +18,5 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {
-    "@magicui": "https://magicui.design/r/{name}",
-    "@react-bits": "https://reactbits.dev/r/{name}.json"
-  }
+  "registries": {}
 }
