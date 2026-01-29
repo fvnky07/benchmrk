@@ -17,6 +17,14 @@
 
 :root {
   --radius: 0.625rem;
+  --font-geist-sans: var(
+    --font-geist-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif
+  );
+  --font-geist-mono: var(--font-geist-mono, 'Courier New', monospace);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -89,9 +97,30 @@
     border-color: var(--border);
     outline-color: rgba(var(--ring), 0.5);
   }
+
+  html {
+    font-family: var(--font-geist-sans);
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-geist-sans);
+  }
+
+  code,
+  pre {
+    font-family: var(--font-geist-mono);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-geist-sans);
+    font-weight: 600;
   }
 }
 
