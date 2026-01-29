@@ -11,6 +11,7 @@ interface GridPatternProps {
   squares?: [number, number][];
   strokeDasharray?: string;
   className?: string;
+  strokeColor?: string;
   [key: string]: any;
 }
 
@@ -22,18 +23,19 @@ export function GridPattern({
   strokeDasharray = '0',
   squares,
   className,
+  strokeColor = 'rgba(255, 255, 255, 0.05)',
   ...props
-}: GridPatternProps) {
+}: GridPatternProps): React.ReactElement {
   const id = React.useId();
 
   return (
     <svg
       aria-hidden="true"
       className={cn(
-        'pointer-events-none absolute inset-0 h-full w-full fill-gray-400/30 stroke-gray-400/30',
+        'pointer-events-none absolute inset-0 h-full w-full',
         className
       )}
-      {...(props as any)}
+      {...(props as React.SVGProps<SVGSVGElement>)}
     >
       <defs>
         <pattern
@@ -47,6 +49,7 @@ export function GridPattern({
           <path
             d={`M.5 ${height}V.5H${width}`}
             fill="none"
+            stroke={strokeColor}
             strokeDasharray={strokeDasharray}
           />
         </pattern>
