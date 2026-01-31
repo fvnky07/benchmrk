@@ -69,9 +69,9 @@ export function Navbar() {
           <Image
             src="/x.svg"
             alt="X (Twitter)"
-            width={20}
-            height={20}
-            className="size-5 sm:size-6"
+            width={16}
+            height={16}
+            className="size-5"
           />
         </a>
 

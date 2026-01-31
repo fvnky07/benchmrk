@@ -1,7 +1,6 @@
 import Hero from '@/components/sections/landing/hero';
 import Features from '@/components/sections/landing/features';
 import WaitingList from '@/components/sections/landing/waiting-list';
-import CTA from '@/components/sections/landing/cta';
 
 export default function LandingPage() {
   return (
@@ -9,7 +8,6 @@ export default function LandingPage() {
       <Hero />
       <Features />
       <WaitingList />
-      <CTA />
     </main>
   );
 }

@@ -12,8 +12,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { useEffect } from 'react';
 
 export default function Hero() {
+  const heroItems = [1, 2, 3];
+
+  // useEffect(() =>{
+  //
+  // },[timer])
   return (
     <section className="debug-5 relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
       {/* Grid Pattern Background */}
@@ -33,7 +39,6 @@ export default function Hero() {
 
             <Accordion
               type="single"
-              collapsible
               defaultValue="1"
               className="bg-black-1 hidden w-full shrink-0 rounded-4xl sm:block"
             >
@@ -84,7 +89,7 @@ export default function Hero() {
             <div className="flex w-full items-center justify-center">
               <Button
                 size="lg"
-                className="shrink-0 rounded-4xl bg-purple-1 px-8 py-6 text-3xl font-bold text-white hover:bg-purple-1/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
+                className="hover:text-green-1 hover:border-green-1 w-full shrink-0 rounded-4xl bg-white text-3xl font-bold text-black hover:border-4 hover:bg-white/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
               >
                 Join the Waitlist
                 <ArrowRight className="ml-2 size-8 sm:size-10 lg:size-12" />
@@ -104,7 +109,10 @@ export default function Hero() {
             </div>
             {/* NOTE: pointer-events-none allows hover to pass through to Squares canvas */}
             <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center lg:p-4">
-              <Iphone className="h-full w-auto max-w-full" />
+              <Iphone
+                videoSrc="/hero-video-1.mp4"
+                className="h-full w-auto max-w-full overflow-clip"
+              />
             </div>
           </div>
         </div>
