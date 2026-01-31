@@ -19,6 +19,7 @@ const RADIUS_V = (SCREEN_RADIUS / SCREEN_HEIGHT) * 100;
 export interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
   src?: string;
   videoSrc?: string;
+  onVideoEnded?: () => void;
 }
 
 export function Iphone({
@@ -26,6 +27,7 @@ export function Iphone({
   videoSrc,
   className,
   style,
+  onVideoEnded,
   ...props
 }: IphoneProps) {
   const hasVideo = !!videoSrc;
@@ -33,7 +35,7 @@ export function Iphone({
 
   return (
     <div
-      className={`relative inline-block w-full align-middle leading-none ${className}`}
+      className={`relative inline-block align-middle leading-none ${className}`}
       style={{
         aspectRatio: `${PHONE_WIDTH}/${PHONE_HEIGHT}`,
         ...style,
@@ -52,13 +54,14 @@ export function Iphone({
           }}
         >
           <video
-            className="block size-full object-cover"
+            className="absolute inset-0 block size-full object-cover"
             src={videoSrc}
             autoPlay
             loop
             muted
             playsInline
             preload="metadata"
+            onEnded={onVideoEnded}
           />
         </div>
       )}
