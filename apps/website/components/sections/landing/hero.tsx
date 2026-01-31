@@ -4,7 +4,7 @@ import Squares from '@/components/Squares';
 import { Iphone } from '@/components/ui/iphone';
 import GridPattern from '@/components/ui/grid-pattern';
 import { Brain, Zap, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Navbar } from '@/components/navbar';
 import {
   Accordion,
   AccordionContent,
@@ -21,61 +21,7 @@ export default function Hero() {
       {/* Centered card with responsive margins */}
       <div className="bg-black-1 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow md:p-6 lg:p-4">
         {/* NOTE: Navbar row - fixed height to prevent overflow */}
-        <div className="flex w-full shrink-0 flex-row items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          {/* Left side: Logo + Brand + Nav links */}
-          <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
-            {/* Logo SVG */}
-            <div className="flex items-center gap-2">
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 32 32"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="shrink-0"
-              >
-                <rect width="32" height="32" rx="8" fill="#34D399" />
-                <path
-                  d="M8 16L14 22L24 10"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-lg font-bold text-white sm:text-xl">
-                benchmrk
-              </span>
-            </div>
-
-            {/* Nav links - hidden on mobile */}
-            <nav className="hidden items-center gap-4 md:flex lg:gap-6">
-              <a
-                href="#changelog"
-                className="text-sm text-white/70 transition-colors hover:text-white"
-              >
-                Changelog
-              </a>
-              <a
-                href="#blog"
-                className="text-sm text-white/70 transition-colors hover:text-white"
-              >
-                Blog
-              </a>
-              <a
-                href="#pricing"
-                className="text-sm text-white/70 transition-colors hover:text-white"
-              >
-                Pricing
-              </a>
-            </nav>
-          </div>
-
-          {/* Right side: Login button */}
-          <Button variant="outline" size="sm" className="shrink-0">
-            Login
-          </Button>
-        </div>
+        <Navbar />
 
         {/* NOTE: Main content row - uses min-h-0 to allow flexbox shrinking */}
         <div className="bg-black-1 debug-5 flex min-h-0 w-full grow flex-col gap-2 rounded-4xl lg:flex-row lg:gap-8">
