@@ -97,7 +97,7 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="bg-black-2 relative flex min-h-0 w-full items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:w-1/3">
+          <div className="bg-black-2 relative flex min-h-48 w-full items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:min-h-0 lg:w-1/3">
             <div className="bg-green-1 absolute inset-0">
               <Squares
                 speed={0.5}
@@ -111,6 +111,9 @@ export default function Hero() {
             <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center lg:p-4">
               <Iphone
                 videoSrc="/hero-video-1.mp4"
+                onVideoEnded={() => {
+                  console.log('video has ended!');
+                }}
                 className="h-full w-auto max-w-full overflow-clip"
               />
             </div>
