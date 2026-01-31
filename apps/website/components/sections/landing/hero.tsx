@@ -4,6 +4,7 @@ import Squares from '@/components/Squares';
 import { Iphone } from '@/components/ui/iphone';
 import GridPattern from '@/components/ui/grid-pattern';
 import { Brain, Zap, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import {
   Accordion,
@@ -79,76 +80,13 @@ export default function Hero() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-            {/* NOTE: Store buttons - responsive flex layout with proper grow behavior */}
-            <div className="flex min-h-0 w-full grow flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:gap-6">
-              {/* App Store Button */}
-              <a
-                href="https://apps.apple.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-white px-6 transition-all hover:scale-105 hover:shadow-lg sm:h-16 sm:w-auto sm:min-w-[200px] lg:h-20 lg:min-w-[240px]"
-              >
-                <svg
-                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"
-                    fill="currentColor"
-                  />
-                </svg>
-                <div className="flex flex-col items-start">
-                  <span className="text-xs font-medium text-gray-600">
-                    Download on the
-                  </span>
-                  <span className="text-lg font-bold text-black sm:text-xl lg:text-2xl">
-                    App Store
-                  </span>
-                </div>
-              </a>
 
-              {/* Google Play Button */}
-              <a
-                href="https://play.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black px-6 transition-all hover:scale-105 hover:shadow-lg sm:h-16 sm:w-auto sm:min-w-[200px] lg:h-20 lg:min-w-[240px]"
-              >
-                <svg
-                  className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92z"
-                    fill="#32BBFF"
-                  />
-                  <path
-                    d="M14.5 12.707l3.842 3.842-10.85 6.248a1 1 0 01-.882 0l-.001-.001 7.891-10.089z"
-                    fill="#32BBFF"
-                  />
-                  <path
-                    d="M14.5 11.293L6.609 1.205l.001-.001a1 1 0 01.882 0l10.85 6.248-3.842 3.841z"
-                    fill="#32BBFF"
-                  />
-                  <path
-                    d="M14.5 12l3.842-3.841 2.849 1.639a1 1 0 010 1.737l-2.849 1.639L14.5 12z"
-                    fill="#32BBFF"
-                  />
-                </svg>
-                <div className="flex flex-col items-start">
-                  <span className="text-xs font-medium text-gray-400">
-                    GET IT ON
-                  </span>
-                  <span className="text-lg font-bold text-white sm:text-xl lg:text-2xl">
-                    Google Play
-                  </span>
-                </div>
-              </a>
-            </div>
+            <Button
+              size="lg"
+              className="w-full shrink-0 rounded-4xl bg-green-1 text-2xl font-bold text-black hover:bg-green-1/90 sm:block sm:text-3xl lg:text-4xl"
+            >
+              Join the Waitlist
+            </Button>
           </div>
 
           <div className="bg-black-2 relative flex min-h-0 w-full items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:w-1/3">
