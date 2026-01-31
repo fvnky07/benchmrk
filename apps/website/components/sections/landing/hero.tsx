@@ -12,17 +12,19 @@ import {
 
 export default function Hero() {
   return (
-    <section className="debug-5 relative flex h-screen w-full items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-6 lg:px-4">
+    <section className="debug-5 relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-6 lg:px-4">
       {/* Grid Pattern Background */}
       <GridPattern width={30} height={30} strokeColor="rgba(0, 0, 0, 1)" />
 
       {/* Centered card with responsive margins */}
-      <div className="bg-black-1 relative z-10 flex h-full w-full overflow-hidden rounded-4xl p-2 shadow md:p-6 lg:p-4">
+      <div className="bg-black-1 debug-2 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow md:p-6 lg:p-4">
+        <div className="debug-3 flex w-full flex-row">navbar</div>
+
         {/* Two-column flex container */}
-        <div className="bg-black-1 flex h-full w-full flex-col gap-6 rounded-4xl lg:flex-row lg:gap-8">
-          <div className="bg-black-2 flex w-full flex-col items-start justify-start gap-4 rounded-4xl px-6 py-4 sm:gap-5 sm:px-8 sm:py-6 lg:w-2/3 lg:px-10 lg:py-8">
-            <h1 className="flex items-center justify-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl">
-              Everything You Need to Track Your Training
+        <div className="bg-black-1 debug-5 flex h-full w-full flex-col gap-2 rounded-4xl lg:flex-row lg:gap-8">
+          <div className="bg-black-2 debug flex w-full shrink flex-col items-start justify-start gap-4 rounded-4xl px-6 py-4 sm:gap-5 sm:px-8 sm:py-6 lg:w-2/3 lg:px-10 lg:py-8">
+            <h1 className="w-full text-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl">
+              Tired of eye-balling your training?
             </h1>
 
             <Accordion
@@ -74,6 +76,11 @@ export default function Hero() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+            <div className="debug flex h-full w-full grow flex-row items-center gap-1 lg:gap-4">
+              <div className="debug-2 h-1/2 w-full rounded-4xl"></div>
+              <div className="debug-2 h-1/2 w-full rounded-4xl"></div>
+              <div className="debug-2 h-1/2 w-full rounded-4xl"></div>
+            </div>
           </div>
 
           <div className="bg-black-2 relative flex w-full items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:w-1/3">
