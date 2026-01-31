@@ -121,7 +121,7 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-nippo);
+    font-family: var(--font-clash-grotesk);
     font-weight: 600;
   }
 }
@@ -133,31 +133,31 @@
   }
 
   .debug-1 {
-    @apply border-red-1 border-2;
+    border: 2px solid var(--color-orange-1);
   }
 
   .debug-2 {
-    @apply border-orange-1 border-2;
+    border: 2px solid var(--color-orange-1);
   }
 
   .debug-3 {
-    @apply border-yellow-1 border-2;
+    border: 2px solid var(--color-yellow-1);
   }
 
   .debug-4 {
-    @apply border-green-1 border-2;
+    border: 2px solid var(--color-green-1);
   }
 
   .debug-5 {
-    @apply border-cyan-1 border-2;
+    border: 2px solid var(--color-cyan-1);
   }
 
   .debug-6 {
-    @apply border-blue-1 border-2;
+    border: 2px solid var(--color-blue-1);
   }
 
   .debug-7 {
-    @apply border-purple-1 border-2;
+    border: 2px solid var(--color-purple-1);
   }
 }
 
