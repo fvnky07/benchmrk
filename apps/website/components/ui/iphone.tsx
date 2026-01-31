@@ -19,6 +19,7 @@ const RADIUS_V = (SCREEN_RADIUS / SCREEN_HEIGHT) * 100;
 export interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
   src?: string;
   videoSrc?: string;
+  onVideoEnded?: () => void;
 }
 
 export function Iphone({
@@ -26,6 +27,7 @@ export function Iphone({
   videoSrc,
   className,
   style,
+  onVideoEnded,
   ...props
 }: IphoneProps) {
   const hasVideo = !!videoSrc;
@@ -59,6 +61,7 @@ export function Iphone({
             muted
             playsInline
             preload="metadata"
+            onEnded={onVideoEnded}
           />
         </div>
       )}
