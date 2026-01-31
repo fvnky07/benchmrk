@@ -3,7 +3,7 @@
 import Squares from '@/components/Squares';
 import { Iphone } from '@/components/ui/iphone';
 import GridPattern from '@/components/ui/grid-pattern';
-import { Brain, Zap, BarChart3 } from 'lucide-react';
+import { Brain, Zap, BarChart3, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import {
@@ -81,12 +81,15 @@ export default function Hero() {
               </AccordionItem>
             </Accordion>
 
-            <Button
-              size="lg"
-              className="w-full shrink-0 rounded-4xl bg-green-1 text-2xl font-bold text-black hover:bg-green-1/90 sm:block sm:text-3xl lg:text-4xl"
-            >
-              Join the Waitlist
-            </Button>
+            <div className="flex w-full items-center justify-center">
+              <Button
+                size="lg"
+                className="shrink-0 rounded-4xl bg-purple-1 px-8 py-6 text-3xl font-bold text-white hover:bg-purple-1/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
+              >
+                Join the Waitlist
+                <ArrowRight className="ml-2 size-8 sm:size-10 lg:size-12" />
+              </Button>
+            </div>
           </div>
 
           <div className="bg-black-2 relative flex min-h-0 w-full items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:w-1/3">
