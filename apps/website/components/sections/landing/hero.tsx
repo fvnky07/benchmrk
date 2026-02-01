@@ -5,7 +5,6 @@ import { Iphone } from '@/components/ui/iphone';
 import GridPattern from '@/components/ui/grid-pattern';
 import { Brain, Zap, BarChart3, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Navbar } from '@/components/navbar';
 import {
   Accordion,
   AccordionContent,
@@ -13,6 +12,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { useEffect } from 'react';
+import { Navbar } from '@/components/ui/navbar';
 
 export default function Hero() {
   const heroItems = [1, 2, 3];
@@ -21,14 +21,14 @@ export default function Hero() {
   //
   // },[timer])
   return (
-    <section className="debug-5 relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
+    <section className="relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
       {/* Grid Pattern Background */}
       <GridPattern width={30} height={30} strokeColor="rgba(0, 0, 0, 1)" />
 
       {/* Centered card with responsive margins */}
       <div className="bg-black-1 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow lg:p-4">
         {/* NOTE: Navbar row - fixed height to prevent overflow */}
-        <Navbar />
+        <Navbar ctaText="Join the Waitlist!" />
 
         {/* NOTE: Main content row - uses min-h-0 to allow flexbox shrinking */}
         <div className="bg-black-1 flex min-h-0 w-full grow flex-col gap-2 rounded-4xl lg:flex-row lg:gap-8">
