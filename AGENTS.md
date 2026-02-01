@@ -11,7 +11,7 @@ apps/
 
 packages/
 ├── backend/     (@repo/backend) - Convex backend
-├── eslint-config/ - Shared ESLint configurations  
+├── eslint-config/ - Shared ESLint configurations
 ├── typescript-config/ - Shared TypeScript configurations
 └── ui/          - Shared React component library
 ```
@@ -19,6 +19,7 @@ packages/
 ## Build, Lint, Test Commands
 
 ### Build
+
 ```bash
 pnpm run build:all              # Build all apps
 pnpm run build:web              # Website only
@@ -28,6 +29,7 @@ pnpm run build:android          # Android build
 ```
 
 ### Type Checking
+
 ```bash
 pnpm run check-types            # All packages
 pnpm turbo run check-types --filter=website
@@ -35,6 +37,7 @@ pnpm turbo run check-types --filter=@mobile/app
 ```
 
 ### Linting
+
 ```bash
 pnpm run lint                   # All packages
 pnpm turbo run lint --filter=website
@@ -42,12 +45,14 @@ pnpm turbo run lint --filter=@mobile/app
 ```
 
 ### Formatting
+
 ```bash
 pnpm run format                 # Format all files (80 char line width)
 prettier --write "apps/website/**/*.{ts,tsx}"  # Specific files
 ```
 
 ### Dev Servers
+
 ```bash
 pnpm run dev:all                # All apps in parallel
 pnpm run dev:web                # Website (http://localhost:3000)
@@ -173,4 +178,3 @@ Before committing:
 - **Port conflicts**: Kill process: `lsof -i :3000 | awk '{print $2}' | xargs kill -9`
 - **Missing deps**: Run `pnpm install`
 - **Type errors**: Check tsconfig.json extends and strictness
-
