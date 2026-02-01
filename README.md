@@ -20,6 +20,7 @@ benchmrk/
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **Website** (apps/website)
   - [Next.js 16](https://nextjs.org/) - React framework with App Router
   - [TypeScript 5.9](https://www.typescriptlang.org/) - Type safety
@@ -37,6 +38,7 @@ benchmrk/
   - [Reanimated 4](https://docs.swmansion.com/react-native-reanimated/) - Animations
 
 ### Backend
+
 - **Convex** (packages/backend)
   - Real-time database
   - Server functions
@@ -44,6 +46,7 @@ benchmrk/
   - File storage
 
 ### Development
+
 - **Turborepo** - Monorepo build system
 - **pnpm** - Fast, disk-efficient package manager
 - **ESLint 9** - Linting
@@ -53,10 +56,12 @@ benchmrk/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js >= 18
 - pnpm >= 9.0.0
 
 ### Installation
+
 ```bash
 # Clone the repository
 git clone <repo-url>
@@ -67,6 +72,7 @@ pnpm install
 ```
 
 ### Development
+
 ```bash
 # Run all apps (website + mobile + backend)
 pnpm run dev:all
@@ -82,6 +88,7 @@ cd packages/backend && pnpm run dev
 ## 📝 Available Scripts
 
 ### Build
+
 ```bash
 pnpm run build:all       # Build all apps
 pnpm run build:web       # Build website
@@ -91,6 +98,7 @@ pnpm run build:android   # Build Android
 ```
 
 ### Quality Checks
+
 ```bash
 pnpm run lint            # Lint all packages
 pnpm run check-types     # Type-check all packages
@@ -98,6 +106,7 @@ pnpm run format          # Format all code with Prettier
 ```
 
 ### Targeted Commands
+
 ```bash
 # Run command on specific package
 pnpm turbo run <command> --filter=website
@@ -108,22 +117,26 @@ pnpm turbo run <command> --filter=@repo/backend
 ## 🏗 Architecture
 
 ### Monorepo Workspace
+
 - Uses **pnpm workspaces** for dependency management
 - Packages reference each other with `workspace:*` protocol
 - Shared configs for TypeScript, ESLint, and Prettier
 
 ### Turborepo Tasks
+
 - **Parallel execution**: Multiple apps run simultaneously with `--parallel`
 - **Incremental builds**: Only rebuilds changed packages
 - **Remote caching**: Share build cache across team (optional)
 
 ### Path Aliases
+
 - **Website**: `@/*` resolves to `apps/website/`
 - **Monorepo packages**: `@repo/*` for shared packages
 
 ## 📂 Key Directories
 
 ### apps/website
+
 ```
 website/
 ├── app/              # Next.js App Router pages
@@ -137,6 +150,7 @@ website/
 ```
 
 ### apps/mobile
+
 ```
 mobile/
 ├── app/             # Expo Router pages
@@ -146,6 +160,7 @@ mobile/
 ```
 
 ### packages/backend
+
 ```
 backend/
 ├── convex/          # Convex functions and schema
@@ -173,6 +188,7 @@ backend/
 ## 📱 Mobile Development
 
 ### Run on Device
+
 ```bash
 # iOS
 pnpm run ios
@@ -182,6 +198,7 @@ pnpm run android
 ```
 
 ### Build for Production
+
 ```bash
 # Prebuild native projects
 expo prebuild --clean
@@ -194,6 +211,7 @@ pnpm run build:android
 ## 🧪 Testing & Quality
 
 Before committing:
+
 1. ✅ `pnpm run check-types` - No TypeScript errors
 2. ✅ `pnpm run lint` - No ESLint warnings
 3. ✅ `pnpm run format` - Code formatted consistently
@@ -202,21 +220,25 @@ Before committing:
 ## 🐛 Troubleshooting
 
 ### Port Already in Use
+
 ```bash
 lsof -i :3000 | awk '{print $2}' | xargs kill -9
 ```
 
 ### Dependencies Not Found
+
 ```bash
 pnpm install
 ```
 
 ### Type Errors
+
 - Check `tsconfig.json` extends correct base config
 - Ensure `strict: true` is enabled
 - Run `pnpm run check-types` to see all errors
 
 ### Build Cache Issues
+
 ```bash
 # Clear Turbo cache
 rm -rf .turbo
@@ -273,6 +295,7 @@ By accessing this repository, you acknowledge that:
 ### Legal Action
 
 Unauthorized use, reproduction, or distribution of this Software may result in:
+
 - Immediate termination of access
 - Legal action including injunctive relief
 - Claims for monetary damages
