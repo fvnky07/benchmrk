@@ -215,7 +215,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                 onClick={(e) => e.preventDefault()}
               >
                 <div className="text-2xl">{logo}</div>
-                <span className="hidden text-3xl font-bold sm:inline-block">
+                <span className="hidden font-[nippo] text-3xl font-bold sm:inline-block">
                   benchmrk
                 </span>
               </button>
@@ -228,7 +228,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                         <button
                           type="button"
                           className={cn(
-                            'group hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 text-sm font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50',
+                            'group hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50',
                             link.active
                               ? 'bg-accent text-accent-foreground'
                               : 'text-foreground/80 hover:text-foreground'
