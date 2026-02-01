@@ -6,7 +6,7 @@ export default function LandingPage() {
   return (
     <main className="debug bg-black-2 flex w-full flex-col items-center justify-center">
       <Hero />
-      <Features />
+      {/* <Features /> */}
       <WaitingList />
     </main>
   );
