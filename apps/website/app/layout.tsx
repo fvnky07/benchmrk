@@ -1,18 +1,8 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import localFont from 'next/font/local';
 import './globals.css';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 const clashGrotesk = localFont({
   src: [
@@ -36,9 +26,82 @@ const nippo = localFont({
   display: 'swap',
 });
 
+// NOTE: Comprehensive SEO metadata for search engines and social media
 export const metadata: Metadata = {
-  title: 'Benchmrk',
-  description: 'benchmrk agentic fitness tracker',
+  metadataBase: new URL('https://benchmrk.app'),
+  title: {
+    default: 'benchmrk - AI-Powered Fitness Tracking',
+    template: '%s | benchmrk',
+  },
+  description:
+    'AI-powered fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics. Better than paper tracking.',
+  keywords: [
+    'fitness tracker',
+    'AI fitness coach',
+    'workout logging',
+    'fitness app',
+    'progressive overload',
+    'strength training tracker',
+    'gym tracker',
+    'AI workout coach',
+    'workout app',
+    'fitness analytics',
+  ],
+  authors: [{ name: 'benchmrk' }],
+  creator: 'benchmrk',
+  publisher: 'benchmrk',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://benchmrk.app',
+    siteName: 'benchmrk',
+    title: 'benchmrk - AI-Powered Fitness Tracking',
+    description:
+      'AI-powered fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics. Better than paper tracking.',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'benchmrk - AI-Powered Fitness Tracking',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@fvnky_07',
+    creator: '@fvnky_07',
+    title: 'benchmrk - AI-Powered Fitness Tracking',
+    description:
+      'AI-powered fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics.',
+    images: ['/opengraph-image'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'benchmrk',
+  },
 };
 
 export default function RootLayout({
@@ -49,9 +112,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${clashGrotesk.variable} ${nippo.variable} antialiased`}
+        className={`${clashGrotesk.variable} ${nippo.variable} antialiased`}
       >
         <Analytics />
+        <SpeedInsights />
         {children}
       </body>
     </html>
