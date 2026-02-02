@@ -161,7 +161,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     return (
       <header
         className={cn(
-          'supports-[backdrop-filter]:bg-background/0 sticky top-0 z-50 w-full border-b px-4 backdrop-blur md:px-6 [&_*]:no-underline',
+          'supports-[backdrop-filter]:bg-background/0 sticky top-0 z-50 w-full border-b px-4 backdrop-blur md:px-6 xl:px-4 [&_*]:no-underline',
           backgroundColor,
           className
         )}
@@ -228,7 +228,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                         <button
                           type="button"
                           className={cn(
-                            'group hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50',
+                            'group hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
                             link.active
                               ? 'bg-accent text-accent-foreground'
                               : 'text-foreground/80 hover:text-foreground'
@@ -247,7 +247,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <Button
-              className="hover:bg-accent hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold"
+              className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg"
               onClick={(e) => {
                 e.preventDefault();
                 if (onSignInClick) {
@@ -260,7 +260,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
               {signInText}
             </Button>
             <Button
-              className="h-9 rounded-4xl px-4 text-sm font-semibold shadow-sm"
+              className="text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg"
               onClick={(e) => {
                 e.preventDefault();
                 if (onCtaClick) {
