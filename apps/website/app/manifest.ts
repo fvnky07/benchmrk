@@ -4,10 +4,10 @@ import type { MetadataRoute } from 'next';
 // NOTE: PWA manifest for mobile "Add to Home Screen" functionality
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'benchmrk - AI-Powered Fitness Tracking',
+    name: 'benchmrk - AI Fitness Tracking',
     short_name: 'benchmrk',
     description:
-      'AI-powered fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics.',
+      'AI fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics.',
     start_url: '/',
     display: 'standalone',
     background_color: '#1F1F1F',
