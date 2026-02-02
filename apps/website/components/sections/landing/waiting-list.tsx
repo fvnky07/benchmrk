@@ -14,7 +14,8 @@ export default function WaitingList() {
         strokeColor="rgba(255,255,255, 0.3)"
       />
       <div className="debug bg-black-2 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow sm:flex-row lg:p-0">
-        <div className="flex flex-col gap-2 lg:gap-4">
+        {/* <div className="hidden flex-col gap-2 lg:flex lg:gap-4"></div> */}
+        <div className="hidden flex-col gap-2 lg:flex lg:gap-4">
           {/* NOTE: Each text container grows to fill available space */}
           <div className="flex items-center justify-center overflow-hidden sm:justify-baseline">
             <h1 className="font-[nippo] text-[15vw] leading-none font-bold tracking-tighter sm:text-[12vw] lg:text-[20rem]">
@@ -32,13 +33,14 @@ export default function WaitingList() {
             </h1>
           </div>
         </div>
-        <div className="flex grow flex-col items-center justify-center gap-4 p-4">
-          <div className="bg-green-1 flex flex-2 grow rounded-4xl p-4">
+
+        <div className="debug-3 flex grow flex-col items-center justify-center gap-4 p-4">
+          <div className="bg-green-1 debug-2 flex flex-2 grow rounded-4xl p-4">
             <div
               style={{ opacity: 0.45 }}
               className="flex h-full w-full flex-2 items-start justify-center rounded-4xl bg-black p-4"
             >
-              <h1 className="text-6xl text-white">
+              <h1 className="text-4xl text-white md:text-6xl">
                 <span>
                   <Sparkle className="size-12" />
                 </span>
@@ -47,7 +49,7 @@ export default function WaitingList() {
               </h1>
             </div>
           </div>
-          <div className="border-green-1 flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-4 p-6">
+          <div className="flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-4 border-white p-6">
             <Field>
               <FieldLabel htmlFor="input-button-group">
                 Enter your email
