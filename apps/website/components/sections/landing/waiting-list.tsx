@@ -1,11 +1,15 @@
+'use client';
 import GridPattern from '@/components/ui/grid-pattern';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Sparkle } from 'lucide-react';
+import { useState } from 'react';
 
 export default function WaitingList() {
+  const [email, setEmail] = useState('');
+
   return (
     <section className="bg-black-1 relative flex h-screen w-full flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-4 lg:px-12">
       <GridPattern
@@ -17,25 +21,25 @@ export default function WaitingList() {
         {/* <div className="hidden flex-col gap-2 lg:flex lg:gap-4"></div> */}
         <div className="hidden flex-col gap-2 lg:flex lg:gap-4">
           {/* NOTE: Each text container grows to fill available space */}
-          <div className="flex items-center justify-center overflow-hidden sm:justify-baseline">
-            <h1 className="font-[nippo] text-[15vw] leading-none font-bold tracking-tighter sm:text-[12vw] lg:text-[20rem]">
+          <div className="flex items-center justify-baseline overflow-hidden">
+            <h1 className="font-[nippo] text-[15vw] leading-none font-bold tracking-tighter sm:text-[12vw] lg:text-[20vw]">
               JOIN
             </h1>
           </div>
-          <div className="flex items-center justify-center overflow-hidden sm:justify-baseline">
+          <div className="flex items-center justify-baseline overflow-hidden">
             <h1 className="font-[nippo] text-[15vw] leading-none font-bold tracking-tighter sm:text-[12vw] lg:text-[20vw]">
               THE
             </h1>
           </div>
-          <div className="flex items-center justify-center overflow-hidden sm:justify-baseline">
+          <div className="flex items-center justify-baseline overflow-hidden sm:justify-baseline">
             <h1 className="font-[nippo] text-[15vw] leading-none font-bold tracking-tighter sm:text-[12vw] lg:text-[20vw]">
               LIST!
             </h1>
           </div>
         </div>
 
-        <div className="debug-3 flex grow flex-col items-center justify-center gap-4 p-4">
-          <div className="bg-green-1 debug-2 flex flex-2 grow rounded-4xl p-4">
+        <div className="flex grow flex-col items-center justify-center gap-4 p-4">
+          <div className="bg-cyan-1 flex flex-2 grow rounded-4xl p-4">
             <div
               style={{ opacity: 0.45 }}
               className="flex h-full w-full flex-2 items-start justify-center rounded-4xl bg-black p-4"
@@ -49,7 +53,7 @@ export default function WaitingList() {
               </h1>
             </div>
           </div>
-          <div className="flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-4 border-white p-6">
+          <div className="flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-6 border-black p-3">
             <Field>
               <FieldLabel htmlFor="input-button-group">
                 Enter your email
@@ -59,6 +63,7 @@ export default function WaitingList() {
                   id="input-button-group"
                   placeholder="johndoe@gmail.com"
                   className="h-12 rounded-4xl border-white px-4"
+                  onChange={(event) => setEmail(event.target.value)}
                 />
                 <Button className="h-12 rounded-4xl px-4">Register</Button>
               </ButtonGroup>

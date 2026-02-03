@@ -10,17 +10,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { Navbar } from '@/components/ui/navbar';
 import Image from 'next/image';
 import LogoSvg from '@/public/logo.svg';
 
 export default function Hero() {
-  const heroItems = [1, 2, 3];
+  const [email, setEmail] = useState('');
+  const handleChange = (event) => {
+    setEmail(event.target.value);
+    console.log('value is:', event.target.value);
+  };
 
-  // useEffect(() =>{
-  //
-  // },[timer])
   return (
     <section className="relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
       {/* Grid Pattern Background */}
@@ -120,7 +121,7 @@ export default function Hero() {
               />
             </div>
             {/* NOTE: pointer-events-none allows hover to pass through to Squares canvas */}
-            <div className="debug-5 pointer-events-none relative z-10 flex h-full w-full items-center justify-center lg:p-4">
+            <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center lg:p-4">
               <Iphone
                 videoSrc="/hero-video-1.mp4"
                 onVideoEnded={() => {
