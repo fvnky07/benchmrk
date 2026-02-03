@@ -16,12 +16,6 @@ import Image from 'next/image';
 import LogoSvg from '@/public/logo.svg';
 
 export default function Hero() {
-  const [email, setEmail] = useState('');
-  const handleChange = (event) => {
-    setEmail(event.target.value);
-    console.log('value is:', event.target.value);
-  };
-
   return (
     <section className="relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
       {/* Grid Pattern Background */}
@@ -103,6 +97,11 @@ export default function Hero() {
               <Button
                 size="lg"
                 className="hover:text-green-1 hover:border-green-1 w-full shrink-0 rounded-4xl bg-white text-3xl font-bold text-black hover:border-4 hover:bg-white/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
+                onClick={() => {
+                  document
+                    .getElementById('waitlist')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+                }}
               >
                 Get Lifetime Premium
                 <ArrowRight className="ml-2 size-8 sm:size-10 lg:size-12" />
