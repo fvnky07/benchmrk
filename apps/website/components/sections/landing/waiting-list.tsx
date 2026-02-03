@@ -11,7 +11,10 @@ export default function WaitingList() {
   const [email, setEmail] = useState('');
 
   return (
-    <section className="bg-black-1 relative flex h-screen w-full flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-4 lg:px-12">
+    <section
+      id="waitlist"
+      className="bg-black-1 relative flex h-screen w-full flex-col items-center justify-center overflow-hidden px-4 py-12 sm:px-4 lg:px-12"
+    >
       <GridPattern
         width={30}
         height={30}
