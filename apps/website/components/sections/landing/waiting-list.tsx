@@ -1,14 +1,43 @@
 'use client';
 import GridPattern from '@/components/ui/grid-pattern';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Sparkle } from 'lucide-react';
 import { useState } from 'react';
+import { useMutation } from 'convex/react';
+import { api } from '@repo/backend/convex/_generated/api';
 
 export default function WaitingList() {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const mutateEmail = useMutation(api.waitlist.addEmailToWaitlist);
+
+  const handleRegister = async () => {
+    if (!email) {
+      setError('Please enter an email');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await mutateEmail({ email });
+      setSuccess(true);
+      setEmail('');
+      // Reset success message after 3 seconds
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to register email');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <section
@@ -61,14 +90,30 @@ export default function WaitingList() {
               <FieldLabel htmlFor="input-button-group">
                 Enter your email
               </FieldLabel>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              {success && (
+                <p className="text-sm text-green-500">
+                  Successfully added to waitlist!
+                </p>
+              )}
               <ButtonGroup className="gap-2">
                 <Input
                   id="input-button-group"
                   placeholder="johndoe@gmail.com"
                   className="h-12 rounded-4xl border-white px-4"
-                  onChange={(event) => setEmail(event.target.value)}
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                  }}
+                  disabled={isLoading}
                 />
-                <Button className="h-12 rounded-4xl px-4">Register</Button>
+                <Button
+                  onClick={handleRegister}
+                  className="h-12 rounded-4xl px-4"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Registering...' : 'Register'}
+                </Button>
               </ButtonGroup>
             </Field>
           </div>

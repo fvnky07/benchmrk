@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@repo/backend/*": ["../../packages/backend/*"]
     }
   },
   "include": [

@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import localFont from 'next/font/local';
 import './globals.css';
+import { ConvexClientProvider } from './ConvexClientProvider';
 
 const clashGrotesk = localFont({
   src: [
@@ -116,7 +117,7 @@ export default function RootLayout({
       >
         <Analytics />
         <SpeedInsights />
-        {children}
+        <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
     </html>
   );
