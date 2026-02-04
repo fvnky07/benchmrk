@@ -8,13 +8,17 @@
  * @module
  */
 
+import type * as waitlist from "../waitlist.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
-} from 'convex/server';
+} from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  waitlist: typeof waitlist;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
@@ -26,7 +30,7 @@ declare const fullApi: ApiFromModules<{}>;
  */
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, 'public'>
+  FunctionReference<any, "public">
 >;
 
 /**
@@ -39,7 +43,7 @@ export declare const api: FilterApi<
  */
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, 'internal'>
+  FunctionReference<any, "internal">
 >;
 
 export declare const components: {};

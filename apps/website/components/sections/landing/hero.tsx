@@ -27,6 +27,11 @@ export default function Hero() {
         <Navbar
           backgroundColor="bg-black-2"
           ctaText="Join the Waitlist!"
+          onCtaClick={() => {
+            document
+              .getElementById('waitlist')
+              ?.scrollIntoView({ behavior: 'smooth' });
+          }}
           logo={
             <Image
               src={LogoSvg}
