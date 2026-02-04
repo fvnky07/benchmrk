@@ -18,24 +18,38 @@ export default function WaitingList() {
   const mutateEmail = useMutation(api.waitlist.addEmailToWaitlist);
 
   const handleRegister = async () => {
-    if (!email) {
+    // Clear previous messages
+    setError(null);
+    setSuccess(false);
+
+    // Basic client-side validation
+    if (!email.trim()) {
       setError('Please enter an email');
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
-      await mutateEmail({ email });
+      await mutateEmail({ email: email.trim() });
       setSuccess(true);
-      setEmail('');
-      // Reset success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
+      setEmail(''); // Clear input on success
+      // Reset success message after 5 seconds
+      setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register email');
+      // Handle specific error messages from backend
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to register email';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Allow pressing Enter to submit
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !isLoading) {
+      handleRegister();
     }
   };
 
@@ -90,29 +104,44 @@ export default function WaitingList() {
               <FieldLabel htmlFor="input-button-group">
                 Enter your email
               </FieldLabel>
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && (
+                <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-500">
+                  {error}
+                </div>
+              )}
               {success && (
-                <p className="text-sm text-green-500">
-                  Successfully added to waitlist!
-                </p>
+                <div className="rounded-md bg-green-500/10 p-3 text-sm text-green-500">
+                  🎉 Successfully added to waitlist! You're one step closer to
+                  lifetime premium.
+                </div>
               )}
               <ButtonGroup className="gap-2">
                 <Input
                   id="input-button-group"
+                  type="email"
                   placeholder="johndoe@gmail.com"
                   className="h-12 rounded-4xl border-white px-4"
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value);
+                    // Clear error when user starts typing
+                    if (error) setError(null);
                   }}
-                  disabled={isLoading}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading || success}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? 'email-error' : undefined}
                 />
                 <Button
                   onClick={handleRegister}
                   className="h-12 rounded-4xl px-4"
-                  disabled={isLoading}
+                  disabled={isLoading || success}
                 >
-                  {isLoading ? 'Registering...' : 'Register'}
+                  {isLoading
+                    ? 'Registering...'
+                    : success
+                      ? 'Registered!'
+                      : 'Register'}
                 </Button>
               </ButtonGroup>
             </Field>
