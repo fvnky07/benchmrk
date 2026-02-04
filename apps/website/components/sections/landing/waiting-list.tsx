@@ -4,6 +4,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { Spinner } from '@/components/ui/spinner';
 import { Sparkle } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation } from 'convex/react';
@@ -137,6 +138,7 @@ export default function WaitingList() {
                   className="h-12 rounded-4xl px-4"
                   disabled={isLoading || success}
                 >
+                  {isLoading && <Spinner data-icon="inline-start" />}
                   {isLoading
                     ? 'Registering...'
                     : success
