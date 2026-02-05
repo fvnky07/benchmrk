@@ -113,8 +113,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // NOTE: Get initial auth token for hydration
-  const token = await getToken();
+  // NOTE: Get initial auth token for hydration (optional - may be null if not configured)
+  let token: string | null = null;
+  try {
+    token = (await getToken()) || null;
+  } catch (error) {
+    // NOTE: Auth not configured yet, continue without token
+    console.warn('Failed to get auth token:', error);
+  }
 
   return (
     <html lang="en" className="dark">

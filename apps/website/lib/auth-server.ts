@@ -2,6 +2,18 @@
 // NOTE: Server-side auth utilities for Next.js SSR and server functions
 import { convexBetterAuthNextJs } from '@convex-dev/better-auth/nextjs';
 
+// NOTE: Fallback to empty string during build if env vars not set
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || '';
+const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL || '';
+
+if (!convexUrl && process.env.NODE_ENV !== 'production') {
+  console.warn('NEXT_PUBLIC_CONVEX_URL is not set');
+}
+
+if (!convexSiteUrl && process.env.NODE_ENV !== 'production') {
+  console.warn('NEXT_PUBLIC_CONVEX_SITE_URL is not set');
+}
+
 export const {
   handler,
   preloadAuthQuery,
@@ -11,6 +23,6 @@ export const {
   fetchAuthMutation,
   fetchAuthAction,
 } = convexBetterAuthNextJs({
-  convexUrl: process.env.NEXT_PUBLIC_CONVEX_URL!,
-  convexSiteUrl: process.env.NEXT_PUBLIC_CONVEX_SITE_URL!,
+  convexUrl,
+  convexSiteUrl,
 });
