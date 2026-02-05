@@ -161,7 +161,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     return (
       <header
         className={cn(
-          'supports-[backdrop-filter]:bg-background/0 sticky top-0 z-50 w-full border-b px-4 backdrop-blur md:px-6 xl:px-4 [&_*]:no-underline',
+          'supports-backdrop-filter:bg-background/0 sticky top-0 z-50 w-full px-4 backdrop-blur **:no-underline md:px-6 xl:px-4',
           backgroundColor,
           className
         )}
@@ -246,6 +246,19 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           </div>
           {/* Right side */}
           <div className="flex items-center gap-3">
+            <Button
+              className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-2 font-semibold xl:text-lg"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onSignInClick) {
+                  onSignInClick();
+                }
+              }}
+              size="sm"
+              variant="ghost"
+            >
+              x
+            </Button>
             <Button
               className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg"
               onClick={(e) => {
