@@ -112,8 +112,8 @@ export default function WaitingList() {
               )}
               {success && (
                 <div className="rounded-md bg-green-500/10 p-3 text-sm text-green-500">
-                  🎉 Successfully added to waitlist! You're one step closer to
-                  lifetime premium.
+                  Check your inbox for the magic link to confirm and claim your
+                  lifetime premium!
                 </div>
               )}
               <ButtonGroup className="gap-2">
