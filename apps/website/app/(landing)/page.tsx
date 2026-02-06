@@ -65,9 +65,11 @@ export default function LandingPage() {
         backgroundColor="bg-black-2"
         ctaText="Join the Waitlist!"
         onCtaClick={() => {
-          document
-            .getElementById('waitlist')
-            ?.scrollIntoView({ behavior: 'smooth' });
+          const section = document.getElementById('waitlist');
+          section?.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => {
+            document.getElementById('input-button-group')?.focus();
+          }, 500);
         }}
         logo={
           <Image
@@ -75,7 +77,7 @@ export default function LandingPage() {
             alt="logo"
             width={32}
             height={32}
-            className="relative h-25 w-20 md:bottom-1.5 md:h-12 md:w-12"
+            className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
           />
         }
         scrollThreshold={100}

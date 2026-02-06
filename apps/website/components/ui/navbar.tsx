@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
@@ -117,10 +118,10 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       signInText,
       signInHref,
       ctaHref,
+      onSignInClick,
       /* eslint-enable @typescript-eslint/no-unused-vars */
       navigationLinks = defaultNavigationLinks,
       ctaText = 'Get Started',
-      onSignInClick,
       onCtaClick,
       backgroundColor = 'bg-background/95',
       ...props
@@ -260,17 +261,22 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <Button
-              className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-2 font-semibold xl:text-lg"
+              className="hover:bg-accent text-md hover:text-accent-foreground h-9 w-9 rounded-4xl p-2 font-semibold xl:text-lg"
               onClick={(e) => {
                 e.preventDefault();
-                if (onSignInClick) {
-                  onSignInClick();
-                }
+                window.open('https://x.com/fvnky_07', '_blank');
               }}
               size="sm"
               variant="ghost"
+              aria-label="Follow us on X (Twitter)"
             >
-              x
+              <Image
+                src="/x.svg"
+                alt="X (Twitter)"
+                width={16}
+                height={16}
+                className="h-4 w-4"
+              />
             </Button>
             {/* <Button */}
             {/*   className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg" */}
