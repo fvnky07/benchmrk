@@ -6,6 +6,7 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { ConvexClientProvider } from './ConvexClientProvider';
 import { getToken } from '@/lib/auth-server';
+import { Footer } from '@/components/ui/footer';
 
 const clashGrotesk = localFont({
   src: [
@@ -131,6 +132,7 @@ export default async function RootLayout({
         <SpeedInsights />
         <ConvexClientProvider initialToken={token}>
           {children}
+          <Footer />
         </ConvexClientProvider>
       </body>
     </html>
