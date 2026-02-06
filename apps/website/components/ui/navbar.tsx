@@ -19,7 +19,7 @@ import { motion } from 'motion/react';
 import { EASE } from '@/lib/animation-config';
 
 // Simple logo component for the navbar
-const Logo = (props: React.SVGAttributes<SVGElement>) => {
+const Logo = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
       aria-label="Logo"
@@ -29,7 +29,7 @@ const Logo = (props: React.SVGAttributes<SVGElement>) => {
       viewBox="0 0 324 323"
       width="1em"
       xmlns="http://www.w3.org/2000/svg"
-      {...(props as any)}
+      {...props}
     >
       <rect fill="currentColor" height="323" rx="161.5" width="323" x="0.5" />
       <circle
@@ -47,7 +47,7 @@ const Logo = (props: React.SVGAttributes<SVGElement>) => {
 const HamburgerIcon = ({
   className,
   ...props
-}: React.SVGAttributes<SVGElement>) => (
+}: React.SVGProps<SVGSVGElement>) => (
   <svg
     aria-label="Menu"
     className={cn('pointer-events-none', className)}
@@ -61,7 +61,7 @@ const HamburgerIcon = ({
     viewBox="0 0 24 24"
     width={16}
     xmlns="http://www.w3.org/2000/svg"
-    {...(props as any)}
+    {...props}
   >
     <path
       className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[315deg]"
@@ -111,12 +111,15 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     {
       className,
       logo = <Logo />,
-      logoHref = '#',
+      // NOTE: These props are part of the public API but not yet wired up
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      logoHref,
+      signInText,
+      signInHref,
+      ctaHref,
+      /* eslint-enable @typescript-eslint/no-unused-vars */
       navigationLinks = defaultNavigationLinks,
-      signInText = 'Log In',
-      signInHref = '#signin',
       ctaText = 'Get Started',
-      ctaHref = '#get-started',
       onSignInClick,
       onCtaClick,
       backgroundColor = 'bg-background/95',
@@ -168,7 +171,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           className
         )}
         ref={combinedRef}
-        {...(props as any)}
+        {...props}
       >
         <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4">
           {/* Left side */}

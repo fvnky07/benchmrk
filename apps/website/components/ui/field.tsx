@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
-interface FieldSetProps extends React.ComponentPropsWithoutRef<'fieldset'> {}
+type FieldSetProps = React.ComponentPropsWithoutRef<'fieldset'>;
 
 function FieldSet({ className, ...props }: FieldSetProps) {
   return (
@@ -49,7 +49,7 @@ function FieldLegend({
   );
 }
 
-interface FieldGroupProps extends React.ComponentPropsWithoutRef<'div'> {}
+type FieldGroupProps = React.ComponentPropsWithoutRef<'div'>;
 
 function FieldGroup({ className, ...props }: FieldGroupProps) {
   return (
@@ -105,7 +105,7 @@ function Field({ className, orientation = 'vertical', ...props }: FieldProps) {
   );
 }
 
-interface FieldContentProps extends React.ComponentPropsWithoutRef<'div'> {}
+type FieldContentProps = React.ComponentPropsWithoutRef<'div'>;
 
 function FieldContent({ className, ...props }: FieldContentProps) {
   return (
@@ -120,9 +120,7 @@ function FieldContent({ className, ...props }: FieldContentProps) {
   );
 }
 
-interface FieldLabelProps extends React.ComponentPropsWithoutRef<
-  typeof Label
-> {}
+type FieldLabelProps = React.ComponentPropsWithoutRef<typeof Label>;
 
 function FieldLabel({ className, ...props }: FieldLabelProps) {
   return (
@@ -139,7 +137,7 @@ function FieldLabel({ className, ...props }: FieldLabelProps) {
   );
 }
 
-interface FieldTitleProps extends React.ComponentPropsWithoutRef<'div'> {}
+type FieldTitleProps = React.ComponentPropsWithoutRef<'div'>;
 
 function FieldTitle({ className, ...props }: FieldTitleProps) {
   return (
@@ -154,7 +152,7 @@ function FieldTitle({ className, ...props }: FieldTitleProps) {
   );
 }
 
-interface FieldDescriptionProps extends React.ComponentPropsWithoutRef<'p'> {}
+type FieldDescriptionProps = React.ComponentPropsWithoutRef<'p'>;
 
 function FieldDescription({ className, ...props }: FieldDescriptionProps) {
   return (

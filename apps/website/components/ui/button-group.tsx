@@ -64,9 +64,9 @@ function ButtonGroupText({
 }
 
 // NOTE: Using ComponentPropsWithoutRef for consistency across all components
-interface ButtonGroupSeparatorProps extends React.ComponentPropsWithoutRef<
+type ButtonGroupSeparatorProps = React.ComponentPropsWithoutRef<
   typeof Separator
-> {}
+>;
 
 function ButtonGroupSeparator({
   className,
