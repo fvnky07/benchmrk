@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
+import { motion } from 'motion/react';
+import { EASE } from '@/lib/animation-config';
 
 // Simple logo component for the navbar
 const Logo = (props: React.SVGAttributes<SVGElement>) => {
@@ -225,10 +227,18 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <NavigationMenuList className="gap-1">
                     {navigationLinks.map((link, index) => (
                       <NavigationMenuItem key={index}>
-                        <button
+                        <motion.button
                           type="button"
+                          whileHover={{
+                            scale: 1.05,
+                            transition: {
+                              duration: 0.2,
+                              ease: EASE.expOut,
+                            },
+                          }}
+                          whileTap={{ scale: 0.97 }}
                           className={cn(
-                            'group hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                            'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
                             link.active
                               ? 'bg-accent text-accent-foreground'
                               : 'text-foreground/80 hover:text-foreground'
@@ -236,7 +246,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                           onClick={(e) => e.preventDefault()}
                         >
                           {link.label}
-                        </button>
+                        </motion.button>
                       </NavigationMenuItem>
                     ))}
                   </NavigationMenuList>

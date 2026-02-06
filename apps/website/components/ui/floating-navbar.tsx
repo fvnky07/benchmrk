@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useScroll } from 'motion/react';
 import { Navbar, NavbarProps } from '@/components/ui/navbar';
+import { EASE, DURATION } from '@/lib/animation-config';
 
 export interface FloatingNavbarProps extends NavbarProps {
   /**
@@ -61,8 +62,8 @@ export const FloatingNavbar = React.forwardRef<
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{
-            duration: 0.3,
-            ease: [0.25, 0.46, 0.45, 0.94], // Smooth easeOutCubic
+            duration: DURATION.fast,
+            ease: EASE.expOut,
           }}
           className="fixed top-0 right-0 left-0 z-[100]"
         >
