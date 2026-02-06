@@ -26,10 +26,8 @@ import {
 import {
   bounceInVariants,
   fadeInVariants,
-  fadeUpVariants,
   scaleInVariants,
   EASE,
-  DURATION,
 } from '@/lib/animation-config';
 
 export default function WelcomeContent() {

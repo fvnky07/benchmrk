@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Sparkle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '@repo/backend/convex/_generated/api';
 import { motion } from 'motion/react';
@@ -21,7 +21,6 @@ import {
   slideFromLeftVariants,
   slideFromRightVariants,
   scaleInVariants,
-  fadeUpVariants,
   EASE,
   DURATION,
 } from '@/lib/animation-config';
@@ -31,7 +30,6 @@ export default function WaitingList() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
 
   const mutateEmail = useMutation(api.waitlist.addEmailToWaitlist);
 
