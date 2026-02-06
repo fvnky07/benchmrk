@@ -164,58 +164,42 @@ export default function WaitingList() {
             </div>
           </FadeInView>
 
-          {/* NOTE: Form elements and stats stagger in */}
+          {/* NOTE: Stats and form with new layout */}
           <StaggerChildren
             staggerDelay={0.15}
             initialDelay={0.3}
-            className="bg-black-1 flex h-auto w-full flex-1 flex-col items-center justify-center gap-6 rounded-4xl border-4 border-white p-6 shadow-2xl"
+            className="bg-black-1 flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-4 border-white p-6 shadow-2xl"
           >
-            {/* NOTE: Stats Card - shows premium slots, confirmed users, waitlist count */}
-            <StaggerItem>
-              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
-                {/* Stat 1: Infinite Premium Slots Left */}
-                <div className="border-cyan-1 bg-cyan-1/10 flex flex-col items-center rounded-2xl border-2 p-4 text-center">
+            {/* NOTE: Stats Row - 2 stats side-by-side on desktop, stacked on mobile */}
+            <StaggerItem className="w-full">
+              <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:items-center">
+                {/* Stat 1: X/100 Premiums Claimed */}
+                <div className="flex flex-col items-center text-center md:items-start md:text-left">
                   {premiumStats === undefined ? (
-                    <LoadingSpinner className="text-cyan-1 size-8" />
+                    <LoadingSpinner className="text-green-1 size-12" />
                   ) : (
                     <>
-                      <div className="text-cyan-1 font-[nippo] text-5xl font-bold sm:text-4xl">
-                        {premiumStats.remaining}
+                      <div className="font-[nippo] text-7xl font-bold text-white shadow-[0_0_30px_rgba(52,211,153,0.6)] sm:text-8xl">
+                        {premiumStats.claimed}/100
                       </div>
-                      <div className="mt-1 text-xs text-white/60 sm:text-sm">
-                        Lifetime Slots Left
+                      <div className="mt-2 text-base text-white/60">
+                        premiums claimed
                       </div>
                     </>
                   )}
                 </div>
 
-                {/* Stat 2: Confirmed Premium Members */}
-                <div className="border-green-1 bg-green-1/10 flex flex-col items-center rounded-2xl border-2 p-4 text-center">
-                  {premiumStats === undefined ? (
-                    <LoadingSpinner className="text-green-1 size-8" />
-                  ) : (
-                    <>
-                      <div className="text-green-1 font-[nippo] text-5xl font-bold sm:text-4xl">
-                        {premiumStats.claimed}
-                      </div>
-                      <div className="mt-1 text-xs text-white/60 sm:text-sm">
-                        Premium Members
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Stat 3: Exaggerated Waitlist Count */}
-                <div className="flex flex-col items-center rounded-2xl border-2 border-yellow-400 bg-yellow-400/10 p-4 text-center">
+                {/* Stat 2: X People Waiting */}
+                <div className="flex flex-col items-center text-center md:items-end md:text-right">
                   {waitlistCount === undefined ? (
-                    <LoadingSpinner className="size-8 text-yellow-400" />
+                    <LoadingSpinner className="text-green-1 size-12" />
                   ) : (
                     <>
-                      <div className="font-[nippo] text-5xl font-bold text-yellow-400 sm:text-4xl">
+                      <div className="font-[nippo] text-7xl font-bold text-white shadow-[0_0_30px_rgba(52,211,153,0.6)] sm:text-8xl">
                         {exaggeratedCount.toLocaleString()}
                       </div>
-                      <div className="mt-1 text-xs text-white/60 sm:text-sm">
-                        People Waiting
+                      <div className="mt-2 text-base text-white/60">
+                        people waiting
                       </div>
                     </>
                   )}
@@ -223,9 +207,9 @@ export default function WaitingList() {
               </div>
             </StaggerItem>
 
-            {/* NOTE: Email input form */}
-            <StaggerItem className="w-full">
-              <Field>
+            {/* NOTE: Email input form - full width */}
+            <StaggerItem className="flex h-full w-full items-center justify-center">
+              <Field className="w-full">
                 <FieldLabel htmlFor="input-button-group">
                   Enter your email
                 </FieldLabel>
