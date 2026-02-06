@@ -259,19 +259,19 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             >
               x
             </Button>
-            <Button
-              className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onSignInClick) {
-                  onSignInClick();
-                }
-              }}
-              size="sm"
-              variant="outline"
-            >
-              {signInText}
-            </Button>
+            {/* <Button */}
+            {/*   className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg" */}
+            {/*   onClick={(e) => { */}
+            {/*     e.preventDefault(); */}
+            {/*     if (onSignInClick) { */}
+            {/*       onSignInClick(); */}
+            {/*     } */}
+            {/*   }} */}
+            {/*   size="sm" */}
+            {/*   variant="outline" */}
+            {/* > */}
+            {/*   {signInText} */}
+            {/* </Button> */}
             <Button
               className="text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg"
               onClick={(e) => {
