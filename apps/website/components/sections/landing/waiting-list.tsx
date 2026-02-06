@@ -25,6 +25,7 @@ import {
   EASE,
   DURATION,
 } from '@/lib/animation-config';
+import { Separator } from '@radix-ui/react-separator';
 
 export default function WaitingList() {
   const [email, setEmail] = useState('');
@@ -172,33 +173,34 @@ export default function WaitingList() {
           >
             {/* NOTE: Stats Row - 2 stats side-by-side on desktop, stacked on mobile */}
             <StaggerItem className="w-full">
-              <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:items-center">
+              <div className="flex w-full flex-col items-center justify-end gap-4 md:flex-row md:items-center">
                 {/* Stat 1: X/100 Premiums Claimed */}
-                <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                <div className="flex flex-col items-end text-center">
                   {premiumStats === undefined ? (
-                    <LoadingSpinner className="text-green-1 size-12" />
+                    <LoadingSpinner className="text-green-1 size-16" />
                   ) : (
                     <>
-                      <div className="font-[nippo] text-7xl font-bold text-white shadow-[0_0_30px_rgba(52,211,153,0.6)] sm:text-8xl">
+                      <div className="font-[nippo] text-7xl font-bold text-white sm:text-8xl">
                         {premiumStats.claimed}/100
                       </div>
-                      <div className="mt-2 text-base text-white/60">
+                      <div className="text-yellow-1 text-base">
                         premiums claimed
                       </div>
                     </>
                   )}
                 </div>
+                <Separator orientation="vertical" />
 
                 {/* Stat 2: X People Waiting */}
                 <div className="flex flex-col items-center text-center md:items-end md:text-right">
-                  {waitlistCount === undefined ? (
-                    <LoadingSpinner className="text-green-1 size-12" />
+                  {premiumStats === undefined ? (
+                    <LoadingSpinner className="text-green-1 size-16" />
                   ) : (
                     <>
-                      <div className="font-[nippo] text-7xl font-bold text-white shadow-[0_0_30px_rgba(52,211,153,0.6)] sm:text-8xl">
+                      <div className="font-[nippo] text-7xl font-bold text-white sm:text-8xl">
                         {exaggeratedCount.toLocaleString()}
                       </div>
-                      <div className="mt-2 text-base text-white/60">
+                      <div className="text-yellow-1 text-base">
                         people waiting
                       </div>
                     </>
@@ -210,9 +212,9 @@ export default function WaitingList() {
             {/* NOTE: Email input form - full width */}
             <StaggerItem className="flex h-full w-full items-center justify-center">
               <Field className="w-full">
-                <FieldLabel htmlFor="input-button-group">
-                  Enter your email
-                </FieldLabel>
+                {/* <FieldLabel htmlFor="input-button-group"> */}
+                {/*   Enter your email */}
+                {/* </FieldLabel> */}
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}

@@ -65,13 +65,13 @@ export const FloatingNavbar = React.forwardRef<
             duration: DURATION.fast,
             ease: EASE.expOut,
           }}
-          className="fixed top-0 right-0 left-0 z-[100]"
+          className="fixed top-0 right-0 left-0 z-100"
         >
           <Navbar
             ref={ref}
             {...navbarProps}
             className="shadow-lg"
-            backgroundColor="bg-background/95 backdrop-blur-md"
+            backgroundColor="bg-background/95 backgroundColor  backdrop-blur-md"
           />
         </motion.div>
       )}
@@ -80,28 +80,3 @@ export const FloatingNavbar = React.forwardRef<
 });
 
 FloatingNavbar.displayName = 'FloatingNavbar';
-
-// Demo component for testing
-export function FloatingNavbarDemo() {
-  return (
-    <>
-      <FloatingNavbar
-        ctaText="Get Started"
-        onCtaClick={() => console.log('CTA clicked')}
-      />
-      {/* Demo content to enable scrolling */}
-      <div className="h-[200vh] space-y-4 p-8">
-        <div className="h-screen bg-gradient-to-b from-blue-100 to-purple-100">
-          <div className="flex h-full items-center justify-center">
-            <h1 className="text-4xl font-bold">Scroll down to see navbar</h1>
-          </div>
-        </div>
-        <div className="h-screen bg-gradient-to-b from-purple-100 to-pink-100">
-          <div className="flex h-full items-center justify-center">
-            <h1 className="text-4xl font-bold">Keep scrolling...</h1>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
