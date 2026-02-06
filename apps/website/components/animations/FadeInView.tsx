@@ -5,7 +5,7 @@
 import { motion, useInView } from 'motion/react';
 import { useRef } from 'react';
 import type { Variants } from 'motion/react';
-import { fadeUpVariants, DURATION, EASE } from '@/lib/animation-config';
+import { DURATION, EASE } from '@/lib/animation-config';
 
 interface FadeInViewProps {
   children: React.ReactNode;
