@@ -46,9 +46,11 @@ export default function Hero() {
             backgroundColor="bg-black-2"
             ctaText="Join the Waitlist!"
             onCtaClick={() => {
-              document
-                .getElementById('waitlist')
-                ?.scrollIntoView({ behavior: 'smooth' });
+              const section = document.getElementById('waitlist');
+              section?.scrollIntoView({ behavior: 'smooth' });
+              setTimeout(() => {
+                document.getElementById('input-button-group')?.focus();
+              }, 500);
             }}
             logo={
               <Image
@@ -149,9 +151,11 @@ export default function Hero() {
                 size="lg"
                 className="hover:text-green-1 hover:border-green-1 w-full shrink-0 rounded-4xl bg-white text-3xl font-bold text-black hover:border-4 hover:bg-white/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
                 onClick={() => {
-                  document
-                    .getElementById('waitlist')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  const section = document.getElementById('waitlist');
+                  section?.scrollIntoView({ behavior: 'smooth' });
+                  setTimeout(() => {
+                    document.getElementById('input-button-group')?.focus();
+                  }, 500);
                 }}
               >
                 Get Lifetime Premium

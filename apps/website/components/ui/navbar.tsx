@@ -291,6 +291,13 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                 e.preventDefault();
                 if (onCtaClick) {
                   onCtaClick();
+                } else {
+                  // NOTE: Default behavior - scroll to waitlist + focus input
+                  const section = document.getElementById('waitlist');
+                  section?.scrollIntoView({ behavior: 'smooth' });
+                  setTimeout(() => {
+                    document.getElementById('input-button-group')?.focus();
+                  }, 500);
                 }
               }}
               size="sm"

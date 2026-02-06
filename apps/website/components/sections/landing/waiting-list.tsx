@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
 import { Sparkle } from 'lucide-react';
-import { useState } from 'react';
-import { useMutation } from 'convex/react';
+import { useState, useRef } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@repo/backend/convex/_generated/api';
+import { Spinner as LoadingSpinner } from '@/components/ui/spinner';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { FadeInView } from '@/components/animations/FadeInView';
@@ -30,6 +31,15 @@ export default function WaitingList() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // NOTE: Query real-time stats from Convex
+  const premiumStats = useQuery(api.waitlist.getPremiumStats);
+  const waitlistCount = useQuery(api.waitlist.getWaitlistCount) ?? 0;
+
+  // NOTE: Exaggerated waitlist count for social proof (easy to adjust)
+  const MULTIPLIER = 300;
+  const exaggeratedCount = (waitlistCount + 1) * MULTIPLIER;
 
   const mutateEmail = useMutation(api.waitlist.addEmailToWaitlist);
 
@@ -154,13 +164,67 @@ export default function WaitingList() {
             </div>
           </FadeInView>
 
-          {/* NOTE: Form elements stagger in */}
+          {/* NOTE: Form elements and stats stagger in */}
           <StaggerChildren
             staggerDelay={0.15}
             initialDelay={0.3}
-            className="flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-6 border-black p-3"
+            className="bg-black-1 flex h-auto w-full flex-1 flex-col items-center justify-center gap-6 rounded-4xl border-4 border-white p-6 shadow-2xl"
           >
+            {/* NOTE: Stats Card - shows premium slots, confirmed users, waitlist count */}
             <StaggerItem>
+              <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+                {/* Stat 1: Infinite Premium Slots Left */}
+                <div className="border-cyan-1 bg-cyan-1/10 flex flex-col items-center rounded-2xl border-2 p-4 text-center">
+                  {premiumStats === undefined ? (
+                    <LoadingSpinner className="text-cyan-1 size-8" />
+                  ) : (
+                    <>
+                      <div className="text-cyan-1 font-[nippo] text-5xl font-bold sm:text-4xl">
+                        {premiumStats.remaining}
+                      </div>
+                      <div className="mt-1 text-xs text-white/60 sm:text-sm">
+                        Lifetime Slots Left
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Stat 2: Confirmed Premium Members */}
+                <div className="border-green-1 bg-green-1/10 flex flex-col items-center rounded-2xl border-2 p-4 text-center">
+                  {premiumStats === undefined ? (
+                    <LoadingSpinner className="text-green-1 size-8" />
+                  ) : (
+                    <>
+                      <div className="text-green-1 font-[nippo] text-5xl font-bold sm:text-4xl">
+                        {premiumStats.claimed}
+                      </div>
+                      <div className="mt-1 text-xs text-white/60 sm:text-sm">
+                        Premium Members
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Stat 3: Exaggerated Waitlist Count */}
+                <div className="flex flex-col items-center rounded-2xl border-2 border-yellow-400 bg-yellow-400/10 p-4 text-center">
+                  {waitlistCount === undefined ? (
+                    <LoadingSpinner className="size-8 text-yellow-400" />
+                  ) : (
+                    <>
+                      <div className="font-[nippo] text-5xl font-bold text-yellow-400 sm:text-4xl">
+                        {exaggeratedCount.toLocaleString()}
+                      </div>
+                      <div className="mt-1 text-xs text-white/60 sm:text-sm">
+                        People Waiting
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </StaggerItem>
+
+            {/* NOTE: Email input form */}
+            <StaggerItem className="w-full">
               <Field>
                 <FieldLabel htmlFor="input-button-group">
                   Enter your email
@@ -194,6 +258,7 @@ export default function WaitingList() {
                 )}
                 <ButtonGroup className="gap-2">
                   <Input
+                    ref={inputRef}
                     id="input-button-group"
                     type="email"
                     placeholder="johndoe@gmail.com"
