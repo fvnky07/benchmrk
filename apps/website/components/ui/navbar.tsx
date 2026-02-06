@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
@@ -15,9 +16,11 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
+import { motion } from 'motion/react';
+import { EASE } from '@/lib/animation-config';
 
 // Simple logo component for the navbar
-const Logo = (props: React.SVGAttributes<SVGElement>) => {
+const Logo = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
       aria-label="Logo"
@@ -27,7 +30,7 @@ const Logo = (props: React.SVGAttributes<SVGElement>) => {
       viewBox="0 0 324 323"
       width="1em"
       xmlns="http://www.w3.org/2000/svg"
-      {...(props as any)}
+      {...props}
     >
       <rect fill="currentColor" height="323" rx="161.5" width="323" x="0.5" />
       <circle
@@ -45,7 +48,7 @@ const Logo = (props: React.SVGAttributes<SVGElement>) => {
 const HamburgerIcon = ({
   className,
   ...props
-}: React.SVGAttributes<SVGElement>) => (
+}: React.SVGProps<SVGSVGElement>) => (
   <svg
     aria-label="Menu"
     className={cn('pointer-events-none', className)}
@@ -59,7 +62,7 @@ const HamburgerIcon = ({
     viewBox="0 0 24 24"
     width={16}
     xmlns="http://www.w3.org/2000/svg"
-    {...(props as any)}
+    {...props}
   >
     <path
       className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[315deg]"
@@ -109,13 +112,16 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     {
       className,
       logo = <Logo />,
-      logoHref = '#',
-      navigationLinks = defaultNavigationLinks,
-      signInText = 'Log In',
-      signInHref = '#signin',
-      ctaText = 'Get Started',
-      ctaHref = '#get-started',
+      // NOTE: These props are part of the public API but not yet wired up
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      logoHref,
+      signInText,
+      signInHref,
+      ctaHref,
       onSignInClick,
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+      navigationLinks = defaultNavigationLinks,
+      ctaText = 'Get Started',
       onCtaClick,
       backgroundColor = 'bg-background/95',
       ...props
@@ -166,7 +172,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           className
         )}
         ref={combinedRef}
-        {...(props as any)}
+        {...props}
       >
         <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4">
           {/* Left side */}
@@ -225,10 +231,18 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <NavigationMenuList className="gap-1">
                     {navigationLinks.map((link, index) => (
                       <NavigationMenuItem key={index}>
-                        <button
+                        <motion.button
                           type="button"
+                          whileHover={{
+                            scale: 1.05,
+                            transition: {
+                              duration: 0.2,
+                              ease: EASE.expOut,
+                            },
+                          }}
+                          whileTap={{ scale: 0.97 }}
                           className={cn(
-                            'group hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                            'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
                             link.active
                               ? 'bg-accent text-accent-foreground'
                               : 'text-foreground/80 hover:text-foreground'
@@ -236,7 +250,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                           onClick={(e) => e.preventDefault()}
                         >
                           {link.label}
-                        </button>
+                        </motion.button>
                       </NavigationMenuItem>
                     ))}
                   </NavigationMenuList>
@@ -247,37 +261,49 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <Button
-              className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-2 font-semibold xl:text-lg"
+              className="hover:bg-accent text-md hover:text-accent-foreground h-9 w-9 rounded-4xl p-2 font-semibold xl:text-lg"
               onClick={(e) => {
                 e.preventDefault();
-                if (onSignInClick) {
-                  onSignInClick();
-                }
+                window.open('https://x.com/fvnky_07', '_blank');
               }}
               size="sm"
               variant="ghost"
+              aria-label="Follow us on X (Twitter)"
             >
-              x
+              <Image
+                src="/x.svg"
+                alt="X (Twitter)"
+                width={16}
+                height={16}
+                className="h-4 w-4"
+              />
             </Button>
-            <Button
-              className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onSignInClick) {
-                  onSignInClick();
-                }
-              }}
-              size="sm"
-              variant="outline"
-            >
-              {signInText}
-            </Button>
+            {/* <Button */}
+            {/*   className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg" */}
+            {/*   onClick={(e) => { */}
+            {/*     e.preventDefault(); */}
+            {/*     if (onSignInClick) { */}
+            {/*       onSignInClick(); */}
+            {/*     } */}
+            {/*   }} */}
+            {/*   size="sm" */}
+            {/*   variant="outline" */}
+            {/* > */}
+            {/*   {signInText} */}
+            {/* </Button> */}
             <Button
               className="text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg"
               onClick={(e) => {
                 e.preventDefault();
                 if (onCtaClick) {
                   onCtaClick();
+                } else {
+                  // NOTE: Default behavior - scroll to waitlist + focus input
+                  const section = document.getElementById('waitlist');
+                  section?.scrollIntoView({ behavior: 'smooth' });
+                  setTimeout(() => {
+                    document.getElementById('input-button-group')?.focus();
+                  }, 500);
                 }
               }}
               size="sm"
