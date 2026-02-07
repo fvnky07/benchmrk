@@ -26,6 +26,7 @@ import {
   EASE,
   DURATION,
 } from '@/lib/animation-config';
+import { LineShadowText } from '@/components/ui/line-shadow-text';
 import RotatingText from '@/components/ui/RotatingText';
 
 export default function Hero() {
