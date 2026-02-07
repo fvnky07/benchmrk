@@ -7,6 +7,7 @@ import './globals.css';
 import { ConvexClientProvider } from './ConvexClientProvider';
 import { getToken } from '@/lib/auth-server';
 import { Footer } from '@/components/ui/footer';
+import { Toaster } from '@/components/ui/sonner';
 
 const clashGrotesk = localFont({
   src: [
@@ -133,6 +134,7 @@ export default async function RootLayout({
         <ConvexClientProvider initialToken={token}>
           {children}
           <Footer />
+          <Toaster />
         </ConvexClientProvider>
       </body>
     </html>
