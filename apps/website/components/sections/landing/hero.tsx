@@ -15,7 +15,6 @@ import { Navbar } from '@/components/ui/navbar';
 import Image from 'next/image';
 import LogoSvg from '@/public/logo.svg';
 import { motion } from 'motion/react';
-import { WordReveal } from '@/components/animations/WordReveal';
 import {
   StaggerChildren,
   StaggerItem,
@@ -27,6 +26,7 @@ import {
   EASE,
   DURATION,
 } from '@/lib/animation-config';
+import RotatingText from '@/components/ui/RotatingText';
 
 export default function Hero() {
   return (
@@ -67,10 +67,32 @@ export default function Hero() {
         {/* NOTE: Main content row - uses min-h-0 to allow flexbox shrinking */}
         <div className="bg-black-1 flex min-h-0 w-full grow flex-col gap-2 rounded-4xl lg:flex-row lg:gap-8">
           <div className="bg-black-2 debug flex min-h-0 w-full shrink flex-col items-start justify-start gap-4 overflow-y-auto rounded-4xl px-6 py-4 sm:gap-5 sm:px-8 sm:py-6 lg:w-2/3 lg:px-10 lg:py-8">
-            {/* NOTE: Word-by-word reveal for the main heading */}
-            <h1 className="w-full shrink-0 text-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl 2xl:text-8xl">
-              <WordReveal text="Tired of eye-balling your training?" onLoad />
-            </h1>
+            {/* NOTE: Enhanced title with rotating text animation */}
+            <motion.h1
+              initial="hidden"
+              animate="visible"
+              variants={fadeInVariants}
+              transition={{
+                duration: DURATION.normal,
+                ease: EASE.expOut,
+              }}
+              className="w-full shrink-0 text-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl 2xl:text-8xl"
+            >
+              <span className="block">Stop</span>
+              <RotatingText
+                texts={['guessing', 'forgetting', 'eyeballing', 'losing']}
+                mainClassName="inline-flex px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 2xl:px-6 2xl:py-3 bg-cyan-1 text-black overflow-hidden justify-center rounded-lg my-2 sm:my-3 lg:my-4"
+                staggerFrom="last"
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '-120%' }}
+                staggerDuration={0.025}
+                splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 lg:pb-1.5 2xl:pb-2"
+                transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+                rotationInterval={2000}
+              />
+              <span className="block">track of your gains</span>
+            </motion.h1>
 
             {/* NOTE: Accordion items stagger in from top */}
             <StaggerChildren
