@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
@@ -101,10 +102,10 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
 
 // Default navigation links
 const defaultNavigationLinks: NavbarNavLink[] = [
-  { href: '#changelog', label: 'Changelog' },
-  { href: '#blog', label: 'Blog' },
-  { href: '#about', label: 'About' },
-  { href: '#pricing', label: 'Pricing' },
+  { href: '/changelog', label: 'Changelog' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/about', label: 'About' },
+  { href: '/pricing', label: 'Pricing' },
 ];
 
 export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
@@ -194,18 +195,17 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                     <NavigationMenuList className="flex-col items-start gap-1">
                       {navigationLinks.map((link, index) => (
                         <NavigationMenuItem className="w-full" key={index}>
-                          <button
-                            type="button"
+                          <Link
+                            href={link.href}
                             className={cn(
                               'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
                               link.active
                                 ? 'bg-accent text-accent-foreground'
                                 : 'text-foreground/80'
                             )}
-                            onClick={(e) => e.preventDefault()}
                           >
                             {link.label}
-                          </button>
+                          </Link>
                         </NavigationMenuItem>
                       ))}
                     </NavigationMenuList>
@@ -215,42 +215,41 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             )}
             {/* Main nav */}
             <div className="flex items-center gap-6">
-              <button
-                type="button"
+              <Link
+                href="/"
                 className="text-primary hover:text-primary/90 flex cursor-pointer items-center space-x-2 transition-colors"
-                onClick={(e) => e.preventDefault()}
               >
                 <div className="text-2xl">{logo}</div>
                 <span className="hidden font-[nippo] text-3xl font-bold sm:inline-block">
                   benchmrk
                 </span>
-              </button>
+              </Link>
               {/* Navigation menu */}
               {!isMobile && (
                 <NavigationMenu className="flex">
                   <NavigationMenuList className="gap-1">
                     {navigationLinks.map((link, index) => (
                       <NavigationMenuItem key={index}>
-                        <motion.button
-                          type="button"
-                          whileHover={{
-                            scale: 1.05,
-                            transition: {
-                              duration: 0.2,
-                              ease: EASE.expOut,
-                            },
-                          }}
-                          whileTap={{ scale: 0.97 }}
-                          className={cn(
-                            'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
-                            link.active
-                              ? 'bg-accent text-accent-foreground'
-                              : 'text-foreground/80 hover:text-foreground'
-                          )}
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          {link.label}
-                        </motion.button>
+                        <Link href={link.href}>
+                          <motion.div
+                            whileHover={{
+                              scale: 1.05,
+                              transition: {
+                                duration: 0.2,
+                                ease: EASE.expOut,
+                              },
+                            }}
+                            whileTap={{ scale: 0.97 }}
+                            className={cn(
+                              'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                              link.active
+                                ? 'bg-accent text-accent-foreground'
+                                : 'text-foreground/80 hover:text-foreground'
+                            )}
+                          >
+                            {link.label}
+                          </motion.div>
+                        </Link>
                       </NavigationMenuItem>
                     ))}
                   </NavigationMenuList>
