@@ -2,18 +2,11 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import { motion } from 'motion/react';
-import { useMutation } from 'convex/react';
-import { api } from '@repo/backend/convex/_generated/api';
-import confetti from 'canvas-confetti';
 import LogoSvg from '@/public/logo.svg';
+import { Separator } from '@radix-ui/react-separator';
 
 export interface FooterProps extends React.HTMLAttributes<HTMLElement> {
   logo?: React.ReactNode;
@@ -32,234 +25,93 @@ const legalLinks = [
   { href: '/privacy', label: 'Privacy Policy' },
 ];
 
-// NOTE: Fire confetti when newsletter signup succeeds
-const fireConfetti = () => {
-  const duration = 2000;
-  const end = Date.now() + duration;
-
-  const frame = () => {
-    confetti({
-      particleCount: 2,
-      angle: 60,
-      spread: 55,
-      origin: { x: 0 },
-      colors: ['#22d3ee', '#34d399', '#fbbf24'],
-    });
-    confetti({
-      particleCount: 2,
-      angle: 120,
-      spread: 55,
-      origin: { x: 1 },
-      colors: ['#22d3ee', '#34d399', '#fbbf24'],
-    });
-
-    if (Date.now() < end) {
-      requestAnimationFrame(frame);
-    }
-  };
-
-  frame();
-};
-
 export const Footer = React.forwardRef<HTMLElement, FooterProps>(
-  ({ className, logo, ...props }, ref) => {
-    const [email, setEmail] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
-
-    // NOTE: Reuse the same waitlist mutation for newsletter signups
-    const mutateEmail = useMutation(api.waitlist.addEmailToWaitlist);
-
-    const handleSubscribe = async () => {
-      setError(null);
-      setSuccess(false);
-
-      if (!email.trim()) {
-        setError('Please enter an email');
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        await mutateEmail({ email: email.trim() });
-        setSuccess(true);
-        setEmail('');
-        fireConfetti();
-        setTimeout(() => setSuccess(false), 5000);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to subscribe';
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter' && !isLoading) {
-        handleSubscribe();
-      }
-    };
-
+  ({ className, ...props }, ref) => {
     return (
       <footer
         ref={ref}
         className={cn(
-          'border-border w-full border-t px-4 py-12 md:px-6 xl:px-4',
+          'border-border bg-black-2 w-full border-t px-4 py-12 md:px-6 xl:px-4',
           className
         )}
-        style={{ backgroundColor: '#050505' }}
         {...props}
       >
         <div className="container mx-auto max-w-screen-2xl">
-          {/* NOTE: Two-column layout - left: brand/newsletter/socials, right: navigation/legal */}
-          <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
-            {/* Left Column - Brand, Newsletter, Copyright, Socials */}
-            <div className="flex flex-col gap-6 lg:max-w-md">
-              {/* Brand */}
+          {/* Main footer content */}
+          <div className="flex flex-col gap-8 md:flex-row md:justify-between md:gap-12">
+            {/* Left: Logo + Social */}
+            <div className="flex flex-col justify-between gap-4">
+              <div className="flex flex-row items-center gap-2">
+                <Image src={LogoSvg} alt="Logo" className="size-16" />
+                <h1 className="text-4xl font-bold">benchmrk</h1>
+              </div>
               <Link
-                href="/"
-                className="flex items-center space-x-2 transition-opacity hover:opacity-80"
+                href="https://x.com/fvnky_07"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-row items-center gap-2 transition-opacity hover:opacity-70"
+                aria-label="Follow us on X (Twitter)"
               >
-                <div className="text-2xl">
-                  {logo || (
-                    <Image
-                      src={LogoSvg}
-                      alt="benchmrk logo"
-                      width={32}
-                      height={32}
-                      className="h-8 w-8"
-                    />
-                  )}
-                </div>
-                <span className="font-[nippo] text-2xl font-bold">
-                  benchmrk
-                </span>
+                <Image
+                  src="/x.svg"
+                  alt="X (Twitter)"
+                  width={20}
+                  height={20}
+                  className="h-6 w-6"
+                />
               </Link>
-
-              {/* Tagline */}
-              <p className="text-muted-foreground text-sm">
-                AI-powered fitness tracker with intelligent coaching and
-                in-depth analytics.
-              </p>
-
-              {/* Newsletter */}
-              <div className="flex flex-col gap-3">
-                <h3 className="text-sm font-semibold">Stay Updated</h3>
-                <p className="text-muted-foreground text-sm">
-                  Subscribe to get updates on our launch.
-                </p>
-                <div className="flex flex-col gap-2">
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-md bg-red-500/10 p-2 text-xs text-red-500"
-                    >
-                      {error}
-                    </motion.div>
-                  )}
-                  {success && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-md bg-green-500/10 p-2 text-xs text-green-500"
-                    >
-                      Thanks for subscribing!
-                    </motion.div>
-                  )}
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      placeholder="your@email.com"
-                      className="h-9 flex-1"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      onKeyPress={handleKeyPress}
-                      disabled={isLoading || success}
-                      aria-invalid={!!error}
-                    />
-                    <Button
-                      onClick={handleSubscribe}
-                      className="h-9"
-                      size="sm"
-                      disabled={isLoading || success}
-                    >
-                      {isLoading && <Spinner data-icon="inline-start" />}
-                      {isLoading
-                        ? 'Sending...'
-                        : success
-                          ? 'Done!'
-                          : 'Subscribe'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Copyright and Social */}
-              <div className="flex flex-col gap-4 pt-6">
-                <div className="flex items-center gap-4">
-                  <Link
-                    href="https://x.com/fvnky_07"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Follow us on X (Twitter)"
-                  >
-                    <Image
-                      src="/x.svg"
-                      alt="X (Twitter)"
-                      width={20}
-                      height={20}
-                      className="h-5 w-5"
-                    />
-                  </Link>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  © {new Date().getFullYear()} benchmrk. All rights reserved.
-                </p>
-              </div>
             </div>
 
-            {/* Right Side - Navigation and Legal */}
-            <div className="flex gap-12 sm:gap-16 md:gap-24">
-              {/* Navigation Column */}
+            {/* Right: Navigation Links */}
+            <div className="flex flex-row gap-8 md:gap-12">
+              {/* Resources Column */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-sm font-semibold">Navigation</h3>
-                <nav className="flex flex-col gap-2">
-                  {navigationLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                <h2 className="rounded-sm border border-white/70 px-4 text-xl font-semibold md:text-2xl">
+                  Resources
+                </h2>
+                <ul className="flex flex-col gap-3 px-4">
+                  {navigationLinks.map(({ href, label }) => (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {label}
+                      </Link>
+                    </li>
                   ))}
-                </nav>
+                </ul>
               </div>
 
               {/* Legal Column */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-sm font-semibold">Legal</h3>
-                <nav className="flex flex-col gap-2">
-                  {legalLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                <h2 className="rounded-sm border border-white/70 px-4 text-xl font-semibold md:text-2xl">
+                  Legal
+                </h2>
+                <ul className="flex flex-col gap-3 px-4">
+                  {legalLinks.map(({ href, label }) => (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {label}
+                      </Link>
+                    </li>
                   ))}
-                </nav>
+                </ul>
               </div>
             </div>
+          </div>
+
+          {/* Separator */}
+          <Separator className="bg-border my-4 h-px w-full" />
+
+          {/* Copyright */}
+          <div className="flex justify-center">
+            <p className="text-muted-foreground text-sm">
+              © {new Date().getFullYear()} benchmrk. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
