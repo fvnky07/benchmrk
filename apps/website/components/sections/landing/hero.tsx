@@ -78,19 +78,21 @@ export default function Hero() {
               }}
               className="w-full shrink-0 text-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl 2xl:text-8xl"
             >
-              <span className="block">Stop</span>
-              <RotatingText
-                texts={['guessing', 'forgetting', 'eyeballing', 'losing']}
-                mainClassName="inline-flex px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 2xl:px-6 2xl:py-3 bg-cyan-1 text-black overflow-hidden justify-center rounded-lg my-2 sm:my-3 lg:my-4"
-                staggerFrom="last"
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '-120%' }}
-                staggerDuration={0.025}
-                splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 lg:pb-1.5 2xl:pb-2"
-                transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-                rotationInterval={2000}
-              />
+              <span className="block">
+                Stop{' '}
+                <RotatingText
+                  texts={['guessing', 'forgetting', 'eyeballing', 'losing']}
+                  mainClassName="inline-flex px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 2xl:px-6 2xl:py-3 bg-cyan-1 text-black overflow-hidden justify-center rounded-lg"
+                  staggerFrom="last"
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '-120%' }}
+                  staggerDuration={0.025}
+                  splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 lg:pb-1.5 2xl:pb-2"
+                  transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+                  rotationInterval={2000}
+                />
+              </span>
               <span className="block">track of your gains</span>
             </motion.h1>
 
