@@ -15,6 +15,8 @@ interface NavbarBadgeLinkProps {
   metadata: string; // version number or blog post title
   active?: boolean;
   className?: string;
+  borderColor?: string; // Custom border color (e.g., 'border-black' for floating navbar)
+  textColor?: string; // Custom text color for metadata and icon (e.g., 'text-white' for hero, 'text-black' for floating)
 }
 
 /**
@@ -45,6 +47,8 @@ export function NavbarBadgeLink({
   icon,
   active = false,
   className,
+  borderColor,
+  textColor,
 }: NavbarBadgeLinkProps) {
   return (
     <Link href={href}>
@@ -61,19 +65,16 @@ export function NavbarBadgeLink({
         <Badge
           variant={'outline'}
           className={cn(
-            'h-9 cursor-pointer gap-2 px-2 py-2 text-lg font-semibold transition-all',
+            'h-9 cursor-pointer gap-2 px-1 py-2 text-lg font-semibold transition-all',
             active && 'bg-accent text-accent-foreground',
+            borderColor, // Apply custom border color if provided
             className
           )}
         >
           <span className="rounded-4xl bg-[#222] px-2 text-white">{label}</span>
-          <span className="dark:text-foreground font-normal text-black">
-            {metadata}
-          </span>
+          <span className={cn('font-normal', textColor)}>{metadata}</span>
           {icon && (
-            <span className="dark:text-foreground flex items-center text-black">
-              {icon}
-            </span>
+            <span className={cn('flex items-center', textColor)}>{icon}</span>
           )}
         </Badge>
       </motion.div>
