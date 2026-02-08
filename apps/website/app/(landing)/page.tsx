@@ -60,9 +60,9 @@ export default function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* NOTE: Floating navbar appears when user scrolls down */}
+      {/* NOTE: Floating navbar appears when user scrolls down past 100px */}
       <FloatingNavbar
-        backgroundColor="bg-black-2"
+        threshold={100}
         ctaText="Join the Waitlist!"
         onCtaClick={() => {
           const section = document.getElementById('waitlist');
@@ -80,7 +80,6 @@ export default function LandingPage() {
             className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
           />
         }
-        scrollThreshold={100}
       />
       <main className="debug bg-black-2 flex w-full flex-col items-center justify-center">
         <Hero />
