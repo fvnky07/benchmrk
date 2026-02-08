@@ -6,7 +6,9 @@ import { FloatingNavbar } from '@/components/ui/floating-navbar';
 import { PricingTiers } from './pricingtiers';
 import { PricingBreakdown } from './pricingbreakdown';
 import { ArrowUpRight, GitFork } from 'lucide-react';
+import LogoSvg from '@/public/logo-dark.svg';
 
+import Image from 'next/image';
 export default function PricingPage() {
   return (
     <>
@@ -36,6 +38,15 @@ export default function PricingPage() {
           ctaButtonHover: 'hover:bg-green-1/90',
         }}
         ctaText="Get Started"
+        logo={
+          <Image
+            src={LogoSvg}
+            alt="logo"
+            width={32}
+            height={32}
+            className="relative bottom-0.5 h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
+          />
+        }
         onCtaClick={() => {
           const section = document.getElementById('waitlist');
           if (section) {
