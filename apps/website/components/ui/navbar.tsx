@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   NavigationMenu,
@@ -15,9 +16,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
 import { motion } from 'motion/react';
 import { EASE } from '@/lib/animation-config';
+import { NavbarBadgeLink } from '@/components/ui/navbar-badge-link';
 
 // Simple logo component for the navbar
 const Logo = (props: React.SVGProps<SVGSVGElement>) => {
@@ -84,6 +86,41 @@ export interface NavbarNavLink {
   href: string;
   label: string;
   active?: boolean;
+  badge?: {
+    metadata: string; // Version number (e.g., "v0.1.0") or blog post title
+    icon?: React.ReactNode; // Optional icon to display in badge
+  };
+}
+
+/**
+ * Custom style overrides for navbar elements
+ * Allows granular control over colors and appearance
+ */
+export interface NavbarCustomStyles {
+  // Container/background
+  background?: string;
+  backdropBlur?: boolean;
+
+  // Logo & brand
+  logoColor?: string;
+  brandText?: string;
+
+  // Navigation links
+  navLinkBase?: string;
+  navLinkHover?: string;
+  navLinkActive?: string;
+  navLinkInactive?: string;
+
+  // Buttons
+  ctaButton?: string;
+  ctaButtonHover?: string;
+  iconButton?: string;
+  iconButtonBorder?: string; // Border color for icon buttons (e.g., Twitter button)
+  iconButtonImage?: string; // Image source for icon button (e.g., '/x.svg' or '/x-light.svg')
+
+  // Badges
+  badgeBorder?: string; // Border color for badge links
+  badgeTextColor?: string; // Text color for badge metadata and icons
 }
 
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
@@ -97,15 +134,107 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   onSignInClick?: () => void;
   onCtaClick?: () => void;
   backgroundColor?: string;
+
+  // NEW: Variant system for predefined themes
+  variant?: 'default' | 'light' | 'dark';
+
+  // NEW: Custom style overrides (takes precedence over variant)
+  customStyles?: NavbarCustomStyles;
 }
 
 // Default navigation links
 const defaultNavigationLinks: NavbarNavLink[] = [
-  { href: '#changelog', label: 'Changelog' },
-  { href: '#blog', label: 'Blog' },
-  { href: '#about', label: 'About' },
-  { href: '#pricing', label: 'Pricing' },
+  {
+    href: '/changelog',
+    label: 'Changelog',
+    badge: {
+      metadata: 'v0.1.0',
+      icon: <GitFork className="h-4 w-4" />,
+    },
+  },
+  {
+    href: '/blog',
+    label: 'Blog',
+    badge: {
+      metadata: 'Getting Started',
+      icon: <ArrowUpRight data-icon="inline-end" className="h-4 w-4" />,
+    },
+  },
+  { href: '/about', label: 'About' },
+  { href: '/pricing', label: 'Pricing' },
 ];
+
+// NOTE: Variant presets - predefined style combinations for common use cases
+const variantPresets: Record<'default' | 'light' | 'dark', NavbarCustomStyles> =
+  {
+    // Default variant: Dark theme with green/cyan brand colors (hero page)
+    default: {
+      background: 'transparent',
+      backdropBlur: true,
+      logoColor: 'text-black',
+      brandText: 'text-green-1',
+      navLinkBase: 'text-green-1',
+      navLinkHover: 'hover:text-cyan-1',
+      navLinkActive: 'bg-accent text-accent-foreground',
+      navLinkInactive: 'text-foreground/80 hover:text-foreground',
+      ctaButton: 'bg-green-1 text-black',
+      ctaButtonHover: 'hover:bg-green-1/90',
+      iconButton: 'hover:bg-accent hover:text-accent-foreground',
+      iconButtonImage: '/x.svg', // White X logo for dark background
+      badgeTextColor: 'text-white', // White text on dark hero background
+    },
+
+    // Light variant: White background with black text (floating navbar)
+    light: {
+      background: 'bg-white',
+      backdropBlur: false,
+      logoColor: 'text-black',
+      brandText: 'text-black',
+      navLinkBase: 'text-black',
+      navLinkHover: 'hover:text-gray-700',
+      navLinkActive: 'bg-gray-100 text-black',
+      navLinkInactive: 'text-black/80 hover:text-black',
+      ctaButton: 'bg-green-1 text-black',
+      ctaButtonHover: 'hover:bg-green-1/90',
+      iconButton: 'hover:bg-gray-100 text-black',
+      iconButtonImage: '/x-light.svg', // Black X logo for white background
+      badgeTextColor: 'text-black', // Black text on white floating navbar
+    },
+
+    // Dark variant: Pure dark theme (future use)
+    dark: {
+      background: 'bg-black',
+      backdropBlur: false,
+      logoColor: 'text-white',
+      brandText: 'text-white',
+      navLinkBase: 'text-white',
+      navLinkHover: 'hover:text-gray-300',
+      navLinkActive: 'bg-white/10 text-white',
+      navLinkInactive: 'text-white/80 hover:text-white',
+      ctaButton: 'bg-white text-black',
+      ctaButtonHover: 'hover:bg-white/90',
+      iconButton: 'hover:bg-white/10 text-white',
+      iconButtonImage: '/x.svg', // White X logo for dark background
+      badgeTextColor: 'text-white', // White text on dark background
+    },
+  };
+
+/**
+ * Resolves final styles by merging variant preset with custom overrides
+ * @param variant - Base variant preset to use
+ * @param customStyles - Custom style overrides (takes precedence)
+ * @returns Merged style configuration
+ */
+function resolveStyles(
+  variant: 'default' | 'light' | 'dark',
+  customStyles?: NavbarCustomStyles
+): NavbarCustomStyles {
+  const baseStyles = variantPresets[variant];
+  return {
+    ...baseStyles,
+    ...customStyles,
+  };
+}
 
 export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
   (
@@ -123,13 +252,22 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       navigationLinks = defaultNavigationLinks,
       ctaText = 'Get Started',
       onCtaClick,
-      backgroundColor = 'bg-background/95',
+      backgroundColor = 'bg-black-2',
+      variant = 'default',
+      customStyles,
       ...props
     },
     ref
   ) => {
     const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef<HTMLElement>(null);
+
+    // NOTE: Resolve final styles by merging variant preset with custom overrides
+    const styles = resolveStyles(variant, customStyles);
+
+    // NOTE: backgroundColor prop is deprecated, but kept for backward compatibility
+    // If customStyles.background is not provided, fall back to backgroundColor prop
+    const finalBackground = styles.background || backgroundColor;
 
     useEffect(() => {
       const checkWidth = () => {
@@ -167,8 +305,9 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     return (
       <header
         className={cn(
-          'supports-backdrop-filter:bg-background/0 sticky top-0 z-50 w-full px-4 backdrop-blur **:no-underline md:px-6 xl:px-4',
-          backgroundColor,
+          'sticky top-0 z-50 w-full px-4 **:no-underline md:px-6 xl:px-4',
+          styles.backdropBlur !== false && 'backdrop-blur',
+          finalBackground,
           className
         )}
         ref={combinedRef}
@@ -194,18 +333,30 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                     <NavigationMenuList className="flex-col items-start gap-1">
                       {navigationLinks.map((link, index) => (
                         <NavigationMenuItem className="w-full" key={index}>
-                          <button
-                            type="button"
-                            className={cn(
-                              'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
-                              link.active
-                                ? 'bg-accent text-accent-foreground'
-                                : 'text-foreground/80'
-                            )}
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            {link.label}
-                          </button>
+                          {link.badge ? (
+                            <NavbarBadgeLink
+                              href={link.href}
+                              label={link.label}
+                              metadata={link.badge.metadata}
+                              icon={link.badge.icon}
+                              active={link.active}
+                              className="w-full justify-start"
+                              borderColor={styles.badgeBorder}
+                              textColor={styles.badgeTextColor}
+                            />
+                          ) : (
+                            <Link
+                              href={link.href}
+                              className={cn(
+                                'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
+                                link.active
+                                  ? 'bg-accent text-accent-foreground'
+                                  : 'text-foreground/80'
+                              )}
+                            >
+                              {link.label}
+                            </Link>
+                          )}
                         </NavigationMenuItem>
                       ))}
                     </NavigationMenuList>
@@ -215,42 +366,67 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             )}
             {/* Main nav */}
             <div className="flex items-center gap-6">
-              <button
-                type="button"
-                className="text-primary hover:text-primary/90 flex cursor-pointer items-center space-x-2 transition-colors"
-                onClick={(e) => e.preventDefault()}
+              <Link
+                href="/"
+                className={cn(
+                  'flex cursor-pointer items-center space-x-2 transition-colors hover:opacity-90',
+                  styles.logoColor
+                )}
               >
                 <div className="text-2xl">{logo}</div>
-                <span className="hidden font-[nippo] text-3xl font-bold sm:inline-block">
+                <span
+                  className={cn(
+                    'hidden font-[nippo] text-3xl font-bold sm:inline-block',
+                    styles.brandText
+                  )}
+                >
                   benchmrk
                 </span>
-              </button>
+              </Link>
               {/* Navigation menu */}
               {!isMobile && (
                 <NavigationMenu className="flex">
                   <NavigationMenuList className="gap-1">
                     {navigationLinks.map((link, index) => (
                       <NavigationMenuItem key={index}>
-                        <motion.button
-                          type="button"
-                          whileHover={{
-                            scale: 1.05,
-                            transition: {
-                              duration: 0.2,
-                              ease: EASE.expOut,
-                            },
-                          }}
-                          whileTap={{ scale: 0.97 }}
-                          className={cn(
-                            'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
-                            link.active
-                              ? 'bg-accent text-accent-foreground'
-                              : 'text-foreground/80 hover:text-foreground'
-                          )}
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          {link.label}
-                        </motion.button>
+                        {link.badge ? (
+                          <NavbarBadgeLink
+                            href={link.href}
+                            label={link.label}
+                            metadata={link.badge.metadata}
+                            icon={link.badge.icon}
+                            active={link.active}
+                            className={cn(
+                              styles.navLinkBase,
+                              styles.navLinkHover
+                            )}
+                            borderColor={styles.badgeBorder}
+                            textColor={styles.badgeTextColor}
+                          />
+                        ) : (
+                          <Link href={link.href}>
+                            <motion.div
+                              whileHover={{
+                                scale: 1.05,
+                                transition: {
+                                  duration: 0.2,
+                                  ease: EASE.expOut,
+                                },
+                              }}
+                              whileTap={{ scale: 0.97 }}
+                              className={cn(
+                                'text-md group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                                styles.navLinkBase,
+                                styles.navLinkHover,
+                                link.active
+                                  ? styles.navLinkActive
+                                  : styles.navLinkInactive
+                              )}
+                            >
+                              {link.label}
+                            </motion.div>
+                          </Link>
+                        )}
                       </NavigationMenuItem>
                     ))}
                   </NavigationMenuList>
@@ -261,17 +437,21 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           {/* Right side */}
           <div className="flex items-center gap-3">
             <Button
-              className="hover:bg-accent text-md hover:text-accent-foreground h-9 w-9 rounded-4xl p-2 font-semibold xl:text-lg"
+              className={cn(
+                'text-md h-9 w-9 rounded-xl bg-transparent p-2 font-semibold xl:text-lg',
+                styles.iconButton,
+                styles.iconButtonBorder
+              )}
               onClick={(e) => {
                 e.preventDefault();
                 window.open('https://x.com/fvnky_07', '_blank');
               }}
               size="sm"
-              variant="ghost"
+              variant="outline"
               aria-label="Follow us on X (Twitter)"
             >
               <Image
-                src="/x.svg"
+                src={styles.iconButtonImage || '/x.svg'}
                 alt="X (Twitter)"
                 width={16}
                 height={16}
@@ -292,7 +472,11 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             {/*   {signInText} */}
             {/* </Button> */}
             <Button
-              className="text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg"
+              className={cn(
+                'text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg',
+                styles.ctaButton,
+                styles.ctaButtonHover
+              )}
               onClick={(e) => {
                 e.preventDefault();
                 if (onCtaClick) {

@@ -4,7 +4,7 @@ import Hero from '@/components/sections/landing/hero';
 import WaitingList from '@/components/sections/landing/waiting-list';
 import { FloatingNavbar } from '@/components/ui/floating-navbar';
 import Image from 'next/image';
-import LogoSvg from '@/public/logo.svg';
+import LogoSvg from '@/public/logo-dark.svg';
 
 export default function LandingPage() {
   // NOTE: Structured data (JSON-LD) for rich search results
@@ -60,9 +60,9 @@ export default function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* NOTE: Floating navbar appears when user scrolls down */}
+      {/* NOTE: Floating navbar appears when user scrolls down past 100px */}
       <FloatingNavbar
-        backgroundColor="bg-black-2"
+        threshold={100}
         ctaText="Join the Waitlist!"
         onCtaClick={() => {
           const section = document.getElementById('waitlist');
@@ -77,10 +77,9 @@ export default function LandingPage() {
             alt="logo"
             width={32}
             height={32}
-            className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
+            className="relative bottom-0.5 h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
           />
         }
-        scrollThreshold={100}
       />
       <main className="debug bg-black-2 flex w-full flex-col items-center justify-center">
         <Hero />
