@@ -16,9 +16,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
 import { motion } from 'motion/react';
 import { EASE } from '@/lib/animation-config';
+import { NavbarBadgeLink } from '@/components/ui/navbar-badge-link';
 
 // Simple logo component for the navbar
 const Logo = (props: React.SVGProps<SVGSVGElement>) => {
@@ -85,6 +86,10 @@ export interface NavbarNavLink {
   href: string;
   label: string;
   active?: boolean;
+  badge?: {
+    metadata: string; // Version number (e.g., "v0.1.0") or blog post title
+    icon?: React.ReactNode; // Optional icon to display in badge
+  };
 }
 
 /**
@@ -133,8 +138,22 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
 
 // Default navigation links
 const defaultNavigationLinks: NavbarNavLink[] = [
-  { href: '/changelog', label: 'Changelog' },
-  { href: '/blog', label: 'Blog' },
+  {
+    href: '/changelog',
+    label: 'Changelog',
+    badge: {
+      metadata: 'v0.1.0',
+      icon: <GitFork className="h-4 w-4" />,
+    },
+  },
+  {
+    href: '/blog',
+    label: 'Blog',
+    badge: {
+      metadata: 'Getting Started',
+      icon: <ArrowUpRight data-icon="inline-end" className="h-4 w-4" />,
+    },
+  },
   { href: '/about', label: 'About' },
   { href: '/pricing', label: 'Pricing' },
 ];
@@ -302,17 +321,28 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                     <NavigationMenuList className="flex-col items-start gap-1">
                       {navigationLinks.map((link, index) => (
                         <NavigationMenuItem className="w-full" key={index}>
-                          <Link
-                            href={link.href}
-                            className={cn(
-                              'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
-                              link.active
-                                ? 'bg-accent text-accent-foreground'
-                                : 'text-foreground/80'
-                            )}
-                          >
-                            {link.label}
-                          </Link>
+                          {link.badge ? (
+                            <NavbarBadgeLink
+                              href={link.href}
+                              label={link.label}
+                              metadata={link.badge.metadata}
+                              icon={link.badge.icon}
+                              active={link.active}
+                              className="w-full justify-start"
+                            />
+                          ) : (
+                            <Link
+                              href={link.href}
+                              className={cn(
+                                'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
+                                link.active
+                                  ? 'bg-accent text-accent-foreground'
+                                  : 'text-foreground/80'
+                              )}
+                            >
+                              {link.label}
+                            </Link>
+                          )}
                         </NavigationMenuItem>
                       ))}
                     </NavigationMenuList>
@@ -345,28 +375,42 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <NavigationMenuList className="gap-1">
                     {navigationLinks.map((link, index) => (
                       <NavigationMenuItem key={index}>
-                        <Link href={link.href}>
-                          <motion.div
-                            whileHover={{
-                              scale: 1.05,
-                              transition: {
-                                duration: 0.2,
-                                ease: EASE.expOut,
-                              },
-                            }}
-                            whileTap={{ scale: 0.97 }}
+                        {link.badge ? (
+                          <NavbarBadgeLink
+                            href={link.href}
+                            label={link.label}
+                            metadata={link.badge.metadata}
+                            icon={link.badge.icon}
+                            active={link.active}
                             className={cn(
-                              'text-md group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
                               styles.navLinkBase,
-                              styles.navLinkHover,
-                              link.active
-                                ? styles.navLinkActive
-                                : styles.navLinkInactive
+                              styles.navLinkHover
                             )}
-                          >
-                            {link.label}
-                          </motion.div>
-                        </Link>
+                          />
+                        ) : (
+                          <Link href={link.href}>
+                            <motion.div
+                              whileHover={{
+                                scale: 1.05,
+                                transition: {
+                                  duration: 0.2,
+                                  ease: EASE.expOut,
+                                },
+                              }}
+                              whileTap={{ scale: 0.97 }}
+                              className={cn(
+                                'text-md group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                                styles.navLinkBase,
+                                styles.navLinkHover,
+                                link.active
+                                  ? styles.navLinkActive
+                                  : styles.navLinkInactive
+                              )}
+                            >
+                              {link.label}
+                            </motion.div>
+                          </Link>
+                        )}
                       </NavigationMenuItem>
                     ))}
                   </NavigationMenuList>
