@@ -16,6 +16,10 @@ export default function PricingPage() {
           { href: '/about', label: 'About' },
           { href: '/pricing', label: 'Pricing', active: true },
         ]}
+        customStyles={{
+          ctaButton: 'bg-green-1 text-black',
+          ctaButtonHover: 'hover:bg-green-1/90',
+        }}
         ctaText="Get Started"
         onCtaClick={() => {
           const section = document.getElementById('waitlist');

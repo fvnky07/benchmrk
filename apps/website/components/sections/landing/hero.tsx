@@ -26,7 +26,6 @@ import {
   EASE,
   DURATION,
 } from '@/lib/animation-config';
-import { LineShadowText } from '@/components/ui/line-shadow-text';
 import RotatingText from '@/components/ui/RotatingText';
 
 export default function Hero() {
@@ -44,7 +43,11 @@ export default function Hero() {
           variants={fadeInVariants}
         >
           <Navbar
-            backgroundColor="bg-black-2"
+            variant="default"
+            customStyles={{
+              ctaButton: 'bg-white text-black',
+              ctaButtonHover: 'hover:bg-gray-100',
+            }}
             ctaText="Join the Waitlist!"
             onCtaClick={() => {
               const section = document.getElementById('waitlist');

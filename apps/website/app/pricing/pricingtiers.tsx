@@ -12,8 +12,8 @@ export const PricingTiers = () => {
   );
 
   return (
-    <section className="bg-black-1 relative flex min-h-screen w-full flex-col items-center justify-center px-4 py-12 sm:px-4 lg:px-12">
-      <div className="flex w-full max-w-4xl flex-col items-center gap-10 rounded-4xl border-2 px-6 py-8 text-2xl 2xl:max-w-6xl">
+    <section className="bg-black-1 debug-3 relative flex min-h-screen w-full flex-col items-center justify-center px-4 py-12 sm:px-4 lg:px-12">
+      <div className="debug-4 mt-8 flex w-full max-w-4xl flex-col items-center gap-10 rounded-4xl border-2 px-6 py-8 text-2xl sm:mt-12 2xl:max-w-6xl">
         {/* Section Header */}
         <PricingHeader
           title="Simple Pricing, Maximum Features"
