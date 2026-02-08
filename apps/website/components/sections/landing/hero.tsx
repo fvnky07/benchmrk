@@ -59,7 +59,7 @@ export default function Hero() {
                 alt="logo"
                 width={32}
                 height={32}
-                className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
+                className="relative sm:h-12 sm:w-12 md:bottom-2"
               />
             }
           />

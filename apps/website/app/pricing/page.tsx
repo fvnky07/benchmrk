@@ -2,14 +2,34 @@
 // NOTE: Modularized pricing page with separated sections for tiers and breakdown
 'use client';
 
+import { FloatingNavbar } from '@/components/ui/floating-navbar';
 import { PricingTiers } from './pricingtiers';
 import { PricingBreakdown } from './pricingbreakdown';
 
 export default function PricingPage() {
   return (
-    <main className="bg-black-1 flex flex-col">
-      <PricingTiers />
-      <PricingBreakdown />
-    </main>
+    <>
+      <FloatingNavbar
+        navigationLinks={[
+          { href: '/changelog', label: 'Changelog' },
+          { href: '/blog', label: 'Blog' },
+          { href: '/about', label: 'About' },
+          { href: '/pricing', label: 'Pricing', active: true },
+        ]}
+        ctaText="Get Started"
+        onCtaClick={() => {
+          const section = document.getElementById('waitlist');
+          if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            window.location.href = '/#waitlist';
+          }
+        }}
+      />
+      <main className="bg-black-1 flex flex-col">
+        <PricingTiers />
+        <PricingBreakdown />
+      </main>
+    </>
   );
 }

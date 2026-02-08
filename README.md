@@ -27,7 +27,7 @@ benchmrk/
   - [Tailwind CSS 4](https://tailwindcss.com/) - Utility-first styling
   - [Radix UI](https://www.radix-ui.com/) - Accessible components (Accordion, Navigation, Popover)
   - [Lucide React](https://lucide.dev/) - Icon library
-  - [GSAP](https://gsap.com/) - Animation library
+  - [Motion](https://motion.dev/) - Animation library
   - [shadcn/ui](https://ui.shadcn.com/) - UI component system
 
 - **Mobile** (apps/mobile)
