@@ -24,8 +24,8 @@ export const PricingCard = ({
         'relative flex flex-col gap-8 overflow-hidden rounded-2xl border p-6 shadow',
         isHighlighted
           ? 'bg-foreground text-background'
-          : 'bg-background text-foreground',
-        isPopular && 'outline outline-[rgba(0,119,0)]'
+          : 'bg-black-2 text-foreground',
+        isPopular && 'outline outline-[#00ff90]'
       )}
     >
       {/* Background Decoration */}

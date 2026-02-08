@@ -1,25 +1,21 @@
 'use client';
 
-import { motion, MotionProps } from 'motion/react';
+import { motion } from 'motion/react';
 
 import { cn } from '@/lib/utils';
 
-interface LineShadowTextProps
-  extends
-    Omit<React.HTMLAttributes<HTMLElement>, keyof MotionProps>,
-    MotionProps {
+interface LineShadowTextProps extends React.ComponentProps<typeof motion.span> {
   shadowColor?: string;
-  as?: React.ElementType;
 }
 
+// NOTE: Uses motion.span directly to avoid component creation during render
+// FIX: Replaced motion.create() pattern with static motion.span component
 export function LineShadowText({
   children,
   shadowColor = 'black',
   className,
-  as: Component = 'span',
   ...props
 }: LineShadowTextProps) {
-  const MotionComponent = motion.create(Component);
   const content = typeof children === 'string' ? children : null;
 
   if (!content) {
@@ -27,7 +23,7 @@ export function LineShadowText({
   }
 
   return (
-    <MotionComponent
+    <motion.span
       style={{ '--shadow-color': shadowColor } as React.CSSProperties}
       className={cn(
         'relative z-0 inline-flex',
@@ -41,6 +37,6 @@ export function LineShadowText({
       {...props}
     >
       {content}
-    </MotionComponent>
+    </motion.span>
   );
 }
