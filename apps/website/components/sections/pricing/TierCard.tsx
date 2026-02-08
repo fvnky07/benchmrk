@@ -22,21 +22,17 @@ export const PricingCard = ({
     <div
       className={cn(
         'relative flex flex-col gap-8 overflow-hidden rounded-2xl border p-6 shadow',
-        isHighlighted
-          ? 'bg-foreground text-background'
-          : 'bg-black-2 text-foreground',
-        isPopular && 'outline outline-[#00ff90]'
+        isHighlighted ? 'bg-foreground text-white' : 'bg-black-1 text-white',
+        isPopular && 'bg-green-1 text-black outline-2 outline-black'
       )}
     >
       {/* Background Decoration */}
-      {isHighlighted && <HighlightedBackground />}
-      {isPopular && <PopularBackground />}
 
       {/* Card Header */}
-      <h2 className="flex items-center gap-3 text-2xl font-medium capitalize">
+      <h2 className="flex items-center gap-3 text-4xl font-medium capitalize">
         {tier.name}
         {isPopular && (
-          <Badge className="mt-1 bg-orange-900 px-1 py-0 text-white hover:bg-orange-900">
+          <Badge className="bg-orange-1 hover:bg-orange-1 mt-1 px-2 py-1 text-white">
             🔥 Most Popular
           </Badge>
         )}
@@ -97,12 +93,4 @@ export const PricingCard = ({
   );
 };
 
-// Highlighted Background Component
-const HighlightedBackground = () => (
-  <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] bg-[size:45px_45px] opacity-100 dark:opacity-30" />
-);
-
 // Popular Background Component
-const PopularBackground = () => (
-  <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.1),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
-);

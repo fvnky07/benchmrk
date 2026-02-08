@@ -4,6 +4,7 @@
 import { PricingCard } from '@/components/sections/pricing/TierCard';
 import { PricingHeader } from '@/components/sections/pricing/PricingHeader';
 import { PAYMENT_FREQUENCIES, TIERS } from '@/components/config';
+import Squares from '@/components/Squares';
 import { useState } from 'react';
 
 export const PricingTiers = () => {
@@ -12,8 +13,16 @@ export const PricingTiers = () => {
   );
 
   return (
-    <section className="bg-black-1 debug-3 relative flex min-h-screen w-full flex-col items-center justify-center px-4 py-12 sm:px-4 lg:px-12">
-      <div className="debug-4 mt-8 flex w-full max-w-4xl flex-col items-center gap-10 rounded-4xl border-2 px-6 py-8 text-2xl sm:mt-12 2xl:max-w-6xl">
+    <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black px-4 py-12 sm:px-4 lg:px-12">
+      <div className="absolute inset-0 h-full w-full">
+        <Squares
+          direction="diagonal"
+          speed={0.5}
+          borderColor="rgba(255, 255, 255, 0.2)"
+          squareSize={40}
+        />
+      </div>
+      <div className="relative mt-8 flex w-full max-w-4xl flex-col items-center gap-2 rounded-4xl border-2 border-black bg-white px-6 py-8 text-2xl text-black sm:mt-12 2xl:max-w-6xl">
         {/* Section Header */}
         <PricingHeader
           title="Simple Pricing, Maximum Features"
