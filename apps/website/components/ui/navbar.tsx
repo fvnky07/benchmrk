@@ -217,10 +217,10 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             <div className="flex items-center gap-6">
               <Link
                 href="/"
-                className="text-primary hover:text-primary/90 flex cursor-pointer items-center space-x-2 transition-colors"
+                className="hover:text-primary/90 flex cursor-pointer items-center space-x-2 text-black transition-colors"
               >
                 <div className="text-2xl">{logo}</div>
-                <span className="hidden font-[nippo] text-3xl font-bold sm:inline-block">
+                <span className="text-green-1 hidden font-[nippo] text-3xl font-bold sm:inline-block">
                   benchmrk
                 </span>
               </Link>
@@ -241,7 +241,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                             }}
                             whileTap={{ scale: 0.97 }}
                             className={cn(
-                              'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                              'group hover:bg-accent hover:text-cyan-1 focus:bg-accent focus:text-accent-foreground text-green-1 text-md inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
                               link.active
                                 ? 'bg-accent text-accent-foreground'
                                 : 'text-foreground/80 hover:text-foreground'
@@ -291,7 +291,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             {/*   {signInText} */}
             {/* </Button> */}
             <Button
-              className="text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg"
+              className="text-md bg-green-1 h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg"
               onClick={(e) => {
                 e.preventDefault();
                 if (onCtaClick) {
