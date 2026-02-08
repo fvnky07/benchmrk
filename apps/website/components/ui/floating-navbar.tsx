@@ -4,98 +4,110 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useScroll } from 'motion/react';
-import { Navbar, NavbarProps } from '@/components/ui/navbar';
+import {
+  Navbar,
+  NavbarProps,
+  NavbarCustomStyles,
+} from '@/components/ui/navbar';
 import { EASE, DURATION } from '@/lib/animation-config';
 
 export interface FloatingNavbarProps extends Omit<
   NavbarProps,
-  'backgroundColor'
+  'backgroundColor' | 'variant'
 > {
-  /**
-   * Scroll threshold in pixels before navbar appears
-   * Set to 0 to always display navbar
-   * @default 0
-   */
   threshold?: number;
+  customStyles?: NavbarCustomStyles;
+  hideOnScrollDown?: boolean;
 }
 
-/**
- * FloatingNavbar Component
- *
- * A scroll-aware navbar that appears when the user scrolls down past a threshold.
- * Set threshold to 0 to always display the navbar without scroll tracking.
- *
- * Features:
- * - White background with black text (no transparency/blur)
- * - Rounded corners (rounded-4xl)
- * - Smooth slide-down animation on appearance
- * - Responsive margins (flush on mobile, spaced on larger screens)
- *
- * NOTE: This component uses the existing Navbar component as its base and adds
- * scroll-triggered visibility logic with smooth animations.
- *
- * @example
- * // Always visible navbar
- * <FloatingNavbar
- *   logo={<Logo />}
- *   ctaText="Get Started"
- *   onCtaClick={() => console.log('CTA clicked')}
- * />
- *
- * @example
- * // Appears after scrolling 200px
- * <FloatingNavbar
- *   threshold={200}
- *   logo={<Logo />}
- *   ctaText="Get Started"
- * />
- */
 export const FloatingNavbar = React.forwardRef<
   HTMLElement,
   FloatingNavbarProps
->(({ threshold = 0, ...navbarProps }, ref) => {
-  const [isVisible, setIsVisible] = useState(threshold === 0);
-  const { scrollY } = useScroll();
+>(
+  (
+    { threshold = 0, hideOnScrollDown = false, customStyles, ...navbarProps },
+    ref
+  ) => {
+    const [isVisible, setIsVisible] = useState(threshold === 0);
+    const [prevScrollY, setPrevScrollY] = useState(0);
+    const { scrollY } = useScroll();
 
-  useEffect(() => {
-    // NOTE: If threshold is 0, always show navbar (no scroll tracking needed)
-    if (threshold === 0) {
-      setIsVisible(true);
-      return;
-    }
+    // NOTE: Merge black borders for badges and Twitter button with custom styles
+    const floatingNavbarStyles = React.useMemo(
+      () => ({
+        ...customStyles,
+        badgeBorder: 'border-black',
+        iconButtonBorder: 'border-black',
+        badgeTextColor: 'text-black', // Black text on white floating navbar
+        iconButtonImage: '/x-light.svg', // Black X logo for white background
+      }),
+      [customStyles]
+    );
 
-    // NOTE: Track scroll position and show/hide based on threshold
-    const unsubscribe = scrollY.on('change', (latest) => {
-      setIsVisible(latest > threshold);
-    });
+    useEffect(() => {
+      // NOTE: If threshold is 0 and no directional scrolling, no tracking needed
+      if (threshold === 0 && !hideOnScrollDown) {
+        return;
+      }
 
-    return () => unsubscribe();
-  }, [scrollY, threshold]);
+      // NOTE: Track scroll position for threshold-based and directional visibility
+      const unsubscribe = scrollY.on('change', (latest) => {
+        // Check if we're past the threshold
+        const pastThreshold = latest > threshold;
 
-  return (
-    <AnimatePresence mode="wait">
-      {isVisible && (
-        <motion.div
-          key="floating-navbar"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          transition={{
-            duration: DURATION.fast,
-            ease: EASE.expOut,
-          }}
-          className="fixed top-0 right-0 left-0 z-100 mx-auto max-w-screen-2xl px-0 sm:top-4 sm:px-4"
-        >
-          <Navbar
-            ref={ref}
-            {...navbarProps}
-            className="rounded-none !bg-white !text-black shadow-lg [backdrop-filter:none] sm:rounded-4xl [&_*]:!text-black [&_a]:!text-black [&_button]:!text-black [&_span]:!text-black"
-            backgroundColor="bg-white"
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-});
+        if (hideOnScrollDown) {
+          // PERF: Directional scroll detection
+          const scrollingDown = latest > prevScrollY;
+          const scrollingUp = latest < prevScrollY;
+
+          // Show navbar when:
+          // 1. Scrolling up AND past threshold
+          // 2. At the very top (latest < 50px) - always show
+          if (scrollingUp && pastThreshold) {
+            setIsVisible(true);
+          } else if (scrollingDown && latest > 50) {
+            setIsVisible(false);
+          } else if (latest < 50) {
+            // Always show at the top
+            setIsVisible(threshold === 0 || pastThreshold);
+          }
+
+          setPrevScrollY(latest);
+        } else {
+          // Simple threshold-based visibility (original behavior)
+          setIsVisible(pastThreshold);
+        }
+      });
+
+      return () => unsubscribe();
+    }, [scrollY, threshold, hideOnScrollDown, prevScrollY]);
+
+    return (
+      <AnimatePresence mode="wait">
+        {isVisible && (
+          <motion.div
+            key="floating-navbar"
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            transition={{
+              duration: DURATION.fast,
+              ease: EASE.expOut,
+            }}
+            className="fixed top-0 right-0 left-0 z-100 mx-auto max-w-screen-2xl px-0 sm:top-4 sm:px-4"
+          >
+            <Navbar
+              ref={ref}
+              {...navbarProps}
+              variant="light"
+              customStyles={floatingNavbarStyles}
+              className="rounded-none shadow-lg sm:rounded-4xl"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+);
 
 FloatingNavbar.displayName = 'FloatingNavbar';

@@ -5,17 +5,36 @@
 import { FloatingNavbar } from '@/components/ui/floating-navbar';
 import { PricingTiers } from './pricingtiers';
 import { PricingBreakdown } from './pricingbreakdown';
+import { ArrowUpRight, GitFork } from 'lucide-react';
 
 export default function PricingPage() {
   return (
     <>
       <FloatingNavbar
         navigationLinks={[
-          { href: '/changelog', label: 'Changelog' },
-          { href: '/blog', label: 'Blog' },
+          {
+            href: '/changelog',
+            label: 'Changelog',
+            badge: {
+              metadata: 'v0.1.0',
+              icon: <GitFork className="h-4 w-4" />,
+            },
+          },
+          {
+            href: '/blog',
+            label: 'Blog',
+            badge: {
+              metadata: 'Getting Started',
+              icon: <ArrowUpRight data-icon="inline-end" className="h-4 w-4" />,
+            },
+          },
           { href: '/about', label: 'About' },
           { href: '/pricing', label: 'Pricing', active: true },
         ]}
+        customStyles={{
+          ctaButton: 'bg-green-1 text-black',
+          ctaButtonHover: 'hover:bg-green-1/90',
+        }}
         ctaText="Get Started"
         onCtaClick={() => {
           const section = document.getElementById('waitlist');
