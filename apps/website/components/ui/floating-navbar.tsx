@@ -15,61 +15,11 @@ export interface FloatingNavbarProps extends Omit<
   NavbarProps,
   'backgroundColor' | 'variant'
 > {
-  /**
-   * Scroll threshold in pixels before navbar appears
-   * Set to 0 to always display navbar
-   * @default 0
-   */
   threshold?: number;
-
-  /**
-   * Custom style overrides for navbar elements
-   * Merged with the light variant preset
-   */
   customStyles?: NavbarCustomStyles;
-
-  /**
-   * Enable directional scroll behavior
-   * - Hides navbar when scrolling down
-   * - Shows navbar when scrolling up
-   * @default false
-   */
   hideOnScrollDown?: boolean;
 }
 
-/**
- * FloatingNavbar Component
- *
- * A scroll-aware navbar that appears when the user scrolls down past a threshold.
- * Set threshold to 0 to always display the navbar without scroll tracking.
- *
- * Features:
- * - White background with black text (no transparency/blur)
- * - Rounded corners (rounded-4xl)
- * - Smooth slide-down animation on appearance
- * - Responsive margins (flush on mobile, spaced on larger screens)
- * - Optional directional scroll behavior (hide on scroll down, show on scroll up)
- *
- * NOTE: This component uses the existing Navbar component as its base and adds
- * scroll-triggered visibility logic with smooth animations.
- *
- * @example
- * // Always visible navbar
- * <FloatingNavbar
- *   logo={<Logo />}
- *   ctaText="Get Started"
- *   onCtaClick={() => console.log('CTA clicked')}
- * />
- *
- * @example
- * // Appears after scrolling 200px, hides when scrolling down
- * <FloatingNavbar
- *   threshold={200}
- *   hideOnScrollDown={true}
- *   logo={<Logo />}
- *   ctaText="Get Started"
- * />
- */
 export const FloatingNavbar = React.forwardRef<
   HTMLElement,
   FloatingNavbarProps
@@ -81,6 +31,18 @@ export const FloatingNavbar = React.forwardRef<
     const [isVisible, setIsVisible] = useState(threshold === 0);
     const [prevScrollY, setPrevScrollY] = useState(0);
     const { scrollY } = useScroll();
+
+    // NOTE: Merge black borders for badges and Twitter button with custom styles
+    const floatingNavbarStyles = React.useMemo(
+      () => ({
+        ...customStyles,
+        badgeBorder: 'border-black',
+        iconButtonBorder: 'border-black',
+        badgeTextColor: 'text-black', // Black text on white floating navbar
+        iconButtonImage: '/x-light.svg', // Black X logo for white background
+      }),
+      [customStyles]
+    );
 
     useEffect(() => {
       // NOTE: If threshold is 0 and no directional scrolling, no tracking needed
@@ -138,7 +100,7 @@ export const FloatingNavbar = React.forwardRef<
               ref={ref}
               {...navbarProps}
               variant="light"
-              customStyles={customStyles}
+              customStyles={floatingNavbarStyles}
               className="rounded-none shadow-lg sm:rounded-4xl"
             />
           </motion.div>

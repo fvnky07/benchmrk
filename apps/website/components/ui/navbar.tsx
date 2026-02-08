@@ -115,6 +115,12 @@ export interface NavbarCustomStyles {
   ctaButton?: string;
   ctaButtonHover?: string;
   iconButton?: string;
+  iconButtonBorder?: string; // Border color for icon buttons (e.g., Twitter button)
+  iconButtonImage?: string; // Image source for icon button (e.g., '/x.svg' or '/x-light.svg')
+
+  // Badges
+  badgeBorder?: string; // Border color for badge links
+  badgeTextColor?: string; // Text color for badge metadata and icons
 }
 
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
@@ -174,6 +180,8 @@ const variantPresets: Record<'default' | 'light' | 'dark', NavbarCustomStyles> =
       ctaButton: 'bg-green-1 text-black',
       ctaButtonHover: 'hover:bg-green-1/90',
       iconButton: 'hover:bg-accent hover:text-accent-foreground',
+      iconButtonImage: '/x.svg', // White X logo for dark background
+      badgeTextColor: 'text-white', // White text on dark hero background
     },
 
     // Light variant: White background with black text (floating navbar)
@@ -189,6 +197,8 @@ const variantPresets: Record<'default' | 'light' | 'dark', NavbarCustomStyles> =
       ctaButton: 'bg-green-1 text-black',
       ctaButtonHover: 'hover:bg-green-1/90',
       iconButton: 'hover:bg-gray-100 text-black',
+      iconButtonImage: '/x-light.svg', // Black X logo for white background
+      badgeTextColor: 'text-black', // Black text on white floating navbar
     },
 
     // Dark variant: Pure dark theme (future use)
@@ -204,6 +214,8 @@ const variantPresets: Record<'default' | 'light' | 'dark', NavbarCustomStyles> =
       ctaButton: 'bg-white text-black',
       ctaButtonHover: 'hover:bg-white/90',
       iconButton: 'hover:bg-white/10 text-white',
+      iconButtonImage: '/x.svg', // White X logo for dark background
+      badgeTextColor: 'text-white', // White text on dark background
     },
   };
 
@@ -329,6 +341,8 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                               icon={link.badge.icon}
                               active={link.active}
                               className="w-full justify-start"
+                              borderColor={styles.badgeBorder}
+                              textColor={styles.badgeTextColor}
                             />
                           ) : (
                             <Link
@@ -386,6 +400,8 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                               styles.navLinkBase,
                               styles.navLinkHover
                             )}
+                            borderColor={styles.badgeBorder}
+                            textColor={styles.badgeTextColor}
                           />
                         ) : (
                           <Link href={link.href}>
@@ -422,19 +438,20 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
           <div className="flex items-center gap-3">
             <Button
               className={cn(
-                'text-md h-9 w-9 rounded-4xl p-2 font-semibold xl:text-lg',
-                styles.iconButton
+                'text-md h-9 w-9 rounded-xl bg-transparent p-2 font-semibold xl:text-lg',
+                styles.iconButton,
+                styles.iconButtonBorder
               )}
               onClick={(e) => {
                 e.preventDefault();
                 window.open('https://x.com/fvnky_07', '_blank');
               }}
               size="sm"
-              variant="ghost"
+              variant="outline"
               aria-label="Follow us on X (Twitter)"
             >
               <Image
-                src="/x.svg"
+                src={styles.iconButtonImage || '/x.svg'}
                 alt="X (Twitter)"
                 width={16}
                 height={16}
