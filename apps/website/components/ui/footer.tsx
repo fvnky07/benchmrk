@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import LogoSvg from '@/public/logo.svg';
 import { Separator } from '@radix-ui/react-separator';
+import { Button } from './button';
 
 export interface FooterProps extends React.HTMLAttributes<HTMLElement> {
   logo?: React.ReactNode;
@@ -31,42 +32,51 @@ export const Footer = React.forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'border-border bg-black-2 w-full border-t px-4 py-12 md:px-6 xl:px-4',
+          'border-border bg-black-2 w-full border-t px-0 py-5',
           className
         )}
         {...props}
       >
         <div className="container mx-auto max-w-screen-2xl">
           {/* Main footer content */}
-          <div className="flex flex-col gap-8 md:flex-row md:justify-between md:gap-12">
+          <div className="flex flex-col gap-8 px-6 md:flex-row md:justify-between md:gap-12 md:px-12 xl:px-18">
             {/* Left: Logo + Social */}
-            <div className="flex flex-col justify-between gap-4">
-              <div className="flex flex-row items-center gap-2">
-                <Image src={LogoSvg} alt="Logo" className="size-16" />
+            <div className="flex flex-col justify-start gap-4">
+              <div className="flex flex-row items-center gap-1">
+                <Image
+                  src={LogoSvg}
+                  alt="Logo"
+                  className="relative bottom-2 size-16"
+                />
                 <h1 className="text-4xl font-bold">benchmrk</h1>
               </div>
-              <Link
-                href="https://x.com/fvnky_07"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-row items-center gap-2 transition-opacity hover:opacity-70"
-                aria-label="Follow us on X (Twitter)"
-              >
-                <Image
-                  src="/x.svg"
-                  alt="X (Twitter)"
-                  width={20}
-                  height={20}
-                  className="h-6 w-6"
-                />
-              </Link>
+              <div className="flex items-center md:justify-center">
+                <Link
+                  href="https://x.com/fvnky_07"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-row items-center gap-2 transition-opacity hover:opacity-70"
+                  aria-label="Follow us on X (Twitter)"
+                >
+                  <Button variant="outline" className="h-auto w-auto">
+                    <Image
+                      src="/x.svg"
+                      alt="X (Twitter)"
+                      width={20}
+                      height={20}
+                      className="h-6 w-6"
+                    />
+                    <span className="text-md pl-4">Follow us on Twitter!</span>
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Right: Navigation Links */}
-            <div className="flex flex-row gap-8 md:gap-12">
+            <div className="flex flex-row gap-8 md:gap-18">
               {/* Resources Column */}
               <div className="flex flex-col gap-4">
-                <h2 className="rounded-sm border border-white/70 px-4 text-xl font-semibold md:text-2xl">
+                <h2 className="px-4 text-xl font-semibold md:text-2xl">
                   Resources
                 </h2>
                 <ul className="flex flex-col gap-3 px-4">
@@ -85,7 +95,7 @@ export const Footer = React.forwardRef<HTMLElement, FooterProps>(
 
               {/* Legal Column */}
               <div className="flex flex-col gap-4">
-                <h2 className="rounded-sm border border-white/70 px-4 text-xl font-semibold md:text-2xl">
+                <h2 className="px-4 text-xl font-semibold md:text-2xl">
                   Legal
                 </h2>
                 <ul className="flex flex-col gap-3 px-4">
