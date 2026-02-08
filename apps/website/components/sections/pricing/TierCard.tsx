@@ -25,7 +25,7 @@ export const PricingCard = ({
         isHighlighted
           ? 'bg-foreground text-background'
           : 'bg-background text-foreground',
-        isPopular && 'outline outline-[rgba(120,119,198)]'
+        isPopular && 'outline outline-[rgba(0,119,0)]'
       )}
     >
       {/* Background Decoration */}
@@ -33,7 +33,7 @@ export const PricingCard = ({
       {isPopular && <PopularBackground />}
 
       {/* Card Header */}
-      <h2 className="flex items-center gap-3 text-xl font-medium capitalize">
+      <h2 className="flex items-center gap-3 text-2xl font-medium capitalize">
         {tier.name}
         {isPopular && (
           <Badge className="mt-1 bg-orange-900 px-1 py-0 text-white hover:bg-orange-900">
