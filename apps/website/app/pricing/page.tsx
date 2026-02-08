@@ -7,8 +7,8 @@ import { PricingTiers } from './pricingtiers';
 import { PricingBreakdown } from './pricingbreakdown';
 import { ArrowUpRight, GitFork } from 'lucide-react';
 import LogoSvg from '@/public/logo-dark.svg';
-
 import Image from 'next/image';
+
 export default function PricingPage() {
   return (
     <>
