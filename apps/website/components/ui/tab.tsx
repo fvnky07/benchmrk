@@ -21,7 +21,7 @@ export const Tab = ({
     <button
       onClick={() => setSelected(text)}
       className={cn(
-        'text-foreground relative w-fit px-4 py-2 text-sm font-semibold capitalize transition-colors',
+        'relative w-fit px-4 py-2 text-sm font-semibold text-black capitalize transition-colors',
         discount && 'flex items-center justify-center gap-2.5'
       )}
     >
@@ -30,16 +30,14 @@ export const Tab = ({
         <motion.span
           layoutId="tab"
           transition={{ type: 'spring', duration: 0.4 }}
-          className="bg-background absolute inset-0 z-0 rounded-full shadow-sm"
+          className="absolute inset-0 z-0 rounded-full bg-white shadow-sm"
         ></motion.span>
       )}
       {discount && (
         <Badge
           className={cn(
             'relative z-10 bg-gray-100 text-xs whitespace-nowrap text-black shadow-none hover:bg-gray-100',
-            selected
-              ? 'bg-[#F3F4F6] hover:bg-[#F3F4F6]'
-              : 'bg-gray-300 hover:bg-gray-300'
+            selected ? 'bg-[#00ff90]' : 'bg-gray-300'
           )}
         >
           Save 35%
