@@ -4,79 +4,110 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useScroll } from 'motion/react';
-import { Navbar, NavbarProps } from '@/components/ui/navbar';
+import {
+  Navbar,
+  NavbarProps,
+  NavbarCustomStyles,
+} from '@/components/ui/navbar';
 import { EASE, DURATION } from '@/lib/animation-config';
 
-export interface FloatingNavbarProps extends NavbarProps {
-  /**
-   * Scroll threshold in pixels before navbar appears
-   * @default 100
-   */
-  scrollThreshold?: number;
+export interface FloatingNavbarProps extends Omit<
+  NavbarProps,
+  'backgroundColor' | 'variant'
+> {
+  threshold?: number;
+  customStyles?: NavbarCustomStyles;
+  hideOnScrollDown?: boolean;
 }
 
-/**
- * FloatingNavbar Component
- *
- * A scroll-aware navbar that appears when the user scrolls down past a threshold
- * and disappears when scrolling back to the top. Uses Motion for smooth animations.
- *
- * NOTE: This component uses the existing Navbar component as its base and adds
- * scroll-triggered visibility logic with smooth slide-down/slide-up animations.
- *
- * @example
- * <FloatingNavbar
- *   logo={<Logo />}
- *   scrollThreshold={100}
- *   ctaText="Get Started"
- *   onCtaClick={() => console.log('CTA clicked')}
- * />
- */
 export const FloatingNavbar = React.forwardRef<
   HTMLElement,
   FloatingNavbarProps
->(({ scrollThreshold = 100, ...navbarProps }, ref) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const { scrollY } = useScroll();
+>(
+  (
+    { threshold = 0, hideOnScrollDown = false, customStyles, ...navbarProps },
+    ref
+  ) => {
+    const [isVisible, setIsVisible] = useState(threshold === 0);
+    const [prevScrollY, setPrevScrollY] = useState(0);
+    const { scrollY } = useScroll();
 
-  useEffect(() => {
-    // NOTE: Subscribe to scroll position changes
-    // Show navbar when scrolled past threshold, hide when back at top
-    const unsubscribe = scrollY.on('change', (latest) => {
-      if (latest > scrollThreshold) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
+    // NOTE: Merge black borders for badges and Twitter button with custom styles
+    const floatingNavbarStyles = React.useMemo(
+      () => ({
+        ...customStyles,
+        badgeBorder: 'border-black',
+        iconButtonBorder: 'border-black',
+        badgeTextColor: 'text-black', // Black text on white floating navbar
+        iconButtonImage: '/x-light.svg', // Black X logo for white background
+      }),
+      [customStyles]
+    );
+
+    useEffect(() => {
+      // NOTE: If threshold is 0 and no directional scrolling, no tracking needed
+      if (threshold === 0 && !hideOnScrollDown) {
+        return;
       }
-    });
 
-    return () => unsubscribe();
-  }, [scrollY, scrollThreshold]);
+      // NOTE: Track scroll position for threshold-based and directional visibility
+      const unsubscribe = scrollY.on('change', (latest) => {
+        // Check if we're past the threshold
+        const pastThreshold = latest > threshold;
 
-  return (
-    <AnimatePresence mode="wait">
-      {isVisible && (
-        <motion.div
-          key="floating-navbar"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          transition={{
-            duration: DURATION.fast,
-            ease: EASE.expOut,
-          }}
-          className="fixed top-0 right-0 left-0 z-100"
-        >
-          <Navbar
-            ref={ref}
-            {...navbarProps}
-            className="shadow-lg"
-            backgroundColor="bg-background/95 backgroundColor  backdrop-blur-md"
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-});
+        if (hideOnScrollDown) {
+          // PERF: Directional scroll detection
+          const scrollingDown = latest > prevScrollY;
+          const scrollingUp = latest < prevScrollY;
+
+          // Show navbar when:
+          // 1. Scrolling up AND past threshold
+          // 2. At the very top (latest < 50px) - always show
+          if (scrollingUp && pastThreshold) {
+            setIsVisible(true);
+          } else if (scrollingDown && latest > 50) {
+            setIsVisible(false);
+          } else if (latest < 50) {
+            // Always show at the top
+            setIsVisible(threshold === 0 || pastThreshold);
+          }
+
+          setPrevScrollY(latest);
+        } else {
+          // Simple threshold-based visibility (original behavior)
+          setIsVisible(pastThreshold);
+        }
+      });
+
+      return () => unsubscribe();
+    }, [scrollY, threshold, hideOnScrollDown, prevScrollY]);
+
+    return (
+      <AnimatePresence mode="wait">
+        {isVisible && (
+          <motion.div
+            key="floating-navbar"
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            transition={{
+              duration: DURATION.fast,
+              ease: EASE.expOut,
+            }}
+            className="fixed top-0 right-0 left-0 z-100 mx-auto max-w-screen-2xl px-0 sm:top-4 sm:px-4"
+          >
+            <Navbar
+              ref={ref}
+              {...navbarProps}
+              variant="light"
+              customStyles={floatingNavbarStyles}
+              className="rounded-none shadow-lg sm:rounded-4xl"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+);
 
 FloatingNavbar.displayName = 'FloatingNavbar';
