@@ -1,13 +1,6 @@
 'use client';
 import { FloatingNavbar } from '@/components/ui/floating-navbar';
-import {
-  GitFork,
-  ArrowUpRight,
-  Github,
-  Twitter,
-  Linkedin,
-  Clock,
-} from 'lucide-react';
+import { GitFork, ArrowUpRight, Github, Twitter, Clock } from 'lucide-react';
 import Image from 'next/image';
 import LogoSvg from '@/public/logo-dark.svg';
 import { Separator } from '@/components/ui/separator';
