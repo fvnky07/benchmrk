@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
     img: ({ className, ...props }: React.ComponentProps<'img'>) => (
-      <img className={cn('rounded-md border', className)} {...props} />
+      <img className={cn('mb-2 rounded-xl border-2', className)} {...props} />
     ),
     Video: ({ className, ...props }: React.ComponentProps<'video'>) => (
       <video
