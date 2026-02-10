@@ -1,32 +1,48 @@
 ---
-title: Alpha Release
-date: 2024-01-20
-version: v0.5.0
-tags: [alpha, early-access]
+title: 'UX Improvements'
+description: 'Major improvements to UI/UX'
+date: '2025-05-23'
+tags: ['UI', 'UX']
+version: '0.9'
 ---
 
-Our first alpha release is here! This is a limited release for internal testing and select users.
+![UX Improvements](https://images.unsplash.com/photo-1680016661694-1cd3faf31c3a?q=80&w=2874&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)
 
-## Alpha Highlights
+- **Redesigned interface** with cleaner, more intuitive navigation
+- **Enhanced accessibility** with improved keyboard navigation and screen reader support
+- **Streamlined workflows** for faster task completion
+- **Responsive design** optimized for all device sizes
 
-### Foundation
-
-- Built on Next.js 16 with React 19
-- Convex backend for real-time data
-- TypeScript for type safety
-
-### Basic Features
-
-- User authentication flow
-- Simple benchmark creation
-- Basic data display
-
-## Next Steps
-
-We're gathering feedback from alpha testers to improve the platform before beta. Key focus areas:
-
-- UI polish and consistency
-- Performance optimization
-- Bug fixes and stability
-
-Thank you to all our alpha testers!
+<Accordion type="multiple" collapsible="true" className="not-prose w-full">
+  <AccordionItem value="item-1">
+    <AccordionTrigger className="text-[#00ff00]">+ Features</AccordionTrigger>
+    <AccordionContent className="flex flex-col gap-4 text-balance">
+      <ul className="list-disc space-y-2 pl-4">
+        <li>
+          <strong>Redesigned navigation menu</strong> with improved organization
+          and visual hierarchy
+        </li>
+        <li>
+          Enhanced accessibility features with full keyboard navigation support
+        </li>
+        <li>High contrast mode for users with visual impairments</li>
+        <li>Optimized touch targets for better mobile interaction</li>
+        <li>Enhanced swipe gestures and mobile-specific navigation</li>
+      </ul>
+    </AccordionContent>
+  </AccordionItem>
+  <AccordionItem value="item-2">
+    <AccordionTrigger className="text-[#ff0000]">- Bug Fixes</AccordionTrigger>
+    <AccordionContent className="flex flex-col gap-4 text-balance">
+      <ul className="list-disc space-y-2 pl-4">
+        <li>
+          Fixed inconsistent button placement across different screen sizes
+        </li>
+        <li>Resolved color contrast issues affecting readability</li>
+        <li>Corrected tab order problems in form navigation</li>
+        <li>Fixed device orientation change handling on mobile devices</li>
+        <li>Improved ARIA label compatibility with screen readers</li>
+      </ul>
+    </AccordionContent>
+  </AccordionItem>
+</Accordion>

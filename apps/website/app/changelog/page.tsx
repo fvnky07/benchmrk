@@ -3,6 +3,7 @@
 import { docs } from '@/.source';
 import { getMDXComponents } from '@/mdx-components';
 import { formatDate } from '@/lib/utils';
+import { GitFork } from 'lucide-react';
 
 export default function HomePage() {
   const allPages = Array.isArray(docs) ? docs : [];
@@ -16,18 +17,18 @@ export default function HomePage() {
     });
 
   return (
-    <div className="bg-background relative min-h-screen">
+    <div className="bg-black-2 relative min-h-screen">
       {/* Header */}
-      <div className="border-border/50 border-b">
-        <div className="relative mx-auto max-w-5xl">
-          <div className="flex items-center justify-between p-3">
-            <h1 className="text-3xl font-semibold tracking-tight">Changelog</h1>
-          </div>
-        </div>
-      </div>
+      {/* <div className="border-border/50 border-b"> */}
+      {/*   <div className="relative mx-auto max-w-5xl"> */}
+      {/*     <div className="flex items-center justify-between p-3"> */}
+      {/*       <h1 className="text-3xl font-semibold tracking-tight">Changelog</h1> */}
+      {/*     </div> */}
+      {/*   </div> */}
+      {/* </div> */}
 
       {/* Timeline */}
-      <div className="mx-auto max-w-5xl px-6 pt-10 lg:px-10">
+      <div className="mx-auto max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
         <div className="relative">
           {sortedChangelogs.map((changelog: any, idx: number) => {
             const MDX = changelog.body;
@@ -39,14 +40,17 @@ export default function HomePage() {
             return (
               <div key={idx} className="relative">
                 <div className="flex flex-col gap-y-6 md:flex-row">
-                  <div className="flex-shrink-0 md:w-48">
+                  <div className="shrink-0 md:w-48">
                     <div className="pb-10 md:sticky md:top-8">
-                      <time className="text-muted-foreground mb-3 block text-sm font-medium">
+                      <time className="text-md text-green-1 mb-3 block font-bold">
                         {formattedDate}
                       </time>
 
                       {version && (
-                        <div className="text-foreground border-border relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-bold">
+                        <div className="text-foreground outline-green-1 text-md relative z-10 inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 font-bold outline-2">
+                          <span>
+                            <GitFork className="size-4" />
+                          </span>
                           {version}
                         </div>
                       )}
@@ -58,18 +62,18 @@ export default function HomePage() {
                     {/* Vertical timeline line */}
                     <div className="bg-border absolute top-2 left-0 hidden h-full w-px md:block">
                       {/* Timeline dot */}
-                      <div className="bg-primary absolute z-10 hidden size-3 -translate-x-1/2 rounded-full md:block" />
+                      <div className="bg-green-1 absolute z-10 hidden size-3 -translate-x-1/2 rounded-full md:block" />
                     </div>
 
                     <div className="space-y-6">
                       <div className="relative z-10 flex flex-col gap-2">
-                        <h2 className="text-2xl font-semibold tracking-tight text-balance">
+                        <h2 className="text-3xl font-semibold tracking-tight text-balance">
                           {changelog.title}
                         </h2>
 
-                        {/* Tags */}
                         {tags && tags.length > 0 && (
                           <div className="flex flex-wrap gap-2">
+                            {/* Tags */}
                             {tags.map((tag: string) => (
                               <span
                                 key={tag}
