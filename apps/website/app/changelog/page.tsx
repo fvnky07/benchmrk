@@ -8,7 +8,7 @@ import { GridPattern } from '@/components/ui/grid-pattern';
 
 import type { ComponentType } from 'react';
 import type { MDXComponents } from '@/components/mdx-components';
-import { FloatingNavbar } from '@/components/ui/floating-navbar';
+import { Navbar } from '@/components/ui/navbar';
 import LogoSvg from '@/public/logo-dark.svg';
 import Image from 'next/image';
 
@@ -63,7 +63,8 @@ export default function HomePage() {
         strokeColor="rgba(255, 255, 255, 0.03)"
       />
 
-      <FloatingNavbar
+      <Navbar
+        variant="light"
         navigationLinks={[
           {
             href: '/changelog',
@@ -101,7 +102,7 @@ export default function HomePage() {
       />
 
       {/* Timeline */}
-      <div className="bg-black-1 relative mx-auto my-24 max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
+      <div className="bg-black-1 relative mx-auto mt-8 mb-24 max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
         <div className="relative">
           {sortedChangelogs.map((changelog, idx) => {
             const MDX = changelog.body;
@@ -114,7 +115,7 @@ export default function HomePage() {
               <div key={idx} className="relative">
                 <div className="flex flex-col gap-y-6 md:flex-row">
                   <div className="shrink-0 md:w-48">
-                    <div className="pb-10 md:sticky md:top-8">
+                    <div className="pb-10 md:sticky md:top-24">
                       <time className="text-md text-green-1 mb-3 block font-bold">
                         {formattedDate}
                       </time>
