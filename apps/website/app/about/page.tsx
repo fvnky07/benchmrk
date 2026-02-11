@@ -53,14 +53,6 @@ export default function AboutPage() {
             className="relative bottom-0.5 h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
           />
         }
-        onCtaClick={() => {
-          const section = document.getElementById('waitlist');
-          if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-          } else {
-            window.location.href = '/#waitlist';
-          }
-        }}
       />
       <main className="bg-black-2 flex min-h-screen w-full items-center justify-center px-4 py-24 sm:px-8">
         <div className="flex w-full max-w-7xl flex-col gap-8 lg:flex-row">

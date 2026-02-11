@@ -3,11 +3,14 @@
 import { docs } from '@/.source';
 import { getMDXComponents } from '@/components/mdx-components';
 import { formatDate } from '@/lib/utils';
-import { GitFork } from 'lucide-react';
+import { ArrowUpRight, GitFork } from 'lucide-react';
 import { GridPattern } from '@/components/ui/grid-pattern';
 
 import type { ComponentType } from 'react';
 import type { MDXComponents } from '@/components/mdx-components';
+import { FloatingNavbar } from '@/components/ui/floating-navbar';
+import LogoSvg from '@/public/logo-dark.svg';
+import Image from 'next/image';
 
 interface ChangelogDoc {
   date: string;
@@ -60,17 +63,45 @@ export default function HomePage() {
         strokeColor="rgba(255, 255, 255, 0.03)"
       />
 
-      {/* Header */}
-      {/* <div className="border-border/50 border-b"> */}
-      {/*   <div className="relative mx-auto max-w-5xl"> */}
-      {/*     <div className="flex items-center justify-between p-3"> */}
-      {/*       <h1 className="text-3xl font-semibold tracking-tight">Changelog</h1> */}
-      {/*     </div> */}
-      {/*   </div> */}
-      {/* </div> */}
+      <FloatingNavbar
+        navigationLinks={[
+          {
+            href: '/changelog',
+            label: 'Changelog',
+            badge: {
+              metadata: 'v0.1.0',
+              icon: <GitFork className="h-4 w-4" />,
+            },
+          },
+          {
+            href: '/blog',
+            label: 'Blog',
+            badge: {
+              metadata: 'Getting Started',
+              icon: <ArrowUpRight data-icon="inline-end" className="h-4 w-4" />,
+            },
+          },
+          { href: '/about', label: 'About' },
+          { href: '/pricing', label: 'Pricing', active: true },
+        ]}
+        customStyles={{
+          ctaButton: 'bg-green-1 text-black',
+          ctaButtonHover: 'hover:bg-green-1/90',
+        }}
+        ctaText="Get Started"
+        logo={
+          <Image
+            src={LogoSvg}
+            alt="logo"
+            width={32}
+            height={32}
+            className="relative bottom-0.5 h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
+          />
+        }
+      />
 
       {/* Timeline */}
-      <div className="relative mx-auto max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
+      <div className="bg-black-1 relative mx-auto my-24 max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
         <div className="relative">
           {sortedChangelogs.map((changelog, idx) => {
             const MDX = changelog.body;

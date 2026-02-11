@@ -64,13 +64,6 @@ export default function LandingPage() {
       <FloatingNavbar
         threshold={100}
         ctaText="Join the Waitlist!"
-        onCtaClick={() => {
-          const section = document.getElementById('waitlist');
-          section?.scrollIntoView({ behavior: 'smooth' });
-          setTimeout(() => {
-            document.getElementById('input-button-group')?.focus();
-          }, 500);
-        }}
         logo={
           <Image
             src={LogoSvg}

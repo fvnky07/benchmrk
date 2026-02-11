@@ -47,14 +47,6 @@ export default function PricingPage() {
             className="relative bottom-0.5 h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12"
           />
         }
-        onCtaClick={() => {
-          const section = document.getElementById('waitlist');
-          if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-          } else {
-            window.location.href = '/#waitlist';
-          }
-        }}
       />
       <main className="bg-black-1 flex flex-col">
         <PricingTiers />
