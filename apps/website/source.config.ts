@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 export default defineConfig({
   mdxOptions: {
-    providerImportSource: '@/mdx-components',
+    providerImportSource: '@/components/mdx-components',
   },
 });
 
