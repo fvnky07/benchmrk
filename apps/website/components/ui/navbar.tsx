@@ -132,7 +132,7 @@ export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   ctaText?: string;
   ctaHref?: string;
   onSignInClick?: () => void;
-  onCtaClick?: () => void;
+  // NOTE: onCtaClick removed - use default scroll behavior or pass ctaHref
   backgroundColor?: string;
 
   // NEW: Variant system for predefined themes
@@ -251,7 +251,6 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       /* eslint-enable @typescript-eslint/no-unused-vars */
       navigationLinks = defaultNavigationLinks,
       ctaText = 'Get Started',
-      onCtaClick,
       backgroundColor = 'bg-black-2',
       variant = 'default',
       customStyles,
@@ -479,15 +478,16 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
               )}
               onClick={(e) => {
                 e.preventDefault();
-                if (onCtaClick) {
-                  onCtaClick();
-                } else {
-                  // NOTE: Default behavior - scroll to waitlist + focus input
-                  const section = document.getElementById('waitlist');
-                  section?.scrollIntoView({ behavior: 'smooth' });
+                // NOTE: Default behavior - scroll to waitlist + focus input
+                // If on different page, navigate to home with hash
+                const section = document.getElementById('waitlist');
+                if (section) {
+                  section.scrollIntoView({ behavior: 'smooth' });
                   setTimeout(() => {
                     document.getElementById('input-button-group')?.focus();
                   }, 500);
+                } else {
+                  window.location.href = '/#waitlist';
                 }
               }}
               size="sm"
