@@ -4,6 +4,7 @@ import { docs } from '@/.source';
 import { getMDXComponents } from '@/components/mdx-components';
 import { formatDate } from '@/lib/utils';
 import { GitFork } from 'lucide-react';
+import { GridPattern } from '@/components/ui/grid-pattern';
 
 import type { ComponentType } from 'react';
 import type { MDXComponents } from '@/components/mdx-components';
@@ -50,7 +51,15 @@ export default function HomePage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="bg-black-2 relative min-h-screen">
+    <div className="bg-black-2 relative min-h-screen overflow-hidden">
+      {/* Background Grid Pattern */}
+      <GridPattern
+        width={60}
+        height={60}
+        className="absolute inset-0 h-full w-full"
+        strokeColor="rgba(255, 255, 255, 0.03)"
+      />
+
       {/* Header */}
       {/* <div className="border-border/50 border-b"> */}
       {/*   <div className="relative mx-auto max-w-5xl"> */}
@@ -61,7 +70,7 @@ export default function HomePage() {
       {/* </div> */}
 
       {/* Timeline */}
-      <div className="mx-auto max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
+      <div className="relative mx-auto max-w-5xl rounded-4xl px-6 pt-10 sm:outline-2 lg:px-10">
         <div className="relative">
           {sortedChangelogs.map((changelog, idx) => {
             const MDX = changelog.body;
