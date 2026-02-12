@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { TextClassContext } from '@/components/nativewindui/Text';
+import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/cn';
 import { useColorScheme } from 'nativewind';
 import { COLORS } from '@/theme/colors';
