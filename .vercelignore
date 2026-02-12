@@ -1,0 +1,6 @@
+apps/mobile
+.turbo
+node_modules
+*.log
+.DS_Store
+.env*.local
