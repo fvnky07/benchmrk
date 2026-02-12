@@ -4,6 +4,8 @@
   "scripts": {
     "build": "turbo run build",
     "build:web": "turbo run build --filter=website",
+    "build:ios": "turbo run build:ios --filter=@native/app",
+    "build:android": "turbo run build:android --filter=@native/app",
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev --filter=website",
     "lint": "turbo run lint",
