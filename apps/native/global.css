@@ -30,6 +30,16 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    /* Custom Theme Colors */
+    --color-white: hsla(0, 0%, 100%, 1);
+    --color-black-1: hsla(0, 0%, 9%, 1);
+    --color-black-2: hsla(0, 0%, 12%, 1);
+    --color-orange-1: hsla(29, 100%, 71%, 1);
+    --color-yellow-1: hsla(52, 100%, 68%, 1);
+    --color-green-1: hsla(160, 76%, 52%, 1);
+    --color-cyan-1: hsla(186, 77%, 57%, 1);
+    --color-blue-1: hsla(218, 77%, 61%, 1);
+    --color-purple-1: hsla(265, 78%, 65%, 1);
   }
 
   .dark:root {
@@ -57,5 +67,15 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    /* Custom Theme Colors */
+    --color-white: hsla(0, 0%, 100%, 1);
+    --color-black-1: hsla(0, 0%, 9%, 1);
+    --color-black-2: hsla(0, 0%, 12%, 1);
+    --color-orange-1: hsla(29, 100%, 71%, 1);
+    --color-yellow-1: hsla(52, 100%, 68%, 1);
+    --color-green-1: hsla(160, 76%, 52%, 1);
+    --color-cyan-1: hsla(186, 77%, 57%, 1);
+    --color-blue-1: hsla(218, 77%, 61%, 1);
+    --color-purple-1: hsla(265, 78%, 65%, 1);
   }
 }

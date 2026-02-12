@@ -42,6 +42,30 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        /* Custom Theme Colors */
+        white: 'var(--color-white)',
+        black: {
+          1: 'var(--color-black-1)',
+          2: 'var(--color-black-2)',
+        },
+        orange: {
+          1: 'var(--color-orange-1)',
+        },
+        yellow: {
+          1: 'var(--color-yellow-1)',
+        },
+        green: {
+          1: 'var(--color-green-1)',
+        },
+        cyan: {
+          1: 'var(--color-cyan-1)',
+        },
+        blue: {
+          1: 'var(--color-blue-1)',
+        },
+        purple: {
+          1: 'var(--color-purple-1)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
