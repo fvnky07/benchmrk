@@ -3,14 +3,9 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "build:all": "turbo run build --filter='./apps/*' --filter='./packages/backend'",
     "build:web": "turbo run build --filter=website",
-    "build:mobile": "turbo run build --filter=@native/app",
-    "build:ios": "turbo run ios --filter=@native/app",
-    "build:android": "turbo run android --filter=@native/app",
-    "build:web-ios-android": "pnpm run build:web && pnpm run build:ios & pnpm run build:android &",
     "dev": "turbo run dev --parallel",
-    "dev:all": "turbo run dev --parallel --filter='./apps/*' --filter='./packages/backend'",
+    "dev:web": "turbo run dev --filter=website",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
