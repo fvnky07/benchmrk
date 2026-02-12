@@ -9,7 +9,7 @@ const PROTECTED_ROUTES = ['/dashboard', '/profile', '/settings'];
 // NOTE: Public routes that should redirect to dashboard if authenticated
 const AUTH_ROUTES = ['/login', '/signup'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // NOTE: Check if route requires authentication
