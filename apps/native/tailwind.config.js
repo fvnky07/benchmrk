@@ -94,5 +94,35 @@ module.exports = {
   future: {
     hoverOnlyWhenSupported: true,
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    // Debug utility classes for layout debugging
+    function ({ addUtilities }) {
+      const debugStyles = {
+        // NOTE: Debug color palette for visual debugging in development
+        '.debug': {
+          '@apply border-2 border-red-500': {},
+        },
+        '.debug-1': {
+          '@apply border-2 border-green-500': {},
+        },
+        '.debug-2': {
+          '@apply border-2 border-blue-500': {},
+        },
+        '.debug-3': {
+          '@apply border-2 border-yellow-500': {},
+        },
+        '.debug-4': {
+          '@apply border-2 border-purple-500': {},
+        },
+        '.debug-5': {
+          '@apply border-2 border-pink-500': {},
+        },
+        '.debug-6': {
+          '@apply border-2 border-orange-500': {},
+        },
+      };
+      addUtilities(debugStyles);
+    },
+  ],
 };
