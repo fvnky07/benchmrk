@@ -33,71 +33,7 @@ export default function LoginScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
-      >
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerClassName="flex-1 p-6"
-          keyboardDismissMode="interactive"
-        >
-          {/* Logo/Branding */}
-          <View className="items-center justify-center gap-4 pb-12 pt-8">
-            <View className="h-20 w-20 items-center justify-center rounded-2xl bg-primary">
-              <Text className="text-4xl font-bold text-primary-foreground">
-                B
-              </Text>
-            </View>
-            <Text className="text-3xl font-bold text-foreground">Benchmrk</Text>
-            <Text className="text-center text-muted-foreground">
-              Welcome back
-            </Text>
-          </View>
-
-          {/* Auth Form */}
-          <View className="w-full max-w-sm gap-4 self-center">
-            {/* Email Input */}
-            <View className="gap-2">
-              <Label nativeID="email-label">Email</Label>
-              <Input
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect={false}
-                aria-labelledby="email-label"
-              />
-            </View>
-
-            {/* Password Input */}
-            <View className="gap-2">
-              <View className="flex-row items-center justify-between">
-                <Label nativeID="password-label">Password</Label>
-                <Pressable onPress={handleForgotPassword}>
-                  <Text className="text-sm text-primary">Forgot password?</Text>
-                </Pressable>
-              </View>
-              <Input
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="current-password"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-                aria-labelledby="password-label"
-              />
-            </View>
-
-            {/* Submit Button */}
-            <Button onPress={handleSubmit} disabled={!email || !password}>
-              <Text>Sign in</Text>
-            </Button>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      ></KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
