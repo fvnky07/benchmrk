@@ -22,6 +22,7 @@
     "paths": {
       "@/*": ["./*"],
       "@repo/backend/*": ["../../packages/backend/*"],
+      "fumadocs-mdx:collections/server": [".source/index.ts"],
       "fumadocs-mdx:collections/*": [".source/*"]
     }
   },
