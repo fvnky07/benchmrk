@@ -2,14 +2,14 @@
 'use client';
 
 import { formatDate } from '@/lib/utils';
-import type { MDXContent } from 'mdx/types';
+import type { ComponentType } from 'react';
 
 interface ChangelogEntry {
   title: string;
   date: string;
   version?: string;
   tags?: string[];
-  body: MDXContent;
+  body: ComponentType;
   info: {
     path: string;
   };

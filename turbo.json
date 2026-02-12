@@ -7,6 +7,16 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", ".expo/**"]
     },
+    "build:ios": {
+      "dependsOn": ["^build:ios"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["ios/**", ".expo/**"]
+    },
+    "build:android": {
+      "dependsOn": ["^build:android"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["android/**", ".expo/**"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
