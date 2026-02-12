@@ -6,13 +6,11 @@ labels: ''
 assignees: ''
 ---
 
-## 📌 Summary
+## 😔 Summary
 
 Describe the issue in as much detail as possible and attach stuff if needed.
 
----
-
-## 📍 Scope
+## 🔫 Scope
 
 - [ ] web (Next.js)
 - [ ] native (Expo)
@@ -20,15 +18,9 @@ Describe the issue in as much detail as possible and attach stuff if needed.
 - [ ] shared
 - [ ] infra
 
----
-
 ## 🎯 Acceptance Criteria
 
 What does the final result look like before the issue can be closed?
 
 - [ ]
 - [ ]
-
----
-
-## 📝 Notes
