@@ -1,14 +1,14 @@
 ---
-name: General Issue
-about: Feature, bug, or refactor
-title: '[scope] issue title   '
+name: Structured Issue ~2mins
+about: bro please use this to describe issues so we can effectively address them. 🍆💦
+title: '[scope] issue title...   '
 labels: ''
 assignees: ''
 ---
 
 ## 📌 Summary
 
-Describe the issue briefly.
+Describe the issue in as much detail as possible and attach stuff if needed.
 
 ---
 
