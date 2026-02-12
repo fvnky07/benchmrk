@@ -5,7 +5,6 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import localFont from 'next/font/local';
 import './globals.css';
 import { ConvexClientProvider } from './ConvexClientProvider';
-import { getToken } from '@/lib/auth-server';
 import { Footer } from '@/components/ui/footer';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -109,21 +108,12 @@ export const metadata: Metadata = {
   },
 };
 
-// NOTE: Server component to fetch auth token for SSR
-export default async function RootLayout({
+// NOTE: Server component for root layout with optimized static rendering
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // NOTE: Get initial auth token for hydration (optional - may be null if not configured)
-  let token: string | null = null;
-  try {
-    token = (await getToken()) || null;
-  } catch (error) {
-    // NOTE: Auth not configured yet, continue without token
-    console.warn('Failed to get auth token:', error);
-  }
-
   return (
     <html lang="en" className="dark">
       <body
@@ -131,7 +121,7 @@ export default async function RootLayout({
       >
         <Analytics />
         <SpeedInsights />
-        <ConvexClientProvider initialToken={token}>
+        <ConvexClientProvider>
           {children}
           <Footer />
           <Toaster />
