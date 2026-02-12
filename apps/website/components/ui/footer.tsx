@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import LogoSvg from '@/public/logo.svg';
 import { Separator } from '@radix-ui/react-separator';
 import { Button } from './button';
+import { DotPattern } from './dot-pattern';
 
 export interface FooterProps extends React.HTMLAttributes<HTMLElement> {
   logo?: React.ReactNode;
@@ -28,16 +29,64 @@ const legalLinks = [
 
 export const Footer = React.forwardRef<HTMLElement, FooterProps>(
   ({ className, ...props }, ref) => {
+    const dotPatternRef = React.useRef<HTMLDivElement>(null);
+
+    // NOTE: Forward mouse events from footer to DotPattern for hover effects
+    const handleMouseMove = React.useCallback((e: React.MouseEvent) => {
+      const dotPattern = dotPatternRef.current;
+      if (!dotPattern) return;
+
+      // Dispatch a native mouse event to the DotPattern container
+      const rect = dotPattern.getBoundingClientRect();
+      const mouseEvent = new MouseEvent('mousemove', {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        bubbles: true,
+      });
+      dotPattern.dispatchEvent(mouseEvent);
+    }, []);
+
+    const handleMouseLeave = React.useCallback(() => {
+      const dotPattern = dotPatternRef.current;
+      if (!dotPattern) return;
+
+      const mouseEvent = new MouseEvent('mouseleave', {
+        bubbles: true,
+      });
+      dotPattern.dispatchEvent(mouseEvent);
+    }, []);
+
     return (
       <footer
         ref={ref}
         className={cn(
-          'border-border bg-black-2 w-full border-t px-0 py-5',
+          'border-border relative w-full overflow-hidden border-t py-2',
           className
         )}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         {...props}
       >
-        <div className="container mx-auto max-w-screen-2xl">
+        {/* NOTE: DotPattern as background with custom styling for footer */}
+        {/* HACK: Override fixed positioning from DotPattern to work within footer */}
+        <div ref={dotPatternRef} className="absolute inset-0">
+          <DotPattern
+            className="!absolute inset-0 bg-gradient-to-b from-neutral-950 to-black"
+            dotSize={2}
+            gap={24}
+            baseColor="#fff"
+            glowColor="#22d3ee"
+            proximity={120}
+            glowIntensity={0.8}
+            waveSpeed={0.3}
+          />
+        </div>
+
+        {/* Overlay to ensure content visibility */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/70 to-black/80" />
+
+        {/* Content wrapper */}
+        <div className="relative z-10 container mx-auto max-w-screen-2xl py-5">
           {/* Main footer content */}
           <div className="flex flex-col gap-8 px-6 md:flex-row md:justify-between md:gap-12 md:px-12 xl:px-18">
             {/* Left: Logo + Social */}
@@ -118,7 +167,7 @@ export const Footer = React.forwardRef<HTMLElement, FooterProps>(
           <Separator className="bg-border my-4 h-px w-full" />
 
           {/* Copyright */}
-          <div className="flex justify-center">
+          <div className="flex justify-center pb-2">
             <p className="text-muted-foreground text-sm">
               © {new Date().getFullYear()} benchmrk. All rights reserved.
             </p>
