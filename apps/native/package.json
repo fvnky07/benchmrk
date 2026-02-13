@@ -64,7 +64,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/react": "~19.2.14",
     "@types/react-dom": "~19.2.3",
-    "eslint": "^9.25.0",
+    "eslint": "^10.0.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.3"
   }
