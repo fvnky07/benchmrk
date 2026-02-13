@@ -76,7 +76,7 @@ export default function LoginScreen() {
             }}
           >
             <Text className="mt-4 pl-2 text-blue-400">
-              Already have an account?
+              Dont have an account?
             </Text>
           </Pressable>
         </View>
