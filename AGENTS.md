@@ -1,63 +1,45 @@
-# AGENTS.md - Repository Guidelines for Agentic Coding
-
-Guidelines for AI agents operating in the benchmrk Turborepo monorepo.
-
 ## Repository Structure
 
-```
-apps/
-├── mobile/      (@mobile/app) - Expo + React Native with Convex integration
-└── website/     (website) - Next.js 16 with TypeScript
-
-packages/
-├── backend/     (@repo/backend) - Convex backend
-├── eslint-config/ - Shared ESLint configurations
-├── typescript-config/ - Shared TypeScript configurations
-└── ui/          - Shared React component library
-```
+├── apps:/
+├── native//
+├── website//
+├── /
+├── packages:/
+├── backend//
+├── eslint-config//
+├── typescript-config//
+├── ui//
 
 ## Build, Lint, Test Commands
 
 ### Build
 
-```bash
-pnpm run build:all              # Build all apps
-pnpm run build:web              # Website only
-pnpm run build:mobile           # Mobile app
-pnpm run build:ios              # iOS build
-pnpm run build:android          # Android build
-```
+pnpm run build # turbo run build
+pnpm run build:web # turbo run build --filter=website
+pnpm run build:ios # turbo run build:ios --filter=@native/app
+pnpm run build:android # turbo run build:android --filter=@native/app
 
 ### Type Checking
 
-```bash
-pnpm run check-types            # All packages
+pnpm run check-types # turbo run check-types
 pnpm turbo run check-types --filter=website
 pnpm turbo run check-types --filter=@mobile/app
-```
 
 ### Linting
 
-```bash
-pnpm run lint                   # All packages
+pnpm run lint # turbo run lint
 pnpm turbo run lint --filter=website
 pnpm turbo run lint --filter=@mobile/app
-```
 
 ### Formatting
 
-```bash
-pnpm run format                 # Format all files (80 char line width)
-prettier --write "apps/website/**/*.{ts,tsx}"  # Specific files
-```
+pnpm run format # prettier --write "**/\*.{ts,tsx,md}"
+prettier --write "apps/website/**/\*.{ts,tsx}" # Specific files
 
 ### Dev Servers
 
-```bash
-pnpm run dev:all                # All apps in parallel
-pnpm run dev:web                # Website (http://localhost:3000)
-pnpm run dev:mobile             # Mobile (Expo)
-```
+pnpm run dev # turbo run dev --parallel
+pnpm run dev:web # turbo run dev --filter=website
 
 ## Code Style Guidelines
 
@@ -106,7 +88,7 @@ Run `pnpm run format` before committing.
 
 - **Try/catch**: Use for async operations; provide meaningful error messages
 - **Error types**: Use `Error` base class or create domain-specific error classes
-- **Logging**: Use `console.error()` for errors, avoid silent failures
+- - **Logging**: Use `console.error()` for errors, avoid silent failures
 - **Type guards**: Check for undefined/null before accessing properties
 
 ### Comments & Documentation
@@ -175,6 +157,6 @@ Before committing:
 
 ### Common Issues
 
-- **Port conflicts**: Kill process: `lsof -i :3000 | awk '{print $2}' | xargs kill -9`
+- **Port conflicts**: Kill process: `lsof -i :3000 | awk '{print }' | xargs kill -9`
 - **Missing deps**: Run `pnpm install`
 - **Type errors**: Check tsconfig.json extends and strictness
