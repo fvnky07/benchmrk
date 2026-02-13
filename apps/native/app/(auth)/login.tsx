@@ -8,17 +8,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // TODO: Implement password input and state
+  // const [password, setPassword] = useState('');
 
   // TODO: Implement forgot password handler
-  const handleForgotPassword = () => {
-    console.log('Forgot password pressed');
-  };
+  // const handleForgotPassword = () => {
+  //   console.log('Forgot password pressed');
+  // };
 
   // TODO: Implement login submission
-  const handleSubmit = () => {
-    console.log('Login submitted:', { email, password });
-  };
+  // const handleSubmit = () => {
+  //   console.log('Login submitted:', { email, password });
+  // };
 
   return (
     <SafeAreaView className="flex-1 bg-black-1 debug" edges={['top', 'bottom']}>
