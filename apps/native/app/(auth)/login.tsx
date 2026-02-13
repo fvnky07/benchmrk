@@ -22,38 +22,31 @@ export default function LoginScreen() {
   // };
 
   return (
-    <SafeAreaView className="flex-1 bg-black-1 debug" edges={['top', 'bottom']}>
-      <Text>yo</Text>
-      <Input
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-        }}
-        placeholder="you@example.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoComplete="email"
-        autoCorrect={false}
-        aria-labelledby="email-label"
-      />
+    <SafeAreaView className="flex-1 bg-black-1" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 items-center justify-center debug"
+        className="flex-1 justify-center px-6"
       >
+        <Text className="mb-6 text-2xl font-bold text-white">Login</Text>
+
+        {/* NOTE: For backgroundColor on React Native, use style prop */}
         <Input
           value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-          }}
-          placeholder="Enter your email address"
+          onChangeText={setEmail}
+          placeholder="Enter your email"
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
           autoCorrect={false}
-          aria-labelledby="email-label"
-          className="bg-white"
+          style={{ backgroundColor: '#ffffff' }}
+          className="mb-4"
         />
-        <Text>yo</Text>
+
+        {/* Example with className (may not work for bg on native) */}
+        <Text className="text-sm text-white">
+          Note: bg-white className may not work on TextInput in React Native.
+          Use style prop instead: style={'{{'} backgroundColor: '#ffffff' {'}}'}
+        </Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
