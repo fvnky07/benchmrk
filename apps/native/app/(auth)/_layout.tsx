@@ -21,6 +21,12 @@ export default function AuthLayout() {
         }}
       />
       <Stack.Screen
+        name="welcome"
+        options={{
+          title: 'Welcome to benchmrk',
+        }}
+      />
+      <Stack.Screen
         name="register"
         options={{
           title: 'Register',
