@@ -5,7 +5,7 @@ import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -73,7 +73,7 @@ export default function LoginScreen() {
           </Button>
           <Pressable
             onPress={() => {
-              router.push('/forgot-password');
+              router.push('/register');
             }}
           >
             <Text className="mt-4 pl-2 text-blue-400">
