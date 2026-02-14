@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
@@ -26,9 +27,9 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAwareScrollView
         className="flex-1 px-6"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
       >
         <View className="flex w-full items-start justify-center gap-1">
           <View className="mb-6 flex w-full flex-row items-center justify-center gap-2">
@@ -80,7 +81,7 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
