@@ -23,7 +23,10 @@ export default function AuthLayout() {
       <Stack.Screen
         name="welcome"
         options={{
-          title: 'Welcome to benchmrk',
+          title: 'Welcome to benchmrk!',
+          headerStyle: {
+            
+          }
         }}
       />
       <Stack.Screen
