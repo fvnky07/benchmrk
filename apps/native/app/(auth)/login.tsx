@@ -10,6 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { loginSchema } from '@/lib/schemas/auth-schemas';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
+import { FieldError } from '@/components/ui/field-error';
+import { showToast } from '@/lib/toast';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -17,18 +21,26 @@ export default function LoginScreen() {
   const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
 
-  // TODO: Implement password input and state
-  // const [password, setPassword] = useState('');
+  const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
+    schema: loginSchema,
+    mode: 'onChange',
+  });
 
-  // TODO: Implement forgot password handler
-  // const handleForgotPassword = () => {
-  //   console.log('Forgot password pressed');
-  // };
-
-  // TODO: Implement login submission
-  // const handleSubmit = () => {
-  //   console.log('Login submitted:', { email, password });
-  // };
+  const onSubmit = () => {
+    handleSubmit({ email, password }, async (data) => {
+      try {
+        // TODO: Implement actual login with Better Auth + Convex
+        console.log('Valid login data:', data);
+        showToast.success('Login successful!', 'Welcome back');
+        router.push('/');
+      } catch (error) {
+        showToast.error(
+          'Login failed',
+          error instanceof Error ? error.message : 'Invalid credentials'
+        );
+      }
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
@@ -42,7 +54,10 @@ export default function LoginScreen() {
           </View>
           <Input
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (hasSubmitted) clearError('email');
+            }}
             placeholder="Email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -50,19 +65,25 @@ export default function LoginScreen() {
             autoCorrect={false}
             style={{ backgroundColor: '#202020' }}
             className="h-12"
+            aria-invalid={!!errors.email}
           />
+          <FieldError error={errors.email} />
           <Input
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (hasSubmitted) clearError('password');
+            }}
             placeholder="Password"
-            keyboardType="email-address"
             autoCapitalize="none"
             secureTextEntry={true}
-            autoComplete="email"
+            autoComplete="password"
             autoCorrect={false}
             style={{ backgroundColor: '#202020' }}
             className="h-12"
+            aria-invalid={!!errors.password}
           />
+          <FieldError error={errors.password} />
           <Pressable
             onPress={() => {
               router.push('/forgot-password');
@@ -75,13 +96,7 @@ export default function LoginScreen() {
         <View className="flex-1" />
 
         <View className="mb-6 flex w-full items-center justify-center">
-          <Button
-            className="w-full"
-            onPress={() => {
-              // TODO: push to account creation screen
-              router.push('/');
-            }}
-          >
+          <Button className="w-full" onPress={onSubmit}>
             <Text>Continue with email</Text>
             <Feather name="arrow-right" size={24} color="black" />
           </Button>
