@@ -40,7 +40,16 @@ export const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
 
+// 2FA verification schema
+export const twoFactorSchema = z.object({
+  code: z
+    .string()
+    .length(6, 'Code must be 6 digits')
+    .regex(/^\d{6}$/, 'Code must contain only numbers'),
+});
+
 // TypeScript types
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type TwoFactorInput = z.infer<typeof twoFactorSchema>;
