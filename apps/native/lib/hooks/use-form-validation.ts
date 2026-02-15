@@ -65,22 +65,35 @@ export function useFormValidation<T extends z.ZodTypeAny>({
     onSuccess?: (data: z.infer<T>) => void | Promise<void>
   ) => {
     setHasSubmitted(true);
-    const result = validate(data);
+    const result = schema.safeParse(data);
 
     if (!result.success) {
+      // Convert Zod errors to field-specific object
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path.join('.');
+        if (!fieldErrors[path]) {
+          fieldErrors[path] = issue.message;
+        }
+      });
+      setErrors(fieldErrors);
+
       // Show toast with first error message
-      const firstError = Object.values(errors)[0];
+      const firstError = Object.values(fieldErrors)[0];
       if (firstError) {
         showToast.error('Validation Error', firstError);
       }
       return false;
     }
 
-    if (result.success && onSuccess && result.data) {
+    // Clear errors on successful validation
+    setErrors({});
+
+    if (onSuccess && result.data) {
       onSuccess(result.data);
     }
 
-    return result.success;
+    return true;
   };
 
   const clearError = (field: string) => {
