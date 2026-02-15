@@ -2,29 +2,44 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
+import { useAuthStore } from '@/lib/stores/auth-store';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { registerSchema } from '@/lib/schemas/auth-schemas';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
+import { showToast } from '@/lib/toast';
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState('');
+  const email = useAuthStore((state) => state.email);
+  const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  // TODO: Implement password input and state
-  // const [password, setPassword] = useState('');
 
-  // TODO: Implement forgot password handler
-  // const handleForgotPassword = () => {
-  //   console.log('Forgot password pressed');
-  // };
+  const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
+    schema: registerSchema,
+    mode: 'onChange',
+  });
 
-  // TODO: Implement login submission
-  // const handleSubmit = () => {
-  //   console.log('Login submitted:', { email, password });
-  // };
+  const onSubmit = () => {
+    handleSubmit({ email, password, confirmPassword }, async (data) => {
+      try {
+        // TODO: Implement actual registration with Better Auth + Convex
+        console.log('Valid registration data:', data);
+        showToast.success('Account created!', 'Welcome to the app');
+        router.push('/');
+      } catch (error) {
+        showToast.error(
+          'Registration failed',
+          error instanceof Error ? error.message : 'Please try again'
+        );
+      }
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
@@ -38,7 +53,10 @@ export default function RegisterScreen() {
           </View>
           <Input
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (hasSubmitted) clearError('email');
+            }}
             placeholder="Email"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -46,30 +64,37 @@ export default function RegisterScreen() {
             autoCorrect={false}
             style={{ backgroundColor: '#202020' }}
             className="h-12"
+            aria-invalid={!!errors.email}
           />
           <Input
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (hasSubmitted) clearError('password');
+            }}
             placeholder="Password"
-            keyboardType="email-address"
             autoCapitalize="none"
             secureTextEntry={true}
-            autoComplete="email"
+            autoComplete="new-password"
             autoCorrect={false}
             style={{ backgroundColor: '#202020' }}
             className="h-12"
+            aria-invalid={!!errors.password}
           />
           <Input
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              if (hasSubmitted) clearError('confirmPassword');
+            }}
             placeholder="Confirm Password"
-            keyboardType="email-address"
             autoCapitalize="none"
             secureTextEntry={true}
-            autoComplete="email"
+            autoComplete="new-password"
             autoCorrect={false}
             style={{ backgroundColor: '#202020' }}
             className="h-12"
+            aria-invalid={!!errors.confirmPassword}
           />
           {/* <Pressable */}
           {/*   onPress={() => { */}
@@ -81,17 +106,16 @@ export default function RegisterScreen() {
         </View>
         <View className="flex-1" />
         <View className="mb-6 flex w-full items-center justify-center">
-          <Button className="w-full">
-            <Text>Continue</Text>
+          <Button className="w-full" onPress={onSubmit}>
+            <Text>Register with email</Text>
+            <Feather name="arrow-right" size={24} color="black" />
           </Button>
           <Pressable
             onPress={() => {
-              router.push('/forgot-password');
+              router.replace('/login');
             }}
           >
-            <Text className="mt-4 pl-2 text-blue-400">
-              Dont have an account?
-            </Text>
+            <Text className="mt-4 pl-2 text-blue-400">Log in instead?</Text>
           </Pressable>
         </View>
       </KeyboardAwareScrollView>
