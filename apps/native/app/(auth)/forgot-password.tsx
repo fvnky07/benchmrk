@@ -51,18 +51,9 @@ export default function ForgotPasswordScreen() {
               router.push('/');
             }}
           >
-            <Text>Register with email</Text>
-            <Feather name="arrow-right" size={24} color="black" />
+            <Text>Send recovery email</Text>
+            <Feather name="mail" size={24} color="black" />
           </Button>
-          <Pressable
-            onPress={() => {
-              router.push('/forgot-password');
-            }}
-          >
-            <Text className="mt-4 pl-2 text-blue-400">
-              Dont have an account?
-            </Text>
-          </Pressable>
         </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
