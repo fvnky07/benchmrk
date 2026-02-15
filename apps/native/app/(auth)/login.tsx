@@ -12,7 +12,6 @@ import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { loginSchema } from '@/lib/schemas/auth-schemas';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
-import { FieldError } from '@/components/ui/field-error';
 import { showToast } from '@/lib/toast';
 
 export default function LoginScreen() {
@@ -67,7 +66,6 @@ export default function LoginScreen() {
             className="h-12"
             aria-invalid={!!errors.email}
           />
-          <FieldError error={errors.email} />
           <Input
             value={password}
             onChangeText={(text) => {
@@ -83,7 +81,6 @@ export default function LoginScreen() {
             className="h-12"
             aria-invalid={!!errors.password}
           />
-          <FieldError error={errors.password} />
           <Pressable
             onPress={() => {
               router.push('/forgot-password');

@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { forgotPasswordSchema } from '@/lib/schemas/auth-schemas';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
-import { FieldError } from '@/components/ui/field-error';
 import { showToast } from '@/lib/toast';
 
 export default function ForgotPasswordScreen() {
@@ -65,7 +64,6 @@ export default function ForgotPasswordScreen() {
             style={{ backgroundColor: '#202020' }}
             aria-invalid={!!errors.email}
           />
-          <FieldError error={errors.email} />
         </View>
         <View className="flex-1" />
         <View className="mb-6 flex w-full items-center justify-center">

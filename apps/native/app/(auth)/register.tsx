@@ -12,7 +12,6 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { registerSchema } from '@/lib/schemas/auth-schemas';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
-import { FieldError } from '@/components/ui/field-error';
 import { showToast } from '@/lib/toast';
 
 export default function RegisterScreen() {
@@ -67,7 +66,6 @@ export default function RegisterScreen() {
             className="h-12"
             aria-invalid={!!errors.email}
           />
-          <FieldError error={errors.email} />
           <Input
             value={password}
             onChangeText={(text) => {
@@ -83,7 +81,6 @@ export default function RegisterScreen() {
             className="h-12"
             aria-invalid={!!errors.password}
           />
-          <FieldError error={errors.password} />
           <Input
             value={confirmPassword}
             onChangeText={(text) => {
@@ -99,7 +96,6 @@ export default function RegisterScreen() {
             className="h-12"
             aria-invalid={!!errors.confirmPassword}
           />
-          <FieldError error={errors.confirmPassword} />
           {/* <Pressable */}
           {/*   onPress={() => { */}
           {/*     router.push('/forgot-password'); */}

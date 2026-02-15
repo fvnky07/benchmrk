@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { z } from 'zod';
+import { showToast } from '@/lib/toast';
 
 interface UseFormValidationOptions<T extends z.ZodTypeAny> {
   schema: T;
@@ -65,6 +66,15 @@ export function useFormValidation<T extends z.ZodTypeAny>({
   ) => {
     setHasSubmitted(true);
     const result = validate(data);
+
+    if (!result.success) {
+      // Show toast with first error message
+      const firstError = Object.values(errors)[0];
+      if (firstError) {
+        showToast.error('Validation Error', firstError);
+      }
+      return false;
+    }
 
     if (result.success && onSuccess && result.data) {
       onSuccess(result.data);
