@@ -10,15 +10,35 @@ import { Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { forgotPasswordSchema } from '@/lib/schemas/auth-schemas';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
+import { FieldError } from '@/components/ui/field-error';
+import { showToast } from '@/lib/toast';
 
 export default function ForgotPasswordScreen() {
   const email = useAuthStore((state) => state.email);
   const setEmail = useAuthStore((state) => state.setEmail);
 
-  // TODO: Implement login submission
-  // const handleSubmit = () => {
-  //   console.log('Login submitted:', { email, password });
-  // };
+  const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
+    schema: forgotPasswordSchema,
+    mode: 'onChange',
+  });
+
+  const onSubmit = () => {
+    handleSubmit({ email }, async (data) => {
+      try {
+        // TODO: Implement password reset with Better Auth
+        console.log('Sending password reset to:', data.email);
+        showToast.success('Check your email!', 'Password reset link sent');
+        router.push('/login');
+      } catch (error) {
+        showToast.error(
+          'Failed to send reset email',
+          error instanceof Error ? error.message : 'Please try again'
+        );
+      }
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
@@ -32,7 +52,10 @@ export default function ForgotPasswordScreen() {
           </View>
           <Input
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (hasSubmitted) clearError('email');
+            }}
             placeholder="Email"
             keyboardType="email-address"
             className="h-12"
@@ -40,17 +63,13 @@ export default function ForgotPasswordScreen() {
             autoComplete="email"
             autoCorrect={false}
             style={{ backgroundColor: '#202020' }}
+            aria-invalid={!!errors.email}
           />
+          <FieldError error={errors.email} />
         </View>
         <View className="flex-1" />
         <View className="mb-6 flex w-full items-center justify-center">
-          <Button
-            className="w-full"
-            onPress={() => {
-              // TODO: push to account creation screen
-              router.push('/');
-            }}
-          >
+          <Button className="w-full" onPress={onSubmit}>
             <Text>Send recovery email</Text>
             <Feather name="mail" size={24} color="black" />
           </Button>
