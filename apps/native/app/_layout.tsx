@@ -11,6 +11,8 @@ import { useColorScheme } from 'nativewind';
 import { useAuth } from '@/lib/useAuth';
 import { SplashScreen } from '@/components/SplashScreen';
 import React from 'react';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from '@/lib/toast-config';
 
 /**
  * Root Layout with authentication-based routing
@@ -51,6 +53,7 @@ export default function RootLayout() {
             </Stack.Protected>
           </Stack>
           <PortalHost />
+          <Toast config={toastConfig} />
         </ThemeProvider>
       </KeyboardProvider>
     </SafeAreaProvider>
