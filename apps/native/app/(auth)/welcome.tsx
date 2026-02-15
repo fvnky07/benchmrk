@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 justify-between bg-black-1 px-4 pb-6 debug"
+      className="flex-1 justify-between bg-green-1 px-4 pb-6"
       edges={['top', 'bottom']}
     >
       <View className="w-full items-center justify-center py-6">

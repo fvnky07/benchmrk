@@ -12,10 +12,10 @@ export const toastConfig: ToastConfig = {
     <BaseToast
       {...props}
       style={{
-        borderLeftColor: '#20A885', // green-1
-        backgroundColor: '#1F1F1F', // black-2
+        borderLeftColor: '#000000', // green-1
+        backgroundColor: '#000000', // black-2
         borderLeftWidth: 5,
-        borderRadius: 8,
+        borderRadius: 24,
         height: 60,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
@@ -42,10 +42,10 @@ export const toastConfig: ToastConfig = {
     <ErrorToast
       {...props}
       style={{
-        borderLeftColor: '#EF4444', // destructive red
-        backgroundColor: '#1F1F1F', // black-2
+        borderLeftColor: '#000000', // destructive red
+        backgroundColor: '#000000', // black-2
         borderLeftWidth: 5,
-        borderRadius: 8,
+        borderRadius: 24,
         height: 60,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
@@ -63,7 +63,7 @@ export const toastConfig: ToastConfig = {
           name="close-circle"
           size={24}
           color="#EF4444"
-          style={{ marginLeft: 15 }}
+          style={{ marginLeft: 15, paddingTop: 15 }}
         />
       )}
     />

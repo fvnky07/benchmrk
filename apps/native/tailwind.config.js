@@ -45,26 +45,29 @@ module.exports = {
         /* Custom Theme Colors */
         white: '#FFFFFF',
         black: {
-          1: '#161616',
+          1: '#171717',
           2: '#1F1F1F',
         },
+        pink: {
+          1: '#FF7878', // Grapefruit Pink
+        },
         orange: {
-          1: '#F5A623',
+          1: '#FFB36B', // Sandy Brown
         },
         yellow: {
-          1: '#F5D547',
+          1: '#FFE95C', // Banana Cream
         },
         green: {
-          1: '#20A885',
+          1: '#28E2A4', // Tropical Mint
         },
         cyan: {
-          1: '#1FB5D6',
+          1: '#3CD5E6', // Strong Cyan
         },
         blue: {
-          1: '#2E7FD6',
+          1: '#4F87E8', // Blue Energy
         },
         purple: {
-          1: '#9A4FD8',
+          1: '#9A60EB', // Lavender Purple
         },
       },
       borderRadius: {
