@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import React, { useState } from 'react';
@@ -81,8 +82,15 @@ export default function RegisterScreen() {
         </View>
         <View className="flex-1" />
         <View className="mb-6 flex w-full items-center justify-center">
-          <Button className="w-full">
-            <Text>Continue</Text>
+          <Button
+            className="w-full"
+            onPress={() => {
+              // TODO: push to account creation screen
+              router.push('/');
+            }}
+          >
+            <Text>Register with email</Text>
+            <Feather name="arrow-right" size={24} color="black" />
           </Button>
           <Pressable
             onPress={() => {
