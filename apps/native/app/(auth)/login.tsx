@@ -9,10 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const email = useAuthStore((state) => state.email);
+  const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
 
   // TODO: Implement password input and state

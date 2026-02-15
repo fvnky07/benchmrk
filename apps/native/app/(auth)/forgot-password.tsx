@@ -5,13 +5,15 @@ import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState('');
+  const email = useAuthStore((state) => state.email);
+  const setEmail = useAuthStore((state) => state.setEmail);
 
   // TODO: Implement login submission
   // const handleSubmit = () => {
