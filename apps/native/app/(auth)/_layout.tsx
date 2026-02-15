@@ -40,6 +40,13 @@ export default function AuthLayout() {
           title: 'Forgot Password',
         }}
       />
+      <Stack.Screen
+        name="verify-2fa"
+        options={{
+          title: 'Verify Code',
+          headerBackVisible: true,
+        }}
+      />
     </Stack>
   );
 }
