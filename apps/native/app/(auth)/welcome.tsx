@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 
-import { Ionicons, AntDesign } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Separator } from '@/components/ui/separator';
@@ -20,19 +20,16 @@ export default function WelcomeScreen() {
   // TODO: Implement login submission
   // const handleSubmit = () => {
   //   console.log('Login submitted:', { email, password });
-  // };
 
   return (
     <SafeAreaView
-      className="flex-1 justify-between bg-black-1 px-4"
+      className="flex-1 justify-between bg-black-1 px-4 pb-6 debug"
       edges={['top', 'bottom']}
     >
-      <View className="flex w-full items-start justify-center gap-1">
-        <View className="mb-6 flex w-full flex-row items-center justify-center gap-2">
-          <Text className="text-4xl">Welcome Nigga</Text>
-        </View>
+      <View className="w-full items-center justify-center py-6">
+        <Text className="text-center text-4xl">Welcome</Text>
       </View>
-      <View className="mb-6 w-full items-center justify-center gap-4">
+      <View className="w-full items-center justify-center gap-4">
         <View className="w-full flex-col gap-4">
           <Button
             variant={'default'}
@@ -56,15 +53,27 @@ export default function WelcomeScreen() {
             <AntDesign name="google" size={24} color="black" />
             <Text>Continue With Google</Text>
           </Button>
-          <Separator />
         </View>
+        <Separator />
 
-        <View className="flex w-full flex-row gap-4">
-          <Button variant={'secondary'} className="grow">
+        <View className="mb-6 flex w-full flex-row gap-4">
+          <Button
+            variant={'secondary'}
+            className="grow"
+            onPress={() => {
+              router.replace('/register');
+            }}
+          >
             <Text>Register</Text>
           </Button>
           <Separator orientation="vertical" />
-          <Button variant={'secondary'} className="grow">
+          <Button
+            variant={'secondary'}
+            className="grow"
+            onPress={() => {
+              router.replace('/login');
+            }}
+          >
             <Text>Login</Text>
           </Button>
         </View>
