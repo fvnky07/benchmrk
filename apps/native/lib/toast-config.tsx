@@ -5,6 +5,7 @@ import {
   InfoToast,
   ToastConfig,
 } from 'react-native-toast-message';
+import { AntDesign } from '@expo/vector-icons';
 
 export const toastConfig: ToastConfig = {
   success: (props) => (
@@ -14,6 +15,7 @@ export const toastConfig: ToastConfig = {
         borderLeftColor: '#20A885', // green-1
         backgroundColor: '#1F1F1F', // black-2
         borderLeftWidth: 5,
+        borderRadius: 8,
         height: 60,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
@@ -26,6 +28,14 @@ export const toastConfig: ToastConfig = {
         fontSize: 13,
         color: '#D1D5DB',
       }}
+      renderLeadingIcon={() => (
+        <AntDesign
+          name="check-circle"
+          size={24}
+          color="#20A885"
+          style={{ marginLeft: 15 }}
+        />
+      )}
     />
   ),
   error: (props) => (
@@ -35,6 +45,7 @@ export const toastConfig: ToastConfig = {
         borderLeftColor: '#EF4444', // destructive red
         backgroundColor: '#1F1F1F', // black-2
         borderLeftWidth: 5,
+        borderRadius: 8,
         height: 60,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
@@ -47,6 +58,14 @@ export const toastConfig: ToastConfig = {
         fontSize: 13,
         color: '#D1D5DB',
       }}
+      renderLeadingIcon={() => (
+        <AntDesign
+          name="close-circle"
+          size={24}
+          color="#EF4444"
+          style={{ marginLeft: 15 }}
+        />
+      )}
     />
   ),
   info: (props) => (
@@ -56,6 +75,7 @@ export const toastConfig: ToastConfig = {
         borderLeftColor: '#2E7FD6', // blue-1
         backgroundColor: '#1F1F1F', // black-2
         borderLeftWidth: 5,
+        borderRadius: 8,
         height: 60,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
@@ -68,6 +88,14 @@ export const toastConfig: ToastConfig = {
         fontSize: 13,
         color: '#D1D5DB',
       }}
+      renderLeadingIcon={() => (
+        <AntDesign
+          name="info-circle"
+          size={24}
+          color="#2E7FD6"
+          style={{ marginLeft: 15 }}
+        />
+      )}
     />
   ),
 };
