@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, AntDesign } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Separator } from '@/components/ui/separator';
 
 export default function WelcomeScreen() {
   // TODO: Implement password input and state
@@ -22,20 +23,48 @@ export default function WelcomeScreen() {
   // };
 
   return (
-    <SafeAreaView className="flex-1 bg-black-1 px-4" edges={['top', 'bottom']}>
+    <SafeAreaView
+      className="flex-1 justify-between bg-black-1 px-4"
+      edges={['top', 'bottom']}
+    >
       <View className="flex w-full items-start justify-center gap-1">
         <View className="mb-6 flex w-full flex-row items-center justify-center gap-2">
           <Text className="text-4xl">Welcome Nigga</Text>
         </View>
       </View>
-      <View className="flex-1" />
-      <View className="mb-6 flex w-full items-center justify-center">
+      <View className="mb-6 w-full items-center justify-center gap-4">
+        <View className="w-full flex-col gap-4">
+          <Button
+            variant={'default'}
+            className="grow"
+            onPress={() => {
+              // TODO: implement better auth apple oauth
+              console.log('APPLE sign in pressed');
+            }}
+          >
+            <AntDesign name="apple" size={24} color="black" />
+            <Text>Continue With Apple</Text>
+          </Button>
+          <Button
+            variant={'default'}
+            className="grow"
+            onPress={() => {
+              // TODO: implement better auth google oauth
+              console.log('GOOGLE sign in pressed');
+            }}
+          >
+            <AntDesign name="google" size={24} color="black" />
+            <Text>Continue With Google</Text>
+          </Button>
+          <Separator />
+        </View>
+
         <View className="flex w-full flex-row gap-4">
           <Button variant={'secondary'} className="grow">
             <Text>Register</Text>
           </Button>
-          <Button variant={'default'} className="grow">
-            <Ionicons name="mail" size={16} />
+          <Separator orientation="vertical" />
+          <Button variant={'secondary'} className="grow">
             <Text>Login</Text>
           </Button>
         </View>
