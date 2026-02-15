@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
@@ -11,7 +12,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState('');
+  const email = useAuthStore((state) => state.email);
+  const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   // TODO: Implement password input and state
@@ -94,12 +96,10 @@ export default function RegisterScreen() {
           </Button>
           <Pressable
             onPress={() => {
-              router.push('/forgot-password');
+              router.replace('/login');
             }}
           >
-            <Text className="mt-4 pl-2 text-blue-400">
-              Dont have an account?
-            </Text>
+            <Text className="mt-4 pl-2 text-blue-400">Log in instead?</Text>
           </Pressable>
         </View>
       </KeyboardAwareScrollView>

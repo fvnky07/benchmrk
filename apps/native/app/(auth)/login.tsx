@@ -87,7 +87,7 @@ export default function LoginScreen() {
           </Button>
           <Pressable
             onPress={() => {
-              router.push('/register');
+              router.replace('/register');
             }}
           >
             <Text className="mt-4 pl-2 text-blue-400">
