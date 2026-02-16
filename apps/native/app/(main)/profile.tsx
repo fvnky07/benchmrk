@@ -2,7 +2,6 @@
 import { View, StyleSheet, ScrollView } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await authClient.signOut();
-    router.replace('/(auth)/login');
+    // Route guards will automatically redirect to auth after signOut
   };
 
   return (
