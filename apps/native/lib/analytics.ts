@@ -86,4 +86,50 @@ export const analytics = {
   preferencesReset: () => {
     posthog.capture('preferences_reset', ctx());
   },
+
+  // --- Auth ---
+  loginSuccess: () => {
+    posthog.capture('login_success', ctx());
+  },
+  loginFailed: (error: string) => {
+    posthog.capture('login_failed', { error, ...ctx() });
+  },
+  signupSuccess: () => {
+    posthog.capture('signup_success', ctx());
+  },
+  signupFailed: (error: string) => {
+    posthog.capture('signup_failed', { error, ...ctx() });
+  },
+  passwordResetRequested: () => {
+    posthog.capture('password_reset_requested', ctx());
+  },
+  logout: () => {
+    posthog.capture('logout', ctx());
+  },
+
+  // --- Onboarding ---
+  profileCompleted: (hasPhoto: boolean, hasBio: boolean) => {
+    posthog.capture('profile_completed', {
+      has_photo: hasPhoto,
+      has_bio: hasBio,
+      ...ctx(),
+    });
+  },
+  profileSkipped: () => {
+    posthog.capture('profile_skipped', ctx());
+  },
+  profilePhotoUploaded: () => {
+    posthog.capture('profile_photo_uploaded', ctx());
+  },
+
+  // --- Two-Factor Authentication ---
+  twoFactorVerified: () => {
+    posthog.capture('two_factor_verified', ctx());
+  },
+  twoFactorFailed: (error: string) => {
+    posthog.capture('two_factor_failed', { error, ...ctx() });
+  },
+  twoFactorResent: () => {
+    posthog.capture('two_factor_resent', ctx());
+  },
 };

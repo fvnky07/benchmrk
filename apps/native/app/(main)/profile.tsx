@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
+import { analytics, resetAnalytics } from '@/lib/analytics';
 import { authClient } from '@/lib/auth-client';
 
 /**
@@ -21,6 +22,8 @@ export default function ProfileScreen() {
   const user = session.data?.user;
 
   const handleLogout = async () => {
+    analytics.logout();
+    resetAnalytics();
     await authClient.signOut();
     // Route guards will automatically redirect to auth after signOut
   };
