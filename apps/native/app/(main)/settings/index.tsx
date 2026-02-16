@@ -1,7 +1,5 @@
-import { api } from '@repo/backend/convex/_generated/api';
-import { useMutation, useQuery } from 'convex/react';
-import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
+
 import { ActivityIndicator, Alert, View } from 'react-native';
 
 import {
@@ -17,6 +15,10 @@ import {
   VStack,
 } from '@expo/ui/swift-ui';
 import { foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useMutation, useQuery } from 'convex/react';
+
+import { router, useFocusEffect } from 'expo-router';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -24,9 +26,7 @@ import { showToast } from '@/lib/toast';
 
 export default function SettingsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
-  const resetToDefaults = useMutation(
-    api.userPreferences.resetToDefaults
-  );
+  const resetToDefaults = useMutation(api.userPreferences.resetToDefaults);
   const [isResetting, setIsResetting] = useState(false);
 
   useFocusEffect(
@@ -64,7 +64,7 @@ export default function SettingsScreen() {
   // ----- loading -----
   if (preferences === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View className="bg-black flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
         <Text className="mt-4 text-gray-400">Loading settings…</Text>
       </View>
@@ -74,7 +74,7 @@ export default function SettingsScreen() {
   // ----- error (null = unauthenticated) -----
   if (preferences === null) {
     return (
-      <View className="flex-1 items-center justify-center bg-black px-6">
+      <View className="bg-black flex-1 items-center justify-center px-6">
         <Text className="mb-2 text-lg font-semibold text-white">
           Unable to load settings
         </Text>
@@ -109,11 +109,7 @@ export default function SettingsScreen() {
               color="#007AFF"
             />
             <Spacer />
-            <Image
-              systemName="chevron.right"
-              size={14}
-              color="#8E8E93"
-            />
+            <Image systemName="chevron.right" size={14} color="#8E8E93" />
           </HStack>
         </Section>
 
@@ -141,19 +137,13 @@ export default function SettingsScreen() {
             >
               {themeLabel}
             </SwiftText>
-            <Image
-              systemName="chevron.right"
-              size={14}
-              color="#8E8E93"
-            />
+            <Image systemName="chevron.right" size={14} color="#8E8E93" />
           </HStack>
 
           {/* Workout Settings */}
           <HStack
             spacing={12}
-            onPress={() =>
-              router.push('./workout-settings' as never)
-            }
+            onPress={() => router.push('./workout-settings' as never)}
           >
             <Label
               title="Workout Settings"
@@ -162,19 +152,13 @@ export default function SettingsScreen() {
             />
             <Spacer />
             <SwiftText color="#8E8E93">{workoutSummary}</SwiftText>
-            <Image
-              systemName="chevron.right"
-              size={14}
-              color="#8E8E93"
-            />
+            <Image systemName="chevron.right" size={14} color="#8E8E93" />
           </HStack>
 
           {/* Integrations */}
           <HStack
             spacing={12}
-            onPress={() =>
-              router.push('./integrations' as never)
-            }
+            onPress={() => router.push('./integrations' as never)}
           >
             <Label
               title="Integrations"
@@ -182,19 +166,13 @@ export default function SettingsScreen() {
               color="#5856D6"
             />
             <Spacer />
-            <Image
-              systemName="chevron.right"
-              size={14}
-              color="#8E8E93"
-            />
+            <Image systemName="chevron.right" size={14} color="#8E8E93" />
           </HStack>
 
           {/* Export & Import */}
           <HStack
             spacing={12}
-            onPress={() =>
-              router.push('./export-import' as never)
-            }
+            onPress={() => router.push('./export-import' as never)}
           >
             <Label
               title="Export & Import Data"
@@ -202,11 +180,7 @@ export default function SettingsScreen() {
               color="#34C759"
             />
             <Spacer />
-            <Image
-              systemName="chevron.right"
-              size={14}
-              color="#8E8E93"
-            />
+            <Image systemName="chevron.right" size={14} color="#8E8E93" />
           </HStack>
         </Section>
 
@@ -219,9 +193,7 @@ export default function SettingsScreen() {
               disabled={isResetting}
               onPress={handleReset}
             >
-              {isResetting
-                ? 'Resetting…'
-                : 'Reset All Settings to Defaults'}
+              {isResetting ? 'Resetting…' : 'Reset All Settings to Defaults'}
             </SwiftButton>
           </VStack>
         </Section>
