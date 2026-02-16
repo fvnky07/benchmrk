@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import { z } from 'zod';
+
 import { showToast } from '@/lib/toast';
 
 interface UseFormValidationOptions<T extends z.ZodTypeAny> {
@@ -20,12 +22,12 @@ export function useFormValidation<T extends z.ZodTypeAny>({
     if (!result.success) {
       // Convert Zod errors to field-specific object
       const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
+      for (const issue of result.error.issues) {
         const path = issue.path.join('.');
         if (!fieldErrors[path]) {
           fieldErrors[path] = issue.message;
         }
-      });
+      }
       setErrors(fieldErrors);
       return { success: false };
     }
@@ -70,12 +72,12 @@ export function useFormValidation<T extends z.ZodTypeAny>({
     if (!result.success) {
       // Convert Zod errors to field-specific object
       const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
+      for (const issue of result.error.issues) {
         const path = issue.path.join('.');
         if (!fieldErrors[path]) {
           fieldErrors[path] = issue.message;
         }
-      });
+      }
       setErrors(fieldErrors);
 
       // Show toast with first error message
@@ -83,6 +85,7 @@ export function useFormValidation<T extends z.ZodTypeAny>({
       if (firstError) {
         // TODO: show a more specific error message instead of just validation error
         showToast.error('Validation Error', firstError);
+        console.log(firstError);
       }
       return false;
     }
