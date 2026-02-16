@@ -7,6 +7,7 @@ import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { ConvexReactClient } from 'convex/react';
 import { useColorScheme } from 'nativewind';
+import { PostHogProvider } from 'posthog-react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -35,7 +36,6 @@ export default function RootLayout() {
   const { isAuthenticated, isLoading } = useAuth();
   const session = authClient.useSession();
 
-  // Identify or reset PostHog user when auth state changes
   useEffect(() => {
     if (isAuthenticated && session.data?.user) {
       const u = session.data.user;
@@ -55,26 +55,32 @@ export default function RootLayout() {
 
   return (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <SafeAreaProvider>
-        <KeyboardProvider>
-          <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* Protected routes - only accessible when authenticated */}
-              <Stack.Protected guard={isAuthenticated}>
-                <Stack.Screen name="(main)" />
-              </Stack.Protected>
-
-              {/* Public routes - only accessible when NOT authenticated */}
-              <Stack.Protected guard={!isAuthenticated}>
-                <Stack.Screen name="(auth)" />
-              </Stack.Protected>
-            </Stack>
-            <PortalHost />
-            <Toast config={toastConfig} />
-          </ThemeProvider>
-        </KeyboardProvider>
-      </SafeAreaProvider>
+      <PostHogProvider
+        apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY!}
+        options={{
+          host: process.env.EXPO_PUBLIC_POSTHOG_HOST!,
+        }}
+      >
+        <SafeAreaProvider>
+          <KeyboardProvider>
+            <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <Stack screenOptions={{ headerShown: false }}>
+                {/* Protected routes - only accessible when authenticated */}
+                <Stack.Protected guard={isAuthenticated}>
+                  <Stack.Screen name="(main)" />
+                </Stack.Protected>
+                {/* Public routes - only accessible when NOT authenticated */}
+                <Stack.Protected guard={!isAuthenticated}>
+                  <Stack.Screen name="(auth)" />
+                </Stack.Protected>
+              </Stack>
+              <PortalHost />
+              <Toast config={toastConfig} />
+            </ThemeProvider>
+          </KeyboardProvider>
+        </SafeAreaProvider>
+      </PostHogProvider>
     </ConvexBetterAuthProvider>
   );
 }
