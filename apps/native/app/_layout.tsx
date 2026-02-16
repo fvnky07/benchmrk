@@ -2,8 +2,10 @@
 import '../global.css';
 import React from 'react';
 
+import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
+import { ConvexReactClient } from 'convex/react';
 import { useColorScheme } from 'nativewind';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,23 +15,20 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { SplashScreen } from '@/components/SplashScreen';
+import { authClient } from '@/lib/auth-client';
 import { NAV_THEME } from '@/lib/theme';
 import { toastConfig } from '@/lib/toast-config';
 import { useAuth } from '@/lib/useAuth';
 
-/**
- * Root Layout with authentication-based routing
- *
- * Flow:
- * 1. Show SplashScreen while checking auth state
- * 2. If authenticated → show (main) group (tabs navigation)
- * 3. If not authenticated → show (auth) group (login/register)
- *
- * TODO: When integrating Better Auth + Convex:
- * - Update useAuth hook to use real auth state
- * - Add session persistence
- * - Handle token refresh
- */
+const convex = new ConvexReactClient(
+  process.env.EXPO_PUBLIC_CONVEX_URL as string,
+  {
+    // Optionally pause queries until the user is authenticated
+    expectAuth: true,
+    unsavedChangesWarning: false,
+  }
+);
+
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const { isAuthenticated, isLoading } = useAuth();
@@ -40,25 +39,27 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <KeyboardProvider>
-        <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* Protected routes - only accessible when authenticated */}
-            <Stack.Protected guard={isAuthenticated}>
-              <Stack.Screen name="(main)" />
-            </Stack.Protected>
+    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+      <SafeAreaProvider>
+        <KeyboardProvider>
+          <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <Stack screenOptions={{ headerShown: false }}>
+              {/* Protected routes - only accessible when authenticated */}
+              <Stack.Protected guard={isAuthenticated}>
+                <Stack.Screen name="(main)" />
+              </Stack.Protected>
 
-            {/* Public routes - only accessible when NOT authenticated */}
-            <Stack.Protected guard={!isAuthenticated}>
-              <Stack.Screen name="(auth)" />
-            </Stack.Protected>
-          </Stack>
-          <PortalHost />
-          <Toast config={toastConfig} />
-        </ThemeProvider>
-      </KeyboardProvider>
-    </SafeAreaProvider>
+              {/* Public routes - only accessible when NOT authenticated */}
+              <Stack.Protected guard={!isAuthenticated}>
+                <Stack.Screen name="(auth)" />
+              </Stack.Protected>
+            </Stack>
+            <PortalHost />
+            <Toast config={toastConfig} />
+          </ThemeProvider>
+        </KeyboardProvider>
+      </SafeAreaProvider>
+    </ConvexBetterAuthProvider>
   );
 }
