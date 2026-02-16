@@ -223,7 +223,7 @@ export default function CreateProfileScreen() {
 
 					{/* Profile Picture */}
 					<View className="flex items-center justify-center gap-4">
-						<Avatar className="size-32">
+						<Avatar alt="Profile picture" className="size-32">
 							{imageUri ? (
 								<AvatarImage source={{ uri: imageUri }} />
 							) : (
