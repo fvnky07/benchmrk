@@ -32,7 +32,7 @@ export const toastConfig: ToastConfig = {
         <AntDesign
           name="check-circle"
           size={24}
-          color="#20A885"
+          color="#00ff90"
           style={{ marginLeft: 15 }}
         />
       )}

@@ -2,7 +2,8 @@
 // NOTE: Client component for welcome page with Motion animations
 'use client';
 
-import { useSession } from '@/lib/auth-client';
+import Link from 'next/link';
+
 import {
   Sparkles,
   Trophy,
@@ -14,21 +15,22 @@ import {
   Twitter,
   CheckCircle2,
 } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import GridPattern from '@/components/ui/grid-pattern';
 import { motion } from 'motion/react';
+
 import { FadeInView } from '@/components/animations/FadeInView';
 import {
   StaggerChildren,
   StaggerItem,
 } from '@/components/animations/StaggerChildren';
+import { Button } from '@/components/ui/button';
+import GridPattern from '@/components/ui/grid-pattern';
 import {
   bounceInVariants,
   fadeInVariants,
   scaleInVariants,
   EASE,
 } from '@/lib/animation-config';
+import { useSession } from '@/lib/auth-client';
 
 export default function WelcomeContent() {
   // NOTE: Get session from Better Auth client
@@ -178,7 +180,7 @@ export default function WelcomeContent() {
         {/* NOTE: CTA buttons stagger in */}
         <StaggerChildren
           staggerDelay={0.12}
-          initialDelay={1.0}
+          initialDelay={1}
           onLoad
           className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
         >

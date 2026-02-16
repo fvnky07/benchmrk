@@ -1,5 +1,6 @@
 // NOTE: Custom MDX components for rendering
 import type { MDXComponents } from 'mdx/types';
+
 import {
   Accordion,
   AccordionContent,

@@ -2,9 +2,11 @@
 // NOTE: Scroll-triggered fade/slide wrapper using motion + useInView
 'use client';
 
-import { motion, useInView } from 'motion/react';
 import { useRef } from 'react';
+
+import { motion, useInView } from 'motion/react';
 import type { Variants } from 'motion/react';
+
 import { DURATION, EASE } from '@/lib/animation-config';
 
 interface FadeInViewProps {

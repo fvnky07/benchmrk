@@ -3,7 +3,9 @@
 
 import { useState } from 'react';
 import type { HTMLAttributes } from 'react';
+
 import Image from 'next/image';
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PHONE_WIDTH = 433;

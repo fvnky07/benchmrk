@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+
 import { cn } from '@/lib/utils';
 
 export interface DotPatternProps {

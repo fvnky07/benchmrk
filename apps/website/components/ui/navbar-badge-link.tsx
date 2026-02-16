@@ -3,10 +3,12 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+
 import { motion } from 'motion/react';
+
+import { Badge } from '@/components/ui/badge';
 import { EASE } from '@/lib/animation-config';
+import { cn } from '@/lib/utils';
 
 interface NavbarBadgeLinkProps {
   href: string;

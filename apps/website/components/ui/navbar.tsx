@@ -2,9 +2,15 @@
 
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
+
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
+import { motion } from 'motion/react';
+
 import { Button } from '@/components/ui/button';
+import { NavbarBadgeLink } from '@/components/ui/navbar-badge-link';
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -15,11 +21,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
-import { motion } from 'motion/react';
 import { EASE } from '@/lib/animation-config';
-import { NavbarBadgeLink } from '@/components/ui/navbar-badge-link';
+import { cn } from '@/lib/utils';
 
 // Simple logo component for the navbar
 const Logo = (props: React.SVGProps<SVGSVGElement>) => {
@@ -480,14 +483,14 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                 e.preventDefault();
                 // NOTE: Default behavior - scroll to waitlist + focus input
                 // If on different page, navigate to home with hash
-                const section = document.getElementById('waitlist');
+                const section = document.querySelector('#waitlist');
                 if (section) {
                   section.scrollIntoView({ behavior: 'smooth' });
                   setTimeout(() => {
-                    document.getElementById('input-button-group')?.focus();
+                    document.querySelector('#input-button-group')?.focus();
                   }, 500);
                 } else {
-                  window.location.href = '/#waitlist';
+                  globalThis.location.href = '/#waitlist';
                 }
               }}
               size="sm"

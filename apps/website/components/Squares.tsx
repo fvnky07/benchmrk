@@ -78,7 +78,7 @@ const Squares: React.FC<SquaresProps> = ({
         0,
         canvas.width / 2,
         canvas.height / 2,
-        Math.sqrt(canvas.width ** 2 + canvas.height ** 2) / 2
+        Math.hypot(canvas.width, canvas.height) / 2
       );
       gradient.addColorStop(0, 'rgba(0,0,0,0)');
       gradient.addColorStop(1, 'rgba(0,0,0,0)');
@@ -90,30 +90,36 @@ const Squares: React.FC<SquaresProps> = ({
     const updateAnimation = () => {
       const effectiveSpeed = Math.max(speed, 0.1);
       switch (direction) {
-        case 'right':
+        case 'right': {
           gridOffset.current.x =
             (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize;
           break;
-        case 'left':
+        }
+        case 'left': {
           gridOffset.current.x =
             (gridOffset.current.x + effectiveSpeed + squareSize) % squareSize;
           break;
-        case 'up':
+        }
+        case 'up': {
           gridOffset.current.y =
             (gridOffset.current.y + effectiveSpeed + squareSize) % squareSize;
           break;
-        case 'down':
+        }
+        case 'down': {
           gridOffset.current.y =
             (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize;
           break;
-        case 'diagonal':
+        }
+        case 'diagonal': {
           gridOffset.current.x =
             (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize;
           gridOffset.current.y =
             (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize;
           break;
-        default:
+        }
+        default: {
           break;
+        }
       }
 
       drawGrid();
