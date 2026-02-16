@@ -2,8 +2,11 @@
 import { View, StyleSheet, ScrollView } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Profile screen
@@ -12,10 +15,17 @@ import { Text } from '@/components/ui/text';
  * TODO: Implement profile functionality:
  * - User information display
  * - Settings
- * - Logout button (when auth is integrated)
  * - Account management
  */
 export default function ProfileScreen() {
+  const session = authClient.useSession();
+  const user = session.data?.user;
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.replace('/(auth)/login');
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -35,10 +45,16 @@ export default function ProfileScreen() {
           <Text variant="h3" className="mb-2 text-card-foreground">
             User Info
           </Text>
-          <Text variant="p" className="text-muted-foreground">
-            User profile information will appear here once Better Auth is
-            integrated.
-          </Text>
+          {user?.email && (
+            <Text variant="p" className="text-muted-foreground">
+              Email: {user.email}
+            </Text>
+          )}
+          {user?.name && (
+            <Text variant="p" className="mt-2 text-muted-foreground">
+              Name: {user.name}
+            </Text>
+          )}
         </View>
 
         <View style={styles.card} className="mt-4 rounded-2xl bg-card p-6">
@@ -51,9 +67,16 @@ export default function ProfileScreen() {
           <Text variant="p" className="mt-2 text-muted-foreground">
             • Preferences
           </Text>
-          <Text variant="p" className="mt-2 text-muted-foreground">
-            • Logout (coming soon)
-          </Text>
+        </View>
+
+        <View className="mt-6">
+          <Button
+            variant="destructive"
+            onPress={handleLogout}
+            className="w-full"
+          >
+            <Text>Logout</Text>
+          </Button>
         </View>
       </ScrollView>
     </SafeAreaView>
