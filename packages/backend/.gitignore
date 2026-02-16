@@ -1,2 +1,11 @@
-
 .env.local
+
+# Convex generated files
+convex/_generated/
+convex/**/_generated/
+**/_generated/
+
+# Convex cache and config
+.convexrc.json
+.convex/
+.convex-esbuild-cache/

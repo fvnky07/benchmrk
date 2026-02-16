@@ -73,8 +73,21 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     baseURL: siteUrl,
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
-    trustedOrigins: ['https://benchmrk.app', 'http://localhost:3000'],
+    trustedOrigins: [
+      'https://benchmrk.app',
+      'http://localhost:3000',
+      'native://',
+      // TODO: apparently dont use the following in prod:
+      ...(process.env.NODE_ENV === 'development'
+        ? [
+            'exp://', // Trust all Expo URLs (prefix matching)
+            'exp://**', // Trust all Expo URLs (wildcard matching)
+            'exp://192.168.*.*:*/**', // Trust 192.168.x.x IP range with any port and path
+          ]
+        : []),
+    ],
     emailAndPassword: {
+      requireEmailVerification: false,
       enabled: true,
     },
     // Custom user fields for premium tracking

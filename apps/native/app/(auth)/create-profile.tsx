@@ -343,7 +343,7 @@ export default function CreateProfileScreen() {
 							<ActivityIndicator size="small" color="black" />
 						) : (
 							<>
-								<Text>{isSubmitting ? "Creating..." : "Complete Profile"}</Text>
+								<Text>Complete Profile</Text>
 								<Feather name="arrow-right" size={24} color="black" />
 							</>
 						)}
