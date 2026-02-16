@@ -20,6 +20,7 @@ import { Text } from "@/components/ui/text";
 import { authClient } from "@/lib/auth-client";
 import { useFormValidation } from "@/lib/hooks/use-form-validation";
 import { profileSchema } from "@/lib/schemas/auth-schemas";
+import { analytics } from "@/lib/analytics";
 import { showToast } from "@/lib/toast";
 
 export default function CreateProfileScreen() {
@@ -113,6 +114,7 @@ export default function CreateProfileScreen() {
 			const json = (await result.json()) as { storageId: string };
 			setImageStorageId(json.storageId);
 
+			analytics.profilePhotoUploaded();
 			showToast.success(
 				"Image uploaded",
 				"Profile picture uploaded successfully",
@@ -151,6 +153,7 @@ export default function CreateProfileScreen() {
 					imageStorageId: imageStorageId || undefined,
 				});
 
+				analytics.profileCompleted(!!imageStorageId, !!bio);
 				// Navigate to main app index
 				setTimeout(() => {
 					router.replace("/(main)");
@@ -185,6 +188,7 @@ export default function CreateProfileScreen() {
 				username: autoUsername,
 			});
 
+			analytics.profileSkipped();
 			// Navigate to main app index
 			setTimeout(() => {
 				router.replace("/(main)");

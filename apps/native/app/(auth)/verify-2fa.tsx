@@ -13,6 +13,7 @@ import { PinInput } from '@/components/ui/pin-input';
 import { Text } from '@/components/ui/text';
 import { twoFactorSchema } from '@/lib/schemas/auth-schemas';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { analytics } from '@/lib/analytics';
 import { showToast } from '@/lib/toast';
 
 const RESEND_COOLDOWN = 60;
@@ -86,16 +87,17 @@ export default function VerifyTwoFactorScreen() {
           throw new Error('Invalid or expired code');
         }
 
+        analytics.twoFactorVerified();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showToast.success('Verified!', 'Code verified successfully');
         router.replace('/');
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Invalid or expired code';
+        analytics.twoFactorFailed(errorMessage);
         setHasError(true);
         clearCode();
-        showToast.error(
-          'Verification Failed',
-          error instanceof Error ? error.message : 'Invalid or expired code'
-        );
+        showToast.error('Verification Failed', errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -125,6 +127,7 @@ export default function VerifyTwoFactorScreen() {
       // TODO: Replace with actual resend code API call
       console.log('Resending 2FA code to:', email);
 
+      analytics.twoFactorResent();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       showToast.success('Code Sent', 'Check your email for a new code');
       startCountdown();

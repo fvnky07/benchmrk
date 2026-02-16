@@ -17,4 +17,33 @@ export default defineSchema({
   })
     .index('by_email', ['email'])
     .index('by_position', ['position']),
+
+  // NOTE: User preferences — one row per user, lazily created
+  // on first settings access with smart defaults
+  user_preferences: defineTable({
+    userId: v.string(),
+
+    // Appearance
+    theme: v.union(
+      v.literal('light'),
+      v.literal('dark'),
+      v.literal('system')
+    ),
+
+    // Workout — general
+    defaultRestTimer: v.number(),
+    weightUnit: v.union(v.literal('kg'), v.literal('lbs')),
+
+    // Workout — tracking
+    autoSaveWorkouts: v.boolean(),
+    syncToCloud: v.boolean(),
+
+    // Integrations
+    appleHealthEnabled: v.boolean(),
+    stravaEnabled: v.boolean(),
+
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
 });

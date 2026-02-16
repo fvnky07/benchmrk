@@ -14,6 +14,7 @@ import { authClient } from "@/lib/auth-client";
 import { useFormValidation } from "@/lib/hooks/use-form-validation";
 import { loginSchema } from "@/lib/schemas/auth-schemas";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { analytics } from "@/lib/analytics";
 import { showToast } from "@/lib/toast";
 
 export default function LoginScreen() {
@@ -40,15 +41,16 @@ export default function LoginScreen() {
 
 				// Successfully logged in, navigate to main app index
 				if (result.data) {
+					analytics.loginSuccess();
 					setTimeout(() => {
 						router.replace("/(main)");
 					}, 100);
 				}
 			} catch (error) {
-				showToast.error(
-					"Login failed",
-					error instanceof Error ? error.message : "Invalid credentials",
-				);
+				const errorMessage =
+					error instanceof Error ? error.message : "Invalid credentials";
+				analytics.loginFailed(errorMessage);
+				showToast.error("Login failed", errorMessage);
 				// Clear password on error
 				setPassword("");
 			} finally {

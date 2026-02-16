@@ -14,6 +14,7 @@ import { authClient } from "@/lib/auth-client";
 import { useFormValidation } from "@/lib/hooks/use-form-validation";
 import { registerSchema } from "@/lib/schemas/auth-schemas";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { analytics } from "@/lib/analytics";
 import { showToast } from "@/lib/toast";
 
 export default function RegisterScreen() {
@@ -49,13 +50,14 @@ export default function RegisterScreen() {
 					name: email.split("@")[0],
 				});
 
+				analytics.signupSuccess();
 				// Navigate to profile creation
 				router.push("/create-profile");
 			} catch (error) {
-				showToast.error(
-					"Sign up failed",
-					error instanceof Error ? error.message : "Invalid credentials",
-				);
+				const errorMessage =
+					error instanceof Error ? error.message : "Invalid credentials";
+				analytics.signupFailed(errorMessage);
+				showToast.error("Sign up failed", errorMessage);
 				resetPasswords();
 				setEmail("");
 			} finally {
