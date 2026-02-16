@@ -16,6 +16,7 @@ import { Text } from '@/components/ui/text';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { forgotPasswordSchema } from '@/lib/schemas/auth-schemas';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { analytics } from '@/lib/analytics';
 import { showToast } from '@/lib/toast';
 
 export default function ForgotPasswordScreen() {
@@ -32,6 +33,7 @@ export default function ForgotPasswordScreen() {
       try {
         // TODO: Implement password reset with Better Auth
         console.log('Sending password reset to:', data.email);
+        analytics.passwordResetRequested();
         showToast.success('Check your email!', 'Password reset link sent');
         router.push('/login');
       } catch (error) {

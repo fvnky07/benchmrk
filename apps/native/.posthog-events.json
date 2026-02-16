@@ -1,0 +1,62 @@
+[
+  {
+    "event_name": "login_success",
+    "description": "User successfully logged in with email/password",
+    "file_path": "app/(auth)/login.tsx"
+  },
+  {
+    "event_name": "login_failed",
+    "description": "User login attempt failed with error",
+    "file_path": "app/(auth)/login.tsx"
+  },
+  {
+    "event_name": "signup_success",
+    "description": "User successfully registered a new account",
+    "file_path": "app/(auth)/register.tsx"
+  },
+  {
+    "event_name": "signup_failed",
+    "description": "User signup attempt failed with error",
+    "file_path": "app/(auth)/register.tsx"
+  },
+  {
+    "event_name": "password_reset_requested",
+    "description": "User requested a password reset email",
+    "file_path": "app/(auth)/forgot-password.tsx"
+  },
+  {
+    "event_name": "profile_completed",
+    "description": "User completed their profile setup with username and optional photo/bio",
+    "file_path": "app/(auth)/create-profile.tsx"
+  },
+  {
+    "event_name": "profile_skipped",
+    "description": "User skipped profile setup during onboarding",
+    "file_path": "app/(auth)/create-profile.tsx"
+  },
+  {
+    "event_name": "profile_photo_uploaded",
+    "description": "User uploaded a profile photo during onboarding",
+    "file_path": "app/(auth)/create-profile.tsx"
+  },
+  {
+    "event_name": "two_factor_verified",
+    "description": "User successfully verified 2FA code",
+    "file_path": "app/(auth)/verify-2fa.tsx"
+  },
+  {
+    "event_name": "two_factor_failed",
+    "description": "User 2FA verification failed",
+    "file_path": "app/(auth)/verify-2fa.tsx"
+  },
+  {
+    "event_name": "two_factor_resent",
+    "description": "User requested a new 2FA code",
+    "file_path": "app/(auth)/verify-2fa.tsx"
+  },
+  {
+    "event_name": "logout",
+    "description": "User logged out of the app",
+    "file_path": "app/(main)/profile.tsx"
+  }
+]
