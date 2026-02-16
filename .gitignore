@@ -42,5 +42,8 @@ yarn-error.log*
 
 # Convex generated files
 **/convex/_generated/
-**/convex/**/convex.config.ts
+**/convex/**/_generated/
 **/.convexrc.json
+
+# Convex build artifacts
+.convex/
