@@ -10,6 +10,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
+
 import type {
   GlobalOptions as ConfettiGlobalOptions,
   CreateTypes as ConfettiInstance,
@@ -47,17 +48,17 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
 
   const canvasRef = useCallback(
     (node: HTMLCanvasElement) => {
-      if (node !== null) {
+      if (node === null) {
+        if (instanceRef.current) {
+          instanceRef.current.reset();
+          instanceRef.current = null;
+        }
+      } else {
         if (instanceRef.current) return;
         instanceRef.current = confetti.create(node, {
           ...globalOptions,
           resize: true,
         });
-      } else {
-        if (instanceRef.current) {
-          instanceRef.current.reset();
-          instanceRef.current = null;
-        }
       }
     },
     [globalOptions]

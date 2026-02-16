@@ -1,9 +1,10 @@
 'use client';
 
+import Image from 'next/image';
+
 import Hero from '@/components/sections/landing/hero';
 import WaitingList from '@/components/sections/landing/waiting-list';
 import { FloatingNavbar } from '@/components/ui/floating-navbar';
-import Image from 'next/image';
 import LogoSvg from '@/public/logo-dark.svg';
 
 export default function LandingPage() {

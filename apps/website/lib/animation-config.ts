@@ -21,7 +21,7 @@ export const DURATION = {
   fast: 0.3,
   normal: 0.5,
   slow: 0.8,
-  slower: 1.0,
+  slower: 1,
   slowest: 1.2,
 };
 

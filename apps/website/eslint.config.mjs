@@ -1,20 +1,15 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
-import nextVitals from 'eslint-config-next/core-web-vitals';
-import nextTs from 'eslint-config-next/typescript';
+import { nextJsConfig } from '@repo/eslint-config/next-js';
+import { globalIgnores } from 'eslint/config';
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
+const eslintConfig = [
+  ...nextJsConfig,
   globalIgnores([
-    // Default ignores of eslint-config-next:
     '.next/**',
     'out/**',
     'build/**',
     'next-env.d.ts',
-    // Auto-generated fumadocs files:
-    '.source/**',
+    '.source/**', // fumadocs auto-generated files
   ]),
-]);
+];
 
 export default eslintConfig;

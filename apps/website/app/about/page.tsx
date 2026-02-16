@@ -1,12 +1,14 @@
 'use client';
-import { FloatingNavbar } from '@/components/ui/floating-navbar';
-import { GitFork, ArrowUpRight, Github, Twitter, Clock } from 'lucide-react';
 import Image from 'next/image';
-import LogoSvg from '@/public/logo-dark.svg';
-import { Separator } from '@/components/ui/separator';
+
+import { GitFork, ArrowUpRight, Github, Twitter, Clock } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { FloatingNavbar } from '@/components/ui/floating-navbar';
+import { Separator } from '@/components/ui/separator';
+import LogoSvg from '@/public/logo-dark.svg';
 
 export default function AboutPage() {
   return (

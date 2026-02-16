@@ -1,17 +1,20 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
   TextInput,
-  View,
   type NativeSyntheticEvent,
   type TextInputKeyPressEventData,
 } from 'react-native';
+
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+
 import * as Haptics from 'expo-haptics';
+
 import { cn } from '@/lib/utils';
 
 const PIN_LENGTH = 6;
@@ -80,11 +83,11 @@ function PinInput({
 
     // Handle paste: if text is longer than 1 char
     if (text.length > 1) {
-      const digits = text.replace(/\D/g, '').slice(0, PIN_LENGTH);
+      const digits = text.replaceAll(/\D/g, '').slice(0, PIN_LENGTH);
       const newValue = [...value];
-      for (let i = 0; i < digits.length; i++) {
+      for (const [i, digit_] of digits.entries()) {
         if (index + i < PIN_LENGTH) {
-          newValue[index + i] = digits[i];
+          newValue[index + i] = digit_;
         }
       }
       onChange(newValue);
@@ -105,7 +108,7 @@ function PinInput({
     }
 
     // Single digit entry
-    const digit = text.replace(/\D/g, '').slice(0, 1);
+    const digit = text.replaceAll(/\D/g, '').slice(0, 1);
     const newValue = [...value];
     newValue[index] = digit;
     onChange(newValue);

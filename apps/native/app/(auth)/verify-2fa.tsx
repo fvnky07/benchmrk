@@ -1,16 +1,19 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import { ActivityIndicator, Pressable, View } from 'react-native';
+
+import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 
 import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
 import { PinInput } from '@/components/ui/pin-input';
-import { useAuthStore } from '@/lib/stores/auth-store';
+import { Text } from '@/components/ui/text';
 import { twoFactorSchema } from '@/lib/schemas/auth-schemas';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import { showToast } from '@/lib/toast';
-import { Feather } from '@expo/vector-icons';
 
 const RESEND_COOLDOWN = 60;
 const EMPTY_CODE = ['', '', '', '', '', ''];

@@ -2,9 +2,11 @@
 // NOTE: Stagger wrapper — animates children one after another
 'use client';
 
-import { motion, useInView } from 'motion/react';
 import { useRef } from 'react';
+
+import { motion, useInView } from 'motion/react';
 import type { Variants } from 'motion/react';
+
 import { EASE } from '@/lib/animation-config';
 
 interface StaggerChildrenProps {

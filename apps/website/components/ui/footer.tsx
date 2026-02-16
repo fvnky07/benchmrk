@@ -2,11 +2,15 @@
 'use client';
 
 import * as React from 'react';
+
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { Separator } from '@radix-ui/react-separator';
+
 import { cn } from '@/lib/utils';
 import LogoSvg from '@/public/logo.svg';
-import { Separator } from '@radix-ui/react-separator';
+
 import { Button } from './button';
 import { DotPattern } from './dot-pattern';
 

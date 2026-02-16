@@ -4,7 +4,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
 import { motion, AnimatePresence } from 'motion/react';
+
 import { cn } from '@/lib/utils';
 
 interface RotatingTextProps {
@@ -58,7 +60,7 @@ export default function RotatingText({
       const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
       return Array.from(segmenter.segment(text), (segment) => segment.segment);
     }
-    return Array.from(text);
+    return [...text];
   }, []);
 
   // NOTE: Split current text into words and characters
@@ -81,13 +83,16 @@ export default function RotatingText({
     (charIndex: number) => {
       const total = totalChars;
       switch (staggerFrom) {
-        case 'last':
+        case 'last': {
           return (total - 1 - charIndex) * staggerDuration;
-        case 'center':
+        }
+        case 'center': {
           return Math.abs(Math.floor(total / 2) - charIndex) * staggerDuration;
+        }
         case 'first':
-        default:
+        default: {
           return charIndex * staggerDuration;
+        }
       }
     },
     [staggerFrom, staggerDuration, totalChars]
