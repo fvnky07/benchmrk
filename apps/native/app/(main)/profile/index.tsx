@@ -2,13 +2,12 @@ import { ScrollView, View } from 'react-native';
 
 import { useColorScheme } from 'nativewind';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Text } from '@/components/ui/text';
-
 import { HeatmapPlaceholder } from '@/components/profile/HeatmapPlaceholder';
 import { StatisticsCard } from '@/components/profile/StatisticsCard';
 import { UserStatsRow } from '@/components/profile/UserStatsRow';
-import { authClient } from '@/lib/auth-client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Text } from '@/components/ui/text';
+import { authClient } from '@/lib/auth';
 
 // TODO: Replace with real Convex useQuery data
 const PLACEHOLDER_STATS = {
@@ -57,10 +56,8 @@ export default function ProfileScreen() {
       {/* ── Row 1: Avatar + Username + Stats ── */}
       <View className="flex-row items-center px-4 pt-4">
         {/* Left column: Avatar */}
-        <Avatar className="size-20" alt={`${username}'s avatar`}>
-          {avatarUrl ? (
-            <AvatarImage source={{ uri: avatarUrl }} />
-          ) : null}
+        <Avatar className="size-20 rounded-md" alt={`${username}'s avatar`}>
+          {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
           <AvatarFallback>
             <Text className="text-lg font-semibold text-foreground">
               {initials}

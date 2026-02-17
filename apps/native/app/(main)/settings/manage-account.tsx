@@ -17,7 +17,7 @@ import { foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/lib/auth';
 
 export default function ManageAccountScreen() {
   const session = authClient.useSession();

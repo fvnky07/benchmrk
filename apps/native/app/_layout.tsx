@@ -17,10 +17,10 @@ import { StatusBar } from 'expo-status-bar';
 
 import { SplashScreen } from '@/components/SplashScreen';
 import { identifyUser, resetAnalytics } from '@/lib/analytics';
-import { authClient } from '@/lib/auth-client';
-import { NAV_THEME } from '@/lib/theme';
+import { authClient } from '@/lib/auth';
+import { NAV_THEME } from '@/lib/ui';
 import { toastConfig } from '@/lib/toast-config';
-import { useAuth } from '@/lib/useAuth';
+import { useAuth } from '@/lib/auth';
 
 const convex = new ConvexReactClient(
   process.env.EXPO_PUBLIC_CONVEX_URL as string,

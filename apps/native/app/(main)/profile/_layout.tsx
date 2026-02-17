@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/lib/auth';
 
 /**
  * Profile tab layout

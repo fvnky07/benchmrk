@@ -35,13 +35,13 @@ export default function MainLayout() {
           <Icon sf="magnifyingglass" />
           <Label>Explore</Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="settings">
-          <Icon sf="gearshape.fill" />
-          <Label>Settings</Label>
-        </NativeTabs.Trigger>
         <NativeTabs.Trigger name="profile">
           <Icon sf="person.fill" />
           <Label>Profile</Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="settings">
+          <Icon sf="gearshape.fill" />
+          <Label>Settings</Label>
         </NativeTabs.Trigger>
       </NativeTabs>
     </ThemeProvider>

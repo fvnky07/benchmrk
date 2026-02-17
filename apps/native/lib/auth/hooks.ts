@@ -1,5 +1,5 @@
 // Auth hook using Better Auth session
-import { authClient } from "./auth-client";
+import { authClient } from "./client";
 
 interface UseAuthReturn {
 	isAuthenticated: boolean;

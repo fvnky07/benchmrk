@@ -17,7 +17,7 @@ import { padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
-import { showToast } from '@/lib/toast';
+import { showToast } from '@/lib/ui';
 
 type Theme = 'light' | 'dark' | 'system';
 
