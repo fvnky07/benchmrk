@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Pressable } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 
@@ -32,17 +32,17 @@ export default function ExportImportScreen() {
       <View className="mt-6">
         <Text className="px-4 pb-2 text-xs font-semibold text-white/60">EXPORT</Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <TouchableOpacity
+          <Pressable
             className="h-14 flex-row items-center px-4"
             onPress={handleExport}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="cloud-upload-outline" size={24} color="#007AFF" />
             <View className="ml-3 flex-1">
               <Text className="text-base text-white">Export All Data</Text>
             </View>
             <Text className="text-sm text-gray-500">Coming soon</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View className="border-t border-gray-800 px-4 py-3">
             <Text className="text-xs leading-5 text-gray-400">
@@ -56,17 +56,17 @@ export default function ExportImportScreen() {
       <View className="mt-6 pb-8">
         <Text className="px-4 pb-2 text-xs font-semibold text-white/60">IMPORT</Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <TouchableOpacity
+          <Pressable
             className="h-14 flex-row items-center px-4"
             onPress={handleImport}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="cloud-download-outline" size={24} color={iconColor} />
             <View className="ml-3 flex-1">
               <Text className="text-base text-white">Import Data</Text>
             </View>
             <Text className="text-sm text-gray-500">Coming soon</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View className="border-t border-gray-800 px-4 py-3">
             <Text className="text-xs leading-5 text-gray-400">
