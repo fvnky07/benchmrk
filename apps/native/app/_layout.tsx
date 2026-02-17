@@ -30,20 +30,18 @@ const convex = new ConvexReactClient(
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
-  const { isAuthenticated, isLoading } = useAuth();
-  const session = authClient.useSession();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated && session.data?.user) {
-      const u = session.data.user;
-      identifyUser(u.id, {
-        email: u.email ?? '',
-        name: u.name ?? '',
+    if (isAuthenticated && user) {
+      identifyUser(user.id, {
+        email: user.email ?? '',
+        name: user.name ?? '',
       });
     } else if (!isAuthenticated && !isLoading) {
       resetAnalytics();
     }
-  }, [isAuthenticated, isLoading, session.data?.user]);
+  }, [isAuthenticated, isLoading, user]);
 
   // Show splash screen while determining auth state
   if (isLoading) {

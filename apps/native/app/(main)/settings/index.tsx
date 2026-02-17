@@ -86,7 +86,9 @@ export default function SettingsScreen() {
   const themeLabel =
     preferences.theme === 'system'
       ? 'System'
-      : (preferences.theme === 'light' ? 'Light' : 'Dark');
+      : preferences.theme === 'light'
+        ? 'Light'
+        : 'Dark';
 
   const workoutSummary = `Rest ${preferences.defaultRestTimer}s · ${preferences.weightUnit.toUpperCase()}`;
 
