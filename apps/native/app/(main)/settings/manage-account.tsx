@@ -1,5 +1,5 @@
-import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+
 import { ActivityIndicator, Alert, View } from 'react-native';
 
 import {
@@ -15,10 +15,12 @@ import {
 } from '@expo/ui/swift-ui';
 import { foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 
+import { useFocusEffect } from 'expo-router';
+
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
-import { useUserProfile } from '@/lib/hooks/use-user-profile';
 import { authClient } from '@/lib/auth';
+import { useUserProfile } from '@/lib/hooks/use-user-profile';
 
 export default function ManageAccountScreen() {
   const { user } = useUserProfile();

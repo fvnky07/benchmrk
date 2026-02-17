@@ -1,27 +1,31 @@
-import { Feather } from '@expo/vector-icons';
-import { api } from '@repo/backend/convex/_generated/api';
-import { useMutation, useQuery } from 'convex/react';
-import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
 import React, { useState } from 'react';
+
 import {
   ActivityIndicator,
   Pressable,
   TextInput as RNTextInput,
   View,
 } from 'react-native';
+
+import { Feather } from '@expo/vector-icons';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useMutation, useQuery } from 'convex/react';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { useFormValidation } from '@/lib/hooks/use-form-validation';
-import { profileSchema } from '@/lib/schemas/auth';
 import { analytics } from '@/lib/analytics';
-import { showToast } from '@/lib/ui';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
+import { profileSchema } from '@/lib/schemas/auth';
+import { showToast } from '@/lib/ui';
 
 export default function CreateProfileScreen() {
   const [username, setUsername] = useState('');
@@ -205,7 +209,7 @@ export default function CreateProfileScreen() {
 
   const getInitials = () => {
     const name = (user?.name as string) || (user?.email as string) || '?';
-    return name.substring(0, 2).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
   const isUsernameAvailable = checkUsername === true;

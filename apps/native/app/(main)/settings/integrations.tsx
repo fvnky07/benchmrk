@@ -1,7 +1,5 @@
-import { api } from '@repo/backend/convex/_generated/api';
-import { useMutation, useQuery } from 'convex/react';
-import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
+
 import { ActivityIndicator, View } from 'react-native';
 
 import {
@@ -16,6 +14,10 @@ import {
   VStack,
 } from '@expo/ui/swift-ui';
 import { padding } from '@expo/ui/swift-ui/modifiers';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useMutation, useQuery } from 'convex/react';
+
+import { useFocusEffect } from 'expo-router';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';

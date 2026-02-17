@@ -11,9 +11,9 @@ import { router } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { PinInput } from '@/components/ui/pin-input';
 import { Text } from '@/components/ui/text';
-import { twoFactorSchema } from '@/lib/schemas/auth-schemas';
-import { useAuthStore } from '@/lib/stores/auth-store';
 import { analytics } from '@/lib/analytics';
+import { useAuthStore } from '@/lib/auth';
+import { twoFactorSchema } from '@/lib/schemas/auth';
 import { showToast } from '@/lib/ui';
 
 const RESEND_COOLDOWN = 60;

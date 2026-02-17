@@ -1,4 +1,3 @@
-import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 
 import {
@@ -12,6 +11,8 @@ import {
   VStack,
 } from '@expo/ui/swift-ui';
 import { foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+
+import { useFocusEffect } from 'expo-router';
 
 import { analytics } from '@/lib/analytics';
 
