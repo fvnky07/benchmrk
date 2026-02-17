@@ -1,22 +1,10 @@
 import { useCallback, useState } from 'react';
 
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, View, ScrollView, TouchableOpacity } from 'react-native';
 
-import {
-  Button as SwiftButton,
-  Host,
-  HStack,
-  Image,
-  Label,
-  List,
-  Section,
-  Spacer,
-  Text as SwiftText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
+import { Ionicons } from '@expo/vector-icons';
 
 import { router, useFocusEffect } from 'expo-router';
 
@@ -95,114 +83,90 @@ export default function SettingsScreen() {
   const workoutSummary = `Rest ${preferences.defaultRestTimer}s · ${preferences.weightUnit.toUpperCase()}`;
 
   return (
-    <Host style={{ flex: 1 }}>
-      <List listStyle="insetGrouped">
-        {/* ---- Profile ---- */}
-        <Section title="PROFILE">
-          <HStack 
-            spacing={0} 
+    <ScrollView className="flex-1 bg-[#000000]">
+      {/* Profile Section */}
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-gray-500">PROFILE</Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          <TouchableOpacity
+            className="h-12 flex-row items-center px-4"
             onPress={() => router.push('./manage-account' as never)}
-            modifiers={[padding({ vertical: 8 })]}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Manage Account"
-              systemImage="person.circle.fill"
-              color="#007AFF"
-            />
-            <Spacer />
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
-        </Section>
+            <Ionicons name="person-circle" size={28} color="#007AFF" />
+            <Text className="ml-3 flex-1 text-base text-white">Manage Account</Text>
+            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        {/* ---- Preferences ---- */}
-        <Section title="PREFERENCES">
+      {/* Preferences Section */}
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-gray-500">PREFERENCES</Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           {/* Appearance */}
-          <HStack 
-            spacing={0} 
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
             onPress={() => router.push('./appearance' as never)}
-            modifiers={[padding({ vertical: 8 })]}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Appearance"
-              systemImage="paintbrush.fill"
-              color="#FF9500"
-            />
-            <Spacer />
-            <SwiftText
-              color="#8E8E93"
-              modifiers={[
-                foregroundStyle({
-                  type: 'hierarchical',
-                  style: 'secondary',
-                }),
-              ]}
-            >
-              {themeLabel}
-            </SwiftText>
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
+            <Ionicons name="brush" size={28} color="#FF9500" />
+            <Text className="ml-3 flex-1 text-base text-white">Appearance</Text>
+            <Text className="mr-2 text-base text-gray-500">{themeLabel}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+          </TouchableOpacity>
 
           {/* Workout Settings */}
-          <HStack 
-            spacing={0} 
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
             onPress={() => router.push('./workout-settings' as never)}
-            modifiers={[padding({ vertical: 8 })]}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Workout Settings"
-              systemImage="dumbbell.fill"
-              color="#FF3B30"
-            />
-            <Spacer />
-            <SwiftText color="#8E8E93">{workoutSummary}</SwiftText>
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
+            <Ionicons name="barbell" size={28} color="#FF3B30" />
+            <Text className="ml-3 flex-1 text-base text-white">Workout Settings</Text>
+            <Text className="mr-2 text-base text-gray-500">{workoutSummary}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+          </TouchableOpacity>
 
           {/* Integrations */}
-          <HStack 
-            spacing={0} 
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
             onPress={() => router.push('./integrations' as never)}
-            modifiers={[padding({ vertical: 8 })]}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Integrations"
-              systemImage="link.circle.fill"
-              color="#5856D6"
-            />
-            <Spacer />
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
+            <Ionicons name="link-outline" size={28} color="#5856D6" />
+            <Text className="ml-3 flex-1 text-base text-white">Integrations</Text>
+            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+          </TouchableOpacity>
 
           {/* Export & Import */}
-          <HStack 
-            spacing={0} 
+          <TouchableOpacity
+            className="h-12 flex-row items-center px-4"
             onPress={() => router.push('./export-import' as never)}
-            modifiers={[padding({ vertical: 8 })]}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Export & Import Data"
-              systemImage="arrow.up.arrow.down.circle.fill"
-              color="#34C759"
-            />
-            <Spacer />
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
-        </Section>
+            <Ionicons name="swap-vertical" size={28} color="#34C759" />
+            <Text className="ml-3 flex-1 text-base text-white">Export & Import Data</Text>
+            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        {/* ---- Reset ---- */}
-        <Section>
-          <VStack spacing={0} alignment="center">
-            <SwiftButton
-              role="destructive"
-              variant="plain"
-              disabled={isResetting}
-              onPress={handleReset}
-            >
+      {/* Reset Section */}
+      <View className="mt-6 pb-8">
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          <TouchableOpacity
+            className="h-12 items-center justify-center px-4"
+            onPress={handleReset}
+            disabled={isResetting}
+            activeOpacity={0.7}
+          >
+            <Text className="text-base font-semibold text-[#FF3B30]">
               {isResetting ? 'Resetting…' : 'Reset All Settings to Defaults'}
-            </SwiftButton>
-          </VStack>
-        </Section>
-      </List>
-    </Host>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
