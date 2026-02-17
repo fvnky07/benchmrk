@@ -68,11 +68,11 @@ PostHog AI
 
 ```jsx
 const MyComponent = () => {
-    const posthog = usePostHog()
-    useEffect(() => {
-        posthog.capture("event_name")
-    }, [posthog])
-}
+  const posthog = usePostHog();
+  useEffect(() => {
+    posthog.capture('event_name');
+  }, [posthog]);
+};
 ```
 
 #### Without the PosthogProvider
@@ -84,11 +84,11 @@ posthog.ts
 PostHog AI
 
 ```jsx
-import PostHog from 'posthog-react-native'
+import PostHog from 'posthog-react-native';
 export const posthog = new PostHog('<ph_project_api_key>', {
   // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
-  host: 'https://us.i.posthog.com'
-})
+  host: 'https://us.i.posthog.com',
+});
 ```
 
 Then you can access PostHog by importing your instance:
@@ -98,12 +98,12 @@ React Native
 PostHog AI
 
 ```jsx
-import { posthog } from './posthog'
+import { posthog } from './posthog';
 export function MyApp1() {
-    useEffect(() => {
-        posthog.capture('event_name')
-    }, [])
-    return <View>Your app code</View>
+  useEffect(() => {
+    posthog.capture('event_name');
+  }, []);
+  return <View>Your app code</View>;
 }
 ```
 
@@ -114,9 +114,11 @@ React Native
 PostHog AI
 
 ```jsx
-import { posthog } from './posthog'
+import { posthog } from './posthog';
 export function MyApp() {
-  return <PostHogProvider client={posthog}>{/* Your app code */}</PostHogProvider>
+  return (
+    <PostHogProvider client={posthog}>{/* Your app code */}</PostHogProvider>
+  );
 }
 ```
 
@@ -148,33 +150,33 @@ These are public, stable IPs used by PostHog services (e.g., Celery tasks for sn
 
 You can further customize how PostHog works through its configuration on initialization.
 
-| Attribute | Description |
-| --- | --- |
-| hostType: StringDefault: https://us.i.posthog.com | PostHog API host (usually https://us.i.posthog.com by default or https://eu.i.posthog.com). Host is optional if you use https://us.i.posthog.com. |
-| flushAtType: NumberDefault: 20 | The number of events to queue before sending to PostHog (flushing). |
-| flushIntervalType: NumberDefault: 10000 | The interval in milliseconds between periodic flushes. |
-| maxBatchSizeType: NumberDefault: 100 | The maximum number of queued messages to be flushed as part of a single batch (must be higher than flushAt). |
-| maxQueueSizeType: NumberDefault: 1000 | The maximum number of cached messages either in memory or on the local storage (must be higher than flushAt). |
-| disabledType: BooleanDefault: false | If set to true, the SDK is essentially disabled (useful for local environments where you don't want to track anything). |
-| defaultOptInType: BooleanDefault: true | If set to false, the SDK will not track until the optIn() function is called. |
-| sendFeatureFlagEventType: BooleanDefault: true | Whether to track that getFeatureFlag was called (used by experiments). |
-| preloadFeatureFlagsType: BooleanDefault: true | Whether to load feature flags when initialized or not. |
-| bootstrapType: ObjectDefault: {} | An object containing the distinctId, isIdentifiedId, featureFlags, and featureFlagPayloads keys. distinctId is a string, and featureFlags and featureFlagPayloads are objects of key-value pairs. Used to ensure data is available as soon as the SDK loads. |
-| fetchRetryCountType: NumberDefault: 3 | How many times HTTP requests will be retried. |
-| fetchRetryDelayType: NumberDefault: 3000 | The delay between HTTP request retries. |
-| requestTimeoutType: NumberDefault: 10000 | Timeout in milliseconds for any calls. |
-| featureFlagsRequestTimeoutMsType: NumberDefault: 10000 | Timeout in milliseconds for feature flag calls. |
-| sessionExpirationTimeSecondsType: NumberDefault: 1800 | For session analysis, how long before a session expires (defaults to 30 minutes). |
-| persistenceType: StringDefault: file | Allows you to provide the storage type. file will try to load the best available storage, the provided customStorage, customAsyncStorage, or in-memory storage. |
-| customAppPropertiesType: Object or FunctionDefault: null | Allows you to provide your own implementation of the common information about your App or a function to modify the default App properties generated. |
-| customStorageType: ObjectDefault: null | Allows you to provide a custom asynchronous storage such as async-storage, expo-file-system, or a synchronous storage such as mmkv. If not provided, PostHog will attempt to use the best available storage via optional peer dependencies. If persistence is set to memory, this option is ignored. |
-| captureAppLifecycleEventsType: BooleanDefault: false | Captures app lifecycle events such as Application Installed, Application Updated, Application Opened, Application Became Active, and Application Backgrounded. By default, this is false. |
-| disableGeoipType: BooleanDefault: false | When true, disables automatic GeoIP resolution for events and feature flags. |
-| enableSessionReplayType: BooleanDefault: false | Enable Recording of Session replay for Android and iOS. |
-| sessionReplayConfigType: ObjectDefault: null | Session replay configuration. See the replay install docs for more details. |
-| enablePersistSessionIdAcrossRestartType: BooleanDefault: false | When true, persists the $session_id across app restarts. If false, $session_id always resets on app restart. |
-| evaluationContextsType: Array of StringsDefault: undefined | Evaluation context tags that constrain which feature flags are evaluated. When set, only flags with matching evaluation context tags (or no evaluation context tags) will be returned. This helps reduce unnecessary flag evaluations and improves performance. See evaluation contexts documentation for more details. Available in version 4.8.0+. The legacy parameter evaluationEnvironments (version 4.7.2+) is also supported for backward compatibility. |
-| before_sendType: FunctionDefault: undefined | A callback function that is called before each event is sent to PostHog. You can use it to modify, filter, or suppress events. Return null to drop the event, or return the modified event to send it. See customizing exception capture for details. |
+| Attribute                                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| hostType: StringDefault: https://us.i.posthog.com              | PostHog API host (usually https://us.i.posthog.com by default or https://eu.i.posthog.com). Host is optional if you use https://us.i.posthog.com.                                                                                                                                                                                                                                                                                                               |
+| flushAtType: NumberDefault: 20                                 | The number of events to queue before sending to PostHog (flushing).                                                                                                                                                                                                                                                                                                                                                                                             |
+| flushIntervalType: NumberDefault: 10000                        | The interval in milliseconds between periodic flushes.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| maxBatchSizeType: NumberDefault: 100                           | The maximum number of queued messages to be flushed as part of a single batch (must be higher than flushAt).                                                                                                                                                                                                                                                                                                                                                    |
+| maxQueueSizeType: NumberDefault: 1000                          | The maximum number of cached messages either in memory or on the local storage (must be higher than flushAt).                                                                                                                                                                                                                                                                                                                                                   |
+| disabledType: BooleanDefault: false                            | If set to true, the SDK is essentially disabled (useful for local environments where you don't want to track anything).                                                                                                                                                                                                                                                                                                                                         |
+| defaultOptInType: BooleanDefault: true                         | If set to false, the SDK will not track until the optIn() function is called.                                                                                                                                                                                                                                                                                                                                                                                   |
+| sendFeatureFlagEventType: BooleanDefault: true                 | Whether to track that getFeatureFlag was called (used by experiments).                                                                                                                                                                                                                                                                                                                                                                                          |
+| preloadFeatureFlagsType: BooleanDefault: true                  | Whether to load feature flags when initialized or not.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| bootstrapType: ObjectDefault: {}                               | An object containing the distinctId, isIdentifiedId, featureFlags, and featureFlagPayloads keys. distinctId is a string, and featureFlags and featureFlagPayloads are objects of key-value pairs. Used to ensure data is available as soon as the SDK loads.                                                                                                                                                                                                    |
+| fetchRetryCountType: NumberDefault: 3                          | How many times HTTP requests will be retried.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| fetchRetryDelayType: NumberDefault: 3000                       | The delay between HTTP request retries.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| requestTimeoutType: NumberDefault: 10000                       | Timeout in milliseconds for any calls.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| featureFlagsRequestTimeoutMsType: NumberDefault: 10000         | Timeout in milliseconds for feature flag calls.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| sessionExpirationTimeSecondsType: NumberDefault: 1800          | For session analysis, how long before a session expires (defaults to 30 minutes).                                                                                                                                                                                                                                                                                                                                                                               |
+| persistenceType: StringDefault: file                           | Allows you to provide the storage type. file will try to load the best available storage, the provided customStorage, customAsyncStorage, or in-memory storage.                                                                                                                                                                                                                                                                                                 |
+| customAppPropertiesType: Object or FunctionDefault: null       | Allows you to provide your own implementation of the common information about your App or a function to modify the default App properties generated.                                                                                                                                                                                                                                                                                                            |
+| customStorageType: ObjectDefault: null                         | Allows you to provide a custom asynchronous storage such as async-storage, expo-file-system, or a synchronous storage such as mmkv. If not provided, PostHog will attempt to use the best available storage via optional peer dependencies. If persistence is set to memory, this option is ignored.                                                                                                                                                            |
+| captureAppLifecycleEventsType: BooleanDefault: false           | Captures app lifecycle events such as Application Installed, Application Updated, Application Opened, Application Became Active, and Application Backgrounded. By default, this is false.                                                                                                                                                                                                                                                                       |
+| disableGeoipType: BooleanDefault: false                        | When true, disables automatic GeoIP resolution for events and feature flags.                                                                                                                                                                                                                                                                                                                                                                                    |
+| enableSessionReplayType: BooleanDefault: false                 | Enable Recording of Session replay for Android and iOS.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| sessionReplayConfigType: ObjectDefault: null                   | Session replay configuration. See the replay install docs for more details.                                                                                                                                                                                                                                                                                                                                                                                     |
+| enablePersistSessionIdAcrossRestartType: BooleanDefault: false | When true, persists the $session_id across app restarts. If false, $session_id always resets on app restart.                                                                                                                                                                                                                                                                                                                                                    |
+| evaluationContextsType: Array of StringsDefault: undefined     | Evaluation context tags that constrain which feature flags are evaluated. When set, only flags with matching evaluation context tags (or no evaluation context tags) will be returned. This helps reduce unnecessary flag evaluations and improves performance. See evaluation contexts documentation for more details. Available in version 4.8.0+. The legacy parameter evaluationEnvironments (version 4.7.2+) is also supported for backward compatibility. |
+| before_sendType: FunctionDefault: undefined                    | A callback function that is called before each event is sent to PostHog. You can use it to modify, filter, or suppress events. Return null to drop the event, or return the modified event to send it. See customizing exception capture for details.                                                                                                                                                                                                           |
 
 ## Capturing events
 
@@ -185,7 +187,7 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.capture('user_signed_up')
+posthog.capture('user_signed_up');
 ```
 
 > **Tip:** We recommend using a `[object] [verb]` format for your event names, where `[object]` is the entity that the behavior relates to, and `[verb]` is the behavior itself. For example, `project created`, `user signed up`, or `invite sent`.
@@ -200,9 +202,9 @@ PostHog AI
 
 ```jsx
 posthog.capture('user_signed_up', {
-    login_type: "email",
-    is_free_trial: true
-})
+  login_type: 'email',
+  is_free_trial: true,
+});
 ```
 
 ### Capturing screen views
@@ -219,16 +221,16 @@ PostHog AI
 
 ```jsx
 // App.(js|ts)
-import { PostHogProvider } from 'posthog-react-native'
-import { NavigationContainer } from '@react-navigation/native'
+import { PostHogProvider } from 'posthog-react-native';
+import { NavigationContainer } from '@react-navigation/native';
 export function App() {
-    return (
-        <NavigationContainer>
-            <PostHogProvider apiKey="<ph_project_api_key>" autocapture>
-                {/* Rest of app */}
-            </PostHogProvider>
-        </NavigationContainer>
-    )
+  return (
+    <NavigationContainer>
+      <PostHogProvider apiKey="<ph_project_api_key>" autocapture>
+        {/* Rest of app */}
+      </PostHogProvider>
+    </NavigationContainer>
+  );
 }
 ```
 
@@ -240,20 +242,23 @@ PostHog AI
 
 ```jsx
 // App.(js|ts)
-import { PostHogProvider } from 'posthog-react-native'
-import { NavigationContainer } from '@react-navigation/native'
+import { PostHogProvider } from 'posthog-react-native';
+import { NavigationContainer } from '@react-navigation/native';
 // Using `PostHogProvider` is optional, but needed if you want to capture touch events automatically with the `captureTouches` option.
 export function App() {
-    return (
-        <NavigationContainer>
-            <PostHogProvider apiKey="<ph_project_api_key>" autocapture={{
-              captureScreens: false, // Screen events are handled differently for v7 and higher
-              captureTouches: true,
-            }}>
-                {/* Rest of app */}
-            </PostHogProvider>
-        </NavigationContainer>
-    )
+  return (
+    <NavigationContainer>
+      <PostHogProvider
+        apiKey="<ph_project_api_key>"
+        autocapture={{
+          captureScreens: false, // Screen events are handled differently for v7 and higher
+          captureTouches: true,
+        }}
+      >
+        {/* Rest of app */}
+      </PostHogProvider>
+    </NavigationContainer>
+  );
 }
 ```
 
@@ -266,9 +271,9 @@ React Native
 PostHog AI
 
 ```jsx
-const posthog = usePostHog() // use the usePostHog hook if using the PostHogProvider or your own custom posthog instance
+const posthog = usePostHog(); // use the usePostHog hook if using the PostHogProvider or your own custom posthog instance
 // you can read the params from `getCurrentRoute()`
-posthog.screen(currentRouteName, params)
+posthog.screen(currentRouteName, params);
 ```
 
 #### With `react-native-navigation` and autocapture:
@@ -305,9 +310,7 @@ PostHog AI
 export const MyScreen = () => {
   return (
     <SharedPostHogProvider>
-      <View>
-        ...
-      </View>
+      <View>...</View>
     </SharedPostHogProvider>
   );
 };
@@ -336,8 +339,8 @@ React Native
 PostHog AI
 
 ```jsx
-const posthog = usePostHog() // use the usePostHog hook if using the PostHogProvider or your own custom posthog instance
-posthog.screen(pathname, params)
+const posthog = usePostHog(); // use the usePostHog hook if using the PostHogProvider or your own custom posthog instance
+posthog.screen(pathname, params);
 ```
 
 #### Manually capturing screen capture events
@@ -350,23 +353,23 @@ PostHog AI
 
 ```javascript
 posthog.screen('dashboard', {
-    background: 'blue',
-    hero: 'superhog',
-})
+  background: 'blue',
+  hero: 'superhog',
+});
 ```
 
 ## Autocapture
 
 PostHog autocapture can automatically track the following events for you:
 
--   **Application Opened** - when the app is opened from a closed state
--   **Application Became Active** - when the app comes to the foreground (e.g. from the app switcher)
--   **Application Backgrounded** - when the app is sent to the background by the user
--   **Application Installed** - when the app is installed.
--   **Application Updated** - when the app is updated.
--   **$screen** - when the user navigates (if using `@react-navigation/native` (v6 or lower) or `react-native-navigation`), check out the [capturing screen views](/docs/libraries/react-native#capturing-screen-views.md) section
--   **$autocapture** - touch events when the user interacts with the screen
--   **$exception** - when the app throws exceptions.
+- **Application Opened** - when the app is opened from a closed state
+- **Application Became Active** - when the app comes to the foreground (e.g. from the app switcher)
+- **Application Backgrounded** - when the app is sent to the background by the user
+- **Application Installed** - when the app is installed.
+- **Application Updated** - when the app is updated.
+- **$screen** - when the user navigates (if using `@react-navigation/native` (v6 or lower) or `react-native-navigation`), check out the [capturing screen views](/docs/libraries/react-native#capturing-screen-views.md) section
+- **$autocapture** - touch events when the user interacts with the screen
+- **$exception** - when the app throws exceptions.
 
 > ⚠️ **React Navigation v7 users**
 >
@@ -395,28 +398,31 @@ React Native
 PostHog AI
 
 ```jsx
-<PostHogProvider apiKey="<ph_project_api_key>" autocapture={{
+<PostHogProvider
+  apiKey="<ph_project_api_key>"
+  autocapture={{
     captureTouches: true,
     captureScreens: true,
     ignoreLabels: [], // Any labels here will be ignored from the stack in touch events
-    customLabelProp: "ph-label",
+    customLabelProp: 'ph-label',
     maxElementsCaptured: 20,
-    noCaptureProp: "ph-no-capture",
-    propsToCapture: ["testID"], // Limit which props are captured. By default, identifiers and text content are captured.
+    noCaptureProp: 'ph-no-capture',
+    propsToCapture: ['testID'], // Limit which props are captured. By default, identifiers and text content are captured.
     navigation: {
-        // By default, only the screen name is tracked but it is possible to track the
-        // params or modify the name by intercepting the autocapture like so
-        routeToName: (name, params) => {
-            if (params.id) return `${name}/${params.id}`
-            return name
-        },
-        routeToProperties: (name, params) => {
-            if (name === "SensitiveScreen") return undefined
-            return params
-        },
+      // By default, only the screen name is tracked but it is possible to track the
+      // params or modify the name by intercepting the autocapture like so
+      routeToName: (name, params) => {
+        if (params.id) return `${name}/${params.id}`;
+        return name;
+      },
+      routeToProperties: (name, params) => {
+        if (name === 'SensitiveScreen') return undefined;
+        return params;
+      },
     },
-}}>
-    ...
+  }}
+>
+  ...
 </PostHogProvider>
 ```
 
@@ -440,20 +446,19 @@ Using `identify`, you can associate events with specific users. This enables you
 
 An `identify` call has the following arguments:
 
--   **distinctId:** Required. A unique identifier for your user. Typically either their email or database ID.
--   **properties:** Optional. A dictionary with key:value pairs to set the [person properties](/docs/product-analytics/person-properties.md)
+- **distinctId:** Required. A unique identifier for your user. Typically either their email or database ID.
+- **properties:** Optional. A dictionary with key:value pairs to set the [person properties](/docs/product-analytics/person-properties.md)
 
 React Native
 
 PostHog AI
 
 ```jsx
-posthog.identify('distinctID',
-  { // ($set):
-      email: 'user@posthog.com',
-      name: 'My Name'
-  }
-)
+posthog.identify('distinctID', {
+  // ($set):
+  email: 'user@posthog.com',
+  name: 'My Name',
+});
 ```
 
 `$set_once` works just like `$set`, except that it will **only set the property if the user doesn't already have that property set**. [See the difference between `$set` and `$set_once`](/docs/product-analytics/person-properties#what-is-the-difference-between-set-and-set_once.md)
@@ -463,17 +468,15 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.identify('distinctID',
-  {
-    $set: {
-        email: 'user@posthog.com',
-        name: 'My Name'
-    },
-    $set_once: {
-        date_of_first_log_in: '2024-03-01'
-    }
-  }
-)
+posthog.identify('distinctID', {
+  $set: {
+    email: 'user@posthog.com',
+    name: 'My Name',
+  },
+  $set_once: {
+    date_of_first_log_in: '2024-03-01',
+  },
+});
 ```
 
 You should call `identify` as soon as you're able to. Typically, this is after your user logs in. This ensures that events sent during your user's sessions are correctly associated with them.
@@ -498,7 +501,7 @@ PostHog AI
 
 ```jsx
 // Sets alias for current user
-posthog.alias('distinct_id')
+posthog.alias('distinct_id');
 ```
 
 We strongly recommend reading our docs on [alias](/docs/data/identify#alias-assigning-multiple-distinct-ids-to-the-same-user.md) to best understand how to correctly use this method.
@@ -516,10 +519,10 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.capture('some_event', { $set: { userProperty: 'value' } })
+posthog.capture('some_event', { $set: { userProperty: 'value' } });
 ```
 
-### $set\_once
+### $set_once
 
 `$set_once` works just like `$set`, except it **only sets the property if the user doesn't already have that property set**.
 
@@ -528,7 +531,7 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.capture('some_event', { $set_once: { userProperty: 'value' } })
+posthog.capture('some_event', { $set_once: { userProperty: 'value' } });
 ```
 
 ## Super properties
@@ -545,9 +548,9 @@ PostHog AI
 
 ```javascript
 posthog.register({
-    'icecream pref': 'vanilla',
-    team_id: 22,
-})
+  'icecream pref': 'vanilla',
+  team_id: 22,
+});
 ```
 
 The call above ensures that every event sent by the user will include `"icecream pref": "vanilla"` and `"team_id": 22`. This way, if you filtered events by property using `icecream_pref = vanilla`, it would display all events captured on that user after the `posthog.register` call, since they all include the specified Super Property.
@@ -582,7 +585,7 @@ PostHog AI
 
 ```javascript
 posthog.init('<ph_project_api_key>', {
-    opt_out_capturing_by_default: true,
+  opt_out_capturing_by_default: true,
 });
 ```
 
@@ -593,7 +596,7 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.opt_out_capturing()
+posthog.opt_out_capturing();
 ```
 
 Similarly, you can opt users in:
@@ -603,7 +606,7 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.opt_in_capturing()
+posthog.opt_in_capturing();
 ```
 
 To check if a user is opted out:
@@ -613,7 +616,7 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.has_opted_out_capturing()
+posthog.has_opted_out_capturing();
 ```
 
 ## Flush
@@ -629,7 +632,7 @@ JavaScript
 PostHog AI
 
 ```javascript
-await posthog.flush()
+await posthog.flush();
 ```
 
 ## Reset after logout
@@ -641,16 +644,16 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.reset()
+posthog.reset();
 ```
 
 ## Offline behavior
 
 The PostHog React Native SDK will continue to capture events when the device is offline. When `persistence` is set to `file` (by default), the events are stored in a queue in the device's file storage. Even when the app is closed, the events are persisted and will be flushed when the app is opened again.
 
--   The queue has a maximum size defined by `maxQueueSize` in the configuration.
--   When the queue is full, the oldest event is deleted first.
--   The queue is flushed only when the device is online.
+- The queue has a maximum size defined by `maxQueueSize` in the configuration.
+- When the queue is full, the oldest event is deleted first.
+- The queue is flushed only when the device is online.
 
 ## Opt in/out
 
@@ -665,9 +668,9 @@ JavaScript
 PostHog AI
 
 ```javascript
-posthog.optedOut // See if a user has opted out
-posthog.optIn() // opt in
-posthog.optOut() // opt out
+posthog.optedOut; // See if a user has opted out
+posthog.optIn(); // opt in
+posthog.optOut(); // opt out
 ```
 
 If you still wish capture these events but want to create a distinction between users and team in PostHog, you should look into [Cohorts](/docs/user-guides/cohorts#differentiating-team-vs-users-traffic.md).
@@ -690,16 +693,20 @@ React Native
 PostHog AI
 
 ```jsx
-import { useFeatureFlag } from 'posthog-react-native'
+import { useFeatureFlag } from 'posthog-react-native';
 const MyComponent = () => {
-    const booleanFlag = useFeatureFlag('key-for-your-boolean-flag')
-    if (booleanFlag === undefined) {
-        // the response is undefined if the flags are being loaded
-        return null
-    }
-    // Optional use the 'useFeatureFlagWithPayload' hook for fetching the feature flag payload
-    return booleanFlag ? <Text>Testing feature 😄</Text> : <Text>Not Testing feature 😢</Text>
-}
+  const booleanFlag = useFeatureFlag('key-for-your-boolean-flag');
+  if (booleanFlag === undefined) {
+    // the response is undefined if the flags are being loaded
+    return null;
+  }
+  // Optional use the 'useFeatureFlagWithPayload' hook for fetching the feature flag payload
+  return booleanFlag ? (
+    <Text>Testing feature 😄</Text>
+  ) : (
+    <Text>Not Testing feature 😢</Text>
+  );
+};
 ```
 
 #### Example 2: Multivariate feature flags
@@ -709,18 +716,19 @@ React Native
 PostHog AI
 
 ```jsx
-import { useFeatureFlag } from 'posthog-react-native'
+import { useFeatureFlag } from 'posthog-react-native';
 const MyComponent = () => {
-    const multiVariantFeature = useFeatureFlag('key-for-your-multivariate-flag')
-    if (multiVariantFeature === undefined) {
-        // the response is undefined if the flags are being loaded
-        return null
-    } else if (multiVariantFeature === 'variant-name') { // replace 'variant-name' with the name of your variant
-      // Do something
-    }
-    // Optional use the 'useFeatureFlagWithPayload' hook for fetching the feature flag payload
-    return <div/>
-}
+  const multiVariantFeature = useFeatureFlag('key-for-your-multivariate-flag');
+  if (multiVariantFeature === undefined) {
+    // the response is undefined if the flags are being loaded
+    return null;
+  } else if (multiVariantFeature === 'variant-name') {
+    // replace 'variant-name' with the name of your variant
+    // Do something
+  }
+  // Optional use the 'useFeatureFlagWithPayload' hook for fetching the feature flag payload
+  return <div />;
+};
 ```
 
 ### Method 2: Loading the flag directly
@@ -731,13 +739,13 @@ PostHog AI
 
 ```jsx
 // Defaults to undefined if not loaded yet or if there was a problem loading
-posthog.isFeatureEnabled('key-for-your-boolean-flag')
+posthog.isFeatureEnabled('key-for-your-boolean-flag');
 // Defaults to undefined if not loaded yet or if there was a problem loading
-posthog.getFeatureFlag('key-for-your-boolean-flag')
+posthog.getFeatureFlag('key-for-your-boolean-flag');
 // Multivariant feature flags are returned as a string
-posthog.getFeatureFlag('key-for-your-multivariate-flag')
+posthog.getFeatureFlag('key-for-your-multivariate-flag');
 // Optional fetch the payload returns 'JsonType' or undefined if not loaded yet or if there was a problem loading
-posthog.getFeatureFlagPayload('key-for-your-multivariate-flag')
+posthog.getFeatureFlagPayload('key-for-your-multivariate-flag');
 ```
 
 ### Ensuring flags are loaded before usage
@@ -758,7 +766,7 @@ posthog.onFeatureFlags((flags) => {
   if (posthog.isFeatureEnabled('flag-key')) {
     // do something
   }
-})
+});
 ```
 
 ### Reloading flags
@@ -772,7 +780,9 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.reloadFeatureFlagsAsync().then((refreshedFlags) => console.log(refreshedFlags))
+posthog
+  .reloadFeatureFlagsAsync()
+  .then((refreshedFlags) => console.log(refreshedFlags));
 ```
 
 Or when you want to trigger the reload, but don't care about the result:
@@ -782,7 +792,7 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.reloadFeatureFlags()
+posthog.reloadFeatureFlags();
 ```
 
 ### Feature flag caching
@@ -799,7 +809,7 @@ PostHog AI
 
 ```jsx
 // Force refresh on app start
-await posthog.reloadFeatureFlagsAsync()
+await posthog.reloadFeatureFlagsAsync();
 ```
 
 Or clear cached values for inactive users:
@@ -810,7 +820,7 @@ PostHog AI
 
 ```jsx
 if (lastActiveDate < migrationDate) {
-  posthog.reset() // Clears all cached data
+  posthog.reset(); // Clears all cached data
 }
 ```
 
@@ -826,8 +836,8 @@ PostHog AI
 export const posthog = new PostHog('<ph_project_api_key>', {
   // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
   host: 'https://us.i.posthog.com',
-  featureFlagsRequestTimeoutMs: 10000 // Time in milliseconds. Default is 10000 (10 seconds).
-})
+  featureFlagsRequestTimeoutMs: 10000, // Time in milliseconds. Default is 10000 (10 seconds).
+});
 ```
 
 ### Error handling
@@ -840,29 +850,31 @@ PostHog AI
 
 ```jsx
 function handleFeatureFlag(client, flagKey, distinctId) {
-    try {
-        const isEnabled = client.isFeatureEnabled(flagKey, distinctId);
-        console.log(`Feature flag '${flagKey}' for user '${distinctId}' is ${isEnabled ? 'enabled' : 'disabled'}`);
-        return isEnabled;
-    } catch (error) {
-        console.error(`Error fetching feature flag '${flagKey}': ${error.message}`);
-        // Optionally, you can return a default value or throw the error
-        // return false; // Default to disabled
-        throw error;
-    }
+  try {
+    const isEnabled = client.isFeatureEnabled(flagKey, distinctId);
+    console.log(
+      `Feature flag '${flagKey}' for user '${distinctId}' is ${isEnabled ? 'enabled' : 'disabled'}`
+    );
+    return isEnabled;
+  } catch (error) {
+    console.error(`Error fetching feature flag '${flagKey}': ${error.message}`);
+    // Optionally, you can return a default value or throw the error
+    // return false; // Default to disabled
+    throw error;
+  }
 }
 // Usage example
 try {
-    const flagEnabled = handleFeatureFlag(client, 'new-feature', 'user-123');
-    if (flagEnabled) {
-        // Implement new feature logic
-    } else {
-        // Implement old feature logic
-    }
+  const flagEnabled = handleFeatureFlag(client, 'new-feature', 'user-123');
+  if (flagEnabled) {
+    // Implement new feature logic
+  } else {
+    // Implement old feature logic
+  }
 } catch (error) {
-    // Handle the error at a higher level
-    console.error('Feature flag check failed, using default behavior');
-    // Implement fallback logic
+  // Handle the error at a higher level
+  console.error('Feature flag check failed, using default behavior');
+  // Implement fallback logic
 }
 ```
 
@@ -875,7 +887,10 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.setPersonPropertiesForFlags({'property1': 'value', property2: 'value2'})
+posthog.setPersonPropertiesForFlags({
+  property1: 'value',
+  property2: 'value2',
+});
 ```
 
 Note that these are set for the entire session. Successive calls are additive: all properties you set are combined together and sent for flag evaluation.
@@ -887,7 +902,10 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.setPersonPropertiesForFlags({'property1': 'value', property2: 'value2'}, false)
+posthog.setPersonPropertiesForFlags(
+  { property1: 'value', property2: 'value2' },
+  false
+);
 ```
 
 At any point, you can reset these properties by calling `resetPersonPropertiesForFlags`:
@@ -897,7 +915,7 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.resetPersonPropertiesForFlags()
+posthog.resetPersonPropertiesForFlags();
 ```
 
 The same holds for [group](/docs/product-analytics/group-analytics.md) properties:
@@ -908,9 +926,11 @@ PostHog AI
 
 ```jsx
 // set properties for a group
-posthog.setGroupPropertiesForFlags({'company': {'property1': 'value', property2: 'value2'}})
+posthog.setGroupPropertiesForFlags({
+  company: { property1: 'value', property2: 'value2' },
+});
 // reset properties for all groups:
-posthog.resetGroupPropertiesForFlags()
+posthog.resetGroupPropertiesForFlags();
 ```
 
 > **Note:** You don't need to add the group names here, since these properties are automatically attached to the current group (set via `posthog.group()`). When you change the group, these properties are reset.
@@ -925,13 +945,13 @@ By default, we always override some properties based on the user IP address.
 
 The list of properties that this overrides:
 
-1.  $geoip\_city\_name
-2.  $geoip\_country\_name
-3.  $geoip\_country\_code
-4.  $geoip\_continent\_name
-5.  $geoip\_continent\_code
-6.  $geoip\_postal\_code
-7.  $geoip\_time\_zone
+1.  $geoip_city_name
+2.  $geoip_country_name
+3.  $geoip_country_code
+4.  $geoip_continent_name
+5.  $geoip_continent_code
+6.  $geoip_postal_code
+7.  $geoip_time_zone
 
 This enables any geolocation-based flags to work without manually setting these properties.
 
@@ -953,17 +973,17 @@ PostHog AI
 
 ```jsx
 // With the useFeatureFlag hook
-import { useFeatureFlag } from 'posthog-react-native'
+import { useFeatureFlag } from 'posthog-react-native';
 const MyComponent = () => {
-    const variant = useFeatureFlag('experiment-feature-flag-key')
-    if (variant === undefined) {
-        // the response is undefined if the flags are being loaded
-        return null
-    }
-    if (variant == 'variant-name') {
-        // do something
-    }
-}
+  const variant = useFeatureFlag('experiment-feature-flag-key');
+  if (variant === undefined) {
+    // the response is undefined if the flags are being loaded
+    return null;
+  }
+  if (variant == 'variant-name') {
+    // do something
+  }
+};
 ```
 
 It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags.md).
@@ -974,18 +994,18 @@ Group analytics allows you to associate the events for that person's session wit
 
 > **Note:** This is a paid feature and is not available on the open-source or free cloud plan. Learn more on the [pricing page](/pricing.md).
 
--   Associate the events for this session with a group
+- Associate the events for this session with a group
 
 JavaScript
 
 PostHog AI
 
 ```javascript
-posthog.group('company', 'company_id_in_your_db')
-posthog.capture('upgraded_plan') // this event is associated with company ID `company_id_in_your_db`
+posthog.group('company', 'company_id_in_your_db');
+posthog.capture('upgraded_plan'); // this event is associated with company ID `company_id_in_your_db`
 ```
 
--   Associate the events for this session with a group AND update the properties of that group
+- Associate the events for this session with a group AND update the properties of that group
 
 JavaScript
 
@@ -993,9 +1013,9 @@ PostHog AI
 
 ```javascript
 posthog.group('company', 'company_id_in_your_db', {
-    name: 'Awesome Inc.',
-    employees: 11,
-})
+  name: 'Awesome Inc.',
+  employees: 11,
+});
 ```
 
 The `name` is a special property which is used in the PostHog UI for the name of the group. If you don't specify a `name` property, the group ID will be used instead.
@@ -1004,14 +1024,14 @@ The `name` is a special property which is used in the PostHog UI for the name of
 
 To set up error tracking in your project, follow the [React Native installation guide](/docs/error-tracking/installation/react-native.md).
 
-### Customizing exception capture with before\_send
+### Customizing exception capture with before_send
 
 You can use the `before_send` callback to modify, filter, or suppress exception events before they are sent to PostHog. This is useful for:
 
--   Adding custom properties to exceptions
--   Overriding exception fingerprints for custom grouping
--   Suppressing specific types of exceptions
--   Redacting sensitive information
+- Adding custom properties to exceptions
+- Overriding exception fingerprints for custom grouping
+- Suppressing specific types of exceptions
+- Redacting sensitive information
 
 React Native
 
@@ -1022,22 +1042,22 @@ const posthog = new PostHog('<ph_project_api_key>', {
   host: 'https://us.i.posthog.com',
   before_send: (event) => {
     if (event.event === '$exception') {
-      const exceptionList = event.properties?.['$exception_list'] || []
-      const exception = exceptionList.length > 0 ? exceptionList[0] : null
+      const exceptionList = event.properties?.['$exception_list'] || [];
+      const exception = exceptionList.length > 0 ? exceptionList[0] : null;
       if (exception) {
         // Add custom properties
-        event.properties['custom_property'] = 'custom_value'
+        event.properties['custom_property'] = 'custom_value';
         // Override fingerprint for custom grouping
-        event.properties['$exception_fingerprint'] = 'MyCustomGroup'
+        event.properties['$exception_fingerprint'] = 'MyCustomGroup';
       }
       // Suppress specific exception types
       if (exception?.['$exception_type'] === 'IgnoredError') {
-        return null // Drop the event
+        return null; // Drop the event
       }
     }
-    return event
+    return event;
   },
-})
+});
 ```
 
 You can also use `before_send` to sample or filter other event types. See the [JavaScript Web SDK documentation](/docs/libraries/js/usage#amending-or-sampling-events.md) for more examples.
@@ -1079,7 +1099,7 @@ React Native
 PostHog AI
 
 ```jsx
-posthog.debug()
+posthog.debug();
 ```
 
 ## Disabling for local development

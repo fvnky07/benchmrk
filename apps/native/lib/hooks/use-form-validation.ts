@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { z } from 'zod';
 
-import { showToast } from '@/lib/toast';
+import { showToast } from '@/lib/ui';
 
 interface UseFormValidationOptions<T extends z.ZodTypeAny> {
   schema: T;

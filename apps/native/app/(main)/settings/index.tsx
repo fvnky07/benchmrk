@@ -1,33 +1,32 @@
 import { useCallback, useState } from 'react';
 
-import { ActivityIndicator, Alert, View } from 'react-native';
-
 import {
-  Button as SwiftButton,
-  Host,
-  HStack,
-  Image,
-  Label,
-  List,
-  Section,
-  Spacer,
-  Text as SwiftText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+  ActivityIndicator,
+  Alert,
+  View,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 
 import { router, useFocusEffect } from 'expo-router';
 
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Text } from '@/components/ui/text';
+import { useUserProfile } from '@/lib';
 import { analytics } from '@/lib/analytics';
-import { showToast } from '@/lib/toast';
+import { showToast } from '@/lib/ui';
 
 export default function SettingsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
   const resetToDefaults = useMutation(api.userPreferences.resetToDefaults);
   const [isResetting, setIsResetting] = useState(false);
+
+  const { username, avatarUrl, initials } = useUserProfile();
+  const iconColour = '#00ff90';
 
   useFocusEffect(
     useCallback(() => {
@@ -64,8 +63,8 @@ export default function SettingsScreen() {
   // ----- loading -----
   if (preferences === undefined) {
     return (
-      <View className="bg-black flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View className="flex-1 items-center justify-center bg-black-1">
+        <ActivityIndicator size="large" color={iconColour} />
         <Text className="mt-4 text-gray-400">Loading settings…</Text>
       </View>
     );
@@ -74,7 +73,7 @@ export default function SettingsScreen() {
   // ----- error (null = unauthenticated) -----
   if (preferences === null) {
     return (
-      <View className="bg-black flex-1 items-center justify-center px-6">
+      <View className="flex-1 items-center justify-center bg-black-1 px-6">
         <Text className="mb-2 text-lg font-semibold text-white">
           Unable to load settings
         </Text>
@@ -88,116 +87,152 @@ export default function SettingsScreen() {
   const themeLabel =
     preferences.theme === 'system'
       ? 'System'
-      : preferences.theme === 'light'
+      : (preferences.theme === 'light'
         ? 'Light'
-        : 'Dark';
+        : 'Dark');
 
   const workoutSummary = `Rest ${preferences.defaultRestTimer}s · ${preferences.weightUnit.toUpperCase()}`;
 
   return (
-    <Host style={{ flex: 1 }}>
-      <List listStyle="insetGrouped">
-        {/* ---- Profile ---- */}
-        <Section title="PROFILE">
-          <HStack
-            spacing={12}
-            onPress={() => router.push('./manage-account' as never)}
+    <ScrollView className="flex-1 bg-black-1">
+      <View className="mt-6">
+        <View className="mx-4 overflow-hidden rounded-xl bg-green-1">
+          <TouchableOpacity
+            className="my-2 h-14 flex-row items-center justify-center px-4"
+            onPress={() => router.push('/(main)/settings/manage-account')}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Manage Account"
-              systemImage="person.circle.fill"
-              color="#007AFF"
-            />
-            <Spacer />
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
-        </Section>
+            <Text className="text-black text-4xl">benchmrk pro</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+          PROFILE
+        </Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-black-3">
+          <TouchableOpacity
+            className="my-2 h-14 flex-row items-center px-4"
+            onPress={() => router.push('/(main)/settings/manage-account')}
+            activeOpacity={0.7}
+          >
+            <Avatar className="size-10 rounded-lg" alt={`${username}'s avatar`}>
+              {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
+              <AvatarFallback>
+                <Text className="text-lg font-semibold text-foreground">
+                  {initials}
+                </Text>
+              </AvatarFallback>
+            </Avatar>
+            <View className="flex-1 flex-col">
+              <Text className="ml-3 text-base text-white">Manage Account</Text>
+              <Text className="ml-3 text-sm text-white/60">
+                Apple ID, Change email, edit profile
+              </Text>
+            </View>
 
-        {/* ---- Preferences ---- */}
-        <Section title="PREFERENCES">
-          {/* Appearance */}
-          <HStack
-            spacing={12}
-            onPress={() => router.push('./appearance' as never)}
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
+          </TouchableOpacity>
+          {/* Export & Import */}
+          <TouchableOpacity
+            className="h-12 flex-row items-center px-4"
+            onPress={() => router.push('/(main)/settings/export-import')}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Appearance"
-              systemImage="paintbrush.fill"
-              color="#FF9500"
+            <Ionicons name="swap-vertical" size={28} color={iconColour} />
+            <Text className="ml-3 flex-1 text-base text-white">
+              Export & Import Data
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
+          </TouchableOpacity>
+          {/* Notifications */}
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            onPress={() => router.push('/(main)/settings/integrations')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="link-outline" size={28} color={iconColour} />
+            <Text className="ml-3 flex-1 text-base text-white">
+              Integrations
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Preferences Section */}
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+          PREFERENCES
+        </Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          {/* Appearance */}
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            onPress={() => router.push('/(main)/settings/appearance')}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="color-palette-outline"
+              size={28}
+              color={iconColour}
             />
-            <Spacer />
-            <SwiftText
-              color="#8E8E93"
-              modifiers={[
-                foregroundStyle({
-                  type: 'hierarchical',
-                  style: 'secondary',
-                }),
-              ]}
-            >
-              {themeLabel}
-            </SwiftText>
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
+            <Text className="ml-3 flex-1 text-base text-white">Appearance</Text>
+            <Text className="mr-2 text-base text-gray-500">{themeLabel}</Text>
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
+          </TouchableOpacity>
 
           {/* Workout Settings */}
-          <HStack
-            spacing={12}
-            onPress={() => router.push('./workout-settings' as never)}
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            onPress={() => router.push('/(main)/settings/workout-settings')}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Workout Settings"
-              systemImage="dumbbell.fill"
-              color="#FF3B30"
-            />
-            <Spacer />
-            <SwiftText color="#8E8E93">{workoutSummary}</SwiftText>
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
+            <Ionicons name="barbell-outline" size={28} color={iconColour} />
+            <Text className="ml-3 flex-1 text-base text-white">
+              Workout Settings
+            </Text>
+            <Text className="mr-2 text-base text-gray-500">
+              {workoutSummary}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
+          </TouchableOpacity>
 
           {/* Integrations */}
-          <HStack
-            spacing={12}
-            onPress={() => router.push('./integrations' as never)}
+          <TouchableOpacity
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            onPress={() => router.push('/(main)/settings/integrations')}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Integrations"
-              systemImage="link.circle.fill"
-              color="#5856D6"
+            <Ionicons
+              name="notifications-outline"
+              size={28}
+              color={iconColour}
             />
-            <Spacer />
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
+            <Text className="ml-3 flex-1 text-base text-white">
+              Notifications
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-          {/* Export & Import */}
-          <HStack
-            spacing={12}
-            onPress={() => router.push('./export-import' as never)}
+      {/* Reset Section */}
+      <View className="mt-6 pb-8">
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          <TouchableOpacity
+            className="h-12 flex-row items-center justify-center gap-4 px-4"
+            onPress={handleReset}
+            disabled={isResetting}
+            activeOpacity={0.7}
           >
-            <Label
-              title="Export & Import Data"
-              systemImage="arrow.up.arrow.down.circle.fill"
-              color="#34C759"
-            />
-            <Spacer />
-            <Image systemName="chevron.right" size={14} color="#8E8E93" />
-          </HStack>
-        </Section>
-
-        {/* ---- Reset ---- */}
-        <Section>
-          <VStack spacing={0} alignment="center">
-            <SwiftButton
-              role="destructive"
-              variant="plain"
-              disabled={isResetting}
-              onPress={handleReset}
-            >
+            <Ionicons name="reload" size={18} color="#ef4444" />
+            <Text className="text-base font-semibold text-red-500">
               {isResetting ? 'Resetting…' : 'Reset All Settings to Defaults'}
-            </SwiftButton>
-          </VStack>
-        </Section>
-      </List>
-    </Host>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
