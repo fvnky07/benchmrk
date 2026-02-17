@@ -16,8 +16,8 @@ import { router, useFocusEffect } from 'expo-router';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Text } from '@/components/ui/text';
+import { useUserProfile } from '@/lib';
 import { analytics } from '@/lib/analytics';
-import { authClient } from '@/lib/auth';
 import { showToast } from '@/lib/ui';
 
 export default function SettingsScreen() {
@@ -25,18 +25,7 @@ export default function SettingsScreen() {
   const resetToDefaults = useMutation(api.userPreferences.resetToDefaults);
   const [isResetting, setIsResetting] = useState(false);
 
-  const session = authClient.useSession();
-  const user = session.data?.user;
-  const userData = user as Record<string, unknown> | undefined;
-
-  const username =
-    (userData?.displayUsername as string) ??
-    (userData?.username as string) ??
-    user?.name ??
-    'User';
-
-  const avatarUrl = (user?.image as string) ?? null;
-  const initials = username.slice(0, 2).toUpperCase();
+  const { username, avatarUrl, initials } = useUserProfile();
 
   useFocusEffect(
     useCallback(() => {

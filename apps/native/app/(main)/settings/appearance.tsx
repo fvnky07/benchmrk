@@ -30,9 +30,7 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
 export default function AppearanceScreen() {
   const systemScheme = useColorScheme();
   const preferences = useQuery(api.userPreferences.getPreferences);
-  const updatePreferences = useMutation(
-    api.userPreferences.updatePreferences
-  );
+  const updatePreferences = useMutation(api.userPreferences.updatePreferences);
   const [isSaving, setIsSaving] = useState(false);
 
   useFocusEffect(
@@ -56,7 +54,7 @@ export default function AppearanceScreen() {
 
   if (preferences === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View className="bg-black flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
@@ -64,10 +62,8 @@ export default function AppearanceScreen() {
 
   if (preferences === null) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
-        <Text className="text-gray-400">
-          Sign in to manage appearance.
-        </Text>
+      <View className="bg-black flex-1 items-center justify-center">
+        <Text className="text-gray-400">Sign in to manage appearance.</Text>
       </View>
     );
   }
@@ -92,11 +88,7 @@ export default function AppearanceScreen() {
                 </SwiftText>
                 <Spacer />
                 {selected && (
-                  <Image
-                    systemName="checkmark"
-                    size={16}
-                    color="#007AFF"
-                  />
+                  <Image systemName="checkmark" size={16} color="#007AFF" />
                 )}
               </HStack>
             );

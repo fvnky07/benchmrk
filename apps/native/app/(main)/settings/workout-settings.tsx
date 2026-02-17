@@ -25,9 +25,7 @@ const REST_TIMER_OPTIONS = [30, 60, 90, 120];
 
 export default function WorkoutSettingsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
-  const updatePreferences = useMutation(
-    api.userPreferences.updatePreferences
-  );
+  const updatePreferences = useMutation(api.userPreferences.updatePreferences);
   const [isSaving, setIsSaving] = useState(false);
 
   useFocusEffect(
@@ -55,7 +53,7 @@ export default function WorkoutSettingsScreen() {
 
   if (preferences === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View className="bg-black flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
@@ -63,7 +61,7 @@ export default function WorkoutSettingsScreen() {
 
   if (preferences === null) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View className="bg-black flex-1 items-center justify-center">
         <Text className="text-gray-400">
           Sign in to manage workout settings.
         </Text>
@@ -81,17 +79,14 @@ export default function WorkoutSettingsScreen() {
             <SwiftText weight="semibold">Default Rest Timer</SwiftText>
             <HStack spacing={8}>
               {REST_TIMER_OPTIONS.map((secs) => {
-                const selected =
-                  preferences.defaultRestTimer === secs;
+                const selected = preferences.defaultRestTimer === secs;
                 return (
                   <HStack
                     key={secs}
                     spacing={4}
                     onPress={() =>
-                      save(
-                        'defaultRestTimer',
-                        secs,
-                        () => analytics.restTimerChanged(secs)
+                      save('defaultRestTimer', secs, () =>
+                        analytics.restTimerChanged(secs)
                       )
                     }
                   >
@@ -126,10 +121,8 @@ export default function WorkoutSettingsScreen() {
                     key={unit}
                     spacing={4}
                     onPress={() =>
-                      save(
-                        'weightUnit',
-                        unit,
-                        () => analytics.weightUnitChanged(unit)
+                      save('weightUnit', unit, () =>
+                        analytics.weightUnitChanged(unit)
                       )
                     }
                   >
@@ -155,11 +148,13 @@ export default function WorkoutSettingsScreen() {
 
         {/* ---- Tracking ---- */}
         <Section title="TRACKING">
-          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
+          <HStack
+            spacing={0}
+            alignment="center"
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <VStack spacing={2} alignment="leading">
-              <SwiftText weight="semibold">
-                Auto-save Workouts
-              </SwiftText>
+              <SwiftText weight="semibold">Auto-save Workouts</SwiftText>
               <SwiftText size={13} color="#8E8E93">
                 Save automatically after completion
               </SwiftText>
@@ -168,14 +163,16 @@ export default function WorkoutSettingsScreen() {
             <Switch
               value={preferences.autoSaveWorkouts}
               onValueChange={(v) =>
-                save('autoSaveWorkouts', v, () =>
-                  analytics.autoSaveToggled(v)
-                )
+                save('autoSaveWorkouts', v, () => analytics.autoSaveToggled(v))
               }
             />
           </HStack>
 
-          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
+          <HStack
+            spacing={0}
+            alignment="center"
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <VStack spacing={2} alignment="leading">
               <SwiftText weight="semibold">Sync to Cloud</SwiftText>
               <SwiftText size={13} color="#8E8E93">
@@ -186,9 +183,7 @@ export default function WorkoutSettingsScreen() {
             <Switch
               value={preferences.syncToCloud}
               onValueChange={(v) =>
-                save('syncToCloud', v, () =>
-                  analytics.syncToggled(v)
-                )
+                save('syncToCloud', v, () => analytics.syncToggled(v))
               }
             />
           </HStack>

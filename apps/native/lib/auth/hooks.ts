@@ -1,9 +1,9 @@
 // Auth hook using Better Auth session
-import { authClient } from "./client";
+import { authClient } from './client';
 
 interface UseAuthReturn {
-	isAuthenticated: boolean;
-	isLoading: boolean;
+  isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 /**
@@ -11,10 +11,10 @@ interface UseAuthReturn {
  * Checks if user has an active session
  */
 export function useAuth(): UseAuthReturn {
-	const session = authClient.useSession();
+  const session = authClient.useSession();
 
-	return {
-		isAuthenticated: !!session.data?.user,
-		isLoading: session.isPending,
-	};
+  return {
+    isAuthenticated: !!session.data?.user,
+    isLoading: session.isPending,
+  };
 }

@@ -47,8 +47,8 @@ export default function ExportImportScreen() {
 
           <VStack spacing={4}>
             <SwiftText size={13} color="#8E8E93">
-              Export your workout history, settings, and profile as
-              a JSON or CSV file.
+              Export your workout history, settings, and profile as a JSON or
+              CSV file.
             </SwiftText>
           </VStack>
         </Section>

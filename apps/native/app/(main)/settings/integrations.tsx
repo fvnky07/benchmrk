@@ -23,9 +23,7 @@ import { showToast } from '@/lib/ui';
 
 export default function IntegrationsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
-  const updatePreferences = useMutation(
-    api.userPreferences.updatePreferences
-  );
+  const updatePreferences = useMutation(api.userPreferences.updatePreferences);
   const [isSaving, setIsSaving] = useState(false);
 
   useFocusEffect(
@@ -53,7 +51,7 @@ export default function IntegrationsScreen() {
 
   if (preferences === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View className="bg-black flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
@@ -61,10 +59,8 @@ export default function IntegrationsScreen() {
 
   if (preferences === null) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
-        <Text className="text-gray-400">
-          Sign in to manage integrations.
-        </Text>
+      <View className="bg-black flex-1 items-center justify-center">
+        <Text className="text-gray-400">Sign in to manage integrations.</Text>
       </View>
     );
   }
@@ -73,7 +69,11 @@ export default function IntegrationsScreen() {
     <Host style={{ flex: 1 }}>
       <List listStyle="insetGrouped">
         <Section title="HEALTH & FITNESS">
-          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
+          <HStack
+            spacing={0}
+            alignment="center"
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <Label
               title="Apple Health"
               systemImage="heart.fill"
@@ -88,18 +88,16 @@ export default function IntegrationsScreen() {
             />
           </HStack>
 
-          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
-            <Label
-              title="Strava"
-              systemImage="figure.run"
-              color="#FC4C02"
-            />
+          <HStack
+            spacing={0}
+            alignment="center"
+            modifiers={[padding({ vertical: 8 })]}
+          >
+            <Label title="Strava" systemImage="figure.run" color="#FC4C02" />
             <Spacer />
             <Switch
               value={preferences.stravaEnabled}
-              onValueChange={(v) =>
-                toggle('stravaEnabled', v, 'Strava')
-              }
+              onValueChange={(v) => toggle('stravaEnabled', v, 'Strava')}
             />
           </HStack>
         </Section>

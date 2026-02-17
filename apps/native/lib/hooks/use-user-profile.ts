@@ -23,7 +23,7 @@ export interface UserProfile {
 
 /**
  * Hook to get user profile data with safe fallbacks
- * 
+ *
  * @example
  * ```tsx
  * const { username, bio, avatarUrl, initials, isLoading } = useUserProfile();
@@ -32,14 +32,11 @@ export interface UserProfile {
 export function useUserProfile(): UserProfile {
   const session = authClient.useSession();
   const user = session.data?.user;
-  
+
   const userData = user as ExtendedUser | undefined;
 
   const username =
-    userData?.displayUsername ??
-    userData?.username ??
-    user?.name ??
-    'User';
+    userData?.displayUsername ?? userData?.username ?? user?.name ?? 'User';
 
   const bio = userData?.bio ?? null;
   const avatarUrl = user?.image ?? null;

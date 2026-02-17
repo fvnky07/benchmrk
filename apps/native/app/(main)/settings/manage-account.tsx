@@ -54,7 +54,7 @@ export default function ManageAccountScreen() {
 
   if (!user) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View className="bg-black flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
         <Text className="mt-4 text-gray-400">Loading account…</Text>
       </View>

@@ -32,6 +32,7 @@ lib/
 ## Usage
 
 ### Import from category
+
 ```ts
 import { authClient, useAuth } from '@/lib/auth';
 import { analytics, identifyUser } from '@/lib/analytics';
@@ -40,6 +41,7 @@ import { cn } from '@/lib/utils';
 ```
 
 ### Import from main index
+
 ```ts
 import { authClient, analytics, showToast, cn } from '@/lib';
 ```

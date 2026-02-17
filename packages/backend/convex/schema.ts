@@ -24,11 +24,7 @@ export default defineSchema({
     userId: v.string(),
 
     // Appearance
-    theme: v.union(
-      v.literal('light'),
-      v.literal('dark'),
-      v.literal('system')
-    ),
+    theme: v.union(v.literal('light'), v.literal('dark'), v.literal('system')),
 
     // Workout — general
     defaultRestTimer: v.number(),
