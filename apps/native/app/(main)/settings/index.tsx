@@ -14,7 +14,7 @@ import {
   Text as SwiftText,
   VStack,
 } from '@expo/ui/swift-ui';
-import { foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+import { foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 
@@ -99,7 +99,11 @@ export default function SettingsScreen() {
       <List listStyle="insetGrouped">
         {/* ---- Profile ---- */}
         <Section title="PROFILE">
-          <HStack spacing={0} onPress={() => router.push('./manage-account' as never)}>
+          <HStack 
+            spacing={0} 
+            onPress={() => router.push('./manage-account' as never)}
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <Label
               title="Manage Account"
               systemImage="person.circle.fill"
@@ -113,7 +117,11 @@ export default function SettingsScreen() {
         {/* ---- Preferences ---- */}
         <Section title="PREFERENCES">
           {/* Appearance */}
-          <HStack spacing={0} onPress={() => router.push('./appearance' as never)}>
+          <HStack 
+            spacing={0} 
+            onPress={() => router.push('./appearance' as never)}
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <Label
               title="Appearance"
               systemImage="paintbrush.fill"
@@ -135,7 +143,11 @@ export default function SettingsScreen() {
           </HStack>
 
           {/* Workout Settings */}
-          <HStack spacing={0} onPress={() => router.push('./workout-settings' as never)}>
+          <HStack 
+            spacing={0} 
+            onPress={() => router.push('./workout-settings' as never)}
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <Label
               title="Workout Settings"
               systemImage="dumbbell.fill"
@@ -147,7 +159,11 @@ export default function SettingsScreen() {
           </HStack>
 
           {/* Integrations */}
-          <HStack spacing={0} onPress={() => router.push('./integrations' as never)}>
+          <HStack 
+            spacing={0} 
+            onPress={() => router.push('./integrations' as never)}
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <Label
               title="Integrations"
               systemImage="link.circle.fill"
@@ -158,7 +174,11 @@ export default function SettingsScreen() {
           </HStack>
 
           {/* Export & Import */}
-          <HStack spacing={0} onPress={() => router.push('./export-import' as never)}>
+          <HStack 
+            spacing={0} 
+            onPress={() => router.push('./export-import' as never)}
+            modifiers={[padding({ vertical: 8 })]}
+          >
             <Label
               title="Export & Import Data"
               systemImage="arrow.up.arrow.down.circle.fill"
