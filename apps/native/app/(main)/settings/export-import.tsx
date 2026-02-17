@@ -1,19 +1,15 @@
-import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 
-import {
-  Host,
-  HStack,
-  Label,
-  List,
-  Section,
-  Spacer,
-  Text as SwiftText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
+import { useFocusEffect } from 'expo-router';
+
+import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
+
+const iconColor = '#00ff90';
 
 export default function ExportImportScreen() {
   useFocusEffect(
@@ -22,64 +18,63 @@ export default function ExportImportScreen() {
     }, [])
   );
 
+  const handleExport = () => {
+    console.log('Export All Data - Coming soon');
+  };
+
+  const handleImport = () => {
+    console.log('Import Data - Coming soon');
+  };
+
   return (
-    <Host style={{ flex: 1 }}>
-      <List listStyle="insetGrouped">
-        <Section title="EXPORT">
-          <HStack spacing={12}>
-            <Label
-              title="Export All Data"
-              systemImage="arrow.up.doc.fill"
-              color="#007AFF"
-            />
-            <Spacer />
-            <SwiftText
-              modifiers={[
-                foregroundStyle({
-                  type: 'hierarchical',
-                  style: 'secondary',
-                }),
-              ]}
-            >
-              Coming soon
-            </SwiftText>
-          </HStack>
+    <ScrollView className="flex-1 bg-black-1">
+      {/* Export Section */}
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">EXPORT</Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          <TouchableOpacity
+            className="h-14 flex-row items-center px-4"
+            onPress={handleExport}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cloud-upload-outline" size={24} color="#007AFF" />
+            <View className="ml-3 flex-1">
+              <Text className="text-base text-white">Export All Data</Text>
+            </View>
+            <Text className="text-sm text-gray-500">Coming soon</Text>
+          </TouchableOpacity>
 
-          <VStack spacing={4}>
-            <SwiftText size={13} color="#8E8E93">
-              Export your workout history, settings, and profile as
-              a JSON or CSV file.
-            </SwiftText>
-          </VStack>
-        </Section>
+          <View className="border-t border-gray-800 px-4 py-3">
+            <Text className="text-xs leading-5 text-gray-400">
+              Export your workout history, settings, and profile as a JSON or CSV file.
+            </Text>
+          </View>
+        </View>
+      </View>
 
-        <Section title="IMPORT">
-          <HStack spacing={12}>
-            <Label
-              title="Import Data"
-              systemImage="arrow.down.doc.fill"
-              color="#34C759"
-            />
-            <Spacer />
-            <SwiftText
-              modifiers={[
-                foregroundStyle({
-                  type: 'hierarchical',
-                  style: 'secondary',
-                }),
-              ]}
-            >
-              Coming soon
-            </SwiftText>
-          </HStack>
+      {/* Import Section */}
+      <View className="mt-6 pb-8">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">IMPORT</Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          <TouchableOpacity
+            className="h-14 flex-row items-center px-4"
+            onPress={handleImport}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cloud-download-outline" size={24} color={iconColor} />
+            <View className="ml-3 flex-1">
+              <Text className="text-base text-white">Import Data</Text>
+            </View>
+            <Text className="text-sm text-gray-500">Coming soon</Text>
+          </TouchableOpacity>
 
-          <VStack spacing={4}>
-            <SwiftText size={13} color="#8E8E93">
+          <View className="border-t border-gray-800 px-4 py-3">
+            <Text className="text-xs leading-5 text-gray-400">
               Restore data from a previous export file.
-            </SwiftText>
-          </VStack>
-        </Section>
-      </List>
-    </Host>
+            </Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }

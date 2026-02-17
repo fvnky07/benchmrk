@@ -42,7 +42,7 @@ The example project shows the target implementation pattern. Consult the documen
 - posthog-react-native is the React Native SDK package name (same as bare RN)
 - Use expo-constants with app.config.js extras for POSTHOG_API_KEY and POSTHOG_HOST (NOT react-native-config)
 - Access config via `Constants.expoConfig?.extra?.posthogApiKey` in your posthog.ts config file
-- For expo-router, wrap PostHogProvider in app/_layout.tsx and manually track screens with `posthog.screen(pathname, params)` in a useEffect
+- For expo-router, wrap PostHogProvider in app/\_layout.tsx and manually track screens with `posthog.screen(pathname, params)` in a useEffect
 - posthog-react-native is the React Native SDK package name
 - Use react-native-config to load POSTHOG_API_KEY and POSTHOG_HOST from .env (variables are embedded at build time, not runtime)
 - Place PostHogProvider INSIDE NavigationContainer for React Navigation v7 compatibility

@@ -11,7 +11,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { useColorScheme } from 'nativewind';
 
 import { TextClassContext } from '@/components/ui/text';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { COLORS } from '@/theme/colors';
 import { withOpacity } from '@/theme/with-opacity';
 

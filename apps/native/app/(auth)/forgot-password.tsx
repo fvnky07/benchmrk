@@ -13,11 +13,11 @@ import { router } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { useFormValidation } from '@/lib/hooks/use-form-validation';
-import { forgotPasswordSchema } from '@/lib/schemas/auth-schemas';
-import { useAuthStore } from '@/lib/stores/auth-store';
 import { analytics } from '@/lib/analytics';
-import { showToast } from '@/lib/toast';
+import { useAuthStore } from '@/lib/auth';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
+import { forgotPasswordSchema } from '@/lib/schemas/auth';
+import { showToast } from '@/lib/ui';
 
 export default function ForgotPasswordScreen() {
   const email = useAuthStore((state) => state.email);
