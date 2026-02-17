@@ -1,4 +1,4 @@
-import { ScrollView, View, TouchableOpacity } from 'react-native';
+import { ScrollView, View, Pressable } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,10 +47,10 @@ export default function WorkoutScreen() {
           </Text>
 
           {/* Start Workout Button */}
-          <TouchableOpacity
+          <Pressable
             className="mb-4 overflow-hidden rounded-xl bg-[#1C1C1E]"
             onPress={handleStartWorkout}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <View className="flex-row items-center p-5">
               <View
@@ -69,33 +69,33 @@ export default function WorkoutScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color={iconColor} />
             </View>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Workout History */}
-          <TouchableOpacity
+          <Pressable
             className="mb-4 h-16 flex-row items-center overflow-hidden rounded-xl bg-[#1C1C1E] px-5"
             onPress={handleViewHistory}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="calendar-outline" size={24} color={iconColor} />
             <Text className="ml-4 flex-1 text-base text-white">
               Workout History
             </Text>
             <Ionicons name="chevron-forward" size={18} color={iconColor} />
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Templates */}
-          <TouchableOpacity
+          <Pressable
             className="h-16 flex-row items-center overflow-hidden rounded-xl bg-[#1C1C1E] px-5"
             onPress={handleViewTemplates}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="document-text-outline" size={24} color={iconColor} />
             <Text className="ml-4 flex-1 text-base text-white">
               Workout Templates
             </Text>
             <Ionicons name="chevron-forward" size={18} color={iconColor} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Stats Overview */}
