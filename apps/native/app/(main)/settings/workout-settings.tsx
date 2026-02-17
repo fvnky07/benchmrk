@@ -114,7 +114,7 @@ export default function WorkoutSettingsScreen() {
           </VStack>
 
           {/* Weight Unit */}
-          <HStack spacing={12}>
+          <HStack spacing={0}>
             <SwiftText weight="semibold">Weight Unit</SwiftText>
             <Spacer />
             <HStack spacing={12}>
@@ -154,7 +154,7 @@ export default function WorkoutSettingsScreen() {
 
         {/* ---- Tracking ---- */}
         <Section title="TRACKING">
-          <HStack spacing={12} alignment="center">
+          <HStack spacing={0} alignment="center">
             <VStack spacing={2} alignment="leading">
               <SwiftText weight="semibold">
                 Auto-save Workouts
@@ -174,7 +174,7 @@ export default function WorkoutSettingsScreen() {
             />
           </HStack>
 
-          <HStack spacing={12} alignment="center">
+          <HStack spacing={0} alignment="center">
             <VStack spacing={2} alignment="leading">
               <SwiftText weight="semibold">Sync to Cloud</SwiftText>
               <SwiftText size={13} color="#8E8E93">

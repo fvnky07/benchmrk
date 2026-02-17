@@ -72,7 +72,7 @@ export default function IntegrationsScreen() {
     <Host style={{ flex: 1 }}>
       <List listStyle="insetGrouped">
         <Section title="HEALTH & FITNESS">
-          <HStack spacing={12} alignment="center">
+          <HStack spacing={0} alignment="center">
             <Label
               title="Apple Health"
               systemImage="heart.fill"
@@ -87,7 +87,7 @@ export default function IntegrationsScreen() {
             />
           </HStack>
 
-          <HStack spacing={12} alignment="center">
+          <HStack spacing={0} alignment="center">
             <Label
               title="Strava"
               systemImage="figure.run"

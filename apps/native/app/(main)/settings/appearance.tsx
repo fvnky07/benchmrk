@@ -82,7 +82,7 @@ export default function AppearanceScreen() {
             return (
               <HStack
                 key={opt.value}
-                spacing={12}
+                spacing={0}
                 onPress={() => handleSelect(opt.value)}
               >
                 <SwiftText weight={selected ? 'semibold' : 'regular'}>

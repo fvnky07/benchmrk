@@ -66,7 +66,7 @@ export default function ManageAccountScreen() {
       <List listStyle="insetGrouped">
         {/* Account Information */}
         <Section title="ACCOUNT INFORMATION">
-          <HStack spacing={12}>
+          <HStack spacing={0}>
             <SwiftText weight="semibold">Email</SwiftText>
             <Spacer />
             <SwiftText
@@ -81,7 +81,7 @@ export default function ManageAccountScreen() {
             </SwiftText>
           </HStack>
 
-          <HStack spacing={12}>
+          <HStack spacing={0}>
             <SwiftText weight="semibold">Name</SwiftText>
             <Spacer />
             <SwiftText
@@ -99,7 +99,7 @@ export default function ManageAccountScreen() {
 
         {/* Actions */}
         <Section title="ACTIONS">
-          <HStack spacing={12}>
+          <HStack spacing={0}>
             <Label
               title="Change Password"
               systemImage="lock.fill"
