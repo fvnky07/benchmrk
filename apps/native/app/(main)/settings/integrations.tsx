@@ -1,19 +1,9 @@
 import { useCallback, useState } from 'react';
 
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, ScrollView } from 'react-native';
 
-import {
-  Host,
-  HStack,
-  Label,
-  List,
-  Section,
-  Spacer,
-  Switch,
-  Text as SwiftText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { padding } from '@expo/ui/swift-ui/modifiers';
+import { Host, Switch } from '@expo/ui/swift-ui';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 
@@ -22,6 +12,8 @@ import { useFocusEffect } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
 import { showToast } from '@/lib/ui';
+
+const iconColor = '#00ff90';
 
 export default function IntegrationsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
@@ -53,65 +45,80 @@ export default function IntegrationsScreen() {
 
   if (preferences === undefined) {
     return (
-      <View className="bg-black flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View className="flex-1 items-center justify-center bg-black-1">
+        <ActivityIndicator size="large" color={iconColor} />
+        <Text className="mt-4 text-gray-400">Loading integrations…</Text>
       </View>
     );
   }
 
   if (preferences === null) {
     return (
-      <View className="bg-black flex-1 items-center justify-center">
+      <View className="flex-1 items-center justify-center bg-black-1">
         <Text className="text-gray-400">Sign in to manage integrations.</Text>
       </View>
     );
   }
 
   return (
-    <Host style={{ flex: 1 }}>
-      <List listStyle="insetGrouped">
-        <Section title="HEALTH & FITNESS">
-          <HStack
-            spacing={0}
-            alignment="center"
-            modifiers={[padding({ vertical: 8 })]}
-          >
-            <Label
-              title="Apple Health"
-              systemImage="heart.fill"
-              color="#FF3B30"
-            />
-            <Spacer />
-            <Switch
-              value={preferences.appleHealthEnabled}
-              onValueChange={(v) =>
-                toggle('appleHealthEnabled', v, 'Apple Health')
-              }
-            />
-          </HStack>
+    <ScrollView className="flex-1 bg-black-1">
+      {/* Health & Fitness */}
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+          HEALTH & FITNESS
+        </Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+          <View className="h-16 flex-row items-center border-b border-gray-800 px-4">
+            <Ionicons name="heart" size={24} color="#FF3B30" />
+            <View className="ml-3 flex-1">
+              <Text className="text-base text-white">Apple Health</Text>
+              <Text className="text-xs text-gray-500">
+                Sync workouts to Apple Health
+              </Text>
+            </View>
+            <Host matchContents>
+              <Switch
+                value={preferences.appleHealthEnabled}
+                onValueChange={(v) =>
+                  toggle('appleHealthEnabled', v, 'Apple Health')
+                }
+                color={iconColor}
+                variant="switch"
+              />
+            </Host>
+          </View>
 
-          <HStack
-            spacing={0}
-            alignment="center"
-            modifiers={[padding({ vertical: 8 })]}
-          >
-            <Label title="Strava" systemImage="figure.run" color="#FC4C02" />
-            <Spacer />
-            <Switch
-              value={preferences.stravaEnabled}
-              onValueChange={(v) => toggle('stravaEnabled', v, 'Strava')}
-            />
-          </HStack>
-        </Section>
+          <View className="h-16 flex-row items-center px-4">
+            <Ionicons name="bicycle" size={24} color="#FC4C02" />
+            <View className="ml-3 flex-1">
+              <Text className="text-base text-white">Strava</Text>
+              <Text className="text-xs text-gray-500">
+                Export activities to Strava
+              </Text>
+            </View>
+            <Host matchContents>
+              <Switch
+                value={preferences.stravaEnabled}
+                onValueChange={(v) => toggle('stravaEnabled', v, 'Strava')}
+                color={iconColor}
+                variant="switch"
+              />
+            </Host>
+          </View>
+        </View>
+      </View>
 
-        <Section title="COMING SOON">
-          <VStack spacing={4}>
-            <SwiftText size={14} color="#8E8E93">
-              More integrations are on the way. Stay tuned!
-            </SwiftText>
-          </VStack>
-        </Section>
-      </List>
-    </Host>
+      {/* Coming Soon */}
+      <View className="mt-6 pb-8">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+          COMING SOON
+        </Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E] p-4">
+          <Text className="text-sm text-gray-400">
+            More integrations are on the way. Stay tuned!
+          </Text>
+        </View>
+      </View>
+    </ScrollView>
   );
 }

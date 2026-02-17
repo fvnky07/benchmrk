@@ -10,9 +10,7 @@ export default defineSchema({
   // confirm via magic link
   waitlist: defineTable({
     email: v.string(),
-    // NOTE: Track waitlist position for UI display
     position: v.optional(v.number()),
-    // NOTE: Made optional for backwards compatibility
     createdAt: v.optional(v.number()),
   })
     .index('by_email', ['email'])

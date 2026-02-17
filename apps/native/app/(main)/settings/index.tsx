@@ -26,6 +26,7 @@ export default function SettingsScreen() {
   const [isResetting, setIsResetting] = useState(false);
 
   const { username, avatarUrl, initials } = useUserProfile();
+  const iconColour = '#00ff90';
 
   useFocusEffect(
     useCallback(() => {
@@ -62,8 +63,8 @@ export default function SettingsScreen() {
   // ----- loading -----
   if (preferences === undefined) {
     return (
-      <View className="bg-black flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View className="flex-1 items-center justify-center bg-black-1">
+        <ActivityIndicator size="large" color={iconColour} />
         <Text className="mt-4 text-gray-400">Loading settings…</Text>
       </View>
     );
@@ -72,7 +73,7 @@ export default function SettingsScreen() {
   // ----- error (null = unauthenticated) -----
   if (preferences === null) {
     return (
-      <View className="bg-black flex-1 items-center justify-center px-6">
+      <View className="flex-1 items-center justify-center bg-black-1 px-6">
         <Text className="mb-2 text-lg font-semibold text-white">
           Unable to load settings
         </Text>
@@ -86,26 +87,36 @@ export default function SettingsScreen() {
   const themeLabel =
     preferences.theme === 'system'
       ? 'System'
-      : preferences.theme === 'light'
+      : (preferences.theme === 'light'
         ? 'Light'
-        : 'Dark';
+        : 'Dark');
 
   const workoutSummary = `Rest ${preferences.defaultRestTimer}s · ${preferences.weightUnit.toUpperCase()}`;
 
   return (
-    <ScrollView className="flex-1 bg-[#000000]">
-      {/* Profile Section */}
+    <ScrollView className="flex-1 bg-black-1">
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-gray-500">
-          PROFILE
-        </Text>
-        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
+        <View className="mx-4 overflow-hidden rounded-xl bg-green-1">
           <TouchableOpacity
-            className="h-18 flex-row items-center px-4"
-            onPress={() => router.push('./manage-account' as never)}
+            className="my-2 h-14 flex-row items-center justify-center px-4"
+            onPress={() => router.push('/(main)/settings/manage-account')}
             activeOpacity={0.7}
           >
-            <Avatar className="size-20 rounded-md" alt={`${username}'s avatar`}>
+            <Text className="text-black text-4xl">benchmrk pro</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View className="mt-6">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+          PROFILE
+        </Text>
+        <View className="mx-4 overflow-hidden rounded-xl bg-black-3">
+          <TouchableOpacity
+            className="my-2 h-14 flex-row items-center px-4"
+            onPress={() => router.push('/(main)/settings/manage-account')}
+            activeOpacity={0.7}
+          >
+            <Avatar className="size-10 rounded-lg" alt={`${username}'s avatar`}>
               {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
               <AvatarFallback>
                 <Text className="text-lg font-semibold text-foreground">
@@ -113,94 +124,95 @@ export default function SettingsScreen() {
                 </Text>
               </AvatarFallback>
             </Avatar>
-            <Text className="ml-3 flex-1 text-base text-white">
-              Manage Account
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <View className="flex-1 flex-col">
+              <Text className="ml-3 text-base text-white">Manage Account</Text>
+              <Text className="ml-3 text-sm text-white/60">
+                Apple ID, Change email, edit profile
+              </Text>
+            </View>
+
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
           </TouchableOpacity>
+          {/* Export & Import */}
           <TouchableOpacity
             className="h-12 flex-row items-center px-4"
-            onPress={() => router.push('./manage-account' as never)}
+            onPress={() => router.push('/(main)/settings/export-import')}
             activeOpacity={0.7}
           >
-            <Ionicons name="person-circle" size={28} color="#007AFF" />
+            <Ionicons name="swap-vertical" size={28} color={iconColour} />
             <Text className="ml-3 flex-1 text-base text-white">
-              Manage Account
+              Export & Import Data
             </Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
           </TouchableOpacity>
+          {/* Notifications */}
           <TouchableOpacity
-            className="h-12 flex-row items-center px-4"
-            onPress={() => router.push('./manage-account' as never)}
+            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            onPress={() => router.push('/(main)/settings/integrations')}
             activeOpacity={0.7}
           >
-            <Ionicons name="person-circle" size={28} color="#007AFF" />
+            <Ionicons name="link-outline" size={28} color={iconColour} />
             <Text className="ml-3 flex-1 text-base text-white">
-              Manage Account
+              Integrations
             </Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Preferences Section */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-gray-500">
+        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
           PREFERENCES
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           {/* Appearance */}
           <TouchableOpacity
             className="h-12 flex-row items-center border-b border-gray-800 px-4"
-            onPress={() => router.push('./appearance' as never)}
+            onPress={() => router.push('/(main)/settings/appearance')}
             activeOpacity={0.7}
           >
-            <Ionicons name="brush" size={28} color="#FF9500" />
+            <Ionicons
+              name="color-palette-outline"
+              size={28}
+              color={iconColour}
+            />
             <Text className="ml-3 flex-1 text-base text-white">Appearance</Text>
             <Text className="mr-2 text-base text-gray-500">{themeLabel}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
           </TouchableOpacity>
 
           {/* Workout Settings */}
           <TouchableOpacity
             className="h-12 flex-row items-center border-b border-gray-800 px-4"
-            onPress={() => router.push('./workout-settings' as never)}
+            onPress={() => router.push('/(main)/settings/workout-settings')}
             activeOpacity={0.7}
           >
-            <Ionicons name="barbell" size={28} color="#FF3B30" />
+            <Ionicons name="barbell-outline" size={28} color={iconColour} />
             <Text className="ml-3 flex-1 text-base text-white">
               Workout Settings
             </Text>
             <Text className="mr-2 text-base text-gray-500">
               {workoutSummary}
             </Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
           </TouchableOpacity>
 
           {/* Integrations */}
           <TouchableOpacity
             className="h-12 flex-row items-center border-b border-gray-800 px-4"
-            onPress={() => router.push('./integrations' as never)}
+            onPress={() => router.push('/(main)/settings/integrations')}
             activeOpacity={0.7}
           >
-            <Ionicons name="link-outline" size={28} color="#5856D6" />
+            <Ionicons
+              name="notifications-outline"
+              size={28}
+              color={iconColour}
+            />
             <Text className="ml-3 flex-1 text-base text-white">
-              Integrations
+              Notifications
             </Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
-          </TouchableOpacity>
-
-          {/* Export & Import */}
-          <TouchableOpacity
-            className="h-12 flex-row items-center px-4"
-            onPress={() => router.push('./export-import' as never)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="swap-vertical" size={28} color="#34C759" />
-            <Text className="ml-3 flex-1 text-base text-white">
-              Export & Import Data
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-forward" size={18} color={iconColour} />
           </TouchableOpacity>
         </View>
       </View>
@@ -209,12 +221,13 @@ export default function SettingsScreen() {
       <View className="mt-6 pb-8">
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <TouchableOpacity
-            className="h-12 items-center justify-center px-4"
+            className="h-12 flex-row items-center justify-center gap-4 px-4"
             onPress={handleReset}
             disabled={isResetting}
             activeOpacity={0.7}
           >
-            <Text className="text-base font-semibold text-[#FF3B30]">
+            <Ionicons name="reload" size={18} color="#ef4444" />
+            <Text className="text-base font-semibold text-red-500">
               {isResetting ? 'Resetting…' : 'Reset All Settings to Defaults'}
             </Text>
           </TouchableOpacity>

@@ -45,8 +45,9 @@ module.exports = {
         /* Custom Theme Colors */
         white: '#FFFFFF',
         black: {
-          1: '#171717',
+          1: '#151515',
           2: '#1F1F1F',
+          3: '#303030',
         },
         pink: {
           1: '#FF7878', // Grapefruit Pink
@@ -59,6 +60,7 @@ module.exports = {
         },
         green: {
           1: '#28E2A4', // Tropical Mint
+          1: '#00ff90', // Tropical Mint
         },
         cyan: {
           1: '#3CD5E6', // Strong Cyan

@@ -23,24 +23,29 @@ import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
  */
 export default function MainLayout() {
   const colorScheme = useColorScheme();
+  const iconColour = '#00ff90';
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <NativeTabs>
         <NativeTabs.Trigger name="index">
-          <Icon sf="house.fill" />
+          <Icon sf="house.fill" selectedColor={iconColour} />
           <Label>Home</Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="explore">
-          <Icon sf="magnifyingglass" />
+          <Icon sf="magnifyingglass" selectedColor={iconColour} />
           <Label>Explore</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="workout">
+          <Icon sf="figure.strengthtraining.traditional" selectedColor={iconColour} />
+          <Label>Workout</Label>
+        </NativeTabs.Trigger>
         <NativeTabs.Trigger name="profile">
-          <Icon sf="person.fill" />
+          <Icon sf="person.fill" selectedColor={iconColour} />
           <Label>Profile</Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="settings">
-          <Icon sf="gearshape.fill" />
+          <Icon sf="gearshape.fill" selectedColor={iconColour} />
           <Label>Settings</Label>
         </NativeTabs.Trigger>
       </NativeTabs>
