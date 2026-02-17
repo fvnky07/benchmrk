@@ -17,11 +17,11 @@ import { foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
+import { useUserProfile } from '@/lib/hooks/use-user-profile';
 import { authClient } from '@/lib/auth';
 
 export default function ManageAccountScreen() {
-  const session = authClient.useSession();
-  const user = session.data?.user;
+  const { user } = useUserProfile();
 
   useFocusEffect(
     useCallback(() => {

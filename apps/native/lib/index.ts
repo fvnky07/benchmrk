@@ -14,6 +14,7 @@ export * from './utils';
 
 // Hooks
 export * from './hooks/use-form-validation';
+export * from './hooks/use-user-profile';
 
 // Schemas
 export * from './schemas/auth';

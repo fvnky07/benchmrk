@@ -7,7 +7,7 @@ import { StatisticsCard } from '@/components/profile/StatisticsCard';
 import { UserStatsRow } from '@/components/profile/UserStatsRow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Text } from '@/components/ui/text';
-import { authClient } from '@/lib/auth';
+import { useUserProfile } from '@/lib/hooks/use-user-profile';
 
 // TODO: Replace with real Convex useQuery data
 const PLACEHOLDER_STATS = {
@@ -30,19 +30,7 @@ const PLACEHOLDER_STATS = {
 export default function ProfileScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const session = authClient.useSession();
-  const user = session.data?.user;
-
-  // Better Auth user fields — cast to access custom fields
-  const userData = user as Record<string, unknown> | undefined;
-  const username =
-    (userData?.displayUsername as string) ??
-    (userData?.username as string) ??
-    user?.name ??
-    'User';
-  const bio = (userData?.bio as string) ?? null;
-  const avatarUrl = (user?.image as string) ?? null;
-  const initials = username.slice(0, 2).toUpperCase();
+  const { username, bio, avatarUrl, initials } = useUserProfile();
 
   // TODO: Replace with Convex useQuery for completed workouts
   // const workouts = useQuery(api.workouts.getUserWorkouts, { userId: user?.id });

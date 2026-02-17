@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 
-import { authClient } from '@/lib/auth';
+import { useUserProfile } from '@/lib/hooks/use-user-profile';
 
 /**
  * Profile tab layout
@@ -16,14 +16,7 @@ import { authClient } from '@/lib/auth';
 export default function ProfileLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const session = authClient.useSession();
-  const user = session.data?.user;
-
-  const username =
-    (user as Record<string, unknown>)?.displayUsername ??
-    (user as Record<string, unknown>)?.username ??
-    user?.name ??
-    'Profile';
+  const { username } = useUserProfile();
 
   return (
     <Stack

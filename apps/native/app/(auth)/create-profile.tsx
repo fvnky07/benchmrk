@@ -17,11 +17,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
-import { authClient } from "@/lib/auth-client";
 import { useFormValidation } from "@/lib/hooks/use-form-validation";
-import { profileSchema } from "@/lib/schemas/auth-schemas";
+import { profileSchema } from "@/lib/schemas/auth";
 import { analytics } from "@/lib/analytics";
-import { showToast } from "@/lib/toast";
+import { showToast } from "@/lib/ui";
+import { useUserProfile } from "@/lib/hooks/use-user-profile";
 
 export default function CreateProfileScreen() {
 	const [username, setUsername] = useState("");
@@ -31,8 +31,8 @@ export default function CreateProfileScreen() {
 	const [isUploading, setIsUploading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const session = authClient.useSession();
-	const userId = session.data?.user?.id;
+	const { user } = useUserProfile();
+	const userId = user?.id as string | undefined;
 
 	const generateUploadUrl = useMutation(api.profile.generateUploadUrl);
 	const updateProfile = useMutation(api.profile.updateProfile);
@@ -178,10 +178,10 @@ export default function CreateProfileScreen() {
 		try {
 			setIsSubmitting(true);
 
-			// Generate username from email
-			const email = session.data?.user?.email || "";
-			const autoUsername =
-				email.split("@")[0] + Math.floor(Math.random() * 1000);
+		// Generate username from email
+		const email = (user?.email as string) || "";
+		const autoUsername =
+			email.split("@")[0] + Math.floor(Math.random() * 1000);
 
 			await updateProfile({
 				userId,
@@ -204,7 +204,7 @@ export default function CreateProfileScreen() {
 	};
 
 	const getInitials = () => {
-		const name = session.data?.user?.name || session.data?.user?.email || "?";
+		const name = (user?.name as string) || (user?.email as string) || "?";
 		return name.substring(0, 2).toUpperCase();
 	};
 
