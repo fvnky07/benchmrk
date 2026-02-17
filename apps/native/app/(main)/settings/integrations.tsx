@@ -15,6 +15,7 @@ import {
   Text as SwiftText,
   VStack,
 } from '@expo/ui/swift-ui';
+import { padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -72,7 +73,7 @@ export default function IntegrationsScreen() {
     <Host style={{ flex: 1 }}>
       <List listStyle="insetGrouped">
         <Section title="HEALTH & FITNESS">
-          <HStack spacing={0} alignment="center">
+          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
             <Label
               title="Apple Health"
               systemImage="heart.fill"
@@ -87,7 +88,7 @@ export default function IntegrationsScreen() {
             />
           </HStack>
 
-          <HStack spacing={0} alignment="center">
+          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
             <Label
               title="Strava"
               systemImage="figure.run"

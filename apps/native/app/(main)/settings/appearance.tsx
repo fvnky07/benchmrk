@@ -13,6 +13,7 @@ import {
   Spacer,
   Text as SwiftText,
 } from '@expo/ui/swift-ui';
+import { padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -84,6 +85,7 @@ export default function AppearanceScreen() {
                 key={opt.value}
                 spacing={0}
                 onPress={() => handleSelect(opt.value)}
+                modifiers={[padding({ vertical: 8 })]}
               >
                 <SwiftText weight={selected ? 'semibold' : 'regular'}>
                   {opt.label}

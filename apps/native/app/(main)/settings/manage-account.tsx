@@ -13,7 +13,7 @@ import {
   Text as SwiftText,
   VStack,
 } from '@expo/ui/swift-ui';
-import { foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+import { foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -66,7 +66,7 @@ export default function ManageAccountScreen() {
       <List listStyle="insetGrouped">
         {/* Account Information */}
         <Section title="ACCOUNT INFORMATION">
-          <HStack spacing={0}>
+          <HStack spacing={0} modifiers={[padding({ vertical: 8 })]}>
             <SwiftText weight="semibold">Email</SwiftText>
             <Spacer />
             <SwiftText
@@ -81,7 +81,7 @@ export default function ManageAccountScreen() {
             </SwiftText>
           </HStack>
 
-          <HStack spacing={0}>
+          <HStack spacing={0} modifiers={[padding({ vertical: 8 })]}>
             <SwiftText weight="semibold">Name</SwiftText>
             <Spacer />
             <SwiftText
@@ -99,7 +99,7 @@ export default function ManageAccountScreen() {
 
         {/* Actions */}
         <Section title="ACTIONS">
-          <HStack spacing={0}>
+          <HStack spacing={0} modifiers={[padding({ vertical: 8 })]}>
             <Label
               title="Change Password"
               systemImage="lock.fill"

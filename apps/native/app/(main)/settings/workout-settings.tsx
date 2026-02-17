@@ -15,6 +15,7 @@ import {
   Text as SwiftText,
   VStack,
 } from '@expo/ui/swift-ui';
+import { padding } from '@expo/ui/swift-ui/modifiers';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -114,7 +115,7 @@ export default function WorkoutSettingsScreen() {
           </VStack>
 
           {/* Weight Unit */}
-          <HStack spacing={0}>
+          <HStack spacing={0} modifiers={[padding({ vertical: 8 })]}>
             <SwiftText weight="semibold">Weight Unit</SwiftText>
             <Spacer />
             <HStack spacing={12}>
@@ -154,7 +155,7 @@ export default function WorkoutSettingsScreen() {
 
         {/* ---- Tracking ---- */}
         <Section title="TRACKING">
-          <HStack spacing={0} alignment="center">
+          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
             <VStack spacing={2} alignment="leading">
               <SwiftText weight="semibold">
                 Auto-save Workouts
@@ -174,7 +175,7 @@ export default function WorkoutSettingsScreen() {
             />
           </HStack>
 
-          <HStack spacing={0} alignment="center">
+          <HStack spacing={0} alignment="center" modifiers={[padding({ vertical: 8 })]}>
             <VStack spacing={2} alignment="leading">
               <SwiftText weight="semibold">Sync to Cloud</SwiftText>
               <SwiftText size={13} color="#8E8E93">
