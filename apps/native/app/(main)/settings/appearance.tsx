@@ -5,7 +5,7 @@ import {
   useColorScheme,
   View,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -90,12 +90,12 @@ export default function AppearanceScreen() {
             const isLast = index === THEME_OPTIONS.length - 1;
 
             return (
-              <TouchableOpacity
+              <Pressable
                 key={option.value}
                 className={`h-12 flex-row items-center px-4 ${isLast ? '' : 'border-b border-gray-800'}`}
                 onPress={() => handleSelect(option.value)}
-                activeOpacity={0.7}
                 disabled={isSaving}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
               >
                 <Ionicons
                   name={option.icon}
@@ -108,7 +108,7 @@ export default function AppearanceScreen() {
                 {selected && (
                   <Ionicons name="checkmark-circle" size={20} color={iconColor} />
                 )}
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>

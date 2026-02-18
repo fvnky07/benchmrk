@@ -5,7 +5,7 @@ import {
   Alert,
   View,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { useMutation, useQuery } from 'convex/react';
 
 import { router, useFocusEffect } from 'expo-router';
 
+import { SettingsRow } from '@/components/settings/SettingsRow';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Text } from '@/components/ui/text';
 import { useUserProfile } from '@/lib';
@@ -87,9 +88,9 @@ export default function SettingsScreen() {
   const themeLabel =
     preferences.theme === 'system'
       ? 'System'
-      : (preferences.theme === 'light'
+      : preferences.theme === 'light'
         ? 'Light'
-        : 'Dark');
+        : 'Dark';
 
   const workoutSummary = `Rest ${preferences.defaultRestTimer}s · ${preferences.weightUnit.toUpperCase()}`;
 
@@ -97,13 +98,13 @@ export default function SettingsScreen() {
     <ScrollView className="flex-1 bg-black-1">
       <View className="mt-6">
         <View className="mx-4 overflow-hidden rounded-xl bg-green-1">
-          <TouchableOpacity
+          <Pressable
             className="my-2 h-14 flex-row items-center justify-center px-4"
             onPress={() => router.push('/(main)/settings/manage-account')}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Text className="text-black text-4xl">benchmrk pro</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
       <View className="mt-6">
@@ -111,10 +112,10 @@ export default function SettingsScreen() {
           PROFILE
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-black-3">
-          <TouchableOpacity
+          <Pressable
             className="my-2 h-14 flex-row items-center px-4"
             onPress={() => router.push('/(main)/settings/manage-account')}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Avatar className="size-10 rounded-lg" alt={`${username}'s avatar`}>
               {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
@@ -132,31 +133,23 @@ export default function SettingsScreen() {
             </View>
 
             <Ionicons name="chevron-forward" size={18} color={iconColour} />
-          </TouchableOpacity>
+          </Pressable>
           {/* Export & Import */}
-          <TouchableOpacity
-            className="h-12 flex-row items-center px-4"
+          <SettingsRow
+            icon="swap-vertical"
+            iconColor={iconColour}
+            label="Export & Import Data"
             onPress={() => router.push('/(main)/settings/export-import')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="swap-vertical" size={28} color={iconColour} />
-            <Text className="ml-3 flex-1 text-base text-white">
-              Export & Import Data
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColour} />
-          </TouchableOpacity>
-          {/* Notifications */}
-          <TouchableOpacity
-            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            hasBorder={false}
+          />
+          {/* Integrations */}
+          <SettingsRow
+            icon="link-outline"
+            iconColor={iconColour}
+            label="Integrations"
             onPress={() => router.push('/(main)/settings/integrations')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="link-outline" size={28} color={iconColour} />
-            <Text className="ml-3 flex-1 text-base text-white">
-              Integrations
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColour} />
-          </TouchableOpacity>
+            hasBorder={true}
+          />
         </View>
       </View>
 
@@ -167,70 +160,50 @@ export default function SettingsScreen() {
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           {/* Appearance */}
-          <TouchableOpacity
-            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+          <SettingsRow
+            icon="color-palette-outline"
+            iconColor={iconColour}
+            label="Appearance"
+            rightLabel={themeLabel}
             onPress={() => router.push('/(main)/settings/appearance')}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="color-palette-outline"
-              size={28}
-              color={iconColour}
-            />
-            <Text className="ml-3 flex-1 text-base text-white">Appearance</Text>
-            <Text className="mr-2 text-base text-gray-500">{themeLabel}</Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColour} />
-          </TouchableOpacity>
+            hasBorder={true}
+          />
 
           {/* Workout Settings */}
-          <TouchableOpacity
-            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+          <SettingsRow
+            icon="barbell-outline"
+            iconColor={iconColour}
+            label="Workout Settings"
+            rightLabel={workoutSummary}
             onPress={() => router.push('/(main)/settings/workout-settings')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="barbell-outline" size={28} color={iconColour} />
-            <Text className="ml-3 flex-1 text-base text-white">
-              Workout Settings
-            </Text>
-            <Text className="mr-2 text-base text-gray-500">
-              {workoutSummary}
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColour} />
-          </TouchableOpacity>
+            hasBorder={true}
+          />
 
-          {/* Integrations */}
-          <TouchableOpacity
-            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+          {/* Notifications */}
+          <SettingsRow
+            icon="notifications-outline"
+            iconColor={iconColour}
+            label="Notifications"
             onPress={() => router.push('/(main)/settings/integrations')}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={28}
-              color={iconColour}
-            />
-            <Text className="ml-3 flex-1 text-base text-white">
-              Notifications
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColour} />
-          </TouchableOpacity>
+            hasBorder={true}
+          />
         </View>
       </View>
 
       {/* Reset Section */}
       <View className="mt-6 pb-8">
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <TouchableOpacity
+          <Pressable
             className="h-12 flex-row items-center justify-center gap-4 px-4"
             onPress={handleReset}
             disabled={isResetting}
-            activeOpacity={0.7}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="reload" size={18} color="#ef4444" />
             <Text className="text-base font-semibold text-red-500">
               {isResetting ? 'Resetting…' : 'Reset All Settings to Defaults'}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </ScrollView>
