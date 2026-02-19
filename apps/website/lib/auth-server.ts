@@ -14,15 +14,7 @@ if (!convexSiteUrl && process.env.NODE_ENV !== 'production') {
   console.warn('NEXT_PUBLIC_CONVEX_SITE_URL is not set');
 }
 
-export const {
-  handler,
-  preloadAuthQuery,
-  isAuthenticated,
-  getToken,
-  fetchAuthQuery,
-  fetchAuthMutation,
-  fetchAuthAction,
-} = convexBetterAuthNextJs({
+export const { handler } = convexBetterAuthNextJs({
   convexUrl,
   convexSiteUrl,
 });

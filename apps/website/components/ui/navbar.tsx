@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
-import { motion } from 'motion/react';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import { Button } from '@/components/ui/button';
 import { NavbarBadgeLink } from '@/components/ui/navbar-badge-link';
@@ -85,7 +85,7 @@ const HamburgerIcon = ({
 );
 
 // Types
-export interface NavbarNavLink {
+interface NavbarNavLink {
   href: string;
   label: string;
   active?: boolean;
@@ -305,36 +305,96 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
     );
 
     return (
-      <header
-        className={cn(
-          'sticky top-0 z-50 w-full px-4 **:no-underline md:px-6 xl:px-4',
-          styles.backdropBlur !== false && 'backdrop-blur',
-          finalBackground,
-          className
-        )}
-        ref={combinedRef}
-        {...props}
-      >
-        <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4">
-          {/* Left side */}
-          <div className="flex items-center gap-2">
-            {/* Mobile menu trigger */}
-            {isMobile && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    className="group hover:bg-accent hover:text-accent-foreground h-9 w-9"
-                    size="icon"
-                    variant="ghost"
+      <LazyMotion features={domAnimation}>
+        <header
+          className={cn(
+            'sticky top-0 z-50 w-full px-4 **:no-underline md:px-6 xl:px-4',
+            styles.backdropBlur !== false && 'backdrop-blur',
+            finalBackground,
+            className
+          )}
+          ref={combinedRef}
+          {...props}
+        >
+          <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4">
+            {/* Left side */}
+            <div className="flex items-center gap-2">
+              {/* Mobile menu trigger */}
+              {isMobile && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      className="group hover:bg-accent hover:text-accent-foreground h-9 w-9"
+                      size="icon"
+                      variant="ghost"
+                    >
+                      <HamburgerIcon />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-48 p-2">
+                    <NavigationMenu className="max-w-none">
+                      <NavigationMenuList className="flex-col items-start gap-1">
+                        {navigationLinks.map((link) => (
+                          <NavigationMenuItem
+                            className="w-full"
+                            key={link.href}
+                          >
+                            {link.badge ? (
+                              <NavbarBadgeLink
+                                href={link.href}
+                                label={link.label}
+                                metadata={link.badge.metadata}
+                                icon={link.badge.icon}
+                                active={link.active}
+                                className="w-full justify-start"
+                                borderColor={styles.badgeBorder}
+                                textColor={styles.badgeTextColor}
+                              />
+                            ) : (
+                              <Link
+                                href={link.href}
+                                className={cn(
+                                  'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
+                                  link.active
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'text-foreground/80'
+                                )}
+                              >
+                                {link.label}
+                              </Link>
+                            )}
+                          </NavigationMenuItem>
+                        ))}
+                      </NavigationMenuList>
+                    </NavigationMenu>
+                  </PopoverContent>
+                </Popover>
+              )}
+              {/* Main nav */}
+              <div className="flex items-center gap-6">
+                <Link
+                  href="/"
+                  className={cn(
+                    'flex cursor-pointer items-center space-x-2 transition-colors hover:opacity-90',
+                    styles.logoColor
+                  )}
+                >
+                  <div className="text-2xl">{logo}</div>
+                  <span
+                    className={cn(
+                      'hidden font-[nippo] text-3xl font-bold sm:inline-block',
+                      styles.brandText
+                    )}
                   >
-                    <HamburgerIcon />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-48 p-2">
-                  <NavigationMenu className="max-w-none">
-                    <NavigationMenuList className="flex-col items-start gap-1">
-                      {navigationLinks.map((link, index) => (
-                        <NavigationMenuItem className="w-full" key={index}>
+                    benchmrk
+                  </span>
+                </Link>
+                {/* Navigation menu */}
+                {!isMobile && (
+                  <NavigationMenu className="flex">
+                    <NavigationMenuList className="gap-1">
+                      {navigationLinks.map((link) => (
+                        <NavigationMenuItem key={link.href}>
                           {link.badge ? (
                             <NavbarBadgeLink
                               href={link.href}
@@ -342,175 +402,118 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                               metadata={link.badge.metadata}
                               icon={link.badge.icon}
                               active={link.active}
-                              className="w-full justify-start"
+                              className={cn(
+                                styles.navLinkBase,
+                                styles.navLinkHover
+                              )}
                               borderColor={styles.badgeBorder}
                               textColor={styles.badgeTextColor}
                             />
                           ) : (
-                            <Link
-                              href={link.href}
-                              className={cn(
-                                'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
-                                link.active
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'text-foreground/80'
-                              )}
-                            >
-                              {link.label}
+                            <Link href={link.href}>
+                              <m.div
+                                whileHover={{
+                                  scale: 1.05,
+                                  transition: {
+                                    duration: 0.2,
+                                    ease: EASE.expOut,
+                                  },
+                                }}
+                                whileTap={{ scale: 0.97 }}
+                                className={cn(
+                                  'text-md group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                                  styles.navLinkBase,
+                                  styles.navLinkHover,
+                                  link.active
+                                    ? styles.navLinkActive
+                                    : styles.navLinkInactive
+                                )}
+                              >
+                                {link.label}
+                              </m.div>
                             </Link>
                           )}
                         </NavigationMenuItem>
                       ))}
                     </NavigationMenuList>
                   </NavigationMenu>
-                </PopoverContent>
-              </Popover>
-            )}
-            {/* Main nav */}
-            <div className="flex items-center gap-6">
-              <Link
-                href="/"
-                className={cn(
-                  'flex cursor-pointer items-center space-x-2 transition-colors hover:opacity-90',
-                  styles.logoColor
                 )}
+              </div>
+            </div>
+            {/* Right side */}
+            <div className="flex items-center gap-3">
+              <Button
+                className={cn(
+                  'text-md h-9 w-9 rounded-xl bg-transparent p-2 font-semibold xl:text-lg',
+                  styles.iconButton,
+                  styles.iconButtonBorder
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.open('https://x.com/fvnky_07', '_blank');
+                }}
+                size="sm"
+                variant="outline"
+                aria-label="Follow us on X (Twitter)"
               >
-                <div className="text-2xl">{logo}</div>
-                <span
-                  className={cn(
-                    'hidden font-[nippo] text-3xl font-bold sm:inline-block',
-                    styles.brandText
-                  )}
-                >
-                  benchmrk
-                </span>
-              </Link>
-              {/* Navigation menu */}
-              {!isMobile && (
-                <NavigationMenu className="flex">
-                  <NavigationMenuList className="gap-1">
-                    {navigationLinks.map((link, index) => (
-                      <NavigationMenuItem key={index}>
-                        {link.badge ? (
-                          <NavbarBadgeLink
-                            href={link.href}
-                            label={link.label}
-                            metadata={link.badge.metadata}
-                            icon={link.badge.icon}
-                            active={link.active}
-                            className={cn(
-                              styles.navLinkBase,
-                              styles.navLinkHover
-                            )}
-                            borderColor={styles.badgeBorder}
-                            textColor={styles.badgeTextColor}
-                          />
-                        ) : (
-                          <Link href={link.href}>
-                            <motion.div
-                              whileHover={{
-                                scale: 1.05,
-                                transition: {
-                                  duration: 0.2,
-                                  ease: EASE.expOut,
-                                },
-                              }}
-                              whileTap={{ scale: 0.97 }}
-                              className={cn(
-                                'text-md group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
-                                styles.navLinkBase,
-                                styles.navLinkHover,
-                                link.active
-                                  ? styles.navLinkActive
-                                  : styles.navLinkInactive
-                              )}
-                            >
-                              {link.label}
-                            </motion.div>
-                          </Link>
-                        )}
-                      </NavigationMenuItem>
-                    ))}
-                  </NavigationMenuList>
-                </NavigationMenu>
-              )}
+                <Image
+                  src={styles.iconButtonImage || '/x.svg'}
+                  alt="X (Twitter)"
+                  width={16}
+                  height={16}
+                  className="h-4 w-4"
+                />
+              </Button>
+              {/* <Button */}
+              {/*   className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg" */}
+              {/*   onClick={(e) => { */}
+              {/*     e.preventDefault(); */}
+              {/*     if (onSignInClick) { */}
+              {/*       onSignInClick(); */}
+              {/*     } */}
+              {/*   }} */}
+              {/*   size="sm" */}
+              {/*   variant="outline" */}
+              {/* > */}
+              {/*   {signInText} */}
+              {/* </Button> */}
+              <Button
+                className={cn(
+                  'text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg',
+                  styles.ctaButton,
+                  styles.ctaButtonHover
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  // NOTE: Default behavior - scroll to waitlist + focus input
+                  // If on different page, navigate to home with hash
+                  const section = document.querySelector('#waitlist');
+                  if (section) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                    setTimeout(() => {
+                      document.querySelector('#input-button-group')?.focus();
+                    }, 500);
+                  } else {
+                    globalThis.location.href = '/#waitlist';
+                  }
+                }}
+                size="sm"
+              >
+                {ctaText}
+                <ArrowRight />
+              </Button>
             </div>
           </div>
-          {/* Right side */}
-          <div className="flex items-center gap-3">
-            <Button
-              className={cn(
-                'text-md h-9 w-9 rounded-xl bg-transparent p-2 font-semibold xl:text-lg',
-                styles.iconButton,
-                styles.iconButtonBorder
-              )}
-              onClick={(e) => {
-                e.preventDefault();
-                window.open('https://x.com/fvnky_07', '_blank');
-              }}
-              size="sm"
-              variant="outline"
-              aria-label="Follow us on X (Twitter)"
-            >
-              <Image
-                src={styles.iconButtonImage || '/x.svg'}
-                alt="X (Twitter)"
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
-            </Button>
-            {/* <Button */}
-            {/*   className="hover:bg-accent text-md hover:text-accent-foreground h-9 rounded-4xl px-4 font-semibold xl:text-lg" */}
-            {/*   onClick={(e) => { */}
-            {/*     e.preventDefault(); */}
-            {/*     if (onSignInClick) { */}
-            {/*       onSignInClick(); */}
-            {/*     } */}
-            {/*   }} */}
-            {/*   size="sm" */}
-            {/*   variant="outline" */}
-            {/* > */}
-            {/*   {signInText} */}
-            {/* </Button> */}
-            <Button
-              className={cn(
-                'text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg',
-                styles.ctaButton,
-                styles.ctaButtonHover
-              )}
-              onClick={(e) => {
-                e.preventDefault();
-                // NOTE: Default behavior - scroll to waitlist + focus input
-                // If on different page, navigate to home with hash
-                const section = document.querySelector('#waitlist');
-                if (section) {
-                  section.scrollIntoView({ behavior: 'smooth' });
-                  setTimeout(() => {
-                    document.querySelector('#input-button-group')?.focus();
-                  }, 500);
-                } else {
-                  globalThis.location.href = '/#waitlist';
-                }
-              }}
-              size="sm"
-            >
-              {ctaText}
-              <ArrowRight />
-            </Button>
-          </div>
-        </div>
-      </header>
+        </header>
+      </LazyMotion>
     );
   }
 );
 
 Navbar.displayName = 'Navbar';
 
-export { Logo, HamburgerIcon };
-
 // Demo
-export function Demo() {
+function Demo() {
   return (
     <div className="fixed inset-0">
       <Navbar />

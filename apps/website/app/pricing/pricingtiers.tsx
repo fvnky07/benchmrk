@@ -35,9 +35,9 @@ export const PricingTiers = () => {
 
         {/* Pricing Cards */}
         <div className="m:pt-4 grid w-full gap-6 sm:grid-cols-2">
-          {TIERS.map((tier, i) => (
+          {TIERS.map((tier) => (
             <PricingCard
-              key={i}
+              key={tier.name}
               tier={tier}
               paymentFrequency={selectedPaymentFreq}
             />

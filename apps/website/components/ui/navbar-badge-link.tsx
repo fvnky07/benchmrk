@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 
-import { motion } from 'motion/react';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import { Badge } from '@/components/ui/badge';
 import { EASE } from '@/lib/animation-config';
@@ -53,33 +53,37 @@ export function NavbarBadgeLink({
   textColor,
 }: NavbarBadgeLinkProps) {
   return (
-    <Link href={href}>
-      <motion.div
-        whileHover={{
-          scale: 1.05,
-          transition: {
-            duration: 0.2,
-            ease: EASE.expOut,
-          },
-        }}
-        whileTap={{ scale: 0.97 }}
-      >
-        <Badge
-          variant={'outline'}
-          className={cn(
-            'h-9 cursor-pointer gap-2 px-1 py-2 text-lg font-semibold transition-all',
-            active && 'bg-accent text-accent-foreground',
-            borderColor, // Apply custom border color if provided
-            className
-          )}
+    <LazyMotion features={domAnimation}>
+      <Link href={href}>
+        <m.div
+          whileHover={{
+            scale: 1.05,
+            transition: {
+              duration: 0.2,
+              ease: EASE.expOut,
+            },
+          }}
+          whileTap={{ scale: 0.97 }}
         >
-          <span className="rounded-4xl bg-[#222] px-2 text-white">{label}</span>
-          <span className={cn('font-normal', textColor)}>{metadata}</span>
-          {icon && (
-            <span className={cn('flex items-center', textColor)}>{icon}</span>
-          )}
-        </Badge>
-      </motion.div>
-    </Link>
+          <Badge
+            variant={'outline'}
+            className={cn(
+              'h-9 cursor-pointer gap-2 px-1 py-2 text-lg font-semibold transition-all',
+              active && 'bg-accent text-accent-foreground',
+              borderColor, // Apply custom border color if provided
+              className
+            )}
+          >
+            <span className="rounded-4xl bg-[#222] px-2 text-white">
+              {label}
+            </span>
+            <span className={cn('font-normal', textColor)}>{metadata}</span>
+            {icon && (
+              <span className={cn('flex items-center', textColor)}>{icon}</span>
+            )}
+          </Badge>
+        </m.div>
+      </Link>
+    </LazyMotion>
   );
 }

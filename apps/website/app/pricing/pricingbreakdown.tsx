@@ -125,8 +125,8 @@ export const PricingBreakdown = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {FEATURE_COMPARISON.map((row, idx) => (
-                  <tr key={idx} className="transition-colors hover:bg-white/5">
+                {FEATURE_COMPARISON.map((row) => (
+                  <tr key={row.feature} className="transition-colors hover:bg-white/5">
                     <td className="text-foreground/80 px-6 py-4 text-sm">
                       {row.feature}
                     </td>
@@ -169,9 +169,9 @@ export const PricingBreakdown = () => {
                 Individuals
               </div>
               <div className="divide-y divide-white/5">
-                {FEATURE_COMPARISON.map((row, idx) => (
+                {FEATURE_COMPARISON.map((row) => (
                   <div
-                    key={idx}
+                    key={row.feature}
                     className="flex items-center justify-between px-4 py-3"
                   >
                     <span className="text-foreground/80 text-sm">
@@ -198,9 +198,9 @@ export const PricingBreakdown = () => {
                 Teams
               </div>
               <div className="divide-y divide-white/5">
-                {FEATURE_COMPARISON.map((row, idx) => (
+                {FEATURE_COMPARISON.map((row) => (
                   <div
-                    key={idx}
+                    key={row.feature}
                     className="flex items-center justify-between px-4 py-3"
                   >
                     <span className="text-foreground/80 text-sm">
@@ -236,9 +236,9 @@ export const PricingBreakdown = () => {
           </div>
 
           <div className="mx-auto max-w-3xl space-y-4">
-            {FAQ_ITEMS.map((item, idx) => (
+            {FAQ_ITEMS.map((item) => (
               <details
-                key={idx}
+                key={item.question}
                 className="bg-background/50 group overflow-hidden rounded-xl border border-white/10 backdrop-blur-sm transition-all hover:border-white/20"
               >
                 <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-left font-medium text-white transition-colors hover:bg-white/5">

@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Field } from '@/components/ui/field';
-import GridPattern from '@/components/ui/grid-pattern';
+import { GridPattern } from '@/components/ui/grid-pattern';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Spinner as LoadingSpinner } from '@/components/ui/spinner';

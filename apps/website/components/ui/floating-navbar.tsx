@@ -2,9 +2,15 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { motion, AnimatePresence, useScroll } from 'motion/react';
+import {
+  LazyMotion,
+  domAnimation,
+  m,
+  AnimatePresence,
+  useScroll,
+} from 'motion/react';
 
 import {
   Navbar,
@@ -13,7 +19,7 @@ import {
 } from '@/components/ui/navbar';
 import { EASE, DURATION } from '@/lib/animation-config';
 
-export interface FloatingNavbarProps extends Omit<
+interface FloatingNavbarProps extends Omit<
   NavbarProps,
   'backgroundColor' | 'variant'
 > {
@@ -31,7 +37,7 @@ export const FloatingNavbar = React.forwardRef<
     ref
   ) => {
     const [isVisible, setIsVisible] = useState(threshold === 0);
-    const [prevScrollY, setPrevScrollY] = useState(0);
+    const prevScrollYRef = useRef(0);
     const { scrollY } = useScroll();
 
     // NOTE: Merge black borders for badges and Twitter button with custom styles
@@ -54,60 +60,53 @@ export const FloatingNavbar = React.forwardRef<
 
       // NOTE: Track scroll position for threshold-based and directional visibility
       const unsubscribe = scrollY.on('change', (latest) => {
-        // Check if we're past the threshold
         const pastThreshold = latest > threshold;
+        const scrollingUp = hideOnScrollDown && latest < prevScrollYRef.current;
+        const scrollingDown =
+          hideOnScrollDown && latest > prevScrollYRef.current;
 
         if (hideOnScrollDown) {
-          // PERF: Directional scroll detection
-          const scrollingDown = latest > prevScrollY;
-          const scrollingUp = latest < prevScrollY;
-
-          // Show navbar when:
-          // 1. Scrolling up AND past threshold
-          // 2. At the very top (latest < 50px) - always show
-          if (scrollingUp && pastThreshold) {
-            setIsVisible(true);
-          } else if (scrollingDown && latest > 50) {
-            setIsVisible(false);
-          } else if (latest < 50) {
-            // Always show at the top
-            setIsVisible(threshold === 0 || pastThreshold);
-          }
-
-          setPrevScrollY(latest);
-        } else {
-          // Simple threshold-based visibility (original behavior)
-          setIsVisible(pastThreshold);
+          prevScrollYRef.current = latest;
         }
+
+        setIsVisible((prev) => {
+          if (!hideOnScrollDown) return pastThreshold;
+          if (scrollingUp && pastThreshold) return true;
+          if (scrollingDown && latest > 50) return false;
+          if (latest < 50) return threshold === 0 || pastThreshold;
+          return prev;
+        });
       });
 
       return () => unsubscribe();
-    }, [scrollY, threshold, hideOnScrollDown, prevScrollY]);
+    }, [scrollY, threshold, hideOnScrollDown]);
 
     return (
-      <AnimatePresence mode="wait">
-        {isVisible && (
-          <motion.div
-            key="floating-navbar"
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            transition={{
-              duration: DURATION.fast,
-              ease: EASE.expOut,
-            }}
-            className="fixed top-0 right-0 left-0 z-100 mx-auto max-w-screen-2xl px-0 sm:top-4 sm:px-4"
-          >
-            <Navbar
-              ref={ref}
-              {...navbarProps}
-              variant="light"
-              customStyles={floatingNavbarStyles}
-              className="rounded-none shadow-lg sm:rounded-4xl"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <LazyMotion features={domAnimation}>
+        <AnimatePresence mode="wait">
+          {isVisible && (
+            <m.div
+              key="floating-navbar"
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -100, opacity: 0 }}
+              transition={{
+                duration: DURATION.fast,
+                ease: EASE.expOut,
+              }}
+              className="fixed top-0 right-0 left-0 z-100 mx-auto max-w-screen-2xl px-0 sm:top-4 sm:px-4"
+            >
+              <Navbar
+                ref={ref}
+                {...navbarProps}
+                variant="light"
+                customStyles={floatingNavbarStyles}
+                className="rounded-none shadow-lg sm:rounded-4xl"
+              />
+            </m.div>
+          )}
+        </AnimatePresence>
+      </LazyMotion>
     );
   }
 );

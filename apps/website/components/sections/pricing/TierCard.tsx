@@ -63,9 +63,9 @@ export const PricingCard = ({
       <div className="flex-1 space-y-2">
         <h3 className="text-sm font-medium">{tier.description}</h3>
         <ul className="space-y-2">
-          {tier.features.map((feature, index) => (
+          {tier.features.map((feature) => (
             <li
-              key={index}
+              key={feature}
               className={cn(
                 'flex items-center gap-2 text-sm font-medium',
                 isHighlighted ? 'text-background' : 'text-foreground/60'

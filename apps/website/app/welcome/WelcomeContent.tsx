@@ -15,7 +15,7 @@ import {
   Twitter,
   CheckCircle2,
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import { FadeInView } from '@/components/animations/FadeInView';
 import {
@@ -23,7 +23,7 @@ import {
   StaggerItem,
 } from '@/components/animations/StaggerChildren';
 import { Button } from '@/components/ui/button';
-import GridPattern from '@/components/ui/grid-pattern';
+import { GridPattern } from '@/components/ui/grid-pattern';
 import {
   bounceInVariants,
   fadeInVariants,
@@ -68,201 +68,203 @@ export default function WelcomeContent() {
   ];
 
   return (
-    <main className="bg-black-1 relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12">
-      <GridPattern
-        width={30}
-        height={30}
-        strokeColor="rgba(255,255,255, 0.1)"
-      />
+    <LazyMotion features={domAnimation}>
+      <main className="bg-black-1 relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12">
+        <GridPattern
+          width={30}
+          height={30}
+          strokeColor="rgba(255,255,255, 0.1)"
+        />
 
-      <div className="relative z-10 mx-auto max-w-3xl text-center">
-        {/* NOTE: Celebration badge fades in */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInVariants}
-          className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2"
-        >
-          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-          <span className="text-sm font-medium text-emerald-400">
-            Email confirmed successfully
-          </span>
-        </motion.div>
+        <div className="relative z-10 mx-auto max-w-3xl text-center">
+          {/* NOTE: Celebration badge fades in */}
+          <m.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInVariants}
+            className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2"
+          >
+            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+            <span className="text-sm font-medium text-emerald-400">
+              Email confirmed successfully
+            </span>
+          </m.div>
 
-        {/* NOTE: Trophy bounces in with rotation */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={bounceInVariants}
-          className="mb-6 flex justify-center"
-        >
-          <div className="relative">
-            <Trophy className="text-cyan-1 h-20 w-20" />
-            <Sparkles className="absolute -top-2 -right-2 h-8 w-8 animate-pulse text-yellow-400" />
-          </div>
-        </motion.div>
+          {/* NOTE: Trophy bounces in with rotation */}
+          <m.div
+            initial="hidden"
+            animate="visible"
+            variants={bounceInVariants}
+            className="mb-6 flex justify-center"
+          >
+            <div className="relative">
+              <Trophy className="text-cyan-1 h-20 w-20" />
+              <Sparkles className="absolute -top-2 -right-2 h-8 w-8 animate-pulse text-yellow-400" />
+            </div>
+          </m.div>
 
-        {/* NOTE: Heading and subtitle stagger in */}
-        <StaggerChildren staggerDelay={0.15} initialDelay={0.4} onLoad>
-          <StaggerItem>
-            <h1 className="mb-4 font-[nippo] text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-              Welcome to{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                benchmrk
-              </span>
-              !
-            </h1>
-          </StaggerItem>
+          {/* NOTE: Heading and subtitle stagger in */}
+          <StaggerChildren staggerDelay={0.15} initialDelay={0.4} onLoad>
+            <StaggerItem>
+              <h1 className="mb-4 font-[nippo] text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+                Welcome to{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                  benchmrk
+                </span>
+                !
+              </h1>
+            </StaggerItem>
 
-          <StaggerItem>
-            <p className="mb-2 text-xl text-gray-300 sm:text-2xl">
-              You&apos;re officially a{' '}
-              <span className="font-semibold text-emerald-400">
-                Lifetime Premium
-              </span>{' '}
-              member
-            </p>
-          </StaggerItem>
-
-          <StaggerItem>
-            {session?.user && (
-              <p className="mb-8 text-gray-500">
-                Registered as{' '}
-                <span className="text-gray-400">{session.user.email}</span>
+            <StaggerItem>
+              <p className="mb-2 text-xl text-gray-300 sm:text-2xl">
+                You&apos;re officially a{' '}
+                <span className="font-semibold text-emerald-400">
+                  Lifetime Premium
+                </span>{' '}
+                member
               </p>
-            )}
-          </StaggerItem>
-        </StaggerChildren>
+            </StaggerItem>
 
-        {/* NOTE: Benefits grid with staggered card entrance */}
-        <FadeInView delay={0.6}>
-          <div className="mb-10 rounded-3xl border border-gray-800 bg-gray-900/50 p-6">
-            <h2 className="text-cyan-1 mb-6 text-lg font-semibold">
-              What you get - forever
-            </h2>
+            <StaggerItem>
+              {session?.user && (
+                <p className="mb-8 text-gray-500">
+                  Registered as{' '}
+                  <span className="text-gray-400">{session.user.email}</span>
+                </p>
+              )}
+            </StaggerItem>
+          </StaggerChildren>
 
-            <StaggerChildren
-              staggerDelay={0.08}
-              initialDelay={0.2}
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {benefits.map((benefit) => (
-                <StaggerItem key={benefit.title} variants={scaleInVariants}>
-                  <div className="rounded-2xl border border-gray-800 bg-gray-800/50 p-4 text-left transition-all hover:border-cyan-500/30 hover:bg-gray-800">
-                    <benefit.icon className="text-cyan-1 mb-3 h-6 w-6" />
-                    <h3 className="mb-1 font-medium text-white">
-                      {benefit.title}
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      {benefit.description}
-                    </p>
-                  </div>
-                </StaggerItem>
-              ))}
-            </StaggerChildren>
-          </div>
-        </FadeInView>
+          {/* NOTE: Benefits grid with staggered card entrance */}
+          <FadeInView delay={0.6}>
+            <div className="mb-10 rounded-3xl border border-gray-800 bg-gray-900/50 p-6">
+              <h2 className="text-cyan-1 mb-6 text-lg font-semibold">
+                What you get - forever
+              </h2>
 
-        {/* NOTE: Launch announcement fades/scales in */}
-        <FadeInView variants={scaleInVariants} delay={0.8}>
-          <div className="mb-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-6">
-            <Rocket className="mx-auto mb-3 h-8 w-8 text-yellow-400" />
-            <h3 className="mb-2 text-lg font-semibold text-yellow-400">
-              App Launching Soon
-            </h3>
-            <p className="text-gray-400">
-              We&apos;re putting the finishing touches on benchmrk. You&apos;ll
-              be the first to know when it&apos;s ready!
-            </p>
-          </div>
-        </FadeInView>
+              <StaggerChildren
+                staggerDelay={0.08}
+                initialDelay={0.2}
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {benefits.map((benefit) => (
+                  <StaggerItem key={benefit.title} variants={scaleInVariants}>
+                    <div className="rounded-2xl border border-gray-800 bg-gray-800/50 p-4 text-left transition-all hover:border-cyan-500/30 hover:bg-gray-800">
+                      <benefit.icon className="text-cyan-1 mb-3 h-6 w-6" />
+                      <h3 className="mb-1 font-medium text-white">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </StaggerItem>
+                ))}
+              </StaggerChildren>
+            </div>
+          </FadeInView>
 
-        {/* NOTE: CTA buttons stagger in */}
-        <StaggerChildren
-          staggerDelay={0.12}
-          initialDelay={1}
-          onLoad
-          className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-        >
-          <StaggerItem>
-            <Button
-              asChild
-              className="bg-cyan-1 hover:bg-cyan-1/90 rounded-full px-6 py-3 font-semibold text-black"
-            >
-              <Link href="https://twitter.com/fvnky_07" target="_blank">
-                <Twitter className="mr-2 h-4 w-4" />
-                Follow for updates
-              </Link>
-            </Button>
-          </StaggerItem>
+          {/* NOTE: Launch announcement fades/scales in */}
+          <FadeInView variants={scaleInVariants} delay={0.8}>
+            <div className="mb-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-6">
+              <Rocket className="mx-auto mb-3 h-8 w-8 text-yellow-400" />
+              <h3 className="mb-2 text-lg font-semibold text-yellow-400">
+                App Launching Soon
+              </h3>
+              <p className="text-gray-400">
+                We&apos;re putting the finishing touches on benchmrk.
+                You&apos;ll be the first to know when it&apos;s ready!
+              </p>
+            </div>
+          </FadeInView>
 
-          <StaggerItem>
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-full border-gray-700 px-6 py-3 text-gray-300 hover:bg-gray-800"
-            >
-              <Link href="/">Back to home</Link>
-            </Button>
-          </StaggerItem>
-        </StaggerChildren>
-      </div>
+          {/* NOTE: CTA buttons stagger in */}
+          <StaggerChildren
+            staggerDelay={0.12}
+            initialDelay={1}
+            onLoad
+            className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+          >
+            <StaggerItem>
+              <Button
+                asChild
+                className="bg-cyan-1 hover:bg-cyan-1/90 rounded-full px-6 py-3 font-semibold text-black"
+              >
+                <Link href="https://twitter.com/fvnky_07" target="_blank">
+                  <Twitter className="mr-2 h-4 w-4" />
+                  Follow for updates
+                </Link>
+              </Button>
+            </StaggerItem>
 
-      {/* NOTE: Decorative dots with randomized Motion entrance */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {[
-          {
-            top: '25%',
-            left: '25%',
-            color: 'bg-cyan-1/20',
-            delay: 0.2,
-          },
-          {
-            top: '33%',
-            right: '33%',
-            color: 'bg-emerald-500/20',
-            delay: 0.7,
-          },
-          {
-            bottom: '33%',
-            left: '33%',
-            color: 'bg-yellow-500/20',
-            delay: 1.2,
-          },
-          {
-            right: '25%',
-            bottom: '25%',
-            color: 'bg-cyan-1/20',
-            delay: 1.7,
-          },
-        ].map((dot, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{
-              opacity: 1,
-              scale: [1, 1.5, 1],
-            }}
-            transition={{
-              delay: dot.delay,
-              duration: 2,
-              ease: EASE.gentle,
-              scale: {
-                repeat: Infinity,
-                duration: 3,
-                ease: EASE.expInOut,
-              },
-            }}
-            className={`absolute h-2 w-2 rounded-full ${dot.color}`}
-            style={{
-              top: dot.top,
-              left: dot.left,
-              right: dot.right,
-              bottom: dot.bottom,
-            }}
-          />
-        ))}
-      </div>
-    </main>
+            <StaggerItem>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-gray-700 px-6 py-3 text-gray-300 hover:bg-gray-800"
+              >
+                <Link href="/">Back to home</Link>
+              </Button>
+            </StaggerItem>
+          </StaggerChildren>
+        </div>
+
+        {/* NOTE: Decorative dots with randomized Motion entrance */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {[
+            {
+              top: '25%',
+              left: '25%',
+              color: 'bg-cyan-1/20',
+              delay: 0.2,
+            },
+            {
+              top: '33%',
+              right: '33%',
+              color: 'bg-emerald-500/20',
+              delay: 0.7,
+            },
+            {
+              bottom: '33%',
+              left: '33%',
+              color: 'bg-yellow-500/20',
+              delay: 1.2,
+            },
+            {
+              right: '25%',
+              bottom: '25%',
+              color: 'bg-cyan-1/20',
+              delay: 1.7,
+            },
+          ].map((dot) => (
+            <m.div
+              key={dot.delay}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{
+                opacity: 1,
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                delay: dot.delay,
+                duration: 2,
+                ease: EASE.gentle,
+                scale: {
+                  repeat: Infinity,
+                  duration: 3,
+                  ease: EASE.expInOut,
+                },
+              }}
+              className={`absolute h-2 w-2 rounded-full ${dot.color}`}
+              style={{
+                top: dot.top,
+                left: dot.left,
+                right: dot.right,
+                bottom: dot.bottom,
+              }}
+            />
+          ))}
+        </div>
+      </main>
+    </LazyMotion>
   );
 }
