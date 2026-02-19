@@ -7,13 +7,6 @@ import { Stack } from 'expo-router';
 
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 
-/**
- * Profile tab layout
- *
- * Configures the Stack header with:
- * - Username as the title
- * - Share icon on the far right (placeholder)
- */
 export default function ProfileLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -23,12 +16,13 @@ export default function ProfileLayout() {
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: isDark ? '#1c1c1e' : '#f2f2f7',
+          backgroundColor: isDark ? '#151515' : '#f2f2f7',
         },
         headerTintColor: isDark ? '#fff' : '#000',
         headerTitleStyle: {
           color: isDark ? '#fff' : '#000',
           fontWeight: '700',
+          fontSize: 22,
         },
       }}
     >
@@ -45,7 +39,8 @@ export default function ProfileLayout() {
             >
               <Feather
                 name="share"
-                size={22}
+                className="pl-1.5"
+                size={24}
                 color={isDark ? '#fff' : '#000'}
               />
             </Pressable>

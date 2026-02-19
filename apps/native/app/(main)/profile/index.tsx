@@ -16,17 +16,6 @@ const PLACEHOLDER_STATS = {
   following: 567,
 };
 
-/**
- * User profile screen
- *
- * Layout:
- * - Row 1: Avatar | Username + Stats (workouts, followers, following)
- * - Row 2: Bio (flex-1) | Heatmap (flex-2) — bio hidden if empty
- * - Row 3: Weekly statistics bar chart (full width)
- * - Row 4: Completed workouts feed (placeholder for Convex useQuery)
- *
- * Header configured in _layout.tsx with username title + share icon.
- */
 export default function ProfileScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -38,13 +27,13 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
-      className={isDark ? 'bg-black' : 'bg-[#f2f2f7]'}
+      className={isDark ? 'bg-black-1' : 'bg-white'}
       contentContainerClassName="pb-12"
     >
       {/* ── Row 1: Avatar + Username + Stats ── */}
       <View className="flex-row items-center px-4 pt-4">
         {/* Left column: Avatar */}
-        <Avatar className="size-20 rounded-md" alt={`${username}'s avatar`}>
+        <Avatar className="size-24 rounded-md" alt={`${username}'s avatar`}>
           {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
           <AvatarFallback>
             <Text className="text-lg font-semibold text-foreground">
@@ -56,7 +45,7 @@ export default function ProfileScreen() {
         {/* Right column: Username + Stats */}
         <View className="ml-4 flex-1">
           {/* Top row: Username */}
-          <Text className="text-lg font-bold text-foreground">{username}</Text>
+          <Text className="text-xl font-bold text-foreground">{username}</Text>
 
           {/* Bottom row: Workouts, Followers, Following */}
           <UserStatsRow
