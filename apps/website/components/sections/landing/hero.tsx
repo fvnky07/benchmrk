@@ -176,7 +176,11 @@ export default function Hero() {
                     const section = document.querySelector('#waitlist');
                     section?.scrollIntoView({ behavior: 'smooth' });
                     setTimeout(() => {
-                      document.querySelector('#input-button-group')?.focus();
+                      (
+                        document.querySelector(
+                          '#input-button-group'
+                        ) as HTMLElement
+                      )?.focus();
                     }, 500);
                   }}
                 >
