@@ -491,7 +491,11 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   if (section) {
                     section.scrollIntoView({ behavior: 'smooth' });
                     setTimeout(() => {
-                      document.querySelector('#input-button-group')?.focus();
+                      (
+                        document.querySelector(
+                          '#input-button-group'
+                        ) as HTMLElement
+                      )?.focus();
                     }, 500);
                   } else {
                     globalThis.location.href = '/#waitlist';
