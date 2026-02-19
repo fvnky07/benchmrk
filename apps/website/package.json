@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "fumadocs-mdx && next dev",
-    "build": "cd ../../packages/backend && npx convex deploy --cmd 'cd ../../apps/website && fumadocs-mdx && next build'",
+    "build:next": "fumadocs-mdx && next build",
+    "build": "cd ../../packages/backend && pnpm dlx convex deploy --cmd 'cd ../../apps/website && pnpm run build:next'",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "fumadocs-mdx"
