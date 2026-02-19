@@ -9,6 +9,7 @@ const eslintConfig = [
     'build/**',
     'next-env.d.ts',
     '.source/**', // fumadocs auto-generated files
+    '../../packages/backend/convex/_generated/**', // convex generated files
   ]),
 ];
 
