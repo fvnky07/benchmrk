@@ -65,10 +65,10 @@ export function GridPattern({
           x={x}
           y={y}
         >
-          {squares.map(([x, y], index) => (
+          {squares.map(([x, y]) => (
             <rect
               height={height - 1}
-              key={`${x}-${y}-${index}`}
+              key={`${x}-${y}`}
               strokeWidth="0"
               width={width - 1}
               x={x * width + 1}
@@ -81,6 +81,3 @@ export function GridPattern({
   );
 }
 
-export type { GridPatternProps };
-
-export default GridPattern;
