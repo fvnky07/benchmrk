@@ -4,7 +4,7 @@
 
 import { useRef } from 'react';
 
-import { motion, useInView } from 'motion/react';
+import { LazyMotion, domAnimation, m, useInView } from 'motion/react';
 import type { Variants } from 'motion/react';
 
 import { DURATION, EASE } from '@/lib/animation-config';
@@ -62,14 +62,16 @@ export function FadeInView({
   };
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
-      variants={resolvedVariants}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <LazyMotion features={domAnimation}>
+      <m.div
+        ref={ref}
+        initial="hidden"
+        animate={isInView ? 'visible' : 'hidden'}
+        variants={resolvedVariants}
+        className={className}
+      >
+        {children}
+      </m.div>
+    </LazyMotion>
   );
 }

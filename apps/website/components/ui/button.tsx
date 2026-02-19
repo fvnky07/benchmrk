@@ -60,14 +60,14 @@ interface IconRefProps {
   iconPlacement?: undefined;
 }
 
-export interface ButtonProps
+interface ButtonProps
   extends
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
-export type ButtonIconProps = IconProps | IconRefProps;
+type ButtonIconProps = IconProps | IconRefProps;
 
 const Button = React.forwardRef<
   HTMLButtonElement,

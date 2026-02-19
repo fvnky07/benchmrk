@@ -2,7 +2,7 @@
 // Source: https://github.com/aymanch-03/shadcn-pricing-page (modified for Free + Premium only)
 export const PAYMENT_FREQUENCIES = ['monthly', 'yearly'];
 
-export interface PricingTier {
+interface PricingTier {
   name: string;
   id: string;
   price: Record<string, number | string>;

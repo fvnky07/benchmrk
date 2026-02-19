@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
-export interface DotPatternProps {
+interface DotPatternProps {
   className?: string;
   children?: React.ReactNode;
   /** Dot diameter in pixels */
@@ -256,6 +256,3 @@ export function DotPattern({
   );
 }
 
-export default function DotPatternDemo() {
-  return <DotPattern />;
-}

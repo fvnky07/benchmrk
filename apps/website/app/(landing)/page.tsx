@@ -1,11 +1,19 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Image from 'next/image';
+import Script from 'next/script';
 
 import Hero from '@/components/sections/landing/hero';
 import WaitingList from '@/components/sections/landing/waiting-list';
 import { FloatingNavbar } from '@/components/ui/floating-navbar';
 import LogoSvg from '@/public/logo-dark.svg';
+
+export const metadata: Metadata = {
+  title: {
+    absolute: 'benchmrk - AI-Powered Fitness Tracking',
+  },
+  description:
+    'AI-powered fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics.',
+};
 
 export default function LandingPage() {
   // NOTE: Structured data (JSON-LD) for rich search results
@@ -57,10 +65,13 @@ export default function LandingPage() {
 
   return (
     <>
-      <script
+      <Script
+        id="json-ld"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+        strategy="afterInteractive"
+      >
+        {JSON.stringify(jsonLd)}
+      </Script>
       {/* NOTE: Floating navbar appears when user scrolls down past 100px */}
       <FloatingNavbar
         threshold={100}

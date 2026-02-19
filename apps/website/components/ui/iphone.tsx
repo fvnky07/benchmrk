@@ -24,7 +24,7 @@ const HEIGHT_PCT = (SCREEN_HEIGHT / PHONE_HEIGHT) * 100;
 const RADIUS_H = (SCREEN_RADIUS / SCREEN_WIDTH) * 100;
 const RADIUS_V = (SCREEN_RADIUS / SCREEN_HEIGHT) * 100;
 
-export interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
+interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
   src?: string;
   videoSrc?: string;
   onVideoEnded?: () => void;
@@ -116,6 +116,7 @@ export function Iphone({
             src={src}
             alt=""
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="block size-full object-cover object-top"
             onLoad={handleMediaLoaded}
           />

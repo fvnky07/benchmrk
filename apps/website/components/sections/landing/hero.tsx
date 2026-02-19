@@ -3,7 +3,7 @@
 import Image from 'next/image';
 
 import { Brain, Zap, BarChart3, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import {
   StaggerChildren,
@@ -17,7 +17,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import GridPattern from '@/components/ui/grid-pattern';
+import { GridPattern } from '@/components/ui/grid-pattern';
 import { Iphone } from '@/components/ui/iphone';
 import { Navbar } from '@/components/ui/navbar';
 import RotatingText from '@/components/ui/RotatingText';
@@ -32,195 +32,195 @@ import LogoSvg from '@/public/logo.svg';
 
 export default function Hero() {
   return (
-    <section className="relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
-      {/* Grid Pattern Background */}
-      <GridPattern width={30} height={30} strokeColor="rgba(0, 0, 0, 1)" />
+    <LazyMotion features={domAnimation}>
+      <section className="relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:px-4 lg:px-4">
+        {/* Grid Pattern Background */}
+        <GridPattern width={30} height={30} strokeColor="rgba(0, 0, 0, 1)" />
 
-      {/* Centered card with responsive margins */}
-      <div className="bg-black-1 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow lg:p-4 xl:p-6">
-        {/* NOTE: Navbar row - fade in on load */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInVariants}
-        >
-          <Navbar
-            variant="default"
-            customStyles={{
-              ctaButton: 'bg-white text-black',
-              ctaButtonHover: 'hover:bg-gray-100',
-            }}
-            ctaText="Join the Waitlist!"
-            logo={
-              <Image
-                src={LogoSvg}
-                alt="logo"
-                width={32}
-                height={32}
-                className="relative sm:h-12 sm:w-12 md:bottom-2"
-              />
-            }
-          />
-        </motion.div>
-
-        {/* NOTE: Main content row - uses min-h-0 to allow flexbox shrinking */}
-        <div className="bg-black-1 flex min-h-0 w-full grow flex-col gap-2 rounded-4xl lg:flex-row lg:gap-8">
-          <div className="bg-black-2 debug flex min-h-0 w-full shrink flex-col items-start justify-start gap-4 overflow-y-auto rounded-4xl px-6 py-4 sm:gap-5 sm:px-8 sm:py-6 lg:w-2/3 lg:px-10 lg:py-8">
-            {/* NOTE: Enhanced title with rotating text animation */}
-            <motion.h1
-              initial="hidden"
-              animate="visible"
-              variants={fadeInVariants}
-              transition={{
-                duration: DURATION.normal,
-                ease: EASE.expOut,
+        {/* Centered card with responsive margins */}
+        <div className="bg-black-1 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow lg:p-4 xl:p-6">
+          {/* NOTE: Navbar row - fade in on load */}
+          <m.div initial="hidden" animate="visible" variants={fadeInVariants}>
+            <Navbar
+              variant="default"
+              customStyles={{
+                ctaButton: 'bg-white text-black',
+                ctaButtonHover: 'hover:bg-gray-100',
               }}
-              className="w-full shrink-0 text-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl 2xl:text-8xl"
-            >
-              <span className="block">
-                Stop{' '}
-                <RotatingText
-                  texts={['guessing', 'forgetting', 'eyeballing', 'losing']}
-                  mainClassName="inline-flex px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 2xl:px-6 2xl:py-3 bg-cyan-1 text-black overflow-hidden justify-center rounded-lg"
-                  staggerFrom="last"
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '-120%' }}
-                  staggerDuration={0.025}
-                  splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 lg:pb-1.5 2xl:pb-2"
-                  transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-                  rotationInterval={2000}
+              ctaText="Join the Waitlist!"
+              logo={
+                <Image
+                  src={LogoSvg}
+                  alt="logo"
+                  width={32}
+                  height={32}
+                  className="relative sm:h-12 sm:w-12 md:bottom-2"
                 />
-              </span>
-              <span className="block">track of your gains</span>
-            </motion.h1>
+              }
+            />
+          </m.div>
 
-            {/* NOTE: Accordion items stagger in from top */}
-            <StaggerChildren
-              staggerDelay={0.15}
-              initialDelay={0.6}
-              onLoad
-              className="w-full shrink-0"
-            >
-              <Accordion
-                type="single"
-                defaultValue="1"
-                className="bg-black-1 w-full shrink-0 rounded-4xl"
+          {/* NOTE: Main content row - uses min-h-0 to allow flexbox shrinking */}
+          <div className="bg-black-1 flex min-h-0 w-full grow flex-col gap-2 rounded-4xl lg:flex-row lg:gap-8">
+            <div className="bg-black-2 debug flex min-h-0 w-full shrink flex-col items-start justify-start gap-4 overflow-y-auto rounded-4xl px-6 py-4 sm:gap-5 sm:px-8 sm:py-6 lg:w-2/3 lg:px-10 lg:py-8">
+              {/* NOTE: Enhanced title with rotating text animation */}
+              <m.h1
+                initial="hidden"
+                animate="visible"
+                variants={fadeInVariants}
+                transition={{
+                  duration: DURATION.normal,
+                  ease: EASE.expOut,
+                }}
+                className="w-full shrink-0 text-center text-3xl leading-tight font-bold sm:text-4xl lg:text-6xl 2xl:text-8xl"
               >
-                <StaggerItem>
-                  <AccordionItem value="1" className="px-2 md:px-4">
-                    <AccordionTrigger>
-                      <Brain className="text-cyan-1 size-5 shrink-0 sm:size-6 lg:size-8" />
-                      <span>AI-Powered Coaching</span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="lg:text-2xl 2xl:text-4xl">
-                        Get personalized workout recommendations and form
-                        corrections powered by advanced machine learning. Your
-                        AI coach adapts to your fitness level and helps you
-                        reach your goals faster.
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                </StaggerItem>
+                <span className="block">
+                  Stop{' '}
+                  <RotatingText
+                    texts={['guessing', 'forgetting', 'eyeballing', 'losing']}
+                    mainClassName="inline-flex px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 2xl:px-6 2xl:py-3 bg-cyan-1 text-black overflow-hidden justify-center rounded-lg"
+                    staggerFrom="last"
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '-120%' }}
+                    staggerDuration={0.025}
+                    splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 lg:pb-1.5 2xl:pb-2"
+                    transition={{ type: 'spring', damping: 30, stiffness: 400 }}
+                    rotationInterval={2000}
+                  />
+                </span>
+                <span className="block">track of your gains</span>
+              </m.h1>
 
-                <StaggerItem>
-                  <AccordionItem value="2" className="px-2 md:px-4">
-                    <AccordionTrigger>
-                      <Zap className="text-cyan-1 size-5 shrink-0 sm:size-6 lg:size-7" />
-                      <span>Better Than Paper Tracking</span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="lg:text-2xl 2xl:text-4xl">
-                        Lightning-fast workout logging that&apos;s easier than
-                        pen and paper. Track sets, reps, and weights in seconds
-                        with our intuitive interface designed for the gym floor.
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                </StaggerItem>
+              {/* NOTE: Accordion items stagger in from top */}
+              <StaggerChildren
+                staggerDelay={0.15}
+                initialDelay={0.6}
+                onLoad
+                className="w-full shrink-0"
+              >
+                <Accordion
+                  type="single"
+                  defaultValue="1"
+                  className="bg-black-1 w-full shrink-0 rounded-4xl"
+                >
+                  <StaggerItem>
+                    <AccordionItem value="1" className="px-2 md:px-4">
+                      <AccordionTrigger>
+                        <Brain className="text-cyan-1 size-5 shrink-0 sm:size-6 lg:size-8" />
+                        <span>AI-Powered Coaching</span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="lg:text-2xl 2xl:text-4xl">
+                          Get personalized workout recommendations and form
+                          corrections powered by advanced machine learning. Your
+                          AI coach adapts to your fitness level and helps you
+                          reach your goals faster.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </StaggerItem>
 
-                <StaggerItem>
-                  <AccordionItem value="3" className="px-2 md:px-4">
-                    <AccordionTrigger>
-                      <BarChart3 className="text-cyan-1 size-5 shrink-0 sm:size-6 lg:size-7" />
-                      <span>In-Depth Statistics</span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="lg:text-2xl 2xl:text-4xl">
-                        Visualize your progress with detailed analytics and
-                        performance metrics. See strength gains, volume trends,
-                        and personal records at a glance to stay motivated.
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                </StaggerItem>
-              </Accordion>
-            </StaggerChildren>
+                  <StaggerItem>
+                    <AccordionItem value="2" className="px-2 md:px-4">
+                      <AccordionTrigger>
+                        <Zap className="text-cyan-1 size-5 shrink-0 sm:size-6 lg:size-7" />
+                        <span>Better Than Paper Tracking</span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="lg:text-2xl 2xl:text-4xl">
+                          Lightning-fast workout logging that&apos;s easier than
+                          pen and paper. Track sets, reps, and weights in
+                          seconds with our intuitive interface designed for the
+                          gym floor.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </StaggerItem>
 
-            {/* NOTE: CTA button fades up with delay after accordion */}
-            <motion.div
+                  <StaggerItem>
+                    <AccordionItem value="3" className="px-2 md:px-4">
+                      <AccordionTrigger>
+                        <BarChart3 className="text-cyan-1 size-5 shrink-0 sm:size-6 lg:size-7" />
+                        <span>In-Depth Statistics</span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="lg:text-2xl 2xl:text-4xl">
+                          Visualize your progress with detailed analytics and
+                          performance metrics. See strength gains, volume
+                          trends, and personal records at a glance to stay
+                          motivated.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </StaggerItem>
+                </Accordion>
+              </StaggerChildren>
+
+              {/* NOTE: CTA button fades up with delay after accordion */}
+              <m.div
+                initial="hidden"
+                animate="visible"
+                variants={fadeUpVariants}
+                transition={{
+                  delay: 1.2,
+                  duration: DURATION.normal,
+                  ease: EASE.expOut,
+                }}
+                className="hidden w-full items-center justify-center sm:block"
+              >
+                <Button
+                  size="lg"
+                  className="hover:text-green-1 hover:border-green-1 w-full shrink-0 rounded-4xl bg-white text-3xl font-bold text-black hover:border-4 hover:bg-white/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
+                  onClick={() => {
+                    const section = document.querySelector('#waitlist');
+                    section?.scrollIntoView({ behavior: 'smooth' });
+                    setTimeout(() => {
+                      document.querySelector('#input-button-group')?.focus();
+                    }, 500);
+                  }}
+                >
+                  Get Lifetime Premium
+                  <ArrowRight className="ml-2 size-8 sm:size-10 lg:size-12" />
+                </Button>
+              </m.div>
+            </div>
+
+            {/* NOTE: iPhone mockup slides up from bottom */}
+            <m.div
               initial="hidden"
               animate="visible"
-              variants={fadeUpVariants}
+              variants={slideUpVariants}
               transition={{
-                delay: 1.2,
-                duration: DURATION.normal,
+                delay: 0.3,
+                duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="hidden w-full items-center justify-center sm:block"
+              className="bg-black-2 relative flex min-h-48 w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:min-h-0 lg:w-1/3"
             >
-              <Button
-                size="lg"
-                className="hover:text-green-1 hover:border-green-1 w-full shrink-0 rounded-4xl bg-white text-3xl font-bold text-black hover:border-4 hover:bg-white/90 sm:px-12 sm:py-8 sm:text-4xl lg:text-5xl"
-                onClick={() => {
-                  const section = document.querySelector('#waitlist');
-                  section?.scrollIntoView({ behavior: 'smooth' });
-                  setTimeout(() => {
-                    document.querySelector('#input-button-group')?.focus();
-                  }, 500);
-                }}
-              >
-                Get Lifetime Premium
-                <ArrowRight className="ml-2 size-8 sm:size-10 lg:size-12" />
-              </Button>
-            </motion.div>
+              <div className="bg-green-1 absolute inset-0">
+                <Squares
+                  speed={0.5}
+                  squareSize={60}
+                  direction="down"
+                  borderColor="#1F1F1F"
+                  hoverFillColor="#1F1F1F"
+                />
+              </div>
+              {/* NOTE: pointer-events-none allows hover to pass through to Squares canvas */}
+              <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center lg:p-4">
+                <Iphone
+                  videoSrc="/hero-video-1.mp4"
+                  onVideoEnded={() => {
+                    console.log('video has ended!');
+                  }}
+                  className="h-full w-auto max-w-full overflow-clip"
+                />
+              </div>
+            </m.div>
           </div>
-
-          {/* NOTE: iPhone mockup slides up from bottom */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={slideUpVariants}
-            transition={{
-              delay: 0.3,
-              duration: DURATION.slow,
-              ease: EASE.expOut,
-            }}
-            className="bg-black-2 relative flex min-h-48 w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_60px_rgba(52,211,153,0.5)] lg:min-h-0 lg:w-1/3"
-          >
-            <div className="bg-green-1 absolute inset-0">
-              <Squares
-                speed={0.5}
-                squareSize={60}
-                direction="down"
-                borderColor="#1F1F1F"
-                hoverFillColor="#1F1F1F"
-              />
-            </div>
-            {/* NOTE: pointer-events-none allows hover to pass through to Squares canvas */}
-            <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center lg:p-4">
-              <Iphone
-                videoSrc="/hero-video-1.mp4"
-                onVideoEnded={() => {
-                  console.log('video has ended!');
-                }}
-                className="h-full w-auto max-w-full overflow-clip"
-              />
-            </div>
-          </motion.div>
         </div>
-      </div>
-    </section>
+      </section>
+    </LazyMotion>
   );
 }

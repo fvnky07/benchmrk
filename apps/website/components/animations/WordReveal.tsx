@@ -4,7 +4,7 @@
 
 import { useRef } from 'react';
 
-import { motion, useInView } from 'motion/react';
+import { LazyMotion, domAnimation, m, useInView } from 'motion/react';
 
 import {
   wordRevealContainerVariants,
@@ -38,27 +38,34 @@ export function WordReveal({
   const isInView = useInView(ref, { once, amount });
 
   const words = text.split(' ');
+  const wordEntries = words.map((word, i) => ({
+    word,
+    key: `${word}-${i}`,
+    addSpace: i < words.length - 1,
+  }));
 
   return (
-    <Tag className={className} ref={ref}>
-      <motion.span
-        initial="hidden"
-        animate={onLoad || isInView ? 'visible' : 'hidden'}
-        variants={wordRevealContainerVariants}
-        className="inline"
-      >
-        {words.map((word, i) => (
-          <motion.span
-            key={`${word}-${i}`}
-            variants={wordRevealChildVariants}
-            className="inline-block"
-          >
-            {word}
-            {/* NOTE: Preserve spaces between words */}
-            {i < words.length - 1 && '\u00A0'}
-          </motion.span>
-        ))}
-      </motion.span>
-    </Tag>
+    <LazyMotion features={domAnimation}>
+      <Tag className={className} ref={ref}>
+        <m.span
+          initial="hidden"
+          animate={onLoad || isInView ? 'visible' : 'hidden'}
+          variants={wordRevealContainerVariants}
+          className="inline"
+        >
+          {wordEntries.map((entry) => (
+            <m.span
+              key={entry.key}
+              variants={wordRevealChildVariants}
+              className="inline-block"
+            >
+              {entry.word}
+              {/* NOTE: Preserve spaces between words */}
+              {entry.addSpace && '\u00A0'}
+            </m.span>
+          ))}
+        </m.span>
+      </Tag>
+    </LazyMotion>
   );
 }

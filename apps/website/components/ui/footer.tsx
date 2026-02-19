@@ -14,7 +14,7 @@ import LogoSvg from '@/public/logo.svg';
 import { Button } from './button';
 import { DotPattern } from './dot-pattern';
 
-export interface FooterProps extends React.HTMLAttributes<HTMLElement> {
+interface FooterProps extends React.HTMLAttributes<HTMLElement> {
   logo?: React.ReactNode;
 }
 
