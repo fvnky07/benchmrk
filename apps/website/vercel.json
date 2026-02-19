@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd ../../packages/backend && npx convex deploy --cmd 'cd ../../apps/website && pnpm run build'",
+  "framework": "nextjs"
+}

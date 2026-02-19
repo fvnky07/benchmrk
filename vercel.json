@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd packages/backend && npx convex deploy --cmd 'cd ../../ && pnpm run build:web'",
-  "outputDirectory": "apps/website/.next",
-  "installCommand": "pnpm install",
-  "framework": "nextjs"
-}
