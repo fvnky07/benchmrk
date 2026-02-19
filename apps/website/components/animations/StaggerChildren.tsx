@@ -4,7 +4,7 @@
 
 import { useRef } from 'react';
 
-import { motion, useInView } from 'motion/react';
+import { LazyMotion, domAnimation, m, useInView } from 'motion/react';
 import type { Variants } from 'motion/react';
 
 import { EASE } from '@/lib/animation-config';
@@ -49,15 +49,17 @@ export function StaggerChildren({
   };
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={onLoad || isInView ? 'visible' : 'hidden'}
-      variants={containerVariants}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <LazyMotion features={domAnimation}>
+      <m.div
+        ref={ref}
+        initial="hidden"
+        animate={onLoad || isInView ? 'visible' : 'hidden'}
+        variants={containerVariants}
+        className={className}
+      >
+        {children}
+      </m.div>
+    </LazyMotion>
   );
 }
 
@@ -91,8 +93,10 @@ export function StaggerItem({
   variants = defaultItemVariants,
 }: Readonly<StaggerItemProps>) {
   return (
-    <motion.div variants={variants} className={className}>
-      {children}
-    </motion.div>
+    <LazyMotion features={domAnimation}>
+      <m.div variants={variants} className={className}>
+        {children}
+      </m.div>
+    </LazyMotion>
   );
 }

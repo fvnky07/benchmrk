@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
-import { motion, AnimatePresence } from 'motion/react';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'motion/react';
 
 import { cn } from '@/lib/utils';
 
@@ -101,38 +101,40 @@ export default function RotatingText({
   let charCounter = 0;
 
   return (
-    <span className={cn('inline-flex', mainClassName)}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span key={currentIndex} className="inline-flex flex-wrap">
-          {elements.map((wordData, wordIndex) => (
-            <span key={wordIndex} className="inline-flex">
-              {wordData.characters.map((char) => {
-                const globalCharIndex = charCounter++;
-                return (
-                  <motion.span
-                    key={`${currentIndex}-${globalCharIndex}`}
-                    className={cn('inline-block', splitLevelClassName)}
-                    /* eslint-disable @typescript-eslint/no-explicit-any */
-                    initial={initial as any}
-                    animate={animate as any}
-                    exit={exit as any}
-                    transition={
-                      {
-                        ...transition,
-                        delay: getStaggerDelay(globalCharIndex),
-                      } as any
-                    }
-                    /* eslint-enable @typescript-eslint/no-explicit-any */
-                  >
-                    {char}
-                  </motion.span>
-                );
-              })}
-              {wordData.needsSpace && <span>&nbsp;</span>}
-            </span>
-          ))}
-        </motion.span>
-      </AnimatePresence>
-    </span>
+    <LazyMotion features={domAnimation}>
+      <span className={cn('inline-flex', mainClassName)}>
+        <AnimatePresence mode="wait" initial={false}>
+          <m.span key={currentIndex} className="inline-flex flex-wrap">
+            {elements.map((wordData, wordIndex) => (
+              <span key={wordIndex} className="inline-flex">
+                {wordData.characters.map((char) => {
+                  const globalCharIndex = charCounter++;
+                  return (
+                    <m.span
+                      key={`${currentIndex}-${globalCharIndex}`}
+                      className={cn('inline-block', splitLevelClassName)}
+                      /* eslint-disable @typescript-eslint/no-explicit-any */
+                      initial={initial as any}
+                      animate={animate as any}
+                      exit={exit as any}
+                      transition={
+                        {
+                          ...transition,
+                          delay: getStaggerDelay(globalCharIndex),
+                        } as any
+                      }
+                      /* eslint-enable @typescript-eslint/no-explicit-any */
+                    >
+                      {char}
+                    </m.span>
+                  );
+                })}
+                {wordData.needsSpace && <span>&nbsp;</span>}
+              </span>
+            ))}
+          </m.span>
+        </AnimatePresence>
+      </span>
+    </LazyMotion>
   );
 }
