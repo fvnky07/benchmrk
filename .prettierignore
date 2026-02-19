@@ -38,3 +38,4 @@ coverage/
 # Generated files
 .generated/
 *.generated.*
+**/_generated/
