@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "fumadocs-mdx && next dev",
     "build:next": "fumadocs-mdx && next build",
-    "build": "cd ../../packages/backend && pnpm dlx convex deploy --cmd 'cd ../../packages/backend && pnpm exec convex codegen && cd ../../apps/website && pnpm run build:next'",
+    "build": "fumadocs-mdx && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "fumadocs-mdx"
