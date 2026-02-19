@@ -12,19 +12,37 @@ import { cn } from '@/lib/utils';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
-    img: ({ className, alt, ...props }: React.ComponentProps<'img'>) => (
+    img: ({
+      className,
+      alt,
+      src,
+      width,
+      height,
+    }: React.ComponentProps<'img'>) => (
       <Image
         className={cn('mb-2 rounded-xl border-2', className)}
         alt={alt ?? ''}
-        {...props}
+        src={src as string}
+        width={width ? Number(width) : undefined}
+        height={height ? Number(height) : undefined}
+        fill={!width && !height}
       />
     ),
-    Video: ({ className, ...props }: React.ComponentProps<'video'>) => (
+    Video: ({
+      className,
+      src,
+      poster,
+    }: {
+      className?: string;
+      src?: string;
+      poster?: string;
+    }) => (
       <video
         className={cn('rounded-md border', className)}
+        src={src}
+        poster={poster}
         controls
         loop
-        {...props}
       />
     ),
     Accordion,
@@ -35,4 +53,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
   };
 }
 
-export const useMDXComponents = getMDXComponents;
+export function useMDXComponents(components?: MDXComponents): MDXComponents {
+  return getMDXComponents(components);
+}
