@@ -5,6 +5,12 @@
       "type": "remote",
       "url": "https://mcp.inkeep.com/better-auth/mcp",
       "enabled": true
+    },
+    "convex": {
+      "type": "local",
+      "command": ["npx", "-y", "convex@latest", "mcp", "start"],
+      "enabled": true
     }
   }
 }
+
