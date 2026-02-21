@@ -11,6 +11,8 @@ import { Footer } from '@/components/ui/footer';
 import { Toaster } from '@/components/ui/sonner';
 
 import { ConvexClientProvider } from './ConvexClientProvider';
+import PostHogPageview from './PostHogPageview';
+import { PostHogProvider } from './PostHogProvider';
 
 const clashGrotesk = localFont({
   src: [
@@ -123,13 +125,16 @@ export default function RootLayout({
       <body
         className={`${clashGrotesk.variable} ${nippo.variable} antialiased`}
       >
-        <Analytics />
-        <SpeedInsights />
-        <ConvexClientProvider>
-          {children}
-          <Footer />
-          <Toaster />
-        </ConvexClientProvider>
+        <PostHogProvider>
+          <PostHogPageview />
+          <Analytics />
+          <SpeedInsights />
+          <ConvexClientProvider>
+            {children}
+            <Footer />
+            <Toaster />
+          </ConvexClientProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
