@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git stash:*)",
+      "Bash(npx expo install:*)",
+      "Bash(node -e:*)",
+      "Bash(npm view:*)",
+      "Bash(npx:*)",
+      "Bash(pnpm run check-types:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(pnpm run build:ios:*)"
+    ]
+  }
+}
