@@ -3,9 +3,6 @@ import type { Metadata } from 'next';
 
 import localFont from 'next/font/local';
 
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-
 import './globals.css';
 import { Footer } from '@/components/ui/footer';
 import { Toaster } from '@/components/ui/sonner';
@@ -127,8 +124,6 @@ export default function RootLayout({
       >
         <PostHogProvider>
           <PostHogPageview />
-          <Analytics />
-          <SpeedInsights />
           <ConvexClientProvider>
             {children}
             <Footer />
