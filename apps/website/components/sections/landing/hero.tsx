@@ -2,26 +2,15 @@
 'use client';
 import Image from 'next/image';
 
-import {
-  Brain,
-  Zap,
-  BarChart3,
-  ArrowRight,
-  Activity,
-  CheckCircle2,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { LazyMotion, domAnimation, m } from 'motion/react';
 
-import {
-  StaggerChildren,
-  StaggerItem,
-} from '@/components/animations/StaggerChildren';
 import Squares from '@/components/Squares';
 import { Button } from '@/components/ui/button';
 import { GridPattern } from '@/components/ui/grid-pattern';
 import { Iphone } from '@/components/ui/iphone';
-import { Navbar } from '@/components/ui/navbar';
 import { LineShadowText } from '@/components/ui/line-shadow-text';
+import { Navbar } from '@/components/ui/navbar';
 import {
   fadeUpVariants,
   slideUpVariants,
@@ -34,9 +23,19 @@ import LogoSvg from '@/public/logo.svg';
 export default function Hero() {
   return (
     <LazyMotion features={domAnimation}>
-      <section className="relative flex min-h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-8 sm:py-12 lg:px-6">
-        {/* Subtle Background Pattern */}
-        <GridPattern width={40} height={40} strokeColor="rgba(0, 0, 0, 0.03)" />
+      <section className="relative flex min-h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-8 sm:py-6 lg:px-6">
+        {/* Dynamic Squares Background */}
+        <div className="absolute inset-0 z-0">
+          <Squares
+            direction="diagonal"
+            speed={0.5}
+            squareSize={40}
+            borderColor="rgba(0, 0, 0, 0.05)"
+            hoverFillColor="rgba(0, 0, 0, 0.02)"
+          />
+          {/* Subtle overlay to soften the background */}
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
+        </div>
 
         {/* Main Hero Container */}
         <div className="bg-black-1 relative z-10 flex min-h-[90vh] w-full max-w-[1600px] flex-col overflow-hidden rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
@@ -64,19 +63,6 @@ export default function Hero() {
           <div className="flex grow flex-col gap-4 lg:flex-row lg:gap-8">
             {/* Left Content Column */}
             <div className="bg-black-2 flex flex-col items-center justify-center gap-10 rounded-4xl px-6 py-12 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-20 lg:text-left">
-              {/* Badge */}
-              <m.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: EASE.expOut }}
-                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5"
-              >
-                <Activity className="text-cyan-1 size-4" />
-                <span className="text-xs font-semibold tracking-wider text-white/80 uppercase">
-                  AI-Powered Fitness Evolution
-                </span>
-              </m.div>
-
               {/* High-Impact Title */}
               <m.div
                 initial="hidden"
