@@ -2,7 +2,14 @@
 'use client';
 import Image from 'next/image';
 
-import { Brain, Zap, BarChart3, ArrowRight } from 'lucide-react';
+import {
+  Brain,
+  Zap,
+  BarChart3,
+  ArrowRight,
+  Activity,
+  CheckCircle2,
+} from 'lucide-react';
 import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import {
@@ -10,17 +17,11 @@ import {
   StaggerItem,
 } from '@/components/animations/StaggerChildren';
 import Squares from '@/components/Squares';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { GridPattern } from '@/components/ui/grid-pattern';
 import { Iphone } from '@/components/ui/iphone';
 import { Navbar } from '@/components/ui/navbar';
-import RotatingText from '@/components/ui/RotatingText';
+import { LineShadowText } from '@/components/ui/line-shadow-text';
 import {
   fadeUpVariants,
   slideUpVariants,
@@ -34,12 +35,12 @@ export default function Hero() {
   return (
     <LazyMotion features={domAnimation}>
       <section className="relative flex min-h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-8 sm:py-12 lg:px-6">
-        {/* Grid Pattern Background */}
-        <GridPattern width={40} height={40} strokeColor="rgba(0, 0, 0, 0.05)" />
+        {/* Subtle Background Pattern */}
+        <GridPattern width={40} height={40} strokeColor="rgba(0, 0, 0, 0.03)" />
 
-        {/* Centered card with responsive margins */}
+        {/* Main Hero Container */}
         <div className="bg-black-1 relative z-10 flex min-h-[90vh] w-full max-w-[1600px] flex-col overflow-hidden rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
-          {/* NOTE: Navbar row - fade in on load */}
+          {/* Navbar */}
           <m.div initial="hidden" animate="visible" variants={fadeInVariants}>
             <Navbar
               variant="default"
@@ -60,152 +61,136 @@ export default function Hero() {
             />
           </m.div>
 
-          {/* NOTE: Main content row */}
-          <div className="bg-black-1 flex min-h-0 w-full grow flex-col gap-4 rounded-4xl lg:flex-row lg:gap-8">
-            <div className="bg-black-2 flex min-h-0 w-full shrink flex-col items-start justify-start gap-8 overflow-y-auto rounded-4xl px-6 py-8 sm:gap-10 sm:px-12 sm:py-12 lg:w-2/3 lg:px-16 lg:py-16">
-              {/* NOTE: Enhanced title with rotating text animation */}
+          <div className="flex grow flex-col gap-4 lg:flex-row lg:gap-8">
+            {/* Left Content Column */}
+            <div className="bg-black-2 flex flex-col items-center justify-center gap-10 rounded-4xl px-6 py-12 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-20 lg:text-left">
+              {/* Badge */}
+              <m.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: EASE.expOut }}
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5"
+              >
+                <Activity className="text-cyan-1 size-4" />
+                <span className="text-xs font-semibold tracking-wider text-white/80 uppercase">
+                  AI-Powered Fitness Evolution
+                </span>
+              </m.div>
+
+              {/* High-Impact Title */}
               <m.div
                 initial="hidden"
                 animate="visible"
                 variants={fadeInVariants}
-                className="w-full space-y-4"
+                className="max-w-4xl"
               >
-                <h1 className="w-full text-center text-4xl leading-tight font-bold sm:text-6xl lg:text-left lg:text-7xl 2xl:text-9xl">
-                  <span className="block">
-                    Stop{' '}
-                    <RotatingText
-                      texts={['guessing', 'forgetting', 'eyeballing', 'losing']}
-                      mainClassName="inline-flex px-3 py-1.5 lg:px-6 lg:py-3 bg-cyan-1 text-black overflow-hidden justify-center rounded-2xl"
-                      staggerFrom="last"
-                      initial={{ y: '100%' }}
-                      animate={{ y: 0 }}
-                      exit={{ y: '-120%' }}
-                      staggerDuration={0.025}
-                      splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 lg:pb-1.5 2xl:pb-2"
-                      transition={{
-                        type: 'spring',
-                        damping: 30,
-                        stiffness: 400,
-                      }}
-                      rotationInterval={2000}
-                    />
+                <h1 className="text-5xl leading-[1.1] font-bold tracking-tight text-white sm:text-7xl lg:text-8xl 2xl:text-[9rem]">
+                  Stop <span className="text-white/40">Guessing.</span>
+                  <br />
+                  <span className="mt-2 block">
+                    Start{' '}
+                    <LineShadowText
+                      className="text-green-1 italic"
+                      shadowColor="#00ff90"
+                    >
+                      Progressing.
+                    </LineShadowText>
                   </span>
-                  <span className="block">track of your gains</span>
                 </h1>
-                <p className="max-w-xl text-center text-lg text-white/60 sm:text-xl lg:text-left lg:text-2xl">
-                  The ultimate AI-powered fitness tracker for those who take
-                  their progress seriously. No fluff, just results.
-                </p>
               </m.div>
 
-              {/* NOTE: Accordion items stagger in */}
-              <StaggerChildren
-                staggerDelay={0.15}
-                initialDelay={0.6}
-                onLoad
-                className="w-full"
+              {/* Subheadline */}
+              <m.p
+                initial="hidden"
+                animate="visible"
+                variants={fadeUpVariants}
+                transition={{ delay: 0.4, duration: DURATION.normal }}
+                className="max-w-xl text-lg text-white/50 sm:text-xl lg:text-2xl"
               >
-                <Accordion
-                  type="single"
-                  defaultValue="1"
-                  className="bg-black-1 w-full rounded-4xl border border-white/5"
-                >
-                  <StaggerItem>
-                    <AccordionItem value="1" className="px-4 md:px-8">
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-4">
-                          <Brain className="text-cyan-1 size-6 shrink-0 sm:size-8" />
-                          <span className="text-xl sm:text-2xl">
-                            AI-Powered Coaching
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-lg text-white/60 sm:text-xl lg:text-2xl">
-                          Get personalized workout recommendations and form
-                          corrections powered by advanced machine learning. Your
-                          AI coach adapts to your fitness level.
-                        </p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </StaggerItem>
+                The ultimate AI-driven fitness companion that analyzes your data
+                to build the perfect workout, every time. No more plateaus, just
+                pure results.
+              </m.p>
 
-                  <StaggerItem>
-                    <AccordionItem value="2" className="px-4 md:px-8">
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-4">
-                          <Zap className="text-green-1 size-6 shrink-0 sm:size-8" />
-                          <span className="text-xl sm:text-2xl">
-                            Faster Than Paper
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <p className="text-lg text-white/60 sm:text-xl lg:text-2xl">
-                          Lightning-fast workout logging designed for the gym
-                          floor. Track sets, reps, and weights in seconds
-                          without missing a beat.
-                        </p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </StaggerItem>
-                </Accordion>
-              </StaggerChildren>
-
-              {/* NOTE: CTA button */}
+              {/* Features Mini-List */}
               <m.div
                 initial="hidden"
                 animate="visible"
                 variants={fadeUpVariants}
-                transition={{
-                  delay: 1.2,
-                  duration: DURATION.normal,
-                  ease: EASE.expOut,
-                }}
-                className="w-full"
+                transition={{ delay: 0.6 }}
+                className="flex flex-wrap justify-center gap-6 lg:justify-start"
+              >
+                {[
+                  'Hyper-fast logging',
+                  'Real-time AI coaching',
+                  'Deep trend analysis',
+                ].map((feature) => (
+                  <div key={feature} className="flex items-center gap-2">
+                    <CheckCircle2 className="text-cyan-1 size-5" />
+                    <span className="text-sm font-medium text-white/80">
+                      {feature}
+                    </span>
+                  </div>
+                ))}
+              </m.div>
+
+              {/* Action Buttons */}
+              <m.div
+                initial="hidden"
+                animate="visible"
+                variants={fadeUpVariants}
+                transition={{ delay: 0.8 }}
+                className="flex w-full flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start"
               >
                 <Button
                   size="lg"
-                  className="group hover:bg-green-1 w-full rounded-4xl bg-white px-10 py-10 text-3xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:text-4xl lg:w-fit"
+                  className="group hover:bg-green-1 h-20 w-full rounded-3xl bg-white px-10 text-2xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:w-fit"
                   onClick={() => {
                     const section = document.querySelector('#waitlist');
                     section?.scrollIntoView({ behavior: 'smooth' });
                   }}
                 >
-                  Join Waitlist
-                  <ArrowRight className="ml-4 size-10 transition-transform group-hover:translate-x-2 sm:size-12" />
+                  Join the Waitlist
+                  <ArrowRight className="ml-3 size-8 transition-transform group-hover:translate-x-2" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-20 w-full rounded-3xl border-2 border-white/10 px-10 text-2xl font-bold text-white transition-all hover:bg-white/5 sm:w-fit"
+                >
+                  Learn More
                 </Button>
               </m.div>
 
-              {/* NOTE: Social proof / Trusted by section */}
+              {/* Social Proof */}
               <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.5, duration: 1 }}
-                className="mt-auto flex w-full flex-col items-center gap-6 pt-12 lg:items-start"
+                transition={{ delay: 1.2, duration: 1 }}
+                className="mt-8 flex flex-col items-center gap-4 lg:items-start"
               >
-                <p className="text-sm font-medium tracking-widest text-white/40 uppercase">
-                  Trusted by athletes from
+                <p className="text-xs font-bold tracking-[0.2em] text-white/30 uppercase">
+                  Backed by the best in performance
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-8 opacity-40 grayscale transition-all hover:grayscale-0 lg:justify-start">
-                  {/* These would be real partner logos */}
-                  <div className="text-2xl font-bold tracking-tighter text-white">
-                    FITNESS.AI
+                <div className="flex flex-wrap items-center justify-center gap-8 opacity-20 grayscale transition-all hover:opacity-50 hover:grayscale-0 lg:justify-start">
+                  <div className="text-xl font-black tracking-tighter text-white italic">
+                    FORCE.FIT
                   </div>
-                  <div className="text-2xl font-bold tracking-tighter text-white">
-                    IRON
+                  <div className="text-xl font-black tracking-tighter text-white italic">
+                    RECOVER
                   </div>
-                  <div className="text-2xl font-bold tracking-tighter text-white">
-                    RECOVERY+
+                  <div className="text-xl font-black tracking-tighter text-white italic">
+                    VELOCITY
                   </div>
-                  <div className="text-2xl font-bold tracking-tighter text-white">
-                    ZENITH
+                  <div className="text-xl font-black tracking-tighter text-white italic">
+                    TITAN
                   </div>
                 </div>
               </m.div>
             </div>
 
-            {/* NOTE: iPhone mockup */}
+            {/* Right Visual Column */}
             <m.div
               initial="hidden"
               animate="visible"
@@ -215,21 +200,25 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-black-2 relative flex min-h-[500px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[0_0_80px_rgba(52,211,153,0.3)] lg:min-h-0 lg:w-1/3"
+              className="bg-black-2 relative flex min-h-[600px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] lg:min-h-0 lg:w-2/5"
             >
-              <div className="absolute inset-0">
+              <div className="absolute inset-0 z-0">
                 <Squares
-                  speed={0.4}
-                  squareSize={60}
-                  direction="down"
-                  borderColor="rgba(255,255,255,0.05)"
-                  hoverFillColor="rgba(0,255,144,0.1)"
+                  speed={0.3}
+                  squareSize={50}
+                  direction="diagonal"
+                  borderColor="rgba(255,255,255,0.03)"
+                  hoverFillColor="rgba(0,255,144,0.05)"
                 />
               </div>
-              <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center p-8 lg:p-12">
+
+              {/* Decorative Glow */}
+              <div className="bg-green-1 absolute top-1/2 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]" />
+
+              <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center p-12 lg:p-16">
                 <Iphone
                   videoSrc="/hero-video-1.mp4"
-                  className="h-full w-auto max-w-full drop-shadow-[0_0_40px_rgba(0,0,0,0.5)]"
+                  className="h-full w-auto max-w-[90%] drop-shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
                 />
               </div>
             </m.div>
