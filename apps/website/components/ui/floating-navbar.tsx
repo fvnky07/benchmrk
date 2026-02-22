@@ -94,14 +94,15 @@ export const FloatingNavbar = React.forwardRef<
                 duration: DURATION.fast,
                 ease: EASE.expOut,
               }}
-              className="fixed top-0 right-0 left-0 z-100 mx-auto max-w-screen-2xl px-0 sm:top-4 sm:px-4"
+              className="fixed top-0 right-0 left-0 z-[100] w-full"
             >
               <Navbar
                 ref={ref}
                 {...navbarProps}
                 variant="light"
                 customStyles={floatingNavbarStyles}
-                className="rounded-none shadow-lg sm:rounded-4xl"
+                noPadding
+                className="rounded-none rounded-b-4xl border-none shadow-xl"
               />
             </m.div>
           )}
