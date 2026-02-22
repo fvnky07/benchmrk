@@ -2,15 +2,17 @@
 'use client';
 import Image from 'next/image';
 
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useQuery } from 'convex/react';
+import { ArrowRight } from 'lucide-react';
 import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import Squares from '@/components/Squares';
 import { Button } from '@/components/ui/button';
-import { GridPattern } from '@/components/ui/grid-pattern';
 import { Iphone } from '@/components/ui/iphone';
 import { LineShadowText } from '@/components/ui/line-shadow-text';
 import { Navbar } from '@/components/ui/navbar';
+import { Separator } from '@/components/ui/separator';
 import {
   fadeUpVariants,
   slideUpVariants,
@@ -21,20 +23,22 @@ import {
 import LogoSvg from '@/public/logo.svg';
 
 export default function Hero() {
+  const waitlistCount = useQuery(api.waitlist.getWaitlistCount) ?? 0;
+  const MULTIPLIER = 300;
+  const exaggeratedCount = (waitlistCount + 1) * MULTIPLIER;
+
   return (
     <LazyMotion features={domAnimation}>
-      <section className="relative flex min-h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-8 sm:py-6 lg:px-6">
+      <section className="relative flex min-h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:py-2 lg:px-6">
         {/* Dynamic Squares Background */}
         <div className="absolute inset-0 z-0">
           <Squares
-            direction="diagonal"
+            direction="down"
             speed={0.5}
             squareSize={40}
-            borderColor="rgba(0, 0, 0, 0.05)"
+            borderColor="rgba(0, 0, 0, 1)"
             hoverFillColor="rgba(0, 0, 0, 0.02)"
           />
-          {/* Subtle overlay to soften the background */}
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
         </div>
 
         {/* Main Hero Container */}
@@ -51,8 +55,8 @@ export default function Hero() {
               logo={
                 <Image
                   src={LogoSvg}
-                  alt="logo"
                   width={32}
+                  alt="logo"
                   height={32}
                   className="relative sm:h-12 sm:w-12 md:bottom-2"
                 />
@@ -62,7 +66,7 @@ export default function Hero() {
 
           <div className="flex grow flex-col gap-4 lg:flex-row lg:gap-8">
             {/* Left Content Column */}
-            <div className="bg-black-2 flex flex-col items-center justify-center gap-10 rounded-4xl px-6 py-12 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-20 lg:text-left">
+            <div className="bg-black-2 flex flex-col items-center justify-center gap-10 rounded-4xl px-6 py-0 text-center sm:px-12 sm:py-12 lg:w-3/5 lg:items-start lg:px-8 lg:text-left">
               {/* High-Impact Title */}
               <m.div
                 initial="hidden"
@@ -70,16 +74,16 @@ export default function Hero() {
                 variants={fadeInVariants}
                 className="max-w-4xl"
               >
-                <h1 className="text-5xl leading-[1.1] font-bold tracking-tight text-white sm:text-7xl lg:text-8xl 2xl:text-[9rem]">
+                <h1 className="text-5xl leading-tight font-bold tracking-tight text-white sm:text-7xl lg:text-8xl lg:leading-22 2xl:text-[9rem]">
                   Stop <span className="text-white/40">Guessing.</span>
                   <br />
-                  <span className="mt-2 block">
+                  <span className="mt-2 flex flex-row items-center justify-center lg:justify-start">
                     Start{' '}
                     <LineShadowText
-                      className="text-green-1 italic"
+                      className="text-green-1 italic drop-shadow-[0_0_15px_rgba(0,255,144,0.3)]"
                       shadowColor="#00ff90"
                     >
-                      Progressing.
+                      Progressing
                     </LineShadowText>
                   </span>
                 </h1>
@@ -98,39 +102,42 @@ export default function Hero() {
                 pure results.
               </m.p>
 
-              {/* Features Mini-List */}
-              <m.div
-                initial="hidden"
-                animate="visible"
-                variants={fadeUpVariants}
-                transition={{ delay: 0.6 }}
-                className="flex flex-wrap justify-center gap-6 lg:justify-start"
-              >
-                {[
-                  'Hyper-fast logging',
-                  'Real-time AI coaching',
-                  'Deep trend analysis',
-                ].map((feature) => (
-                  <div key={feature} className="flex items-center gap-2">
-                    <CheckCircle2 className="text-cyan-1 size-5" />
-                    <span className="text-sm font-medium text-white/80">
-                      {feature}
-                    </span>
-                  </div>
-                ))}
-              </m.div>
-
-              {/* Action Buttons */}
+              {/* Action Buttons & Stats Row */}
               <m.div
                 initial="hidden"
                 animate="visible"
                 variants={fadeUpVariants}
                 transition={{ delay: 0.8 }}
-                className="flex w-full flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start"
+                className="flex w-full flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
               >
+                <div className="flex flex-1 items-center justify-center gap-4 sm:gap-8">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="font-[nippo] text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
+                      {exaggeratedCount.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                      Waitlist Signups
+                    </span>
+                  </div>
+
+                  <Separator
+                    orientation="vertical"
+                    className="h-12 bg-white/10"
+                  />
+
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="font-[nippo] text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
+                      12,400+
+                    </span>
+                    <span className="text-xs font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                      Total Users
+                    </span>
+                  </div>
+                </div>
+
                 <Button
                   size="lg"
-                  className="group hover:bg-green-1 h-20 w-full rounded-3xl bg-white px-10 text-2xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:w-fit"
+                  className="group hover:bg-green-1 h-20 w-full rounded-3xl bg-white px-10 text-2xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:mx-auto sm:w-fit lg:mx-0"
                   onClick={() => {
                     const section = document.querySelector('#waitlist');
                     section?.scrollIntoView({ behavior: 'smooth' });
@@ -138,14 +145,6 @@ export default function Hero() {
                 >
                   Join the Waitlist
                   <ArrowRight className="ml-3 size-8 transition-transform group-hover:translate-x-2" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-20 w-full rounded-3xl border-2 border-white/10 px-10 text-2xl font-bold text-white transition-all hover:bg-white/5 sm:w-fit"
-                >
-                  Learn More
                 </Button>
               </m.div>
 
@@ -186,14 +185,14 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-black-2 relative flex min-h-[600px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] lg:min-h-0 lg:w-2/5"
+              className="bg-green-1 relative flex min-h-[600px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] lg:min-h-0 lg:w-2/5"
             >
               <div className="absolute inset-0 z-0">
                 <Squares
                   speed={0.3}
                   squareSize={50}
                   direction="diagonal"
-                  borderColor="rgba(255,255,255,0.03)"
+                  borderColor="rgba(0,0,0,1)"
                   hoverFillColor="rgba(0,255,144,0.05)"
                 />
               </div>
