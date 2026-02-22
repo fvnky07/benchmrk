@@ -64,7 +64,7 @@ export default function Hero() {
             />
           </m.div>
 
-          <div className="flex grow flex-col gap-4 lg:flex-row lg:gap-8">
+          <div className="flex grow flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-8">
             {/* Left Content Column */}
             <div className="bg-black-2 flex flex-col items-center justify-center gap-10 rounded-4xl px-6 py-0 text-center sm:px-12 sm:py-12 lg:w-3/5 lg:items-start lg:px-8 lg:text-left">
               {/* High-Impact Title */}
@@ -185,14 +185,14 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-green-1 relative flex min-h-[500px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] sm:min-h-[600px] lg:h-full lg:min-h-0 lg:w-2/5"
+              className="bg-black-2 relative flex min-h-[500px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] sm:min-h-[600px] lg:h-auto lg:min-h-0 lg:flex-1"
             >
               <div className="absolute inset-0 z-0">
                 <Squares
                   speed={0.3}
                   squareSize={50}
                   direction="diagonal"
-                  borderColor="rgba(0,0,0,1)"
+                  borderColor="rgba(255,255,255,0.03)"
                   hoverFillColor="rgba(0,255,144,0.05)"
                 />
               </div>
