@@ -185,7 +185,7 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-green-1 relative flex min-h-[600px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] lg:min-h-0 lg:w-2/5"
+              className="bg-green-1 relative flex min-h-[500px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] sm:min-h-[600px] lg:h-full lg:min-h-0 lg:w-2/5"
             >
               <div className="absolute inset-0 z-0">
                 <Squares
@@ -200,10 +200,10 @@ export default function Hero() {
               {/* Decorative Glow */}
               <div className="bg-green-1 absolute top-1/2 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]" />
 
-              <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center p-12 lg:p-16">
+              <div className="pointer-events-none relative z-10 flex h-full w-full items-center justify-center p-8 sm:p-12 lg:p-16">
                 <Iphone
                   videoSrc="/hero-video-1.mp4"
-                  className="h-full w-auto max-w-[90%] drop-shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
+                  className="h-full max-h-[80vh] w-auto max-w-[90%] drop-shadow-[0_40px_100px_rgba(0,0,0,0.8)] lg:max-h-full"
                 />
               </div>
             </m.div>
