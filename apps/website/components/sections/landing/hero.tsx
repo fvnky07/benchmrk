@@ -29,7 +29,7 @@ export default function Hero() {
 
   return (
     <LazyMotion features={domAnimation}>
-      <section className="relative flex min-h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:py-2 lg:px-6">
+      <section className="relative flex h-screen w-full shrink items-center justify-center overflow-hidden bg-white px-4 py-4 sm:py-6 lg:px-6">
         {/* Dynamic Squares Background */}
         <div className="absolute inset-0 z-0">
           <Squares
@@ -42,9 +42,14 @@ export default function Hero() {
         </div>
 
         {/* Main Hero Container */}
-        <div className="bg-black-1 relative z-10 flex min-h-[90vh] w-full max-w-[1600px] flex-col overflow-hidden rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
+        <div className="bg-black-1 relative z-10 flex h-full w-full max-w-[1600px] flex-col overflow-hidden rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
           {/* Navbar */}
-          <m.div initial="hidden" animate="visible" variants={fadeInVariants}>
+          <m.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInVariants}
+            className="shrink-0"
+          >
             <Navbar
               variant="default"
               customStyles={{
@@ -64,9 +69,9 @@ export default function Hero() {
             />
           </m.div>
 
-          <div className="flex grow flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-8">
+          <div className="flex flex-1 flex-col gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:gap-8">
             {/* Left Content Column */}
-            <div className="bg-black-2 flex flex-col items-center justify-center gap-10 rounded-4xl px-6 py-0 text-center sm:px-12 sm:py-12 lg:w-3/5 lg:items-start lg:px-8 lg:text-left">
+            <div className="bg-black-2 flex flex-1 flex-col items-center justify-center gap-6 rounded-4xl px-6 py-4 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-8 lg:py-12 lg:text-left">
               {/* High-Impact Title */}
               <m.div
                 initial="hidden"
@@ -74,7 +79,7 @@ export default function Hero() {
                 variants={fadeInVariants}
                 className="max-w-4xl"
               >
-                <h1 className="text-5xl font-bold tracking-tight text-white sm:text-7xl lg:text-8xl lg:leading-22 2xl:text-[9rem]">
+                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-8xl lg:leading-22 2xl:text-[9rem]">
                   Stop <span className="text-white/40">Guessing.</span>
                   <br />
                   <span className="mt-2 flex flex-row items-center justify-center lg:justify-start">
@@ -95,7 +100,7 @@ export default function Hero() {
                 animate="visible"
                 variants={fadeUpVariants}
                 transition={{ delay: 0.4, duration: DURATION.normal }}
-                className="max-w-xl text-lg text-white/50 sm:text-xl lg:text-2xl"
+                className="max-w-xl text-base text-white/50 sm:text-xl lg:text-2xl"
               >
                 The ultimate AI-driven fitness companion that analyzes your data
                 to build the perfect workout, every time. No more plateaus, just
@@ -108,28 +113,28 @@ export default function Hero() {
                 animate="visible"
                 variants={fadeUpVariants}
                 transition={{ delay: 0.8 }}
-                className="flex w-full flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+                className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
               >
                 <div className="flex flex-1 items-center justify-center gap-4 sm:gap-8">
                   <div className="flex flex-col items-center justify-center">
-                    <span className="font-[nippo] text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
+                    <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                       {exaggeratedCount.toLocaleString()}
                     </span>
-                    <span className="text-xs font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                    <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
                       Waitlist Signups
                     </span>
                   </div>
 
                   <Separator
                     orientation="vertical"
-                    className="h-12 bg-white/10"
+                    className="h-10 bg-white/10 sm:h-12"
                   />
 
                   <div className="flex flex-col items-center justify-center">
-                    <span className="font-[nippo] text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
+                    <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                       12,400+
                     </span>
-                    <span className="text-xs font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                    <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
                       Total Users
                     </span>
                   </div>
@@ -137,38 +142,38 @@ export default function Hero() {
 
                 <Button
                   size="lg"
-                  className="group hover:bg-green-1 h-20 w-full rounded-3xl bg-white px-10 text-2xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:mx-auto sm:w-fit lg:mx-0"
+                  className="group hover:bg-green-1 h-14 w-full rounded-2xl bg-white px-6 text-xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:h-20 sm:rounded-3xl sm:px-10 sm:text-2xl lg:mx-0 lg:w-fit"
                   onClick={() => {
                     const section = document.querySelector('#waitlist');
                     section?.scrollIntoView({ behavior: 'smooth' });
                   }}
                 >
                   Join the Waitlist
-                  <ArrowRight className="ml-3 size-8 transition-transform group-hover:translate-x-2" />
+                  <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
                 </Button>
               </m.div>
 
-              {/* Social Proof */}
+              {/* Social Proof - Hidden on small mobile to save space */}
               <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.2, duration: 1 }}
-                className="mt-8 flex flex-col items-center gap-4 lg:items-start"
+                className="mt-4 hidden flex-col items-center gap-4 sm:flex lg:items-start"
               >
-                <p className="text-xs font-bold tracking-[0.2em] text-white/30 uppercase">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-white/30 uppercase sm:text-xs">
                   Backed by the best in performance
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-8 opacity-20 grayscale transition-all hover:opacity-50 hover:grayscale-0 lg:justify-start">
-                  <div className="text-xl font-black tracking-tighter text-white italic">
+                <div className="flex flex-wrap items-center justify-center gap-4 opacity-20 grayscale transition-all hover:opacity-50 hover:grayscale-0 sm:gap-8 lg:justify-start">
+                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
                     FORCE.FIT
                   </div>
-                  <div className="text-xl font-black tracking-tighter text-white italic">
+                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
                     RECOVER
                   </div>
-                  <div className="text-xl font-black tracking-tighter text-white italic">
+                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
                     VELOCITY
                   </div>
-                  <div className="text-xl font-black tracking-tighter text-white italic">
+                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
                     TITAN
                   </div>
                 </div>
@@ -185,7 +190,7 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-black-2 relative flex min-h-[500px] w-full grow items-center justify-center overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] sm:min-h-[600px] lg:h-auto lg:min-h-0 lg:flex-1"
+              className="bg-black-2 relative flex flex-1 overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] lg:h-auto lg:w-2/5"
             >
               <div className="absolute inset-0 z-0">
                 <Squares
@@ -196,6 +201,9 @@ export default function Hero() {
                   hoverFillColor="rgba(0,255,144,0.05)"
                 />
               </div>
+
+              {/* Decorative Glow */}
+              <div className="bg-green-1 absolute top-1/2 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]" />
 
               <div className="relative z-10 h-full w-full">
                 <AspectRatio
