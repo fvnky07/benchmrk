@@ -74,7 +74,7 @@ export default function Hero() {
                 variants={fadeInVariants}
                 className="max-w-4xl"
               >
-                <h1 className="text-5xl leading-tight font-bold tracking-tight text-white sm:text-7xl lg:text-8xl lg:leading-22 2xl:text-[9rem]">
+                <h1 className="text-5xl font-bold tracking-tight text-white sm:text-7xl lg:text-8xl lg:leading-22 2xl:text-[9rem]">
                   Stop <span className="text-white/40">Guessing.</span>
                   <br />
                   <span className="mt-2 flex flex-row items-center justify-center lg:justify-start">
@@ -197,27 +197,20 @@ export default function Hero() {
                 />
               </div>
 
-              {/* Decorative Glow */}
-              <div className="bg-green-1 absolute top-1/2 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]" />
-
-              <div className="relative z-10 flex h-full w-full items-center justify-center p-8 sm:p-12 lg:p-16">
-                <div className="flex w-full max-w-[350px] items-center justify-center lg:h-full lg:max-w-none">
-                  <div className="w-full lg:aspect-[9/16] lg:h-full lg:w-auto">
-                    <AspectRatio
-                      ratio={9 / 16}
-                      className="overflow-hidden rounded-3xl border-4 border-white/5 bg-black shadow-2xl"
-                    >
-                      <video
-                        src="/hero-video-1.mp4"
-                        className="h-full w-full object-cover"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
-                    </AspectRatio>
-                  </div>
-                </div>
+              <div className="relative z-10 h-full w-full">
+                <AspectRatio
+                  ratio={9 / 16}
+                  className="h-full w-full overflow-hidden bg-black"
+                >
+                  <video
+                    src="/hero-video-1.mp4"
+                    className="h-full w-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                </AspectRatio>
               </div>
             </m.div>
           </div>
