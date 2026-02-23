@@ -71,113 +71,114 @@ export default function Hero() {
 
           <div className="flex flex-1 flex-col gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:gap-8">
             {/* Left Content Column */}
-            <div className="bg-black-2 flex flex-1 flex-col items-center justify-center gap-6 rounded-4xl px-6 py-4 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-8 lg:py-12 lg:text-left">
-              {/* High-Impact Title */}
-              <m.div
-                initial="hidden"
-                animate="visible"
-                variants={fadeInVariants}
-                className="max-w-4xl"
-              >
-                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-8xl lg:leading-22 2xl:text-[9rem]">
-                  Stop <span className="text-white/40">Guessing.</span>
-                  <br />
-                  <span className="mt-2 flex flex-row items-center justify-center lg:justify-start">
-                    Start{' '}
-                    <LineShadowText
-                      className="text-green-1 italic drop-shadow-[0_0_15px_rgba(0,255,144,0.3)]"
-                      shadowColor="#00ff90"
-                    >
-                      Progressing
-                    </LineShadowText>
-                  </span>
-                </h1>
-              </m.div>
+            <div className="bg-black-2 flex grow flex-col justify-between rounded-4xl border-2 px-6 py-8 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-8 lg:py-12 lg:text-left">
+              <div className="flex flex-col items-center gap-6 lg:items-start">
+                {/* High-Impact Title */}
+                <m.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInVariants}
+                  className="max-w-4xl"
+                >
+                  <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-[5.2rem] 2xl:text-8xl">
+                    Stop <span className="text-white/40">Guessing.</span>
+                    <br />
+                    <span className="mt-2 flex flex-row items-center justify-center lg:justify-start">
+                      Start
+                      <LineShadowText
+                        className="text-green-1 pl-2 italic drop-shadow-[0_0_15px_rgba(0,255,144,0.3)]"
+                        shadowColor="#00ff90"
+                      >
+                        Progressing
+                      </LineShadowText>
+                    </span>
+                  </h1>
+                </m.div>
 
-              {/* Subheadline */}
-              <m.p
-                initial="hidden"
-                animate="visible"
-                variants={fadeUpVariants}
-                transition={{ delay: 0.4, duration: DURATION.normal }}
-                className="max-w-xl text-base text-white/50 sm:text-xl lg:text-2xl"
-              >
-                The ultimate AI-driven fitness companion that analyzes your data
-                to build the perfect workout, every time. No more plateaus, just
-                pure results.
-              </m.p>
+                {/* Subheadline */}
+                <m.p
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeUpVariants}
+                  transition={{ delay: 0.4, duration: DURATION.normal }}
+                  className="max-w-xl text-base text-white/50 sm:text-xl lg:text-2xl"
+                >
+                  The ultimate AI-driven fitness companion that analyzes your
+                  data to build the perfect workout, every time. No more
+                  plateaus, just pure results.
+                </m.p>
+              </div>
 
               {/* Action Buttons & Stats Row */}
-              <m.div
-                initial="hidden"
-                animate="visible"
-                variants={fadeUpVariants}
-                transition={{ delay: 0.8 }}
-                className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
-              >
-                <div className="flex flex-1 items-center justify-center gap-4 sm:gap-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
-                      {exaggeratedCount.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
-                      Waitlist Signups
-                    </span>
-                  </div>
-
-                  <Separator
-                    orientation="vertical"
-                    className="h-10 bg-white/10 sm:h-12"
-                  />
-
-                  <div className="flex flex-col items-center justify-center">
-                    <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
-                      12,400+
-                    </span>
-                    <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
-                      Total Users
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  size="lg"
-                  className="group hover:bg-green-1 h-14 w-full rounded-2xl bg-white px-6 text-xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:h-20 sm:rounded-3xl sm:px-10 sm:text-2xl lg:mx-0 lg:w-fit"
-                  onClick={() => {
-                    const section = document.querySelector('#waitlist');
-                    section?.scrollIntoView({ behavior: 'smooth' });
-                  }}
+              <div className="flex w-full flex-col gap-10">
+                <m.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeUpVariants}
+                  transition={{ delay: 0.8 }}
+                  className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                 >
-                  Join the Waitlist
-                  <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
-                </Button>
-              </m.div>
+                  <div className="flex flex-1 items-center justify-center gap-4 sm:gap-8">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
+                        {exaggeratedCount.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                        Waiting
+                      </span>
+                    </div>
 
-              {/* Social Proof - Hidden on small mobile to save space */}
-              <m.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.2, duration: 1 }}
-                className="mt-4 hidden flex-col items-center gap-4 sm:flex lg:items-start"
-              >
-                <p className="text-[10px] font-bold tracking-[0.2em] text-white/30 uppercase sm:text-xs">
-                  Backed by the best in performance
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-4 opacity-20 grayscale transition-all hover:opacity-50 hover:grayscale-0 sm:gap-8 lg:justify-start">
-                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
-                    FORCE.FIT
+                    <Separator orientation="vertical" />
+
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
+                        126
+                      </span>
+                      <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                        Total Users
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
-                    RECOVER
+
+                  <Button
+                    size="lg"
+                    className="group hover:bg-green-1 h-14 w-full rounded-2xl bg-white px-6 text-xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:h-20 sm:rounded-3xl sm:px-10 sm:text-2xl lg:mx-0 lg:w-fit"
+                    onClick={() => {
+                      const section = document.querySelector('#waitlist');
+                      section?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    Join the Waitlist
+                    <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
+                  </Button>
+                </m.div>
+
+                {/* Social Proof - Hidden on small mobile to save space */}
+                <m.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.2, duration: 1 }}
+                  className="hidden flex-col items-center gap-4 sm:flex lg:items-start"
+                >
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-white/30 uppercase sm:text-xs">
+                    Backed by the best in performance
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-4 opacity-20 grayscale transition-all hover:opacity-50 hover:grayscale-0 sm:gap-8 lg:justify-start">
+                    <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
+                      FORCE.FIT
+                    </div>
+                    <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
+                      RECOVER
+                    </div>
+                    <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
+                      VELOCITY
+                    </div>
+                    <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
+                      TITAN
+                    </div>
                   </div>
-                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
-                    VELOCITY
-                  </div>
-                  <div className="text-lg font-black tracking-tighter text-white italic sm:text-xl">
-                    TITAN
-                  </div>
-                </div>
-              </m.div>
+                </m.div>
+              </div>
             </div>
 
             {/* Right Visual Column */}
@@ -190,21 +191,8 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-black-2 relative flex flex-1 overflow-hidden rounded-4xl shadow-[inset_0_0_100px_rgba(0,255,144,0.1)] lg:h-auto lg:w-2/5"
+              className="bg-black-2 relative flex overflow-hidden rounded-4xl lg:h-auto lg:w-2/5"
             >
-              <div className="absolute inset-0 z-0">
-                <Squares
-                  speed={0.3}
-                  squareSize={50}
-                  direction="diagonal"
-                  borderColor="rgba(255,255,255,0.03)"
-                  hoverFillColor="rgba(0,255,144,0.05)"
-                />
-              </div>
-
-              {/* Decorative Glow */}
-              <div className="bg-green-1 absolute top-1/2 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]" />
-
               <div className="relative z-10 h-full w-full">
                 <AspectRatio
                   ratio={9 / 16}
