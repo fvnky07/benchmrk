@@ -112,7 +112,7 @@ export default function WaitingList() {
         height={30}
         strokeColor="rgba(255,255,255, 0.3)"
       />
-      <div className="debug bg-black-2 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow sm:flex-row lg:p-0">
+      <div className="bg-black-2 relative z-10 flex h-full w-full flex-col overflow-hidden rounded-4xl p-2 shadow sm:flex-row lg:p-0">
         {/* NOTE: "JOIN THE LIST!" words slide in from alternating sides */}
         <div className="hidden flex-col gap-2 lg:flex lg:gap-4">
           <FadeInView
@@ -138,7 +138,7 @@ export default function WaitingList() {
             className="flex items-center justify-baseline overflow-hidden sm:justify-baseline"
           >
             <h1 className="font-[nippo] text-[15vw] leading-none font-bold tracking-tighter sm:text-[12vw] lg:text-[20vw]">
-              LIST!
+              LIST
             </h1>
           </FadeInView>
         </div>
@@ -146,7 +146,7 @@ export default function WaitingList() {
         <div className="flex grow flex-col items-center justify-center gap-4 p-4">
           {/* NOTE: Benefit callout scales in on scroll */}
           <FadeInView variants={scaleInVariants} className="flex flex-2 grow">
-            <div className="bg-cyan-1 flex flex-2 grow rounded-4xl p-4">
+            <div className="bg-green-1 flex flex-2 grow rounded-4xl p-4">
               <div
                 style={{ opacity: 0.45 }}
                 className="flex h-full w-full flex-2 items-start justify-center rounded-4xl bg-black p-4"
@@ -166,40 +166,42 @@ export default function WaitingList() {
           <StaggerChildren
             staggerDelay={0.15}
             initialDelay={0.3}
-            className="bg-black-1 flex h-auto w-full flex-1 flex-col items-center justify-center gap-4 rounded-4xl border-4 border-white p-6 shadow-2xl"
+            className="bg-black-2 flex h-auto w-full flex-1 flex-col items-center justify-between gap-4 rounded-4xl border-2 p-6 shadow-2xl"
           >
-            {/* NOTE: Stats Row - 2 stats side-by-side on desktop, stacked on mobile */}
-            <StaggerItem className="w-full">
-              <div className="flex w-full flex-col items-center justify-end gap-4 md:flex-row md:items-center">
+            {/* NOTE: Stats Row - 2 stats side-by-side, always horizontal */}
+            <StaggerItem className="flex w-full flex-1 items-center justify-center">
+              <div className="flex w-full flex-row items-center justify-center gap-6 sm:gap-10">
                 {/* Stat 1: X/100 Premiums Claimed */}
-                <div className="flex flex-col items-end text-center">
+                <div className="flex flex-col items-center justify-center text-center">
                   {premiumStats === undefined ? (
-                    <LoadingSpinner className="text-green-1 size-16" />
+                    <LoadingSpinner className="text-green-1 size-10 sm:size-16" />
                   ) : (
                     <>
-                      <div className="font-[nippo] text-[clamp(2.5rem,10vw,6rem)] font-bold text-white">
+                      <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-8xl 2xl:text-9xl">
                         {premiumStats.claimed}/100
-                      </div>
-                      <div className="text-yellow-1 text-base">
-                        premiums claimed
-                      </div>
+                      </span>
+                      <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                        Premiums Claimed
+                      </span>
                     </>
                   )}
                 </div>
-                <Separator orientation="vertical" />
+
+                {/* Separator */}
+                <div className="h-12 w-px shrink-0 bg-white/20 sm:h-16" />
 
                 {/* Stat 2: X People Waiting */}
-                <div className="flex flex-col items-center text-center md:items-end md:text-right">
+                <div className="flex flex-col items-center justify-center text-center">
                   {premiumStats === undefined ? (
-                    <LoadingSpinner className="text-green-1 size-16" />
+                    <LoadingSpinner className="text-green-1 size-10 sm:size-16" />
                   ) : (
                     <>
-                      <div className="font-[nippo] text-[clamp(2.5rem,10vw,6rem)] font-bold text-white">
+                      <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-8xl 2xl:text-9xl">
                         {exaggeratedCount.toLocaleString()}
-                      </div>
-                      <div className="text-yellow-1 text-base">
-                        people waiting
-                      </div>
+                      </span>
+                      <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
+                        Waiting
+                      </span>
                     </>
                   )}
                 </div>
@@ -207,15 +209,15 @@ export default function WaitingList() {
             </StaggerItem>
 
             {/* NOTE: Email input form - full width */}
-            <StaggerItem className="flex h-full w-full items-center justify-center">
+            <StaggerItem className="flex h-full w-full items-end justify-center">
               <Field className="w-full">
                 <ButtonGroup className="gap-2">
                   <Input
                     ref={inputRef}
                     id="input-button-group"
                     type="email"
-                    placeholder="johndoe@gmail.com"
-                    className="h-12 rounded-4xl border-white px-4"
+                    placeholder="Enter your email"
+                    className="h-12 rounded-4xl px-4"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     onKeyPress={handleKeyPress}
@@ -223,7 +225,7 @@ export default function WaitingList() {
                   />
                   <Button
                     onClick={handleRegister}
-                    className="h-12 rounded-4xl px-4"
+                    className="bg-green-1 h-12 rounded-4xl px-4"
                     disabled={isLoading}
                   >
                     {isLoading && <Spinner data-icon="inline-start" />}
