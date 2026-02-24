@@ -142,6 +142,58 @@ export const slideFromRightVariants: Variants = {
   },
 };
 
+// NOTE: Hero title word reveal — dramatic staggered word entrance
+export const heroTitleContainerVariants: Variants = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+export const heroTitleWordVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 48,
+    filter: 'blur(8px)',
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: DURATION.slow,
+      ease: EASE.expOut,
+    },
+  },
+};
+
+// NOTE: Typewriter character reveal — fast per-character opacity with expInOut
+export const typewriterContainerVariants: Variants = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.022,
+      delayChildren: 0.9,
+    },
+  },
+};
+
+export const typewriterCharVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.08,
+      ease: EASE.expInOut,
+    },
+  },
+};
+
 // NOTE: Bounce entrance — for trophy/celebration elements
 export const bounceInVariants: Variants = {
   hidden: {
