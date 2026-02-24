@@ -155,55 +155,94 @@ export default function Hero() {
 
               {/* Action Buttons & Stats Row */}
               <div className="flex w-full flex-col justify-start gap-12">
-                <m.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={fadeUpVariants}
-                  transition={{ delay: 0.8 }}
-                  className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
-                >
-                  <Button
-                    size="lg"
-                    className="group hover:bg-green-1 hidden h-14 w-full rounded-2xl bg-white text-4xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:flex sm:h-20 sm:rounded-xl sm:px-24 sm:text-2xl lg:mx-0 lg:w-fit"
-                    onClick={() => {
-                      const section = document.querySelector('#waitlist');
-                      section?.scrollIntoView({ behavior: 'smooth' });
+                <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+                  {/* CTA Button */}
+                  <m.div
+                    initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{
+                      delay: 0.85,
+                      duration: DURATION.slow,
+                      ease: EASE.expOut,
                     }}
+                    className="hidden sm:block"
                   >
-                    Join the Waitlist
-                    <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
-                  </Button>
-                  <div className="hidden flex-1 items-center justify-center gap-4 rounded-2xl border-2 sm:flex sm:gap-8">
-                    <div className="flex flex-col items-center justify-center">
+                    <Button
+                      size="lg"
+                      className="group hover:bg-green-1 h-14 w-full rounded-2xl bg-white text-4xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:h-20 sm:rounded-xl sm:px-24 sm:text-2xl lg:mx-0 lg:w-fit"
+                      onClick={() => {
+                        const section = document.querySelector('#waitlist');
+                        section?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      Join the Waitlist
+                      <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
+                    </Button>
+                  </m.div>
+
+                  {/* Stats */}
+                  <m.div
+                    initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{
+                      delay: 1.05,
+                      duration: DURATION.slow,
+                      ease: EASE.expOut,
+                    }}
+                    className="hidden flex-1 items-center justify-center gap-4 rounded-2xl border-2 sm:flex sm:gap-8"
+                  >
+                    <m.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        delay: 1.15,
+                        duration: DURATION.normal,
+                        ease: EASE.expOut,
+                      }}
+                      className="flex flex-col items-center justify-center"
+                    >
                       <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                         {exaggeratedCount.toLocaleString()}
                       </span>
                       <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
                         Waiting
                       </span>
-                    </div>
+                    </m.div>
 
                     <Separator
                       orientation="vertical"
                       className="h-full bg-white/20"
                     />
 
-                    <div className="flex flex-col items-center justify-center">
+                    <m.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        delay: 1.25,
+                        duration: DURATION.normal,
+                        ease: EASE.expOut,
+                      }}
+                      className="flex flex-col items-center justify-center"
+                    >
                       <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                         126
                       </span>
                       <span className="text-[10px] font-medium tracking-widest text-white/40 uppercase sm:text-sm">
                         Total Users
                       </span>
-                    </div>
-                  </div>
-                </m.div>
+                    </m.div>
+                  </m.div>
+                </div>
 
                 {/* Social Proof - Hidden on small mobile to save space */}
                 <m.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.2, duration: 1 }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: 1.4,
+                    duration: DURATION.slow,
+                    ease: EASE.expOut,
+                  }}
                   className="hidden flex-col items-center gap-4 sm:flex lg:items-start"
                 >
                   <p className="text-[10px] font-bold tracking-[0.2em] text-white/30 uppercase sm:text-xs">
