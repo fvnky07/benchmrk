@@ -12,9 +12,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
 import { LineShadowText } from '@/components/ui/line-shadow-text';
 import { Navbar } from '@/components/ui/navbar';
-import { Separator } from '@/components/ui/separator';
 import {
-  fadeUpVariants,
   slideUpVariants,
   fadeInVariants,
   heroTitleContainerVariants,
@@ -24,7 +22,7 @@ import {
   EASE,
   DURATION,
 } from '@/lib/animation-config';
-import LogoSvg from '@/public/logo.svg';
+import LogoSvg from '@/public/logo-light.svg';
 
 const DESCRIPTION =
   'The ultimate AI-driven fitness companion that analyzes your data to build the perfect workout, every time. No more plateaus, just pure results.';
@@ -55,7 +53,7 @@ export default function Hero() {
         </div>
 
         {/* Main Hero Container */}
-        <div className="bg-black-1 relative z-10 flex h-full w-full max-w-[1600px] flex-col rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
+        <div className="bg-black-1 relative z-10 flex h-full w-full max-w-400 flex-col rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
           {/* Navbar */}
           <m.div
             initial="hidden"
@@ -76,7 +74,7 @@ export default function Hero() {
                   width={32}
                   alt="logo"
                   height={32}
-                  className="relative sm:h-12 sm:w-12 md:bottom-2"
+                  className="relative sm:bottom-1 sm:h-12 sm:w-12"
                 />
               }
             />
@@ -189,7 +187,7 @@ export default function Hero() {
                       duration: DURATION.slow,
                       ease: EASE.expOut,
                     }}
-                    className="hidden flex-1 items-center justify-center gap-4 rounded-2xl border-2 sm:flex sm:gap-8"
+                    className="hidden flex-1 items-center rounded-2xl border-2 sm:flex sm:h-20"
                   >
                     <m.div
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -199,7 +197,7 @@ export default function Hero() {
                         duration: DURATION.normal,
                         ease: EASE.expOut,
                       }}
-                      className="flex flex-col items-center justify-center"
+                      className="flex flex-1 flex-col items-center justify-center"
                     >
                       <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                         {exaggeratedCount.toLocaleString()}
@@ -209,10 +207,7 @@ export default function Hero() {
                       </span>
                     </m.div>
 
-                    <Separator
-                      orientation="vertical"
-                      className="h-full bg-white/20"
-                    />
+                    <div className="h-12 w-px shrink-0 bg-white/20 sm:h-12" />
 
                     <m.div
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -222,7 +217,7 @@ export default function Hero() {
                         duration: DURATION.normal,
                         ease: EASE.expOut,
                       }}
-                      className="flex flex-col items-center justify-center"
+                      className="flex flex-1 flex-col items-center justify-center"
                     >
                       <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                         126
