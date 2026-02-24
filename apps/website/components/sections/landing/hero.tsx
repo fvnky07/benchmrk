@@ -17,10 +17,23 @@ import {
   fadeUpVariants,
   slideUpVariants,
   fadeInVariants,
+  heroTitleContainerVariants,
+  heroTitleWordVariants,
+  typewriterContainerVariants,
+  typewriterCharVariants,
   EASE,
   DURATION,
 } from '@/lib/animation-config';
 import LogoSvg from '@/public/logo.svg';
+
+const DESCRIPTION =
+  'The ultimate AI-driven fitness companion that analyzes your data to build the perfect workout, every time. No more plateaus, just pure results.';
+
+// Pre-split into stable objects so we avoid array-index keys in JSX
+const DESCRIPTION_CHARS = DESCRIPTION.split('').map((char, i) => ({
+  id: `c${i}`,
+  char,
+}));
 
 export default function Hero() {
   const waitlistCount = useQuery(api.waitlist.getWaitlistCount) ?? 0;
@@ -35,14 +48,14 @@ export default function Hero() {
           <Squares
             direction="down"
             speed={0.5}
-            squareSize={40}
+            squareSize={30}
             borderColor="rgba(0, 0, 0, 1)"
             hoverFillColor="rgba(0, 0, 0, 0.02)"
           />
         </div>
 
         {/* Main Hero Container */}
-        <div className="bg-black-1 relative z-10 flex h-full w-full max-w-[1600px] flex-col overflow-hidden rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
+        <div className="bg-black-1 relative z-10 flex h-full w-full max-w-[1600px] flex-col rounded-4xl p-2 shadow-2xl lg:p-4 xl:p-6">
           {/* Navbar */}
           <m.div
             initial="hidden"
@@ -69,48 +82,79 @@ export default function Hero() {
             />
           </m.div>
 
-          <div className="flex flex-1 flex-col gap-4 overflow-hidden lg:flex-row lg:items-stretch lg:gap-8">
+          <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-8">
             {/* Left Content Column */}
-            <div className="bg-black-2 flex grow flex-col justify-between rounded-4xl border-2 px-6 py-8 text-center sm:px-12 lg:w-3/5 lg:items-start lg:px-8 lg:py-12 lg:text-left">
+            <div className="bg-black-2 flex grow flex-col justify-between rounded-4xl border-2 px-6 py-8 text-center sm:px-12 lg:items-start lg:px-8 lg:py-12 lg:text-left">
               <div className="flex flex-col items-center gap-6 lg:items-start">
-                {/* High-Impact Title */}
+                {/* High-Impact Title — word-by-word stagger */}
                 <m.div
                   initial="hidden"
                   animate="visible"
-                  variants={fadeInVariants}
+                  variants={heroTitleContainerVariants}
                   className="max-w-4xl"
                 >
-                  <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-[5.2rem] 2xl:text-8xl">
-                    Stop <span className="text-white/40">Guessing.</span>
-                    <br />
-                    <span className="mt-2 flex flex-row items-center justify-center lg:justify-start">
-                      Start
-                      <LineShadowText
-                        className="text-green-1 pl-2 italic drop-shadow-[0_0_15px_rgba(0,255,144,0.3)]"
-                        shadowColor="#00ff90"
+                  <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-8xl 2xl:text-8xl">
+                    {/* Line 1 */}
+                    <span className="inline-flex flex-wrap items-baseline gap-x-3">
+                      <m.span
+                        variants={heroTitleWordVariants}
+                        className="inline-block"
                       >
-                        Progressing
-                      </LineShadowText>
+                        Stop
+                      </m.span>
+                      <m.span
+                        variants={heroTitleWordVariants}
+                        className="inline-block text-white/50"
+                      >
+                        Guessing.
+                      </m.span>
+                    </span>
+                    <br />
+                    {/* Line 2 */}
+                    <span className="mt-2 inline-flex flex-row items-center justify-center gap-x-3 lg:justify-start">
+                      <m.span
+                        variants={heroTitleWordVariants}
+                        className="inline-block"
+                      >
+                        Start
+                      </m.span>
+                      <m.span
+                        variants={heroTitleWordVariants}
+                        className="inline-block"
+                      >
+                        <LineShadowText
+                          className="text-green-1 italic drop-shadow-[0_0_15px_rgba(0,255,144,0.3)]"
+                          shadowColor="#00ff90"
+                        >
+                          Progressing
+                        </LineShadowText>
+                      </m.span>
                     </span>
                   </h1>
                 </m.div>
 
-                {/* Subheadline */}
+                {/* Subheadline — typewriter character reveal */}
                 <m.p
                   initial="hidden"
                   animate="visible"
-                  variants={fadeUpVariants}
-                  transition={{ delay: 0.4, duration: DURATION.normal }}
-                  className="max-w-xl text-base text-white/50 sm:text-xl lg:text-2xl"
+                  variants={typewriterContainerVariants}
+                  className="hidden max-w-xl text-base text-white/50 sm:block sm:text-xl lg:text-2xl"
+                  aria-label={DESCRIPTION}
                 >
-                  The ultimate AI-driven fitness companion that analyzes your
-                  data to build the perfect workout, every time. No more
-                  plateaus, just pure results.
+                  {DESCRIPTION_CHARS.map(({ id, char }) => (
+                    <m.span
+                      key={id}
+                      variants={typewriterCharVariants}
+                      style={char === ' ' ? { whiteSpace: 'pre' } : undefined}
+                    >
+                      {char}
+                    </m.span>
+                  ))}
                 </m.p>
               </div>
 
               {/* Action Buttons & Stats Row */}
-              <div className="flex w-full flex-col gap-10">
+              <div className="flex w-full flex-col justify-start gap-12">
                 <m.div
                   initial="hidden"
                   animate="visible"
@@ -118,7 +162,18 @@ export default function Hero() {
                   transition={{ delay: 0.8 }}
                   className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                 >
-                  <div className="flex flex-1 items-center justify-center gap-4 sm:gap-8">
+                  <Button
+                    size="lg"
+                    className="group hover:bg-green-1 hidden h-14 w-full rounded-2xl bg-white text-4xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:flex sm:h-20 sm:rounded-xl sm:px-24 sm:text-2xl lg:mx-0 lg:w-fit"
+                    onClick={() => {
+                      const section = document.querySelector('#waitlist');
+                      section?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    Join the Waitlist
+                    <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
+                  </Button>
+                  <div className="hidden flex-1 items-center justify-center gap-4 rounded-2xl border-2 sm:flex sm:gap-8">
                     <div className="flex flex-col items-center justify-center">
                       <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
                         {exaggeratedCount.toLocaleString()}
@@ -128,7 +183,10 @@ export default function Hero() {
                       </span>
                     </div>
 
-                    <Separator orientation="vertical" />
+                    <Separator
+                      orientation="vertical"
+                      className="h-full bg-white/20"
+                    />
 
                     <div className="flex flex-col items-center justify-center">
                       <span className="font-[nippo] text-2xl font-bold text-white sm:text-5xl lg:text-6xl">
@@ -139,18 +197,6 @@ export default function Hero() {
                       </span>
                     </div>
                   </div>
-
-                  <Button
-                    size="lg"
-                    className="group hover:bg-green-1 h-14 w-full rounded-2xl bg-white px-6 text-xl font-bold text-black transition-all hover:scale-[1.02] hover:text-black active:scale-95 sm:h-20 sm:rounded-3xl sm:px-10 sm:text-2xl lg:mx-0 lg:w-fit"
-                    onClick={() => {
-                      const section = document.querySelector('#waitlist');
-                      section?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                  >
-                    Join the Waitlist
-                    <ArrowRight className="ml-2 size-6 transition-transform group-hover:translate-x-2 sm:ml-3 sm:size-8" />
-                  </Button>
                 </m.div>
 
                 {/* Social Proof - Hidden on small mobile to save space */}
@@ -191,7 +237,7 @@ export default function Hero() {
                 duration: DURATION.slow,
                 ease: EASE.expOut,
               }}
-              className="bg-black-2 relative flex overflow-hidden rounded-4xl lg:h-auto lg:w-2/5"
+              className="bg-black-2 relative flex overflow-hidden rounded-4xl lg:aspect-[9/16] lg:shrink-0"
             >
               <div className="relative z-10 h-full w-full">
                 <AspectRatio
