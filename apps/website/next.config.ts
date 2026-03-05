@@ -1,3 +1,5 @@
+import path from 'path';
+
 import type { NextConfig } from 'next';
 
 import { createMDX } from 'fumadocs-mdx/next';
@@ -7,7 +9,8 @@ const withMDX = createMDX();
 const nextConfig: NextConfig = {
   output: 'standalone',
   turbopack: {
-    root: __dirname,
+    // Point to monorepo root so Turbopack can resolve packages from node_modules/.pnpm
+    root: path.resolve(__dirname, '../..'),
   },
   images: {
     remotePatterns: [
