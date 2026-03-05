@@ -1,30 +1,17 @@
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# ---- deps stage ----
-FROM base AS deps
-WORKDIR /app
-
-COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY packages/eslint-config/package.json ./packages/eslint-config/
-COPY apps/website/package.json ./apps/website/
-
-# ignore-scripts prevents fumadocs-mdx postinstall from failing (no source yet)
-RUN pnpm install --frozen-lockfile --ignore-scripts
-
-# ---- build stage ----
+# ---- builder stage ----
 FROM base AS builder
 WORKDIR /app
 
-# Copy everything needed for the build
+# Copy all workspace config and source first
 COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY packages/eslint-config ./packages/eslint-config
 COPY apps/website ./apps/website
 
-# Copy installed node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/website/node_modules ./apps/website/node_modules
-COPY --from=deps /app/packages/eslint-config/node_modules ./packages/eslint-config/node_modules
+# Install with source present so postinstall scripts work
+RUN pnpm install --frozen-lockfile
 
 RUN pnpm turbo run build --filter=website
 
