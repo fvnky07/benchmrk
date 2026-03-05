@@ -9,7 +9,7 @@ COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY apps/website/package.json ./apps/website/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ---- build stage ----
 FROM base AS builder
