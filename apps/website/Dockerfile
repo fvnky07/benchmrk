@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY packages/eslint-config ./packages/eslint-config
+COPY packages/backend ./packages/backend
 COPY apps/website ./apps/website
 
 # onlyBuiltDependencies in root package.json allows esbuild/sharp to build
