@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "nodePackages.pnpm"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = [
+  "cd apps/website && pnpm fumadocs-mdx && pnpm next build"
+]
+dependsOn = ["install"]
+
+[start]
+cmd = "cd apps/website && node .next/standalone/apps/website/server.js"
