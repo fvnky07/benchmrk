@@ -6,6 +6,9 @@ const withMDX = createMDX();
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {

@@ -9,18 +9,22 @@ COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY apps/website/package.json ./apps/website/
 
+# ignore-scripts prevents fumadocs-mdx postinstall from failing (no source yet)
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ---- build stage ----
 FROM base AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/website/node_modules ./apps/website/node_modules
-
+# Copy everything needed for the build
+COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY packages/eslint-config ./packages/eslint-config
 COPY apps/website ./apps/website
-COPY package.json pnpm-workspace.yaml turbo.json ./
+
+# Copy installed node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/website/node_modules ./apps/website/node_modules
+COPY --from=deps /app/packages/eslint-config/node_modules ./packages/eslint-config/node_modules
 
 RUN pnpm turbo run build --filter=website
 
