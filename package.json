@@ -32,5 +32,13 @@
   },
   "dependencies": {
     "eslint": "^9.39.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild",
+      "protobufjs",
+      "sharp"
+    ]
   }
 }

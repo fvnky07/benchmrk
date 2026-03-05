@@ -5,15 +5,15 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 FROM base AS builder
 WORKDIR /app
 
-# Copy all workspace config and source first
 COPY .npmrc package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY packages/eslint-config ./packages/eslint-config
 COPY apps/website ./apps/website
 
-# Install with source present so postinstall scripts work
+# onlyBuiltDependencies in root package.json allows esbuild/sharp to build
 RUN pnpm install --frozen-lockfile
 
-RUN pnpm turbo run build --filter=website
+WORKDIR /app/apps/website
+RUN pnpm fumadocs-mdx && pnpm next build
 
 # ---- runner stage ----
 FROM base AS runner
