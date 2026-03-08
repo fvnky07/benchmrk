@@ -1,1 +1,4 @@
-pnpm exec biome check --write --staged
+STAGED=$(git diff --cached --name-only --diff-filter=d | grep -E '\.(ts|tsx|js|jsx|json)$' || true)
+if [ -n "$STAGED" ]; then
+  pnpm exec biome check --write --staged --files-ignore-unknown=true
+fi
