@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "convex dev",
-    "deploy": "convex deploy"
+    "deploy": "convex deploy",
+    "lint": "biome check ."
   },
   "keywords": [],
   "author": "",

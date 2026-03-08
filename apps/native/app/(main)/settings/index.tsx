@@ -1,21 +1,18 @@
-import { useCallback, useState } from 'react';
-
-import {
-  ActivityIndicator,
-  Alert,
-  View,
-  ScrollView,
-  Pressable,
-} from 'react-native';
-
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
-
 import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 
 import { SettingsRow } from '@/components/settings/SettingsRow';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Text } from '@/components/ui/text';
 import { useUserProfile } from '@/lib';
 import { analytics } from '@/lib/analytics';
@@ -75,7 +72,7 @@ export default function SettingsScreen() {
   if (preferences === null) {
     return (
       <View className="flex-1 items-center justify-center bg-black-1 px-6">
-        <Text className="mb-2 text-lg font-semibold text-white">
+        <Text className="mb-2 font-semibold text-lg text-white">
           Unable to load settings
         </Text>
         <Text className="text-center text-gray-400">
@@ -103,12 +100,12 @@ export default function SettingsScreen() {
             onPress={() => router.push('/(main)/settings/manage-account')}
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
-            <Text className="text-black text-4xl">benchmrk pro</Text>
+            <Text className="text-4xl text-black">benchmrk pro</Text>
           </Pressable>
         </View>
       </View>
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           PROFILE
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-black-3">
@@ -120,7 +117,7 @@ export default function SettingsScreen() {
             <Avatar className="size-10 rounded-lg" alt={`${username}'s avatar`}>
               {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
               <AvatarFallback>
-                <Text className="text-lg font-semibold text-foreground">
+                <Text className="font-semibold text-foreground text-lg">
                   {initials}
                 </Text>
               </AvatarFallback>
@@ -155,7 +152,7 @@ export default function SettingsScreen() {
 
       {/* Preferences Section */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           PREFERENCES
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
@@ -200,7 +197,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="reload" size={18} color="#ef4444" />
-            <Text className="text-base font-semibold text-red-500">
+            <Text className="font-semibold text-base text-red-500">
               {isResetting ? 'Resetting…' : 'Reset All Settings to Defaults'}
             </Text>
           </Pressable>

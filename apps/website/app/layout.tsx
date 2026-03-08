@@ -4,10 +4,10 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 
 import './globals.css';
-import { Footer } from '@/components/ui/footer';
-import { Toaster } from '@/components/ui/sonner';
 
 import { UnderConstructionToast } from '@/components/UnderConstructionToast';
+import { Footer } from '@/components/ui/footer';
+import { Toaster } from '@/components/ui/sonner';
 
 import { ConvexClientProvider } from './ConvexClientProvider';
 import PostHogPageview from './PostHogPageview';

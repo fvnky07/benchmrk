@@ -14,7 +14,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
+    "lint": "biome check .",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
@@ -56,7 +56,6 @@
     "expo-web-browser": "~15.0.10",
     "nativewind": "^4.2.1",
     "posthog-react-native": "^4.34.0",
-    "prettier-plugin-tailwindcss": "^0.7.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
@@ -79,12 +78,9 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/react": "~19.1.0",
     "@types/react-dom": "~19.1.0",
-    "eslint": "^9.25.0",
-    "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   }
 }

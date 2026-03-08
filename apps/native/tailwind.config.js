@@ -59,7 +59,6 @@ module.exports = {
           1: '#FFE95C', // Banana Cream
         },
         green: {
-          1: '#28E2A4', // Tropical Mint
           1: '#00ff90', // Tropical Mint
         },
         cyan: {
@@ -102,7 +101,7 @@ module.exports = {
   plugins: [
     require('tailwindcss-animate'),
     // Debug utility classes for layout debugging
-    function ({ addUtilities }) {
+    ({ addUtilities }) => {
       const debugStyles = {
         // NOTE: Debug color palette for visual debugging in development
         '.debug': {

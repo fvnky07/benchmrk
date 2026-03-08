@@ -4,10 +4,8 @@ import React from 'react';
 
 import { cn } from '@/lib/utils';
 
-interface GridPatternProps extends Omit<
-  React.SVGProps<SVGSVGElement>,
-  'width' | 'height'
-> {
+interface GridPatternProps
+  extends Omit<React.SVGProps<SVGSVGElement>, 'width' | 'height'> {
   width?: number;
   height?: number;
   x?: number;
@@ -80,4 +78,3 @@ export function GridPattern({
     </svg>
   );
 }
-

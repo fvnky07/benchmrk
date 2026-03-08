@@ -1,18 +1,17 @@
 import '../global.css';
-import { useEffect } from 'react';
 
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { ConvexReactClient } from 'convex/react';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { PostHogProvider } from 'posthog-react-native';
+import { useEffect } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 
 import { SplashScreen } from '@/components/SplashScreen';
 import { identifyUser, resetAnalytics } from '@/lib/analytics';

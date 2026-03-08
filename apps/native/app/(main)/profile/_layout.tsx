@@ -1,9 +1,7 @@
-import { Pressable } from 'react-native';
-
 import { Feather } from '@expo/vector-icons';
-import { useColorScheme } from 'nativewind';
-
 import { Stack } from 'expo-router';
+import { useColorScheme } from 'nativewind';
+import { Pressable } from 'react-native';
 
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 

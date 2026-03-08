@@ -2,10 +2,10 @@
 // NOTE: Stagger wrapper — animates children one after another
 'use client';
 
-import { useRef } from 'react';
-
-import { LazyMotion, domAnimation, m, useInView } from 'motion/react';
 import type { Variants } from 'motion/react';
+
+import { domAnimation, LazyMotion, m, useInView } from 'motion/react';
+import { useRef } from 'react';
 
 import { EASE } from '@/lib/animation-config';
 

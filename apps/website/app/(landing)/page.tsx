@@ -87,7 +87,7 @@ export default function LandingPage() {
           />
         }
       />
-      <main className="bg-black-1 flex w-full flex-col items-center justify-center">
+      <main className="flex w-full flex-col items-center justify-center bg-black-1">
         <Hero />
         {/* <Features /> */}
         <WaitingList />

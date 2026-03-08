@@ -4,9 +4,9 @@
 import { useState } from 'react';
 
 import { PAYMENT_FREQUENCIES, TIERS } from '@/components/config';
+import Squares from '@/components/Squares';
 import { PricingHeader } from '@/components/sections/pricing/PricingHeader';
 import { PricingCard } from '@/components/sections/pricing/TierCard';
-import Squares from '@/components/Squares';
 
 export const PricingTiers = () => {
   const [selectedPaymentFreq, setSelectedPaymentFreq] = useState(
@@ -34,7 +34,7 @@ export const PricingTiers = () => {
         />
 
         {/* Pricing Cards */}
-        <div className="m:pt-4 grid w-full gap-6 sm:grid-cols-2">
+        <div className="grid w-full gap-6 m:pt-4 sm:grid-cols-2">
           {TIERS.map((tier) => (
             <PricingCard
               key={tier.name}

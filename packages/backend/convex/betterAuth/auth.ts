@@ -1,10 +1,10 @@
-import { createClient } from '@convex-dev/better-auth';
-import type { GenericCtx } from '@convex-dev/better-auth';
-import { convex } from '@convex-dev/better-auth/plugins';
-import { magicLink } from 'better-auth/plugins';
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { expo } from '@better-auth/expo';
+import type { GenericCtx } from '@convex-dev/better-auth';
+import { createClient } from '@convex-dev/better-auth';
+import { convex } from '@convex-dev/better-auth/plugins';
+import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
+import { magicLink } from 'better-auth/plugins';
 import { components } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
@@ -167,7 +167,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           );
         } else {
           console.log(
-            `Premium limit reached ` + `(${premiumCount}/${PREMIUM_USER_LIMIT})`
+            `Premium limit reached (${premiumCount}/${PREMIUM_USER_LIMIT})`
           );
         }
       }),

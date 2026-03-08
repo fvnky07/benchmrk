@@ -3,7 +3,7 @@
 import NumberFlow from '@number-flow/react';
 import { ArrowRight, BadgeCheck } from 'lucide-react';
 
-import { TIERS } from '@/components/config';
+import type { TIERS } from '@/components/config';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -30,10 +30,10 @@ export const PricingCard = ({
       {/* Background Decoration */}
 
       {/* Card Header */}
-      <h2 className="flex items-center gap-3 text-4xl font-medium capitalize">
+      <h2 className="flex items-center gap-3 font-medium text-4xl capitalize">
         {tier.name}
         {isPopular && (
-          <Badge className="bg-orange-1 hover:bg-orange-1 mt-1 px-2 py-1 text-white">
+          <Badge className="mt-1 bg-orange-1 px-2 py-1 text-white hover:bg-orange-1">
             🔥 Most Popular
           </Badge>
         )}
@@ -50,24 +50,24 @@ export const PricingCard = ({
                 trailingZeroDisplay: 'stripIfInteger',
               }}
               value={price}
-              className="text-4xl font-medium"
+              className="font-medium text-4xl"
             />
-            <p className="-mt-2 text-xs font-medium">Per month/user</p>
+            <p className="-mt-2 font-medium text-xs">Per month/user</p>
           </>
         ) : (
-          <h1 className="text-4xl font-medium">{price}</h1>
+          <h1 className="font-medium text-4xl">{price}</h1>
         )}
       </div>
 
       {/* Features */}
       <div className="flex-1 space-y-2">
-        <h3 className="text-sm font-medium">{tier.description}</h3>
+        <h3 className="font-medium text-sm">{tier.description}</h3>
         <ul className="space-y-2">
           {tier.features.map((feature) => (
             <li
               key={feature}
               className={cn(
-                'flex items-center gap-2 text-sm font-medium',
+                'flex items-center gap-2 font-medium text-sm',
                 isHighlighted ? 'text-background' : 'text-foreground/60'
               )}
             >

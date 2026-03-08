@@ -1,11 +1,9 @@
 // app/PostHogPageview.tsx
 'use client';
 
-import { useEffect, Suspense, useRef } from 'react';
-
 import { usePathname, useSearchParams } from 'next/navigation';
-
 import posthog from 'posthog-js';
+import { Suspense, useEffect, useRef } from 'react';
 
 function PostHogPageviewContent() {
   const pathname = usePathname();
@@ -19,7 +17,7 @@ function PostHogPageviewContent() {
     if (pathname && posthog) {
       let url = window.origin + pathname;
       if (searchParams.toString()) {
-        url = url + `?${searchParams.toString()}`;
+        url = `${url}?${searchParams.toString()}`;
       }
       posthog.capture('$pageview', {
         $current_url: url,

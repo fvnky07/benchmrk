@@ -13,7 +13,7 @@ export function FieldError({ error, className }: FieldErrorProps) {
 
   return (
     <View className={cn('mt-1.5 px-1', className)}>
-      <Text className="text-xs text-destructive">{error}</Text>
+      <Text className="text-destructive text-xs">{error}</Text>
     </View>
   );
 }

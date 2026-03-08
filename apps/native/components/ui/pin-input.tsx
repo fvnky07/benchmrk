@@ -1,19 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  TextInput,
   type NativeSyntheticEvent,
+  TextInput,
   type TextInputKeyPressEventData,
 } from 'react-native';
-
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-
-import * as Haptics from 'expo-haptics';
 
 import { cn } from '@/lib/utils';
 
@@ -188,7 +185,7 @@ function PinInput({
             editable={!disabled}
             selectTextOnFocus
             className={cn(
-              'h-14 w-12 rounded-lg border-2 text-center text-2xl font-semibold text-white',
+              'h-14 w-12 rounded-lg border-2 text-center font-semibold text-2xl text-white',
               'bg-black-2',
               // Default border
               !isFocused && !isFilled && !error && 'border-input',

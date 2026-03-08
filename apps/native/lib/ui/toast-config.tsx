@@ -1,11 +1,10 @@
-import React from 'react';
+import { AntDesign } from '@expo/vector-icons';
 import {
   BaseToast,
   ErrorToast,
   InfoToast,
-  ToastConfig,
+  type ToastConfig,
 } from 'react-native-toast-message';
-import { AntDesign } from '@expo/vector-icons';
 
 export const toastConfig: ToastConfig = {
   success: (props) => (

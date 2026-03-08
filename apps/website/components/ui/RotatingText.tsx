@@ -3,9 +3,8 @@
 // Based on React Bits implementation
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-
-import { LazyMotion, domAnimation, m, AnimatePresence } from 'motion/react';
+import { AnimatePresence, domAnimation, LazyMotion, m } from 'motion/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -89,7 +88,6 @@ export default function RotatingText({
         case 'center': {
           return Math.abs(Math.floor(total / 2) - charIndex) * staggerDuration;
         }
-        case 'first':
         default: {
           return charIndex * staggerDuration;
         }

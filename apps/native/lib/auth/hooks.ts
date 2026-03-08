@@ -20,17 +20,17 @@ export interface UseAuthReturn {
 
 /**
  * Authentication hook using Better Auth session
- * 
+ *
  * Single source of truth for auth state - all auth checks should use this hook.
  * This is the ONLY place where authClient.useSession() should be called.
- * 
+ *
  * @example
  * ```tsx
  * const { user, isAuthenticated, isLoading } = useAuth();
- * 
+ *
  * if (isLoading) return <Loading />;
  * if (!isAuthenticated) return <Login />;
- * 
+ *
  * return <div>Welcome {user?.name}</div>;
  * ```
  */

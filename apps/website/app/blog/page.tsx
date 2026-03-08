@@ -14,8 +14,8 @@ export default function BlogPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-black px-4">
       <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold text-white">Blog</h1>
-        <p className="text-xl text-gray-400">Coming soon</p>
+        <h1 className="mb-4 font-bold text-4xl text-white">Blog</h1>
+        <p className="text-gray-400 text-xl">Coming soon</p>
       </div>
     </main>
   );

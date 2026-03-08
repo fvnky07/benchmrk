@@ -2,20 +2,19 @@
 // NOTE: Client component for welcome page with Motion animations
 'use client';
 
-import Link from 'next/link';
-
 import {
-  Sparkles,
-  Trophy,
-  Dumbbell,
-  TrendingUp,
+  CheckCircle2,
   Clock,
+  Dumbbell,
   HeadphonesIcon,
   Rocket,
+  Sparkles,
+  TrendingUp,
+  Trophy,
   Twitter,
-  CheckCircle2,
 } from 'lucide-react';
-import { LazyMotion, domAnimation, m } from 'motion/react';
+import { domAnimation, LazyMotion, m } from 'motion/react';
+import Link from 'next/link';
 
 import { FadeInView } from '@/components/animations/FadeInView';
 import {
@@ -26,9 +25,9 @@ import { Button } from '@/components/ui/button';
 import { GridPattern } from '@/components/ui/grid-pattern';
 import {
   bounceInVariants,
+  EASE,
   fadeInVariants,
   scaleInVariants,
-  EASE,
 } from '@/lib/animation-config';
 import { useSession } from '@/lib/auth-client';
 
@@ -69,7 +68,7 @@ export default function WelcomeContent() {
 
   return (
     <LazyMotion features={domAnimation}>
-      <main className="bg-black-1 relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12">
+      <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black-1 px-4 py-12">
         <GridPattern
           width={30}
           height={30}
@@ -85,7 +84,7 @@ export default function WelcomeContent() {
             className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2"
           >
             <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-            <span className="text-sm font-medium text-emerald-400">
+            <span className="font-medium text-emerald-400 text-sm">
               Email confirmed successfully
             </span>
           </m.div>
@@ -98,7 +97,7 @@ export default function WelcomeContent() {
             className="mb-6 flex justify-center"
           >
             <div className="relative">
-              <Trophy className="text-cyan-1 h-20 w-20" />
+              <Trophy className="h-20 w-20 text-cyan-1" />
               <Sparkles className="absolute -top-2 -right-2 h-8 w-8 animate-pulse text-yellow-400" />
             </div>
           </m.div>
@@ -106,7 +105,7 @@ export default function WelcomeContent() {
           {/* NOTE: Heading and subtitle stagger in */}
           <StaggerChildren staggerDelay={0.15} initialDelay={0.4} onLoad>
             <StaggerItem>
-              <h1 className="mb-4 font-[nippo] text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+              <h1 className="mb-4 font-[nippo] font-bold text-4xl text-white tracking-tight sm:text-5xl md:text-6xl">
                 Welcome to{' '}
                 <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
                   benchmrk
@@ -116,7 +115,7 @@ export default function WelcomeContent() {
             </StaggerItem>
 
             <StaggerItem>
-              <p className="mb-2 text-xl text-gray-300 sm:text-2xl">
+              <p className="mb-2 text-gray-300 text-xl sm:text-2xl">
                 You&apos;re officially a{' '}
                 <span className="font-semibold text-emerald-400">
                   Lifetime Premium
@@ -138,7 +137,7 @@ export default function WelcomeContent() {
           {/* NOTE: Benefits grid with staggered card entrance */}
           <FadeInView delay={0.6}>
             <div className="mb-10 rounded-3xl border border-gray-800 bg-gray-900/50 p-6">
-              <h2 className="text-cyan-1 mb-6 text-lg font-semibold">
+              <h2 className="mb-6 font-semibold text-cyan-1 text-lg">
                 What you get - forever
               </h2>
 
@@ -150,11 +149,11 @@ export default function WelcomeContent() {
                 {benefits.map((benefit) => (
                   <StaggerItem key={benefit.title} variants={scaleInVariants}>
                     <div className="rounded-2xl border border-gray-800 bg-gray-800/50 p-4 text-left transition-all hover:border-cyan-500/30 hover:bg-gray-800">
-                      <benefit.icon className="text-cyan-1 mb-3 h-6 w-6" />
+                      <benefit.icon className="mb-3 h-6 w-6 text-cyan-1" />
                       <h3 className="mb-1 font-medium text-white">
                         {benefit.title}
                       </h3>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-gray-400 text-sm">
                         {benefit.description}
                       </p>
                     </div>
@@ -168,7 +167,7 @@ export default function WelcomeContent() {
           <FadeInView variants={scaleInVariants} delay={0.8}>
             <div className="mb-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-6">
               <Rocket className="mx-auto mb-3 h-8 w-8 text-yellow-400" />
-              <h3 className="mb-2 text-lg font-semibold text-yellow-400">
+              <h3 className="mb-2 font-semibold text-lg text-yellow-400">
                 App Launching Soon
               </h3>
               <p className="text-gray-400">
@@ -188,7 +187,7 @@ export default function WelcomeContent() {
             <StaggerItem>
               <Button
                 asChild
-                className="bg-cyan-1 hover:bg-cyan-1/90 rounded-full px-6 py-3 font-semibold text-black"
+                className="rounded-full bg-cyan-1 px-6 py-3 font-semibold text-black hover:bg-cyan-1/90"
               >
                 <Link href="https://twitter.com/fvnky_07" target="_blank">
                   <Twitter className="mr-2 h-4 w-4" />

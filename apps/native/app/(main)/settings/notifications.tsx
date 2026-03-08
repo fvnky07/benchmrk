@@ -1,11 +1,8 @@
-import { useCallback } from 'react';
-
-import { ActivityIndicator, View, ScrollView } from 'react-native';
-
 import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
-
 import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -44,11 +41,11 @@ export default function NotificationsScreen() {
     <ScrollView className="flex-1 bg-black-1">
       {/* Coming Soon */}
       <View className="mt-6 pb-8">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           COMING SOON
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E] p-4">
-          <Text className="text-sm text-gray-400">
+          <Text className="text-gray-400 text-sm">
             More integrations are on the way. Stay tuned!
           </Text>
         </View>

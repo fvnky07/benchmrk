@@ -1,1 +1,1 @@
-export { posthog, identifyUser, resetAnalytics, analytics } from './posthog';
+export { analytics, identifyUser, posthog, resetAnalytics } from './posthog';

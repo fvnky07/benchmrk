@@ -2,10 +2,10 @@
 // NOTE: Scroll-triggered fade/slide wrapper using motion + useInView
 'use client';
 
-import { useRef } from 'react';
-
-import { LazyMotion, domAnimation, m, useInView } from 'motion/react';
 import type { Variants } from 'motion/react';
+
+import { domAnimation, LazyMotion, m, useInView } from 'motion/react';
+import { useRef } from 'react';
 
 import { DURATION, EASE } from '@/lib/animation-config';
 

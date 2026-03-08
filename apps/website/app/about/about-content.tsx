@@ -1,7 +1,7 @@
 'use client';
-import Image from 'next/image';
 
-import { GitFork, ArrowUpRight, Github, Twitter, Clock } from 'lucide-react';
+import { ArrowUpRight, Clock, GitFork, Github, Twitter } from 'lucide-react';
+import Image from 'next/image';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,20 +49,20 @@ export function AboutContent() {
           />
         }
       />
-      <main className="bg-black-2 flex min-h-screen w-full items-center justify-center px-4 py-24 sm:px-8">
+      <main className="flex min-h-screen w-full items-center justify-center bg-black-2 px-4 py-24 sm:px-8">
         <div className="flex w-full max-w-7xl flex-col gap-8 lg:flex-row">
           {/* Left Card: Personal Profile */}
-          <div className="bg-black-1 flex flex-1 flex-col items-start justify-between gap-6 rounded-4xl border-2 border-white/10 p-8">
+          <div className="flex flex-1 flex-col items-start justify-between gap-6 rounded-4xl border-2 border-white/10 bg-black-1 p-8">
             <div className="flex w-full flex-col gap-4">
               {/* Profile Image Placeholder */}
-              <div className="bg-green-1 relative aspect-square w-full overflow-hidden rounded-4xl">
-                <div className="flex h-full w-full items-center justify-center text-8xl font-bold text-black">
+              <div className="relative aspect-square w-full overflow-hidden rounded-4xl bg-green-1">
+                <div className="flex h-full w-full items-center justify-center font-bold text-8xl text-black">
                   FV
                 </div>
               </div>
 
               {/* Name */}
-              <h1 className="text-5xl font-bold text-white sm:text-6xl">
+              <h1 className="font-bold text-5xl text-white sm:text-6xl">
                 fvnky
               </h1>
 
@@ -80,7 +80,7 @@ export function AboutContent() {
               <Separator className="my-2" />
 
               {/* Bio */}
-              <p className="text-base leading-relaxed text-white/70 sm:text-lg">
+              <p className="text-base text-white/70 leading-relaxed sm:text-lg">
                 Passionate software engineer focused on building performant,
                 user-centric applications. Dedicated to creating tools that
                 empower developers and simplify complex workflows through
@@ -119,10 +119,10 @@ export function AboutContent() {
 
           {/* Right Card: Benchmrk Story */}
           <div className="flex flex-2 flex-col gap-6 rounded-4xl p-8">
-            <h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
+            <h1 className="font-bold text-4xl text-white sm:text-5xl lg:text-6xl">
               Why Benchmrk Started
             </h1>
-            <div className="space-y-6 text-lg leading-relaxed text-white sm:text-2xl">
+            <div className="space-y-6 text-lg text-white leading-relaxed sm:text-2xl">
               <p>
                 Benchmrk was born from a recurring frustration: existing
                 performance measurement tools were either overly complex, lacked

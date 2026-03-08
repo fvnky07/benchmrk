@@ -1,18 +1,15 @@
-import { useCallback, useState } from 'react';
-
-import {
-  ActivityIndicator,
-  useColorScheme,
-  View,
-  ScrollView,
-  Pressable,
-} from 'react-native';
-
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
-
 import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  useColorScheme,
+  View,
+} from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -81,7 +78,7 @@ export default function AppearanceScreen() {
     <ScrollView className="flex-1 bg-black-1">
       {/* Theme Options */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           THEME
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
@@ -92,7 +89,7 @@ export default function AppearanceScreen() {
             return (
               <Pressable
                 key={option.value}
-                className={`h-12 flex-row items-center px-4 ${isLast ? '' : 'border-b border-gray-800'}`}
+                className={`h-12 flex-row items-center px-4 ${isLast ? '' : 'border-gray-800 border-b'}`}
                 onPress={() => handleSelect(option.value)}
                 disabled={isSaving}
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
@@ -102,11 +99,17 @@ export default function AppearanceScreen() {
                   size={24}
                   color={selected ? iconColor : '#8E8E93'}
                 />
-                <Text className={`ml-3 flex-1 text-base ${selected ? 'font-semibold text-white' : 'text-white'}`}>
+                <Text
+                  className={`ml-3 flex-1 text-base ${selected ? 'font-semibold text-white' : 'text-white'}`}
+                >
                   {option.label}
                 </Text>
                 {selected && (
-                  <Ionicons name="checkmark-circle" size={20} color={iconColor} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={iconColor}
+                  />
                 )}
               </Pressable>
             );
@@ -116,12 +119,16 @@ export default function AppearanceScreen() {
 
       {/* Info Section */}
       <View className="mt-6 pb-8">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">INFORMATION</Text>
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
+          INFORMATION
+        </Text>
         <View className="mx-4 rounded-xl bg-[#1C1C1E] p-4">
-          <Text className="text-sm leading-5 text-gray-400">
-            Your system is currently using <Text className="text-white">{systemScheme ?? 'light'}</Text> mode. 
+          <Text className="text-gray-400 text-sm leading-5">
+            Your system is currently using{' '}
+            <Text className="text-white">{systemScheme ?? 'light'}</Text> mode.
             {'\n\n'}
-            Choosing &quot;System Default&quot; will automatically follow your device&apos;s appearance settings.
+            Choosing &quot;System Default&quot; will automatically follow your
+            device&apos;s appearance settings.
           </Text>
         </View>
       </View>

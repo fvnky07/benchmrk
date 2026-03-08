@@ -1,6 +1,6 @@
 'use client';
 
-import { LazyMotion, domAnimation, m } from 'motion/react';
+import { domAnimation, LazyMotion, m } from 'motion/react';
 
 import { cn } from '@/lib/utils';
 

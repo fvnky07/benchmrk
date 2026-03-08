@@ -10,10 +10,10 @@ interface StatItemProps {
 function StatItem({ label, value }: StatItemProps) {
   return (
     <View className="items-center">
-      <Text className="text-base font-bold text-foreground">
+      <Text className="font-bold text-base text-foreground">
         {value.toLocaleString()}
       </Text>
-      <Text className="text-xs text-muted-foreground">{label}</Text>
+      <Text className="text-muted-foreground text-xs">{label}</Text>
     </View>
   );
 }

@@ -1,6 +1,5 @@
-import { View } from 'react-native';
-
 import { useColorScheme } from 'nativewind';
+import { View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 

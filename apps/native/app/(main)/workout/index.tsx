@@ -1,8 +1,6 @@
+import { type Href, useRouter } from 'expo-router';
 import { Text } from 'react-native';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { Href, useRouter } from 'expo-router';
 
 import { Button } from '@/components/ui/button';
 

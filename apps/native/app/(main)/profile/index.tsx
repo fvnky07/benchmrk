@@ -1,6 +1,5 @@
-import { ScrollView, View } from 'react-native';
-
 import { useColorScheme } from 'nativewind';
+import { ScrollView, View } from 'react-native';
 
 import { HeatmapPlaceholder } from '@/components/profile/HeatmapPlaceholder';
 import { StatisticsCard } from '@/components/profile/StatisticsCard';
@@ -36,7 +35,7 @@ export default function ProfileScreen() {
         <Avatar className="size-24 rounded-md" alt={`${username}'s avatar`}>
           {avatarUrl ? <AvatarImage source={{ uri: avatarUrl }} /> : null}
           <AvatarFallback>
-            <Text className="text-lg font-semibold text-foreground">
+            <Text className="font-semibold text-foreground text-lg">
               {initials}
             </Text>
           </AvatarFallback>
@@ -45,7 +44,7 @@ export default function ProfileScreen() {
         {/* Right column: Username + Stats */}
         <View className="ml-4 flex-1">
           {/* Top row: Username */}
-          <Text className="text-xl font-bold text-foreground">{username}</Text>
+          <Text className="font-bold text-foreground text-xl">{username}</Text>
 
           {/* Bottom row: Workouts, Followers, Following */}
           <UserStatsRow
@@ -62,10 +61,10 @@ export default function ProfileScreen() {
           <View className="flex-row gap-3">
             {/* Bio — flex-1 */}
             <View className="flex-1 rounded-lg border-2 border-border bg-card p-3">
-              <Text className="text-xs font-medium text-muted-foreground">
+              <Text className="font-medium text-muted-foreground text-xs">
                 Bio
               </Text>
-              <Text className="mt-1 text-sm text-foreground">{bio}</Text>
+              <Text className="mt-1 text-foreground text-sm">{bio}</Text>
             </View>
 
             {/* Heatmap — flex-[2] */}
@@ -87,20 +86,20 @@ export default function ProfileScreen() {
       {/* ── Row 4: Completed Workouts Feed (placeholder) ── */}
       <View className="mt-4 px-4">
         <View className="rounded-xl border border-border bg-card p-4">
-          <Text className="text-sm font-semibold text-foreground">
+          <Text className="font-semibold text-foreground text-sm">
             Recent Workouts
           </Text>
-          <Text className="mt-1 text-xs text-muted-foreground">
+          <Text className="mt-1 text-muted-foreground text-xs">
             Completed workouts will appear here
           </Text>
 
           {/* TODO: Map over Convex useQuery results */}
           {workouts.length === 0 ? (
             <View className="mt-4 items-center py-8">
-              <Text className="text-sm text-muted-foreground">
+              <Text className="text-muted-foreground text-sm">
                 No workouts yet
               </Text>
-              <Text className="mt-1 text-xs text-muted-foreground">
+              <Text className="mt-1 text-muted-foreground text-xs">
                 Complete a workout to see it here
               </Text>
             </View>

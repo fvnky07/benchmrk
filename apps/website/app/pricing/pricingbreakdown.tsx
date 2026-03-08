@@ -94,48 +94,51 @@ const FAQ_ITEMS: FAQItem[] = [
 
 export const PricingBreakdown = () => {
   return (
-    <section className="bg-black-1 relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden px-4 py-16 sm:px-4 sm:py-24 lg:px-12">
+    <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black-1 px-4 py-16 sm:px-4 sm:py-24 lg:px-12">
       <div className="w-full max-w-6xl space-y-16">
         {/* Feature Comparison Table */}
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-green-1 text-4xl font-medium tracking-tight sm:text-5xl">
+            <h2 className="font-medium text-4xl text-green-1 tracking-tight sm:text-5xl">
               Compare Plans
             </h2>
-            <p className="text-foreground/60 mx-auto mt-4 max-w-2xl text-base sm:text-lg">
+            <p className="mx-auto mt-4 max-w-2xl text-base text-foreground/60 sm:text-lg">
               See what&apos;s included in each plan and find the perfect fit for
               your needs.
             </p>
           </div>
 
           {/* Desktop Table */}
-          <div className="bg-background/50 hidden overflow-hidden rounded-2xl border border-white/10 backdrop-blur-sm sm:block">
+          <div className="hidden overflow-hidden rounded-2xl border border-white/10 bg-background/50 backdrop-blur-sm sm:block">
             <table className="w-full">
-              <thead className="bg-green-1/10 border-b border-white/10">
+              <thead className="border-white/10 border-b bg-green-1/10">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-white">
+                  <th className="px-6 py-4 text-left font-medium text-sm text-white">
                     Feature
                   </th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-white">
+                  <th className="px-6 py-4 text-center font-medium text-sm text-white">
                     Individuals
                   </th>
-                  <th className="bg-green-1/5 px-6 py-4 text-center text-sm font-medium text-white">
+                  <th className="bg-green-1/5 px-6 py-4 text-center font-medium text-sm text-white">
                     Teams
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {FEATURE_COMPARISON.map((row) => (
-                  <tr key={row.feature} className="transition-colors hover:bg-white/5">
-                    <td className="text-foreground/80 px-6 py-4 text-sm">
+                  <tr
+                    key={row.feature}
+                    className="transition-colors hover:bg-white/5"
+                  >
+                    <td className="px-6 py-4 text-foreground/80 text-sm">
                       {row.feature}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {typeof row.individuals === 'boolean' ? (
                         row.individuals ? (
-                          <Check className="text-green-1 mx-auto h-5 w-5" />
+                          <Check className="mx-auto h-5 w-5 text-green-1" />
                         ) : (
-                          <X className="text-foreground/20 mx-auto h-5 w-5" />
+                          <X className="mx-auto h-5 w-5 text-foreground/20" />
                         )
                       ) : (
                         <span className="text-foreground/80 text-sm">
@@ -146,9 +149,9 @@ export const PricingBreakdown = () => {
                     <td className="bg-green-1/5 px-6 py-4 text-center">
                       {typeof row.teams === 'boolean' ? (
                         row.teams ? (
-                          <Check className="text-green-1 mx-auto h-5 w-5" />
+                          <Check className="mx-auto h-5 w-5 text-green-1" />
                         ) : (
-                          <X className="text-foreground/20 mx-auto h-5 w-5" />
+                          <X className="mx-auto h-5 w-5 text-foreground/20" />
                         )
                       ) : (
                         <span className="text-foreground/80 text-sm">
@@ -164,8 +167,8 @@ export const PricingBreakdown = () => {
 
           {/* Mobile Cards */}
           <div className="space-y-4 sm:hidden">
-            <div className="bg-background/50 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-sm">
-              <div className="bg-green-1/10 border-b border-white/10 px-4 py-3 text-center font-medium text-white">
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-background/50 backdrop-blur-sm">
+              <div className="border-white/10 border-b bg-green-1/10 px-4 py-3 text-center font-medium text-white">
                 Individuals
               </div>
               <div className="divide-y divide-white/5">
@@ -180,9 +183,9 @@ export const PricingBreakdown = () => {
                     <span className="text-foreground/80 text-sm">
                       {typeof row.individuals === 'boolean' ? (
                         row.individuals ? (
-                          <Check className="text-green-1 h-5 w-5" />
+                          <Check className="h-5 w-5 text-green-1" />
                         ) : (
-                          <X className="text-foreground/20 h-5 w-5" />
+                          <X className="h-5 w-5 text-foreground/20" />
                         )
                       ) : (
                         row.individuals
@@ -193,8 +196,8 @@ export const PricingBreakdown = () => {
               </div>
             </div>
 
-            <div className="bg-background/50 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-sm">
-              <div className="bg-green-1/10 border-b border-white/10 px-4 py-3 text-center font-medium text-white">
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-background/50 backdrop-blur-sm">
+              <div className="border-white/10 border-b bg-green-1/10 px-4 py-3 text-center font-medium text-white">
                 Teams
               </div>
               <div className="divide-y divide-white/5">
@@ -209,9 +212,9 @@ export const PricingBreakdown = () => {
                     <span className="text-foreground/80 text-sm">
                       {typeof row.teams === 'boolean' ? (
                         row.teams ? (
-                          <Check className="text-green-1 h-5 w-5" />
+                          <Check className="h-5 w-5 text-green-1" />
                         ) : (
-                          <X className="text-foreground/20 h-5 w-5" />
+                          <X className="h-5 w-5 text-foreground/20" />
                         )
                       ) : (
                         row.teams
@@ -227,10 +230,10 @@ export const PricingBreakdown = () => {
         {/* FAQ Section */}
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-green-1 text-4xl font-medium tracking-tight sm:text-5xl">
+            <h2 className="font-medium text-4xl text-green-1 tracking-tight sm:text-5xl">
               Frequently Asked Questions
             </h2>
-            <p className="text-foreground/60 mx-auto mt-4 max-w-2xl text-base sm:text-lg">
+            <p className="mx-auto mt-4 max-w-2xl text-base text-foreground/60 sm:text-lg">
               Everything you need to know about our pricing and plans.
             </p>
           </div>
@@ -239,12 +242,12 @@ export const PricingBreakdown = () => {
             {FAQ_ITEMS.map((item) => (
               <details
                 key={item.question}
-                className="bg-background/50 group overflow-hidden rounded-xl border border-white/10 backdrop-blur-sm transition-all hover:border-white/20"
+                className="group overflow-hidden rounded-xl border border-white/10 bg-background/50 backdrop-blur-sm transition-all hover:border-white/20"
               >
                 <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-left font-medium text-white transition-colors hover:bg-white/5">
                   <span className="text-base sm:text-lg">{item.question}</span>
                   <svg
-                    className="text-green-1 h-5 w-5 shrink-0 transition-transform group-open:rotate-180"
+                    className="h-5 w-5 shrink-0 text-green-1 transition-transform group-open:rotate-180"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -257,7 +260,7 @@ export const PricingBreakdown = () => {
                     />
                   </svg>
                 </summary>
-                <div className="text-foreground/80 border-t border-white/5 px-6 py-4 text-sm leading-relaxed sm:text-base">
+                <div className="border-white/5 border-t px-6 py-4 text-foreground/80 text-sm leading-relaxed sm:text-base">
                   {item.answer}
                 </div>
               </details>
@@ -266,14 +269,14 @@ export const PricingBreakdown = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="bg-green-1/10 rounded-2xl border border-white/10 px-6 py-8 text-center backdrop-blur-sm sm:px-12 sm:py-12">
-          <h3 className="text-green-1 text-2xl font-medium sm:text-3xl">
+        <div className="rounded-2xl border border-white/10 bg-green-1/10 px-6 py-8 text-center backdrop-blur-sm sm:px-12 sm:py-12">
+          <h3 className="font-medium text-2xl text-green-1 sm:text-3xl">
             Still have questions?
           </h3>
-          <p className="text-foreground/80 mx-auto mt-3 max-w-xl text-sm sm:text-base">
+          <p className="mx-auto mt-3 max-w-xl text-foreground/80 text-sm sm:text-base">
             Our team is here to help you choose the right plan for your needs.
           </p>
-          <button className="bg-green-1 hover:bg-green-1/90 mt-6 rounded-full px-8 py-3 text-sm font-medium text-black transition-all sm:text-base">
+          <button className="mt-6 rounded-full bg-green-1 px-8 py-3 font-medium text-black text-sm transition-all hover:bg-green-1/90 sm:text-base">
             Contact Sales
           </button>
         </div>

@@ -1,16 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-
 import {
   ActivityIndicator,
   Alert,
-  View,
-  ScrollView,
   Pressable,
+  ScrollView,
+  View,
 } from 'react-native';
-
-import { Ionicons } from '@expo/vector-icons';
-
-import { router, useFocusEffect } from 'expo-router';
 
 import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
@@ -95,18 +92,18 @@ export default function ManageAccountScreen() {
     <ScrollView className="flex-1 bg-black-1">
       {/* Account Information */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           ACCOUNT INFORMATION
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <View className="h-12 flex-row items-center border-b border-gray-800 px-4">
+          <View className="h-12 flex-row items-center border-gray-800 border-b px-4">
             <Text className="flex-1 text-base text-white">Email</Text>
             <Text className="text-base text-gray-500">
               {user.email ?? 'Not set'}
             </Text>
           </View>
 
-          <View className="h-12 flex-row items-center border-b border-gray-800 px-4">
+          <View className="h-12 flex-row items-center border-gray-800 border-b px-4">
             <Text className="flex-1 text-base text-white">Name</Text>
             <Text className="text-base text-gray-500">
               {user.name ?? 'Not set'}
@@ -122,11 +119,11 @@ export default function ManageAccountScreen() {
 
       {/* Profile */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           PROFILE
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <View className="min-h-12 flex-row items-center border-b border-gray-800 px-4 py-3">
+          <View className="min-h-12 flex-row items-center border-gray-800 border-b px-4 py-3">
             <Text className="flex-1 text-base text-white">Bio</Text>
             <Text className="max-w-[60%] text-right text-base text-gray-500">
               {bio ?? 'Not set'}
@@ -149,12 +146,12 @@ export default function ManageAccountScreen() {
 
       {/* Security */}
       <View className="mt-6">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           SECURITY
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <Pressable
-            className="h-12 flex-row items-center border-b border-gray-800 px-4"
+            className="h-12 flex-row items-center border-gray-800 border-b px-4"
             onPress={handleChangePassword}
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
@@ -182,7 +179,7 @@ export default function ManageAccountScreen() {
 
       {/* Danger Zone */}
       <View className="mt-6 pb-8">
-        <Text className="px-4 pb-2 text-xs font-semibold text-white/60">
+        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
           DANGER ZONE
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
@@ -192,12 +189,12 @@ export default function ManageAccountScreen() {
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            <Text className="text-base font-semibold text-red-500">
+            <Text className="font-semibold text-base text-red-500">
               Delete Account
             </Text>
           </Pressable>
         </View>
-        <Text className="px-4 pt-2 text-xs text-gray-500">
+        <Text className="px-4 pt-2 text-gray-500 text-xs">
           This will permanently delete your account and all data. This action
           cannot be undone.
         </Text>

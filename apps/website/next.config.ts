@@ -1,8 +1,6 @@
-import path from 'path';
-
-import type { NextConfig } from 'next';
-
+import path from 'node:path';
 import { createMDX } from 'fumadocs-mdx/next';
+import type { NextConfig } from 'next';
 
 const withMDX = createMDX();
 

@@ -1,12 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
-import { ActivityIndicator, Pressable, View } from 'react-native';
-
 import { Feather } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { PinInput } from '@/components/ui/pin-input';
@@ -30,15 +27,7 @@ export default function VerifyTwoFactorScreen() {
 
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Start resend countdown on mount
-  useEffect(() => {
-    startCountdown();
-    return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
-  }, []);
-
-  const startCountdown = () => {
+  const startCountdown = useCallback(() => {
     setIsResendDisabled(true);
     setCountdown(RESEND_COOLDOWN);
 
@@ -54,7 +43,15 @@ export default function VerifyTwoFactorScreen() {
         return prev - 1;
       });
     }, 1000);
-  };
+  }, []);
+
+  // Start resend countdown on mount
+  useEffect(() => {
+    startCountdown();
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [startCountdown]);
 
   const clearCode = useCallback(() => {
     setCode([...EMPTY_CODE]);
@@ -152,7 +149,7 @@ export default function VerifyTwoFactorScreen() {
       <View className="flex-1 justify-between px-6">
         {/* Header */}
         <View className="items-center pt-8">
-          <Text className="text-3xl font-bold">Enter Verification Code</Text>
+          <Text className="font-bold text-3xl">Enter Verification Code</Text>
           <Text className="mt-2 text-center text-muted-foreground">
             We sent a 6-digit code to{' '}
             {email ? (

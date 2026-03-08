@@ -1,11 +1,8 @@
-import { useState } from 'react';
-
-import { Alert, Pressable } from 'react-native';
-
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'nativewind';
-
 import { router, Stack } from 'expo-router';
+import { useColorScheme } from 'nativewind';
+import { useState } from 'react';
+import { Alert, Pressable } from 'react-native';
 
 import { authClient } from '@/lib';
 

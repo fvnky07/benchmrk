@@ -2,9 +2,8 @@
 // NOTE: Badge wrapper for navbar links that display metadata (version, blog posts, etc.)
 'use client';
 
+import { domAnimation, LazyMotion, m } from 'motion/react';
 import Link from 'next/link';
-
-import { LazyMotion, domAnimation, m } from 'motion/react';
 
 import { Badge } from '@/components/ui/badge';
 import { EASE } from '@/lib/animation-config';
@@ -68,7 +67,7 @@ export function NavbarBadgeLink({
           <Badge
             variant={'outline'}
             className={cn(
-              'h-9 cursor-pointer gap-2 px-1 py-2 text-lg font-semibold transition-all',
+              'h-9 cursor-pointer gap-2 px-1 py-2 font-semibold text-lg transition-all',
               active && 'bg-accent text-accent-foreground',
               borderColor, // Apply custom border color if provided
               className

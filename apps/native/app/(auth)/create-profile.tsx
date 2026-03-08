@@ -1,20 +1,17 @@
-import React, { useState } from 'react';
-
+import { Feather } from '@expo/vector-icons';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useMutation, useQuery } from 'convex/react';
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   TextInput as RNTextInput,
   View,
 } from 'react-native';
-
-import { Feather } from '@expo/vector-icons';
-import { api } from '@repo/backend/convex/_generated/api';
-import { useMutation, useQuery } from 'convex/react';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -222,7 +219,7 @@ export default function CreateProfileScreen() {
       >
         <View className="flex w-full items-center justify-center gap-6 pt-8">
           <View className="flex w-full items-center justify-center gap-2">
-            <Text className="text-3xl font-bold">Complete Your Profile</Text>
+            <Text className="font-bold text-3xl">Complete Your Profile</Text>
             <Text className="text-center text-gray-400">
               Choose a profile picture and username
             </Text>
@@ -235,7 +232,7 @@ export default function CreateProfileScreen() {
                 <AvatarImage source={{ uri: imageUri }} />
               ) : (
                 <AvatarFallback className="bg-blue-600">
-                  <Text className="text-4xl font-bold text-white">
+                  <Text className="font-bold text-4xl text-white">
                     {getInitials()}
                   </Text>
                 </AvatarFallback>
@@ -279,7 +276,7 @@ export default function CreateProfileScreen() {
                 aria-invalid={!!errors.username}
               />
               {showUsernameCheck && (
-                <View className="absolute right-3 top-3">
+                <View className="absolute top-3 right-3">
                   {isUsernameAvailable ? (
                     <Feather name="check-circle" size={20} color="#10b981" />
                   ) : (
@@ -289,7 +286,7 @@ export default function CreateProfileScreen() {
               )}
             </View>
             {errors.username && (
-              <Text className="pl-2 text-sm text-red-400">
+              <Text className="pl-2 text-red-400 text-sm">
                 {errors.username}
               </Text>
             )}
@@ -328,11 +325,11 @@ export default function CreateProfileScreen() {
                 textAlignVertical: 'top',
               }}
             />
-            <Text className="pl-2 text-right text-sm text-gray-400">
+            <Text className="pl-2 text-right text-gray-400 text-sm">
               {bio.length}/150
             </Text>
             {errors.bio && (
-              <Text className="pl-2 text-sm text-red-400">{errors.bio}</Text>
+              <Text className="pl-2 text-red-400 text-sm">{errors.bio}</Text>
             )}
           </View>
         </View>

@@ -1,4 +1,4 @@
-import { useAuth, type User } from '../auth';
+import { type User, useAuth } from '../auth';
 
 export interface ExtendedUser extends User {
   displayUsername?: string;
@@ -23,7 +23,7 @@ export interface UserProfile {
 
 /**
  * Hook to get user profile data with safe fallbacks
- * 
+ *
  * Consumes useAuth() to avoid duplicate session subscriptions.
  *
  * @example

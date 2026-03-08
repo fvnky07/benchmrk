@@ -1,13 +1,12 @@
 'use client';
 
-import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
+import { domAnimation, LazyMotion, m } from 'motion/react';
 
 import Image from 'next/image';
 import Link from 'next/link';
-
-import { ArrowRight, ArrowUpRight, GitFork } from 'lucide-react';
-import { LazyMotion, domAnimation, m } from 'motion/react';
+import * as React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { NavbarBadgeLink } from '@/components/ui/navbar-badge-link';
@@ -334,7 +333,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      className="group hover:bg-accent hover:text-accent-foreground h-9 w-9"
+                      className="group h-9 w-9 hover:bg-accent hover:text-accent-foreground"
                       size="icon"
                       variant="ghost"
                     >
@@ -364,7 +363,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                               <Link
                                 href={link.href}
                                 className={cn(
-                                  'hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium no-underline transition-colors',
+                                  'flex w-full cursor-pointer items-center rounded-md px-3 py-2 font-medium text-sm no-underline transition-colors hover:bg-accent hover:text-accent-foreground',
                                   link.active
                                     ? 'bg-accent text-accent-foreground'
                                     : 'text-foreground/80'
@@ -392,7 +391,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                   <div className="text-2xl">{logo}</div>
                   <span
                     className={cn(
-                      'hidden font-[nippo] text-3xl font-bold sm:inline-block',
+                      'hidden font-[nippo] font-bold text-3xl sm:inline-block',
                       styles.brandText
                     )}
                   >
@@ -431,7 +430,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                                 }}
                                 whileTap={{ scale: 0.97 }}
                                 className={cn(
-                                  'text-md group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
+                                  'group inline-flex h-9 w-max cursor-pointer items-center justify-center rounded-4xl px-4 py-2 font-semibold text-md no-underline transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 xl:text-lg',
                                   styles.navLinkBase,
                                   styles.navLinkHover,
                                   link.active
@@ -454,7 +453,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
             <div className="flex items-center gap-3">
               <Button
                 className={cn(
-                  'text-md h-9 w-9 rounded-xl bg-transparent p-2 font-semibold xl:text-lg',
+                  'h-9 w-9 rounded-xl bg-transparent p-2 font-semibold text-md xl:text-lg',
                   styles.iconButton,
                   styles.iconButtonBorder
                 )}
@@ -489,7 +488,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
               {/* </Button> */}
               <Button
                 className={cn(
-                  'text-md h-9 rounded-4xl px-4 font-semibold shadow-sm xl:text-lg',
+                  'h-9 rounded-4xl px-4 font-semibold text-md shadow-sm xl:text-lg',
                   styles.ctaButton,
                   styles.ctaButtonHover
                 )}
@@ -527,7 +526,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
 Navbar.displayName = 'Navbar';
 
 // Demo
-function Demo() {
+function _Demo() {
   return (
     <div className="fixed inset-0">
       <Navbar />

@@ -1,6 +1,5 @@
-import { View } from 'react-native';
-
 import { useColorScheme } from 'nativewind';
+import { View } from 'react-native';
 
 const WEEKS = 15;
 const DAYS = 7;
@@ -35,12 +34,12 @@ export function HeatmapPlaceholder() {
               borderRadius: 2,
               backgroundColor:
                 opacity > 0
-                  ? (isDark
+                  ? isDark
                     ? `rgba(34, 197, 94, ${opacity * 0.8})`
-                    : `rgba(22, 163, 74, ${opacity * 0.8})`)
-                  : (isDark
+                    : `rgba(22, 163, 74, ${opacity * 0.8})`
+                  : isDark
                     ? 'rgba(255, 255, 255, 0.06)'
-                    : 'rgba(0, 0, 0, 0.06)'),
+                    : 'rgba(0, 0, 0, 0.06)',
             }}
           />
         ))}

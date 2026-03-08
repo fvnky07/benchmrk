@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { showToast } from '@/lib/ui';
 

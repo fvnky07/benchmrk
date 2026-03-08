@@ -2,13 +2,12 @@
 // NOTE: Word-by-word text reveal animation
 'use client';
 
+import { domAnimation, LazyMotion, m, useInView } from 'motion/react';
 import { useRef } from 'react';
 
-import { LazyMotion, domAnimation, m, useInView } from 'motion/react';
-
 import {
-  wordRevealContainerVariants,
   wordRevealChildVariants,
+  wordRevealContainerVariants,
 } from '@/lib/animation-config';
 
 interface WordRevealProps {

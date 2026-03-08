@@ -1,6 +1,5 @@
-import { Pressable } from 'react-native';
-
 import { Ionicons } from '@expo/vector-icons';
+import { Pressable } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 
@@ -29,7 +28,7 @@ export function SettingsRow({
 }: SettingsRowProps) {
   return (
     <Pressable
-      className={`h-12 flex-row items-center px-4 ${hasBorder ? 'border-b border-gray-800' : ''}`}
+      className={`h-12 flex-row items-center px-4 ${hasBorder ? 'border-gray-800 border-b' : ''}`}
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
@@ -41,7 +40,9 @@ export function SettingsRow({
           {rightLabel}
         </Text>
       )}
-      {showChevron && <Ionicons name="chevron-forward" size={18} color={iconColor} />}
+      {showChevron && (
+        <Ionicons name="chevron-forward" size={18} color={iconColor} />
+      )}
     </Pressable>
   );
 }

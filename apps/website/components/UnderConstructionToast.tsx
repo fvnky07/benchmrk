@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-
 import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 const TOAST_ID = 'under-construction';

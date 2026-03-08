@@ -33,12 +33,12 @@ export function ChangelogClient({ entries }: ChangelogClientProps) {
             <div className="flex flex-col gap-y-6 md:flex-row">
               <div className="flex-shrink-0 md:w-48">
                 <div className="pb-10 md:sticky md:top-8">
-                  <time className="text-muted-foreground mb-3 block text-sm font-medium">
+                  <time className="mb-3 block font-medium text-muted-foreground text-sm">
                     {formattedDate}
                   </time>
 
                   {entry.version && (
-                    <div className="text-foreground border-border relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-bold">
+                    <div className="relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border font-bold text-foreground text-sm">
                       {entry.version}
                     </div>
                   )}
@@ -48,14 +48,14 @@ export function ChangelogClient({ entries }: ChangelogClientProps) {
               {/* Right side - Content */}
               <div className="relative flex-1 pb-10 md:pl-8">
                 {/* Vertical timeline line */}
-                <div className="bg-border absolute top-2 left-0 hidden h-full w-px md:block">
+                <div className="absolute top-2 left-0 hidden h-full w-px bg-border md:block">
                   {/* Timeline dot */}
-                  <div className="bg-primary absolute z-10 hidden size-3 -translate-x-1/2 rounded-full md:block" />
+                  <div className="absolute z-10 hidden size-3 -translate-x-1/2 rounded-full bg-primary md:block" />
                 </div>
 
                 <div className="space-y-6">
                   <div className="relative z-10 flex flex-col gap-2">
-                    <h2 className="text-2xl font-semibold tracking-tight text-balance">
+                    <h2 className="text-balance font-semibold text-2xl tracking-tight">
                       {entry.title}
                     </h2>
 
@@ -65,7 +65,7 @@ export function ChangelogClient({ entries }: ChangelogClientProps) {
                         {entry.tags.map((tag: string) => (
                           <span
                             key={tag}
-                            className="bg-muted text-muted-foreground flex h-6 w-fit items-center justify-center rounded-full border px-2 text-xs font-medium"
+                            className="flex h-6 w-fit items-center justify-center rounded-full border bg-muted px-2 font-medium text-muted-foreground text-xs"
                           >
                             {tag}
                           </span>
@@ -73,7 +73,7 @@ export function ChangelogClient({ entries }: ChangelogClientProps) {
                       </div>
                     )}
                   </div>
-                  <div className="prose dark:prose-invert prose-headings:scroll-mt-8 prose-headings:font-semibold prose-a:no-underline prose-headings:tracking-tight prose-headings:text-balance prose-p:tracking-tight prose-p:text-balance max-w-none">
+                  <div className="prose dark:prose-invert max-w-none prose-headings:scroll-mt-8 prose-headings:text-balance prose-p:text-balance prose-headings:font-semibold prose-headings:tracking-tight prose-p:tracking-tight prose-a:no-underline">
                     <MDX />
                   </div>
                 </div>
