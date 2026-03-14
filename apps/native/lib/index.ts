@@ -13,3 +13,5 @@ export * from './schemas/auth';
 export * from './ui';
 // General utilities
 export * from './utils';
+// Workout
+export * from './workout';
