@@ -87,6 +87,7 @@
     "@types/react-dom": "~19.1.0",
     "jest": "^30.3.0",
     "jest-expo": "^55.0.9",
+    "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   }
 }
