@@ -40,4 +40,43 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
+
+  // Exercises catalog (seeded by init.ts)
+  exercises: defineTable({
+    slug: v.string(),
+    name: v.string(),
+    description: v.string(),
+    imageUrl: v.optional(v.string()),
+    category: v.optional(v.string()),
+    muscleGroups: v.optional(v.array(v.string())),
+    instructions: v.optional(v.string()),
+  }).index('by_slug', ['slug']),
+
+  // User saved workouts (max 3 for free tier)
+  workouts: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    createdAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  // Join table: which exercises belong to a workout + config
+  workoutExercises: defineTable({
+    workoutId: v.id('workouts'),
+    exerciseId: v.id('exercises'),
+    order: v.number(),
+    sets: v.number(),
+    reps: v.number(),
+    weight: v.number(),
+  })
+    .index('by_workout', ['workoutId'])
+    .index('by_exercise', ['exerciseId'])
+    .index('by_workout_exercise', ['workoutId', 'exerciseId']),
+
+  // Comments on exercises
+  exerciseComments: defineTable({
+    exerciseId: v.id('exercises'),
+    userId: v.string(),
+    body: v.string(),
+    createdAt: v.number(),
+  }).index('by_exercise', ['exerciseId']),
 });

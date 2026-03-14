@@ -1,5 +1,9 @@
 import { Stack } from 'expo-router';
 
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function WorkoutLayout() {
   return (
     <Stack
@@ -19,6 +23,38 @@ export default function WorkoutLayout() {
       <Stack.Screen
         name="create-workout"
         options={{ title: 'Create Workout' }}
+      />
+      <Stack.Screen
+        name="create/index"
+        options={{
+          title: 'Create Workout',
+          headerRight: () => null,
+        }}
+      />
+      <Stack.Screen
+        name="create/configure"
+        options={{
+          title: 'Configure Exercises',
+          headerRight: () => null,
+        }}
+      />
+      <Stack.Screen
+        name="create/review"
+        options={{
+          title: 'Review Workout',
+        }}
+      />
+      <Stack.Screen
+        name="exercise/[slug]"
+        options={{
+          title: 'Exercise Details',
+        }}
+      />
+      <Stack.Screen
+        name="[id]/start"
+        options={{
+          title: 'Start Workout',
+        }}
       />
     </Stack>
   );

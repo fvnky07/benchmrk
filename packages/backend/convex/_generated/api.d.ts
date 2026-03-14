@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as exerciseComments from "../exerciseComments.js";
 import type * as http from "../http.js";
 import type * as profile from "../profile.js";
 import type * as userPreferences from "../userPreferences.js";
@@ -22,6 +23,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  exerciseComments: typeof exerciseComments;
   http: typeof http;
   profile: typeof profile;
   userPreferences: typeof userPreferences;

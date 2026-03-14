@@ -4,6 +4,7 @@
 export * from './analytics';
 // Authentication
 export * from './auth';
+export * from './convex/workout-api';
 // Hooks
 export * from './hooks/use-form-validation';
 export * from './hooks/use-user-profile';
@@ -13,3 +14,5 @@ export * from './schemas/auth';
 export * from './ui';
 // General utilities
 export * from './utils';
+// Workout
+export * from './workout';
