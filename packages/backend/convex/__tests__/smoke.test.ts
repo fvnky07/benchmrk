@@ -2,9 +2,10 @@ import { convexTest } from 'convex-test';
 import { expect, test } from 'vitest';
 import schema from '../schema';
 
-const modules = import.meta.glob<{ default: any }>('../_generated/*.js', {
-  eager: true,
-});
+const modules = import.meta.glob<{ default: Record<string, unknown> }>(
+  '../_generated/*.js',
+  { eager: true }
+);
 
 test('convex test harness runs', async () => {
   const t = convexTest(schema, modules);
