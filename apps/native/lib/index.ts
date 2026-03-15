@@ -4,6 +4,7 @@
 export * from './analytics';
 // Authentication
 export * from './auth';
+export * from './convex/session-api';
 export * from './convex/workout-api';
 // Hooks
 export * from './hooks/use-form-validation';
