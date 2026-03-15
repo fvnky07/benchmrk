@@ -53,7 +53,9 @@ export default function WorkoutLayout() {
       <Stack.Screen
         name="[id]/start"
         options={{
-          title: 'Start Workout',
+          title: '',
+          headerBackVisible: false,
+          gestureEnabled: false,
         }}
       />
     </Stack>

@@ -1,5 +1,6 @@
 import { ConvexError, v } from 'convex/values';
 
+import { components } from './_generated/api';
 import { mutation, query } from './_generated/server';
 
 const FREE_TIER_WORKOUT_LIMIT = 3;
@@ -95,5 +96,59 @@ export const deleteWorkout = mutation({
 
     await ctx.db.delete(args.workoutId);
     return args.workoutId;
+  },
+});
+
+export const getRecentWorkoutsWithProfiles = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+
+    const workouts = await ctx.db.query('workouts').order('desc').take(limit);
+
+    const workoutsWithProfiles = [];
+
+    for (const workout of workouts) {
+      const user = await ctx.runQuery(components.betterAuth.users.getUser, {
+        userId: workout.userId,
+      });
+
+      const workoutExercises = await ctx.db
+        .query('workoutExercises')
+        .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
+        .collect();
+
+      const totalVolume = workoutExercises.reduce((sum, we) => {
+        return sum + we.sets * we.reps * we.weight;
+      }, 0);
+
+      const totalSets = workoutExercises.reduce((sum, we) => sum + we.sets, 0);
+
+      workoutsWithProfiles.push({
+        _id: workout._id,
+        name: workout.name,
+        createdAt: workout.createdAt,
+        exerciseCount: workoutExercises.length,
+        totalSets,
+        totalVolume,
+        user: user
+          ? {
+              userId: user.userId,
+              name: user.name,
+              username: user.username,
+              image: user.image,
+            }
+          : {
+              userId: workout.userId,
+              name: 'Anonymous',
+              username: null,
+              image: null,
+            },
+      });
+    }
+
+    return workoutsWithProfiles;
   },
 });

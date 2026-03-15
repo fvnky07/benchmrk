@@ -8,6 +8,8 @@ import {
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
+import { ActiveWorkoutMiniPlayer } from '@/components/workout/ActiveWorkoutMiniPlayer';
+
 /**
  * Main app layout with native tabs navigation
  *
@@ -52,6 +54,7 @@ export default function MainLayout() {
           <Label>Settings</Label>
         </NativeTabs.Trigger>
       </NativeTabs>
+      <ActiveWorkoutMiniPlayer />
     </ThemeProvider>
   );
 }
