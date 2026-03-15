@@ -10,10 +10,14 @@
 
 import type * as auth from "../auth.js";
 import type * as exerciseComments from "../exerciseComments.js";
+import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
+import type * as init from "../init.js";
 import type * as profile from "../profile.js";
 import type * as userPreferences from "../userPreferences.js";
 import type * as waitlist from "../waitlist.js";
+import type * as workoutExercises from "../workoutExercises.js";
+import type * as workouts from "../workouts.js";
 
 import type {
   ApiFromModules,
@@ -24,10 +28,14 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   exerciseComments: typeof exerciseComments;
+  exercises: typeof exercises;
   http: typeof http;
+  init: typeof init;
   profile: typeof profile;
   userPreferences: typeof userPreferences;
   waitlist: typeof waitlist;
+  workoutExercises: typeof workoutExercises;
+  workouts: typeof workouts;
 }>;
 
 /**
