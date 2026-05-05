@@ -82,7 +82,7 @@ function PinInput({
     if (text.length > 1) {
       const digits = text.replaceAll(/\D/g, '').slice(0, PIN_LENGTH);
       const newValue = [...value];
-      for (const [i, digit_] of digits.entries()) {
+      for (const [i, digit_] of [...digits].entries()) {
         if (index + i < PIN_LENGTH) {
           newValue[index + i] = digit_;
         }

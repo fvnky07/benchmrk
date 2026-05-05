@@ -77,7 +77,7 @@ export default function VerifyTwoFactorScreen() {
         console.log('Verifying 2FA code:', fullCode);
 
         // Simulated API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise<void>((resolve) => setTimeout(resolve, 1500));
 
         // TODO: Remove this simulated error check
         if (fullCode === '000000') {
