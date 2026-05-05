@@ -205,5 +205,5 @@ function PinInput({
   );
 }
 
-export { PinInput };
 export type { PinInputProps };
+export { PinInput };
