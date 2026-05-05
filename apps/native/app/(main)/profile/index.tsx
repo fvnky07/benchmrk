@@ -20,8 +20,6 @@ export default function ProfileScreen() {
   const isDark = colorScheme === 'dark';
   const { username, bio, avatarUrl, initials } = useUserProfile();
 
-  // TODO: Replace with Convex useQuery for completed workouts
-  // const workouts = useQuery(api.workouts.getUserWorkouts, { userId: user?.id });
   const workouts: unknown[] = [];
 
   return (

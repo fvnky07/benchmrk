@@ -11,8 +11,6 @@ const iconColor = '#00ff90';
 
 export default function NotificationsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
-  // const updatePreferences = useMutation(api.userPreferences.updatePreferences);
-  // const [isSaving, setIsSaving] = useState(false);
 
   useFocusEffect(
     useCallback(() => {

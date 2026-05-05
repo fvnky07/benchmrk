@@ -8,18 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
 
 export default function WelcomeScreen() {
-  // TODO: Implement password input and state
-  // const [password, setPassword] = useState('');
-
-  // TODO: Implement forgot password handler
-  // const handleForgotPassword = () => {
-  //   console.log('Forgot password pressed');
-  // };
-
-  // TODO: Implement login submission
-  // const handleSubmit = () => {
-  //   console.log('Login submitted:', { email, password });
-
   return (
     <SafeAreaView
       className="flex-1 justify-between bg-green-1 px-4 pb-6"
