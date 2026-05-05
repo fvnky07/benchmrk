@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["jest", "@testing-library/jest-native"],
+    "types": ["jest"],
     "paths": {
       "@/*": ["./*"]
     }

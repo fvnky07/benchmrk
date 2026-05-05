@@ -22,6 +22,7 @@ export function ActiveWorkoutMiniPlayer() {
     (s) => s.sessionStartTimestamp
   );
   const sessionName = useActiveSessionStore((s) => s.sessionName);
+  const workoutTemplateId = useActiveSessionStore((s) => s.workoutTemplateId);
   const endSession = useActiveSessionStore((s) => s.endSession);
 
   const { formatted } = useWorkoutTimer(sessionStartTimestamp);
@@ -52,7 +53,9 @@ export function ActiveWorkoutMiniPlayer() {
   };
 
   const handleTap = () => {
-    router.push('/(main)/workout');
+    if (workoutTemplateId) {
+      router.push(`/(main)/workout/${workoutTemplateId}/start`);
+    }
   };
 
   return (

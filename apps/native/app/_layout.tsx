@@ -8,7 +8,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { PostHogProvider } from 'posthog-react-native';
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -26,6 +26,29 @@ const convex = new ConvexReactClient(
     unsavedChangesWarning: false,
   }
 );
+
+const ENABLE_POSTHOG = process.env.EXPO_PUBLIC_ENABLE_POSTHOG !== 'false';
+
+function AppProviders({
+  children,
+}: Readonly<{
+  children: ReactNode;
+}>) {
+  if (!ENABLE_POSTHOG) {
+    return children;
+  }
+
+  return (
+    <PostHogProvider
+      apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY!}
+      options={{
+        host: process.env.EXPO_PUBLIC_POSTHOG_HOST!,
+      }}
+    >
+      {children}
+    </PostHogProvider>
+  );
+}
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
@@ -49,12 +72,7 @@ export default function RootLayout() {
 
   return (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <PostHogProvider
-        apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY!}
-        options={{
-          host: process.env.EXPO_PUBLIC_POSTHOG_HOST!,
-        }}
-      >
+      <AppProviders>
         <SafeAreaProvider>
           <KeyboardProvider>
             <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
@@ -74,7 +92,7 @@ export default function RootLayout() {
             </ThemeProvider>
           </KeyboardProvider>
         </SafeAreaProvider>
-      </PostHogProvider>
+      </AppProviders>
     </ConvexBetterAuthProvider>
   );
 }

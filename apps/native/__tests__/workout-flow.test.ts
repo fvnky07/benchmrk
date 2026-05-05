@@ -4,7 +4,7 @@ import {
   buildWorkoutExercisePayload,
   canContinueFromConfiguration,
   canContinueFromSelection,
-} from '@/lib/workout';
+} from '@/lib/workout/flow';
 
 describe('workout flow logic', () => {
   it('allows selection step to continue with valid name and selected exercises', () => {

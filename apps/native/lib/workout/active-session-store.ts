@@ -7,6 +7,7 @@ interface ActiveSessionState {
   activeSessionId: string | null;
   sessionStartTimestamp: number | null; // Date.now() when session started — timer source of truth
   sessionName: string;
+  workoutTemplateId: string | null;
   // Non-persisted UI state
   currentExerciseIndex: number;
 }
@@ -15,7 +16,8 @@ interface ActiveSessionActions {
   startSession: (
     sessionId: string,
     name: string,
-    startTimestamp: number
+    startTimestamp: number,
+    workoutTemplateId: string
   ) => void;
   endSession: () => void;
   setCurrentExerciseIndex: (index: number) => void;
@@ -29,13 +31,15 @@ export const useActiveSessionStore = create<ActiveSessionStore>()(
       activeSessionId: null,
       sessionStartTimestamp: null,
       sessionName: '',
+      workoutTemplateId: null,
       currentExerciseIndex: 0,
 
-      startSession: (sessionId, name, startTimestamp) =>
+      startSession: (sessionId, name, startTimestamp, workoutTemplateId) =>
         set({
           activeSessionId: sessionId,
           sessionStartTimestamp: startTimestamp,
           sessionName: name,
+          workoutTemplateId,
           currentExerciseIndex: 0,
         }),
 
@@ -44,6 +48,7 @@ export const useActiveSessionStore = create<ActiveSessionStore>()(
           activeSessionId: null,
           sessionStartTimestamp: null,
           sessionName: '',
+          workoutTemplateId: null,
           currentExerciseIndex: 0,
         }),
 
@@ -57,6 +62,7 @@ export const useActiveSessionStore = create<ActiveSessionStore>()(
         activeSessionId: state.activeSessionId,
         sessionStartTimestamp: state.sessionStartTimestamp,
         sessionName: state.sessionName,
+        workoutTemplateId: state.workoutTemplateId,
       }),
     }
   )

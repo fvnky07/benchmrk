@@ -33,7 +33,7 @@ import {
 
 export default function StartWorkoutScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const workoutId = params.id;
+  const workoutId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const navigation = useNavigation();
 
@@ -90,6 +90,7 @@ export default function StartWorkoutScreen() {
   // 5 paths: resume match, block conflict, clear stale, create new, wait.
   useEffect(() => {
     if (hasInitialized.current) return;
+    if (!workoutId) return;
     if (workout === undefined || workoutExercises === undefined) return;
     if (!workout) return;
 
@@ -124,7 +125,12 @@ export default function StartWorkoutScreen() {
           name: workout.name,
           workoutTemplateId: workoutId,
         });
-        startSessionStore(sessionId, workout.name, Date.now());
+
+        if (!sessionId) {
+          throw new Error('Session was not created');
+        }
+
+        startSessionStore(sessionId, workout.name, Date.now(), workoutId);
 
         for (const we of workoutExercises) {
           await addExerciseMutation({
@@ -136,6 +142,9 @@ export default function StartWorkoutScreen() {
         showToast.success('Workout Started', workout.name);
       } catch (error) {
         console.error('Failed to start workout session:', error);
+        showToast.error('Could not start workout', 'Please try again.');
+        endSessionStore();
+        router.replace('/(main)/workout');
       }
     })();
   }, [
@@ -164,7 +173,7 @@ export default function StartWorkoutScreen() {
           });
           endSessionStore();
           showToast.success('Workout Complete', 'Great job!');
-          router.replace('/workout');
+          router.replace('/(main)/workout');
         },
       },
     ]);
@@ -238,6 +247,19 @@ export default function StartWorkoutScreen() {
       <View className="flex-1 items-center justify-center bg-black-1">
         <ActivityIndicator size="large" color="#00ff90" />
         <Text className="mt-4 text-white/60">Loading workout…</Text>
+      </View>
+    );
+  }
+
+  if (!workoutId) {
+    return (
+      <View className="flex-1 items-center justify-center bg-black-1 px-6">
+        <Text className="font-semibold text-lg text-white">
+          Invalid workout
+        </Text>
+        <Text className="mt-2 text-center text-white/60">
+          This workout link is invalid.
+        </Text>
       </View>
     );
   }

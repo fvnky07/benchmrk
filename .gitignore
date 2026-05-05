@@ -53,3 +53,19 @@ yarn-error.log*
 **/.next/
 **/dist/
 **/build/
+
+# Stray Expo prebuild output if accidentally generated at repo root
+# (real native projects live under apps/native/ios and apps/native/android)
+/android/
+/ios/
+/app.json
+
+# Expo export debug artifacts
+**/.expo-export-*/
+
+# Claude Code worktrees and runtime
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
+# oh-my-claudecode runtime state
+.omc/

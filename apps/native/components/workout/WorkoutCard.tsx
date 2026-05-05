@@ -28,7 +28,13 @@ export function WorkoutCard({
           <Text className="text-sm text-white/60">{subtitle}</Text>
         </View>
 
-        <Button className="bg-green-1" onPress={onStart}>
+        <Button
+          className="bg-green-1"
+          onPress={(event) => {
+            event.stopPropagation();
+            onStart();
+          }}
+        >
           <Text>Start workout</Text>
         </Button>
       </View>

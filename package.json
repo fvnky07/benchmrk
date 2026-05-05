@@ -1,5 +1,8 @@
 {
   "name": "benchmrk",
+  "version": "1.0.0",
+  "description": "Open source native fitness tracker with premium features",
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -14,7 +17,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.6",
+    "@biomejs/biome": "^2.4.14",
     "husky": "^9.1.7",
     "turbo": "^2.7.5",
     "typescript": "5.9.2"
