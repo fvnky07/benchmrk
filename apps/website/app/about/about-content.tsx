@@ -63,7 +63,7 @@ export function AboutContent() {
 
               {/* Name */}
               <h1 className="font-bold text-5xl text-white sm:text-6xl">
-                fvnky
+                benchmrk team
               </h1>
 
               {/* Role Badges */}

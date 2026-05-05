@@ -104,16 +104,16 @@ export const Footer = React.forwardRef<HTMLElement, FooterProps>(
               </div>
               <div className="flex items-center md:justify-center">
                 <Link
-                  href="https://x.com/fvnky_07"
+                  href="https://github.com/fvnky07/benchmrk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex flex-row items-center gap-2 transition-opacity hover:opacity-70"
-                  aria-label="Follow us on X (Twitter)"
+                  aria-label="View benchmrk on GitHub"
                 >
                   <Button variant="outline" className="h-auto w-auto">
                     <Image
                       src="/x.svg"
-                      alt="X (Twitter)"
+                      alt="GitHub"
                       width={20}
                       height={20}
                       className="h-6 w-6"

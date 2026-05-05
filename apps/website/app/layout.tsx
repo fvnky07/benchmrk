@@ -83,8 +83,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@fvnky_07',
-    creator: '@fvnky_07',
+    site: '@benchmrk',
+    creator: '@benchmrk',
     title: 'benchmrk - AI-Powered Fitness Tracking',
     description:
       'AI-powered fitness tracker with intelligent coaching, lightning-fast workout logging, and in-depth analytics.',

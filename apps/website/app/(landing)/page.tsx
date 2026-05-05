@@ -30,7 +30,7 @@ export default function LandingPage() {
           '@type': 'ImageObject',
           url: 'https://benchmrk.app/opengraph-image',
         },
-        sameAs: ['https://x.com/fvnky_07'],
+        sameAs: ['https://github.com/fvnky07/benchmrk'],
       },
       {
         '@type': 'WebApplication',

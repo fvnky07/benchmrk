@@ -459,15 +459,15 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                 )}
                 onClick={(e) => {
                   e.preventDefault();
-                  window.open('https://x.com/fvnky_07', '_blank');
+                  window.open('https://github.com/fvnky07/benchmrk', '_blank');
                 }}
                 size="sm"
                 variant="ghost"
-                aria-label="Follow us on X (Twitter)"
+                aria-label="View benchmrk on GitHub"
               >
                 <Image
                   src={styles.iconButtonImage || '/x.svg'}
-                  alt="X (Twitter)"
+                  alt="GitHub"
                   width={16}
                   height={16}
                   className="h-12 w-12"
