@@ -4,3 +4,8 @@
 .convexrc.json
 .convex/
 .convex-esbuild-cache/
+
+# AI tooling runtime state
+.agents/
+.claude/
+skills-lock.json
