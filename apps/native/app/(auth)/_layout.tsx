@@ -8,7 +8,6 @@ function ThemeToggle() {
 
   const toggleTheme = () => {
     // TODO: Implement theme persistence with userPreferences
-    console.log('Theme toggle - Coming soon');
   };
 
   return (

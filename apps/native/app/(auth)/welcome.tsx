@@ -23,7 +23,6 @@ export default function WelcomeScreen() {
             className="grow"
             onPress={() => {
               // TODO: implement better auth apple oauth
-              console.log('APPLE sign in pressed');
             }}
           >
             <AntDesign name="apple" size={24} color="black" />
@@ -34,7 +33,6 @@ export default function WelcomeScreen() {
             className="grow"
             onPress={() => {
               // TODO: implement better auth google oauth
-              console.log('GOOGLE sign in pressed');
             }}
           >
             <AntDesign name="google" size={24} color="black" />

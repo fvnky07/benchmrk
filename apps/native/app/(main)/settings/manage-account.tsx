@@ -71,13 +71,9 @@ export default function ManageAccountScreen() {
     );
   };
 
-  const handleChangePassword = () => {
-    console.log('Change password - Coming soon');
-  };
+  const handleChangePassword = () => {};
 
-  const handleEditProfile = () => {
-    console.log('Edit profile - Coming soon');
-  };
+  const handleEditProfile = () => {};
 
   if (!user) {
     return (

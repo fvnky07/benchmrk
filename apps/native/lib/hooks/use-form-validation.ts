@@ -85,7 +85,6 @@ export function useFormValidation<T extends z.ZodTypeAny>({
       if (firstError) {
         // TODO: show a more specific error message instead of just validation error
         showToast.error('Validation Error', firstError);
-        console.log(firstError);
       }
       return false;
     }

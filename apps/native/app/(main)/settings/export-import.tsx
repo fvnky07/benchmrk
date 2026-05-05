@@ -15,13 +15,9 @@ export default function ExportImportScreen() {
     }, [])
   );
 
-  const handleExport = () => {
-    console.log('Export All Data - Coming soon');
-  };
+  const handleExport = () => {};
 
-  const handleImport = () => {
-    console.log('Import Data - Coming soon');
-  };
+  const handleImport = () => {};
 
   return (
     <ScrollView className="flex-1 bg-black-1">

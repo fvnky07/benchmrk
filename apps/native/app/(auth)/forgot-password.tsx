@@ -23,10 +23,9 @@ export default function ForgotPasswordScreen() {
   });
 
   const onSubmit = () => {
-    handleSubmit({ email }, async (data) => {
+    handleSubmit({ email }, async (_data) => {
       try {
         // TODO: Implement password reset with Better Auth
-        console.log('Sending password reset to:', data.email);
         analytics.passwordResetRequested();
         showToast.success('Check your email!', 'Password reset link sent');
         router.push('/login');

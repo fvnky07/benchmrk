@@ -42,9 +42,7 @@ export function Iphone({
   const hasVideo = !!videoSrc;
   const hasMedia = hasVideo || !!src;
 
-  // PERF: Handler to set loading to false when media is ready
   const handleMediaLoaded = () => {
-    console.log('Media loaded - hiding skeleton');
     setIsLoading(false);
   };
 
