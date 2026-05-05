@@ -21,10 +21,10 @@
   </p>
 
   <p>
-    <a href="#-quick-start">Quick Start</a> ·
-    <a href="#-features">Features</a> ·
-    <a href="#-tech-stack">Tech Stack</a> ·
-    <a href="#-repo-layout">Repo Layout</a> ·
+    <a href="#quick-start">Quick Start</a> ·
+    <a href="#features">Features</a> ·
+    <a href="#tech-stack">Tech Stack</a> ·
+    <a href="#repo-layout">Repo Layout</a> ·
     <a href="./CONTRIBUTING.md">Contributing</a>
   </p>
 
@@ -62,15 +62,18 @@ cp packages/backend/.env.example packages/backend/.env.local
 cp apps/website/.env.example     apps/website/.env.local
 cp apps/native/.env.example      apps/native/.env.local
 
-# 3. Boot the backend
-#    Interactive on first run — provisions a free Convex deployment and prints the URLs you need
+# 3. Terminal 1 — provision and run the Convex backend
+#    First run is interactive: creates a free deployment and prints the URLs for your .env files
 cd packages/backend && pnpm run dev
 
-# 4. In a new terminal, start everything
-cd ../.. && pnpm run dev
+# 4. Terminal 2 — start the web app
+pnpm run dev:web
+
+# 5. Terminal 3 (optional) — start the native app
+cd apps/native && expo start
 ```
 
-Open `http://localhost:3000` for the web app. For native, scan the Expo QR code or run `expo run:ios` / `expo run:android` from `apps/native`.
+Open `http://localhost:3000` for the web app. For native, scan the Expo QR code printed by `expo start`.
 
 ## Tech Stack
 
@@ -101,6 +104,8 @@ benchmrk/
 |---------|-------------|
 | `pnpm run dev` | Start all apps in parallel |
 | `pnpm run dev:web` | Website only |
+| `pnpm run build` | Build all packages |
+| `pnpm run build:web` | Build website |
 | `pnpm run build:ios` | Build iOS app |
 | `pnpm run build:android` | Build Android app |
 | `pnpm run lint` | Lint with Biome |
