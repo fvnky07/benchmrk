@@ -189,7 +189,10 @@ export default function WelcomeContent() {
                 asChild
                 className="rounded-full bg-cyan-1 px-6 py-3 font-semibold text-black hover:bg-cyan-1/90"
               >
-                <Link href="https://github.com/fvnky07/benchmrk" target="_blank">
+                <Link
+                  href="https://github.com/fvnky07/benchmrk"
+                  target="_blank"
+                >
                   <Twitter className="mr-2 h-4 w-4" />
                   Star on GitHub
                 </Link>
