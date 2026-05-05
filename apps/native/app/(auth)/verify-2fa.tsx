@@ -74,9 +74,6 @@ export default function VerifyTwoFactorScreen() {
 
       try {
         // TODO: Replace with actual Better Auth + Convex 2FA verification
-        console.log('Verifying 2FA code:', fullCode);
-
-        // Simulated API call
         await new Promise<void>((resolve) => setTimeout(resolve, 1500));
 
         // TODO: Remove this simulated error check
@@ -122,8 +119,6 @@ export default function VerifyTwoFactorScreen() {
 
     try {
       // TODO: Replace with actual resend code API call
-      console.log('Resending 2FA code to:', email);
-
       analytics.twoFactorResent();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       showToast.success('Code Sent', 'Check your email for a new code');

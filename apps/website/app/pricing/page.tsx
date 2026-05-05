@@ -1,3 +1,5 @@
+// NOTE: Modularized pricing page with separated sections for tiers and breakdown
+
 import { ArrowUpRight, GitFork } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';

@@ -38,8 +38,6 @@ async function sendEmailViaResend(
     return;
   }
 
-  console.log(`Sending magic link email to: ${to}`);
-
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -58,9 +56,6 @@ async function sendEmailViaResend(
     if (!response.ok) {
       const error = await response.text();
       console.error('Resend API error:', response.status, error);
-    } else {
-      const result = await response.json();
-      console.log('Email sent successfully:', result);
     }
   } catch (error) {
     console.error('Failed to send email:', error);
@@ -113,14 +108,11 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
         // magic link creates/authenticates a user
         const newSession = hookCtx.context.newSession;
         if (!newSession) {
-          console.log('magic-link/verify hook: no newSession');
           return;
         }
 
         const userId = newSession.user.id;
         const adapter = hookCtx.context.adapter;
-
-        console.log(`magic-link/verify: user ${userId}`);
 
         //Idempotency - check if already premium
         const existingUser = await adapter.findOne<{
@@ -134,7 +126,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           existingUser?.premiumUntil != null &&
           existingUser.premiumUntil > Date.now()
         ) {
-          console.log(`User ${userId} already premium`);
           return;
         }
 
@@ -160,15 +151,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
               premiumUntil,
             },
           });
-
-          console.log(
-            `Premium granted: ${userId} ` +
-              `(${premiumCount + 1}/${PREMIUM_USER_LIMIT})`
-          );
-        } else {
-          console.log(
-            `Premium limit reached (${premiumCount}/${PREMIUM_USER_LIMIT})`
-          );
         }
       }),
     },
@@ -176,7 +158,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       magicLink({
         expiresIn: 60 * 60 * 24,
         sendMagicLink: async ({ email, url }) => {
-          console.log(`Magic link for ${email}: ${url}`);
           await sendEmailViaResend(
             email,
             'Confirm your spot - benchmrk',
