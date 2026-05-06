@@ -61,7 +61,7 @@ async function sendEmailViaResend(
     } else {
       // Drain the body to release the underlying connection;
       // we don't need the JSON payload on success.
-      await response.body?.cancel();
+      await response.text();
     }
   } catch (error) {
     console.error('Failed to send email:', error);
