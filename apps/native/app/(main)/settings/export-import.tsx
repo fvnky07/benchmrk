@@ -15,9 +15,7 @@ export default function ExportImportScreen() {
     }, [])
   );
 
-  const handleExport = () => {};
-
-  const handleImport = () => {};
+  // Export and Import are not yet implemented; Pressables below are disabled.
 
   return (
     <ScrollView className="flex-1 bg-black-1">
@@ -28,9 +26,9 @@ export default function ExportImportScreen() {
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <Pressable
-            className="h-14 flex-row items-center px-4"
-            onPress={handleExport}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            className="h-14 flex-row items-center px-4 opacity-50"
+            disabled={true}
+            accessibilityState={{ disabled: true }}
           >
             <Ionicons name="cloud-upload-outline" size={24} color="#007AFF" />
             <View className="ml-3 flex-1">
@@ -55,9 +53,9 @@ export default function ExportImportScreen() {
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <Pressable
-            className="h-14 flex-row items-center px-4"
-            onPress={handleImport}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            className="h-14 flex-row items-center px-4 opacity-50"
+            disabled={true}
+            accessibilityState={{ disabled: true }}
           >
             <Ionicons
               name="cloud-download-outline"

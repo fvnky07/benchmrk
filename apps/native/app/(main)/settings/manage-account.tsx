@@ -71,9 +71,8 @@ export default function ManageAccountScreen() {
     );
   };
 
-  const handleChangePassword = () => {};
-
-  const handleEditProfile = () => {};
+  // Edit Profile and Change Password not yet implemented;
+  // Pressables below are disabled until those flows ship.
 
   if (!user) {
     return (
@@ -127,15 +126,15 @@ export default function ManageAccountScreen() {
           </View>
 
           <Pressable
-            className="h-12 flex-row items-center px-4"
-            onPress={handleEditProfile}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            className="h-12 flex-row items-center px-4 opacity-50"
+            disabled={true}
+            accessibilityState={{ disabled: true }}
           >
             <Ionicons name="create-outline" size={24} color={iconColor} />
             <Text className="ml-3 flex-1 text-base text-white">
               Edit Profile
             </Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColor} />
+            <Text className="text-gray-500 text-sm">Coming soon</Text>
           </Pressable>
         </View>
       </View>
@@ -147,15 +146,15 @@ export default function ManageAccountScreen() {
         </Text>
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <Pressable
-            className="h-12 flex-row items-center border-gray-800 border-b px-4"
-            onPress={handleChangePassword}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            className="h-12 flex-row items-center border-gray-800 border-b px-4 opacity-50"
+            disabled={true}
+            accessibilityState={{ disabled: true }}
           >
             <Ionicons name="lock-closed-outline" size={24} color={iconColor} />
             <Text className="ml-3 flex-1 text-base text-white">
               Change Password
             </Text>
-            <Ionicons name="chevron-forward" size={18} color={iconColor} />
+            <Text className="text-gray-500 text-sm">Coming soon</Text>
           </Pressable>
 
           <Pressable
