@@ -1,9 +1,5 @@
 <div align="center">
   <img src="./assets/banner.png" alt="benchmrk" />
-  <br />
-  <br />
-
-  <h1>benchmrk</h1>
   <p><strong>The open-source fitness tracker that respects your data.</strong><br/>Track workouts, share progress, and own every byte — on iOS, Android, and the web.</p>
 
   <p>
@@ -15,15 +11,6 @@
     </a>
     <img src="https://img.shields.io/badge/status-public%20beta-FFB400?style=flat-square" alt="Public Beta" />
     <img src="https://img.shields.io/badge/platforms-iOS%20·%20Android%20·%20Web-1F2937?style=flat-square" alt="Platforms" />
-  </p>
-
-  <p>
-    <a href="#why-benchmrk">Why</a> ·
-    <a href="#what-you-get">Features</a> ·
-    <a href="#screenshots">Screenshots</a> ·
-    <a href="#built-with">Built With</a> ·
-    <a href="#roadmap">Roadmap</a> ·
-    <a href="./CONTRIBUTING.md">Contribute</a>
   </p>
 </div>
 
@@ -51,9 +38,9 @@ benchmrk is the alternative: a single tracker you can use for free, host yoursel
 
 ## Screenshots
 
-| Workout Session | Exercise Catalog | Social Feed |
-|:-:|:-:|:-:|
-| _coming soon_ | _coming soon_ | _coming soon_ |
+| Workout Session | Exercise Catalog |  Social Feed  |
+| :-------------: | :--------------: | :-----------: |
+|  _coming soon_  |  _coming soon_   | _coming soon_ |
 
 > Want to help? Drop screenshots into a PR — see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
@@ -61,12 +48,12 @@ benchmrk is the alternative: a single tracker you can use for free, host yoursel
 
 A modern, fully typed stack chosen for speed of iteration and long-term maintainability.
 
-| Layer | Technology |
-|------|-----------|
-| 📱 Mobile | Expo SDK 54 · React Native · Expo Router · NativeWind · Reanimated |
-| 🌐 Web | Next.js 16 · React 19 · Tailwind CSS 4 · Radix UI |
-| 🛰️ Backend | Convex (real-time DB + serverless functions) · Better Auth |
-| 🧰 Tooling | Turborepo · pnpm · Biome · TypeScript |
+| Layer      | Technology                                                         |
+| ---------- | ------------------------------------------------------------------ |
+| 📱 Mobile  | Expo SDK 54 · React Native · Expo Router · NativeWind · Reanimated |
+| 🌐 Web     | Next.js 16 · React 19 · Tailwind CSS 4 · Radix UI                  |
+| 🛰️ Backend | Convex (real-time DB + serverless functions) · Better Auth         |
+| 🧰 Tooling | Turborepo · pnpm · Biome · TypeScript                              |
 
 ## Try it
 
