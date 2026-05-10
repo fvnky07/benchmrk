@@ -33,11 +33,9 @@
 
 Modern fitness apps are great at one thing: locking you in.
 
-|  |  |  |
-|:-:|:-:|:-:|
-| 🔒 | **Your data, their servers** | Years of workouts, sets, and progress trapped behind paywalls and proprietary exports. |
-| 💸 | **Subscriptions for the basics** | Logging a set shouldn't require a monthly fee. Neither should syncing across your own devices. |
-| 🧩 | **Fragmented experience** | Workouts in one app, social in another, history nowhere. Nothing talks to anything else. |
+- 🔒 **Your data, their servers.** Years of workouts, sets, and progress trapped behind paywalls and proprietary exports.
+- 💸 **Subscriptions for the basics.** Logging a set shouldn't require a monthly fee. Neither should syncing across your own devices.
+- 🧩 **Fragmented experience.** Workouts in one app, social in another, history nowhere. Nothing talks to anything else.
 
 benchmrk is the alternative: a single tracker you can use for free, host yourself, audit line by line, and trust forever.
 
@@ -74,7 +72,7 @@ A modern, fully typed stack chosen for speed of iteration and long-term maintain
 
 The fastest way to use benchmrk is to install the app — public beta links land here once they're live.
 
-In the meantime, you can run the full stack locally in three commands. Setup, environment variables, and platform-specific notes live in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
+In the meantime, you can run the full stack locally with a handful of commands. Setup, environment variables, and platform-specific notes live in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
 
 ## Roadmap
 
