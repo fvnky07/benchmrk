@@ -43,7 +43,7 @@ pnpm run dev:web                                  # Next.js website
 cd apps/native && pnpm run dev                    # Expo dev server
 ```
 
-Open `http://localhost:3000` for the web app. For native, scan the Expo QR code printed by `expo start`.
+Open `http://localhost:3000` for the web app. For native, the `pnpm run dev` script in `apps/native` runs `expo start` under the hood — scan the Expo QR code it prints, or press `i` / `a` to launch the iOS or Android simulator.
 
 ## Repo layout
 

@@ -1,11 +1,5 @@
 <div align="center">
   <img src="./assets/banner.png" alt="benchmrk" />
-  <br />
-  <br />
-
-  <h1>benchmrk</h1>
-  <p><strong>The open-source fitness tracker that respects your data.</strong><br/>Track workouts, share progress, and own every byte — on iOS, Android, and the web.</p>
-
   <p>
     <a href="./LICENSE">
       <img src="https://img.shields.io/badge/License-AGPL%20v3-28E2A4?style=flat-square" alt="AGPL v3" />
@@ -16,28 +10,17 @@
     <img src="https://img.shields.io/badge/status-public%20beta-FFB400?style=flat-square" alt="Public Beta" />
     <img src="https://img.shields.io/badge/platforms-iOS%20·%20Android%20·%20Web-1F2937?style=flat-square" alt="Platforms" />
   </p>
+  <p><strong>The open-source fitness tracker that respects your data.</strong><br/>Track workouts, share progress, and own every byte — on iOS, Android, and the web.</p>
 
-  <p>
-    <a href="#why-benchmrk">Why</a> ·
-    <a href="#what-you-get">Features</a> ·
-    <a href="#screenshots">Screenshots</a> ·
-    <a href="#built-with">Built With</a> ·
-    <a href="#roadmap">Roadmap</a> ·
-    <a href="./CONTRIBUTING.md">Contribute</a>
-  </p>
 </div>
-
----
 
 ## Why benchmrk
 
 Modern fitness apps are great at one thing: locking you in.
 
-|  |  |  |
-|:-:|:-:|:-:|
-| 🔒 | **Your data, their servers** | Years of workouts, sets, and progress trapped behind paywalls and proprietary exports. |
-| 💸 | **Subscriptions for the basics** | Logging a set shouldn't require a monthly fee. Neither should syncing across your own devices. |
-| 🧩 | **Fragmented experience** | Workouts in one app, social in another, history nowhere. Nothing talks to anything else. |
+- 🔒 **Your data, their servers.** Years of workouts, sets, and progress trapped behind paywalls and proprietary exports.
+- 💸 **Subscriptions for the basics.** Logging a set shouldn't require a monthly fee. Neither should syncing across your own devices.
+- 🧩 **Fragmented experience.** Workouts in one app, social in another, history nowhere. Nothing talks to anything else.
 
 benchmrk is the alternative: a single tracker you can use for free, host yourself, audit line by line, and trust forever.
 
@@ -53,9 +36,9 @@ benchmrk is the alternative: a single tracker you can use for free, host yoursel
 
 ## Screenshots
 
-| Workout Session | Exercise Catalog | Social Feed |
-|:-:|:-:|:-:|
-| _coming soon_ | _coming soon_ | _coming soon_ |
+| Workout Session | Exercise Catalog |  Social Feed  |
+| :-------------: | :--------------: | :-----------: |
+|  _coming soon_  |  _coming soon_   | _coming soon_ |
 
 > Want to help? Drop screenshots into a PR — see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
@@ -63,18 +46,18 @@ benchmrk is the alternative: a single tracker you can use for free, host yoursel
 
 A modern, fully typed stack chosen for speed of iteration and long-term maintainability.
 
-| Layer | Technology |
-|------|-----------|
-| 📱 Mobile | Expo SDK 54 · React Native · Expo Router · NativeWind · Reanimated |
-| 🌐 Web | Next.js 16 · React 19 · Tailwind CSS 4 · Radix UI |
-| 🛰️ Backend | Convex (real-time DB + serverless functions) · Better Auth |
-| 🧰 Tooling | Turborepo · pnpm · Biome · TypeScript |
+| Layer      | Technology                                                         |
+| ---------- | ------------------------------------------------------------------ |
+| 📱 Mobile  | Expo SDK 54 · React Native · Expo Router · NativeWind · Reanimated |
+| 🌐 Web     | Next.js 16 · React 19 · Tailwind CSS 4 · Radix UI                  |
+| 🛰️ Backend | Convex (real-time DB + serverless functions) · Better Auth         |
+| 🧰 Tooling | Turborepo · pnpm · Biome · TypeScript                              |
 
 ## Try it
 
 The fastest way to use benchmrk is to install the app — public beta links land here once they're live.
 
-In the meantime, you can run the full stack locally in three commands. Setup, environment variables, and platform-specific notes live in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
+In the meantime, you can run the full stack locally with a handful of commands. Setup, environment variables, and platform-specific notes live in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
 
 ## Roadmap
 
