@@ -1,7 +1,5 @@
 <div align="center">
   <img src="./assets/banner.png" alt="benchmrk" />
-  <p><strong>The open-source fitness tracker that respects your data.</strong><br/>Track workouts, share progress, and own every byte — on iOS, Android, and the web.</p>
-
   <p>
     <a href="./LICENSE">
       <img src="https://img.shields.io/badge/License-AGPL%20v3-28E2A4?style=flat-square" alt="AGPL v3" />
@@ -12,9 +10,9 @@
     <img src="https://img.shields.io/badge/status-public%20beta-FFB400?style=flat-square" alt="Public Beta" />
     <img src="https://img.shields.io/badge/platforms-iOS%20·%20Android%20·%20Web-1F2937?style=flat-square" alt="Platforms" />
   </p>
-</div>
+  <p><strong>The open-source fitness tracker that respects your data.</strong><br/>Track workouts, share progress, and own every byte — on iOS, Android, and the web.</p>
 
----
+</div>
 
 ## Why benchmrk
 
