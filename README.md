@@ -1,11 +1,10 @@
 <div align="center">
-  <br />
-  <img src="apps/website/public/logo.svg" width="72" alt="benchmrk" />
+  <img src="./assets/banner.png" alt="benchmrk" />
   <br />
   <br />
 
-  <h3>benchmrk</h3>
-  <p>Open-source fitness tracker for iOS & Android — real-time sync, social feed, self-hostable.</p>
+  <h1>benchmrk</h1>
+  <p><strong>The open-source fitness tracker that respects your data.</strong><br/>Track workouts, share progress, and own every byte — on iOS, Android, and the web.</p>
 
   <p>
     <a href="./LICENSE">
@@ -14,139 +13,110 @@
     <a href="./CONTRIBUTING.md">
       <img src="https://img.shields.io/badge/PRs-welcome-28E2A4?style=flat-square" alt="PRs Welcome" />
     </a>
-    <img src="https://img.shields.io/badge/Expo-~54-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo" />
-    <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js&logoColor=white" alt="Next.js" />
-    <img src="https://img.shields.io/badge/Convex-real--time-EF4823?style=flat-square" alt="Convex" />
-    <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/status-public%20beta-FFB400?style=flat-square" alt="Public Beta" />
+    <img src="https://img.shields.io/badge/platforms-iOS%20·%20Android%20·%20Web-1F2937?style=flat-square" alt="Platforms" />
   </p>
 
   <p>
-    <a href="#quick-start">Quick Start</a> ·
-    <a href="#features">Features</a> ·
-    <a href="#tech-stack">Tech Stack</a> ·
-    <a href="#repo-layout">Repo Layout</a> ·
-    <a href="./CONTRIBUTING.md">Contributing</a>
+    <a href="#why-benchmrk">Why</a> ·
+    <a href="#what-you-get">Features</a> ·
+    <a href="#screenshots">Screenshots</a> ·
+    <a href="#built-with">Built With</a> ·
+    <a href="#roadmap">Roadmap</a> ·
+    <a href="./CONTRIBUTING.md">Contribute</a>
   </p>
-
-  <br />
 </div>
 
 ---
 
-## Features
+## Why benchmrk
 
-- **Custom workouts** — Build plans from a growing exercise catalog
-- **Active session tracking** — Log sets, reps, weights, and duration in real time
-- **Social feed** — Share completed sessions and see what your network is lifting
-- **Real-time sync** — Powered by Convex; changes propagate instantly across all devices
-- **Self-hostable** — Run the full stack for free, no vendor lock-in
+Modern fitness apps are great at one thing: locking you in.
+
+|  |  |  |
+|:-:|:-:|:-:|
+| 🔒 | **Your data, their servers** | Years of workouts, sets, and progress trapped behind paywalls and proprietary exports. |
+| 💸 | **Subscriptions for the basics** | Logging a set shouldn't require a monthly fee. Neither should syncing across your own devices. |
+| 🧩 | **Fragmented experience** | Workouts in one app, social in another, history nowhere. Nothing talks to anything else. |
+
+benchmrk is the alternative: a single tracker you can use for free, host yourself, audit line by line, and trust forever.
+
+## What you get
+
+- 🏋️ **Custom workouts** — Build training plans from a growing exercise catalog, or roll your own.
+- ⏱️ **Live session tracking** — Log sets, reps, weight, and rest in real time, even offline.
+- 📈 **Progress that's actually yours** — Every lift, every PR, exportable whenever you want.
+- 👥 **Social feed** — Share completed sessions, cheer on friends, see what your network is lifting.
+- ⚡ **Instant sync** — Powered by Convex; changes propagate to every device the moment they happen.
+- 🌐 **Works everywhere** — Native iOS, native Android, and a full web app share one backend.
+- 🏠 **Self-hostable** — Run the entire stack on your own infrastructure. No vendor lock-in, no telemetry, no surprises.
 
 ## Screenshots
 
 | Workout Session | Exercise Catalog | Social Feed |
 |:-:|:-:|:-:|
-| *coming soon* | *coming soon* | *coming soon* |
+| _coming soon_ | _coming soon_ | _coming soon_ |
 
-## Quick Start
+> Want to help? Drop screenshots into a PR — see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-**Prerequisites:** Node.js ≥ 18 · pnpm 10 · free [Convex](https://convex.dev) account · Xcode / Android Studio (for native builds)
+## Built with
 
-```bash
-# 1. Clone and install
-git clone https://github.com/fvnky07/benchmrk
-cd benchmrk
-pnpm install
-
-# 2. Copy environment templates
-cp packages/backend/.env.example packages/backend/.env.local
-cp apps/website/.env.example     apps/website/.env.local
-cp apps/native/.env.example      apps/native/.env.local
-
-# 3. Terminal 1 — provision and run the Convex backend
-#    First run is interactive: creates a free deployment and prints the URLs for your .env files
-cd packages/backend && pnpm run dev
-
-# 4. Terminal 2 — start the web app
-pnpm run dev:web
-
-# 5. Terminal 3 (optional) — start the native app
-cd apps/native && expo start
-```
-
-Open `http://localhost:3000` for the web app. For native, scan the Expo QR code printed by `expo start`.
-
-## Tech Stack
+A modern, fully typed stack chosen for speed of iteration and long-term maintainability.
 
 | Layer | Technology |
-|-------|-----------|
-| Mobile | Expo SDK 54 · React Native 0.81 · Expo Router 6 · NativeWind 4 · Reanimated 4 |
-| Web | Next.js 16 · React 19 · Tailwind CSS 4 · Radix UI |
-| Backend | Convex · Better Auth |
-| Tooling | Turborepo · pnpm · Biome · TypeScript 5.9 |
+|------|-----------|
+| 📱 Mobile | Expo SDK 54 · React Native · Expo Router · NativeWind · Reanimated |
+| 🌐 Web | Next.js 16 · React 19 · Tailwind CSS 4 · Radix UI |
+| 🛰️ Backend | Convex (real-time DB + serverless functions) · Better Auth |
+| 🧰 Tooling | Turborepo · pnpm · Biome · TypeScript |
 
-## Repo Layout
+## Try it
 
-```
-benchmrk/
-├── apps/
-│   ├── native/          # Expo — iOS, Android, web
-│   └── website/         # Next.js landing + web app
-├── packages/
-│   ├── backend/         # Convex schema, queries, mutations, auth
-│   ├── ui/              # Shared React component primitives
-│   └── typescript-config/
-└── .github/
-```
+The fastest way to use benchmrk is to install the app — public beta links land here once they're live.
 
-## Scripts
-
-| Command | What it does |
-|---------|-------------|
-| `pnpm run dev` | Start all apps in parallel |
-| `pnpm run dev:web` | Website only |
-| `pnpm run build` | Build all packages |
-| `pnpm run build:web` | Build website |
-| `pnpm run build:ios` | Build iOS app |
-| `pnpm run build:android` | Build Android app |
-| `pnpm run lint` | Lint with Biome |
-| `pnpm run format` | Auto-fix formatting |
-| `pnpm run check-types` | Type-check all packages |
-
-## Architecture
-
-**Monorepo.** Turborepo orchestrates parallel builds and caching across pnpm workspaces. Each app and package has its own `package.json` and can be filtered independently with `--filter=<name>`.
-
-**Auth.** Better Auth via `@convex-dev/better-auth`. Email/password today; OAuth providers, 2FA, and password reset are planned.
-
-**Data.** Convex provides reactive real-time queries and mutations. Components subscribe via `useQuery` and write via `useMutation`; updates propagate automatically without polling.
-
-**Styling.** Web uses Tailwind CSS 4 (`@tailwindcss/postcss`). Native uses NativeWind 4, which compiles Tailwind class names to React Native styles at build time.
+In the meantime, you can run the full stack locally in three commands. Setup, environment variables, and platform-specific notes live in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
 
 ## Roadmap
 
-- [x] Workout creation + exercise catalog
-- [x] Active workout session tracking (sets / reps / weights)
+- [x] Workout creation and exercise catalog
+- [x] Active session tracking — sets, reps, weights, duration
 - [x] Social workout feed
-- [ ] Premium subscription tier (RevenueCat + Stripe)
-- [ ] Health-data integrations (Apple Health, Strava)
-- [ ] Auth: forgot password, 2FA, OAuth providers
+- [x] Real-time multi-device sync
+- [ ] Apple Health & Google Fit integration
+- [ ] Strava cross-posting
+- [ ] OAuth providers, 2FA, password reset
+- [ ] Wearable companion (Apple Watch / Wear OS)
+- [ ] Optional managed hosting tier (Stripe + RevenueCat)
+
+Have an idea? [Open a discussion](https://github.com/fvnky07/benchmrk/discussions).
 
 ## Contributing
 
-PRs are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup instructions, branch conventions, commit format, and code style. Use [Discussions](https://github.com/fvnky07/benchmrk/discussions) for design questions and ideas, and [Issues](https://github.com/fvnky07/benchmrk/issues) for confirmed bugs.
+PRs, bug reports, and feature ideas are all welcome. If it's your first time here, start with **[CONTRIBUTING.md](./CONTRIBUTING.md)** — it covers local setup, the repo layout, scripts, architecture, branch and commit conventions, and the PR process.
 
-## Security
+- 💬 [Discussions](https://github.com/fvnky07/benchmrk/discussions) — design questions, ideas, "how do I…"
+- 🐞 [Issues](https://github.com/fvnky07/benchmrk/issues) — confirmed bugs and concrete requests
+- 🔐 [Security](https://github.com/fvnky07/benchmrk/security/advisories) — vulnerability disclosure (please don't open public issues)
 
-Report vulnerabilities via [GitHub Security Advisories](https://github.com/fvnky07/benchmrk/security/advisories). Do not open public issues for security bugs. See [SECURITY.md](./SECURITY.md) for the full policy.
+## Acknowledgements
+
+benchmrk stands on the shoulders of incredible open-source work:
+
+- [Convex](https://convex.dev) for the reactive database that makes real-time feel free
+- [Expo](https://expo.dev) and the React Native team for cross-platform native that doesn't suck
+- [Next.js](https://nextjs.org) for a web framework that scales from landing page to product
+- [Better Auth](https://better-auth.com) for honest, typed authentication
+- [Turborepo](https://turborepo.dev), [pnpm](https://pnpm.io), [Biome](https://biomejs.dev) for the tooling that keeps the monorepo fast
+- Everyone who has filed an issue, opened a PR, or starred the repo — thank you.
 
 ## License
 
-benchmrk is licensed under the [GNU Affero General Public License v3.0 or later](./LICENSE).
+benchmrk is released under the [GNU Affero General Public License v3.0 or later](./LICENSE).
 
-Self-hosting is free. If you operate a modified version as a network service you must publish your modifications under the same license.
+You're free to use, study, modify, and self-host benchmrk. If you run a modified version as a network service, you must make your modifications available under the same license. Read the [LICENSE](./LICENSE) for the full terms.
 
 ---
 
 <div align="center">
-  <sub>Built with <a href="https://convex.dev">Convex</a> · <a href="https://expo.dev">Expo</a> · <a href="https://nextjs.org">Next.js</a> · <a href="https://better-auth.com">Better Auth</a></sub>
+  <sub>Built with ♥ for everyone who'd rather own their training data than rent it.</sub>
 </div>

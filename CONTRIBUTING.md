@@ -2,6 +2,8 @@
 
 Thanks for your interest in contributing. benchmrk is an open source fitness tracker and we welcome bug reports, feature ideas, and pull requests.
 
+This document covers everything you need to run benchmrk locally and ship a change. The user-facing pitch lives in [README.md](./README.md).
+
 ## Prerequisites
 
 - Node.js 18 or newer
@@ -40,6 +42,49 @@ pnpm run dev
 pnpm run dev:web                                  # Next.js website
 cd apps/native && pnpm run dev                    # Expo dev server
 ```
+
+Open `http://localhost:3000` for the web app. For native, scan the Expo QR code printed by `expo start`.
+
+## Repo layout
+
+```
+benchmrk/
+├── apps/
+│   ├── native/          # Expo — iOS, Android, web
+│   └── website/         # Next.js landing + web app
+├── packages/
+│   ├── backend/         # Convex schema, queries, mutations, auth
+│   ├── ui/              # Shared React component primitives
+│   └── typescript-config/
+├── assets/              # Brand assets (banner, screenshots)
+└── .github/
+```
+
+## Scripts
+
+| Command | What it does |
+|---------|-------------|
+| `pnpm run dev` | Start all apps in parallel |
+| `pnpm run dev:web` | Website only |
+| `pnpm run build` | Build all packages |
+| `pnpm run build:web` | Build website |
+| `pnpm run build:ios` | Build iOS app |
+| `pnpm run build:android` | Build Android app |
+| `pnpm run lint` | Lint with Biome |
+| `pnpm run format` | Auto-fix formatting |
+| `pnpm run check-types` | Type-check all packages |
+
+Each workspace can be filtered with `--filter=<name>` (e.g. `turbo run check-types --filter=website`).
+
+## Architecture
+
+**Monorepo.** Turborepo orchestrates parallel builds and caching across pnpm workspaces. Each app and package has its own `package.json` and can be filtered independently with `--filter=<name>`.
+
+**Auth.** Better Auth via `@convex-dev/better-auth`. Email/password today; OAuth providers, 2FA, and password reset are planned.
+
+**Data.** Convex provides reactive real-time queries and mutations. Components subscribe via `useQuery` and write via `useMutation`; updates propagate automatically without polling.
+
+**Styling.** Web uses Tailwind CSS 4 (`@tailwindcss/postcss`). Native uses NativeWind 4, which compiles Tailwind class names to React Native styles at build time.
 
 ## Tests
 
