@@ -29,6 +29,30 @@ cp apps/native/.env.example      apps/native/.env.local
 
 The Convex URLs come from running `cd packages/backend && pnpm run dev` for the first time — it provisions a deployment and prints the URLs you need.
 
+## Parallel worktrees
+
+Use one worktree per feature or agent. This command creates an isolated,
+seven-day Convex development deployment for the current worktree, deploys its
+functions once, and writes its ignored web and native Convex client URLs:
+
+```bash
+git worktree add ../worktrees/my-feature -b my-feature
+cd ../worktrees/my-feature
+pnpm install
+pnpm run worktree:setup
+```
+
+The primary checkout must already have a configured
+`packages/backend/.env.local`; the setup command uses only its
+`CONVEX_DEPLOYMENT` to locate the same Convex project. It does not copy secrets.
+Each worktree can then run `pnpm run dev:web` independently; Next.js selects
+the next available localhost port. Do not run `worktree:setup` in the primary
+checkout.
+
+New cloud development deployments receive only project environment-variable
+defaults. Configure required backend secrets such as `BETTER_AUTH_SECRET` in
+the Convex project's development defaults before creating agent worktrees.
+
 ## Running the apps
 
 ```bash
