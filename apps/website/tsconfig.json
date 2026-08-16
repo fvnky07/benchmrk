@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -22,8 +21,8 @@
     "paths": {
       "@/*": ["./*"],
       "@repo/backend/*": ["../../packages/backend/*"],
-      "fumadocs-mdx:collections/server": [".source/index.ts"],
-      "fumadocs-mdx:collections/*": [".source/*"]
+      "fumadocs-mdx:collections/server": ["./.source/server.ts"],
+      "fumadocs-mdx:collections/*": ["./.source/*"]
     }
   },
   "include": [

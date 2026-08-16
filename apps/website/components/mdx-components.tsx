@@ -24,16 +24,31 @@ export function getMDXComponents(
       height,
       src = '',
       ...props
-    }: ComponentPropsWithoutRef<'img'>) => (
-      <Image
-        src={src}
-        alt={alt}
-        className={cn('mb-2 rounded-xl border-2', className)}
-        width={width ? Number(width) : 800}
-        height={height ? Number(height) : 600}
-        {...props}
-      />
-    ),
+    }: ComponentPropsWithoutRef<'img'>) => {
+      if (typeof src !== 'string') {
+        return (
+          <img
+            src={src}
+            alt={alt}
+            className={cn('mb-2 rounded-xl border-2', className)}
+            width={width}
+            height={height}
+            {...props}
+          />
+        );
+      }
+
+      return (
+        <Image
+          src={src}
+          alt={alt}
+          className={cn('mb-2 rounded-xl border-2', className)}
+          width={width ? Number(width) : 800}
+          height={height ? Number(height) : 600}
+          {...props}
+        />
+      );
+    },
     Video: ({ className, ...props }: ComponentPropsWithoutRef<'video'>) => (
       <video
         className={cn('rounded-md border', className)}

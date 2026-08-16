@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowUpRight, Clock, GitFork, Github, Twitter } from 'lucide-react';
+import { SiGithub, SiX } from '@icons-pack/react-simple-icons';
+import { ArrowUpRight, Clock, GitFork } from 'lucide-react';
 import Image from 'next/image';
 
 import { Badge } from '@/components/ui/badge';
@@ -96,7 +97,7 @@ export function AboutContent() {
                 className="flex-1"
                 onClick={() => window.open('https://github.com', '_blank')}
               >
-                <Github className="h-5 w-5" />
+                <SiGithub className="h-5 w-5" />
               </Button>
               <Button
                 variant="outline"
@@ -104,7 +105,7 @@ export function AboutContent() {
                 className="flex-1"
                 onClick={() => window.open('https://twitter.com', '_blank')}
               >
-                <Twitter className="h-5 w-5" />
+                <SiX className="h-5 w-5" />
               </Button>
               <Button
                 variant="outline"

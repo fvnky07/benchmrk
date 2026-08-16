@@ -11,30 +11,20 @@
     "build:android": "turbo run build:android --filter=@native/app",
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev --filter=website",
+    "worktree:setup": "node scripts/setup-worktree.mjs",
     "lint": "biome check .",
     "format": "biome format --write .",
     "check-types": "turbo run check-types",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.14",
+    "@biomejs/biome": "^2.5.8",
     "husky": "^9.1.7",
-    "turbo": "^2.7.5",
-    "typescript": "5.9.2"
+    "turbo": "^2.10.10",
+    "typescript": "7.0.2"
   },
   "packageManager": "pnpm@10.29.3",
   "engines": {
     "node": ">=18"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js",
-      "esbuild",
-      "protobufjs",
-      "sharp"
-    ],
-    "overrides": {
-      "esbuild": "0.27.0"
-    }
   }
 }

@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 
 import Image from 'next/image';
 import type { ComponentType } from 'react';
-import { docs } from '@/.source';
+import { docs } from '@/.source/server';
 import type { MDXComponents } from '@/components/mdx-components';
 import { getMDXComponents } from '@/components/mdx-components';
 import { GridPattern } from '@/components/ui/grid-pattern';

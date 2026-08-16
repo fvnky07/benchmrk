@@ -1,4 +1,5 @@
-import { Host, Switch } from '@expo/ui/swift-ui';
+import { Host, Toggle } from '@expo/ui/swift-ui';
+import { tint } from '@expo/ui/swift-ui/modifiers';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
@@ -74,13 +75,12 @@ export default function IntegrationsScreen() {
               </Text>
             </View>
             <Host matchContents>
-              <Switch
-                value={preferences.appleHealthEnabled}
-                onValueChange={(v) =>
-                  toggle('appleHealthEnabled', v, 'Apple Health')
+              <Toggle
+                isOn={preferences.appleHealthEnabled}
+                onIsOnChange={(isOn) =>
+                  toggle('appleHealthEnabled', isOn, 'Apple Health')
                 }
-                color={iconColor}
-                variant="switch"
+                modifiers={[tint(iconColor)]}
               />
             </Host>
           </View>
@@ -94,11 +94,10 @@ export default function IntegrationsScreen() {
               </Text>
             </View>
             <Host matchContents>
-              <Switch
-                value={preferences.stravaEnabled}
-                onValueChange={(v) => toggle('stravaEnabled', v, 'Strava')}
-                color={iconColor}
-                variant="switch"
+              <Toggle
+                isOn={preferences.stravaEnabled}
+                onIsOnChange={(isOn) => toggle('stravaEnabled', isOn, 'Strava')}
+                modifiers={[tint(iconColor)]}
               />
             </Host>
           </View>

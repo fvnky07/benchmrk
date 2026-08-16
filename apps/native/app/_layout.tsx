@@ -1,6 +1,9 @@
 import '../global.css';
 
-import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
+import {
+  type AuthClient as ConvexAuthClient,
+  ConvexBetterAuthProvider,
+} from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { ConvexReactClient } from 'convex/react';
@@ -27,6 +30,9 @@ const convex = new ConvexReactClient(
   }
 );
 
+// @convex-dev/better-auth supports expoClient at runtime but omits it from
+// ConvexBetterAuthProvider's client union.
+const convexAuthClient = authClient as unknown as ConvexAuthClient;
 const ENABLE_POSTHOG = process.env.EXPO_PUBLIC_ENABLE_POSTHOG !== 'false';
 
 function AppProviders({
@@ -71,7 +77,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+    <ConvexBetterAuthProvider client={convex} authClient={convexAuthClient}>
       <AppProviders>
         <SafeAreaProvider>
           <KeyboardProvider>

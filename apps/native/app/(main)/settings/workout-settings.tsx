@@ -1,4 +1,5 @@
-import { Host, Picker, Switch } from '@expo/ui/swift-ui';
+import { Host, Picker, Text as SwiftText, Toggle } from '@expo/ui/swift-ui';
+import { pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useFocusEffect } from 'expo-router';
@@ -60,11 +61,6 @@ export default function WorkoutSettingsScreen() {
     );
   }
 
-  const restTimerIndex = REST_TIMER_OPTIONS.indexOf(
-    preferences.defaultRestTimer
-  );
-  const weightUnitIndex = WEIGHT_UNITS.indexOf(preferences.weightUnit);
-
   return (
     <ScrollView className="flex-1 bg-black-1">
       {/* Rest Timer */}
@@ -75,15 +71,21 @@ export default function WorkoutSettingsScreen() {
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <Host matchContents>
             <Picker
-              options={REST_TIMER_OPTIONS.map((s) => `${s}s`)}
-              selectedIndex={restTimerIndex}
-              onOptionSelected={({ nativeEvent: { index } }) => {
-                save('defaultRestTimer', REST_TIMER_OPTIONS[index], () =>
-                  analytics.restTimerChanged(REST_TIMER_OPTIONS[index])
+              selection={preferences.defaultRestTimer}
+              onSelectionChange={(seconds) => {
+                if (typeof seconds !== 'number') return;
+                save('defaultRestTimer', seconds, () =>
+                  analytics.restTimerChanged(seconds)
                 );
               }}
-              variant="segmented"
-            />
+              modifiers={[pickerStyle('segmented')]}
+            >
+              {REST_TIMER_OPTIONS.map((seconds) => (
+                <SwiftText key={seconds} modifiers={[tag(seconds)]}>
+                  {`${seconds}s`}
+                </SwiftText>
+              ))}
+            </Picker>
           </Host>
         </View>
       </View>
@@ -96,15 +98,21 @@ export default function WorkoutSettingsScreen() {
         <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
           <Host matchContents>
             <Picker
-              options={WEIGHT_UNITS.map((u) => u.toUpperCase())}
-              selectedIndex={weightUnitIndex}
-              onOptionSelected={({ nativeEvent: { index } }) => {
-                save('weightUnit', WEIGHT_UNITS[index], () =>
-                  analytics.weightUnitChanged(WEIGHT_UNITS[index])
+              selection={preferences.weightUnit}
+              onSelectionChange={(unit) => {
+                if (unit !== 'kg' && unit !== 'lbs') return;
+                save('weightUnit', unit, () =>
+                  analytics.weightUnitChanged(unit)
                 );
               }}
-              variant="segmented"
-            />
+              modifiers={[pickerStyle('segmented')]}
+            >
+              {WEIGHT_UNITS.map((unit) => (
+                <SwiftText key={unit} modifiers={[tag(unit)]}>
+                  {unit.toUpperCase()}
+                </SwiftText>
+              ))}
+            </Picker>
           </Host>
         </View>
       </View>
@@ -123,15 +131,14 @@ export default function WorkoutSettingsScreen() {
               </Text>
             </View>
             <Host matchContents>
-              <Switch
-                value={preferences.autoSaveWorkouts}
-                onValueChange={(v) =>
-                  save('autoSaveWorkouts', v, () =>
-                    analytics.autoSaveToggled(v)
+              <Toggle
+                isOn={preferences.autoSaveWorkouts}
+                onIsOnChange={(isOn) =>
+                  save('autoSaveWorkouts', isOn, () =>
+                    analytics.autoSaveToggled(isOn)
                   )
                 }
-                color={iconColor}
-                variant="switch"
+                modifiers={[tint(iconColor)]}
               />
             </Host>
           </View>
@@ -144,13 +151,12 @@ export default function WorkoutSettingsScreen() {
               </Text>
             </View>
             <Host matchContents>
-              <Switch
-                value={preferences.syncToCloud}
-                onValueChange={(v) =>
-                  save('syncToCloud', v, () => analytics.syncToggled(v))
+              <Toggle
+                isOn={preferences.syncToCloud}
+                onIsOnChange={(isOn) =>
+                  save('syncToCloud', isOn, () => analytics.syncToggled(isOn))
                 }
-                color={iconColor}
-                variant="switch"
+                modifiers={[tint(iconColor)]}
               />
             </Host>
           </View>
