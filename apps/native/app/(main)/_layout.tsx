@@ -3,7 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from '@react-navigation/native';
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
 import { ActiveWorkoutMiniPlayer } from '@/components/workout/ActiveWorkoutMiniPlayer';
@@ -27,29 +27,26 @@ export default function MainLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <NativeTabs>
+      <NativeTabs tintColor={iconColour}>
         <NativeTabs.Trigger name="index">
-          <Icon sf="house.fill" selectedColor={iconColour} />
-          <Label>Home</Label>
+          <NativeTabs.Trigger.Icon sf="house.fill" />
+          <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="explore">
-          <Icon sf="magnifyingglass" selectedColor={iconColour} />
-          <Label>Explore</Label>
+          <NativeTabs.Trigger.Icon sf="magnifyingglass" />
+          <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="workout">
-          <Icon
-            sf="figure.strengthtraining.traditional"
-            selectedColor={iconColour}
-          />
-          <Label>Workout</Label>
+          <NativeTabs.Trigger.Icon sf="figure.strengthtraining.traditional" />
+          <NativeTabs.Trigger.Label>Workout</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="profile">
-          <Icon sf="person.fill" selectedColor={iconColour} />
-          <Label>Profile</Label>
+          <NativeTabs.Trigger.Icon sf="person.fill" />
+          <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="settings">
-          <Icon sf="gearshape.fill" selectedColor={iconColour} />
-          <Label>Settings</Label>
+          <NativeTabs.Trigger.Icon sf="gearshape.fill" />
+          <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       </NativeTabs>
       <ActiveWorkoutMiniPlayer />

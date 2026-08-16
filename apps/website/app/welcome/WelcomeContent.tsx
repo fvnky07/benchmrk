@@ -1,6 +1,7 @@
 // NOTE: Client component for welcome page with Motion animations
 'use client';
 
+import { SiGithub } from '@icons-pack/react-simple-icons';
 import {
   CheckCircle2,
   Clock,
@@ -10,7 +11,6 @@ import {
   Sparkles,
   TrendingUp,
   Trophy,
-  Twitter,
 } from 'lucide-react';
 import { domAnimation, LazyMotion, m } from 'motion/react';
 import Link from 'next/link';
@@ -192,7 +192,7 @@ export default function WelcomeContent() {
                   href="https://github.com/fvnky07/benchmrk"
                   target="_blank"
                 >
-                  <Twitter className="mr-2 h-4 w-4" />
+                  <SiGithub className="mr-2 h-4 w-4" />
                   Star on GitHub
                 </Link>
               </Button>
