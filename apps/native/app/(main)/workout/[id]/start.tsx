@@ -1,25 +1,13 @@
+import { Button, ListItem, Text } from '@expo/ui';
 import { useMutation, useQuery } from 'convex/react';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 
-import { Text } from '@/components/ui/text';
-import { ActiveExerciseCard } from '@/components/workout/ActiveExerciseCard';
+import { NativeActiveExerciseCard } from '@/components/native/native-active-exercise-card';
+import { NativeScreen } from '@/components/native/native-screen';
+import type { NativeSetMetrics } from '@/components/native/native-set-row';
 import { ExercisePicker } from '@/components/workout/ExercisePicker';
-import type { SetMetrics } from '@/components/workout/SetRow';
 import {
   sessionExercisesApi,
   sessionSetsApi,
@@ -35,7 +23,6 @@ export default function StartWorkoutScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const workoutId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
-  const navigation = useNavigation();
 
   const activeSessionId = useActiveSessionStore((s) => s.activeSessionId);
   const sessionStartTimestamp = useActiveSessionStore(
@@ -51,11 +38,11 @@ export default function StartWorkoutScreen() {
 
   const workout = useQuery(
     workoutsApi.getWorkout,
-    workoutId ? { workoutId } : 'skip'
+    activeSessionId || !workoutId ? 'skip' : { workoutId }
   );
   const workoutExercises = useQuery(
     workoutExercisesApi.getWorkoutExercises,
-    workoutId ? { workoutId } : 'skip'
+    activeSessionId || !workoutId ? 'skip' : { workoutId }
   );
 
   const activeSession = useQuery(
@@ -89,10 +76,7 @@ export default function StartWorkoutScreen() {
   // Session init: reconcile Zustand (local) ↔ Convex (server) state.
   // 5 paths: resume match, block conflict, clear stale, create new, wait.
   useEffect(() => {
-    if (hasInitialized.current) return;
-    if (!workoutId) return;
-    if (workout === undefined || workoutExercises === undefined) return;
-    if (!workout) return;
+    if (hasInitialized.current || !workoutId) return;
 
     if (activeSessionId) {
       if (activeSession === undefined) return;
@@ -114,6 +98,14 @@ export default function StartWorkoutScreen() {
 
       // Stale Zustand — Convex returned null
       endSessionStore();
+      router.replace('/(main)/workout');
+      return;
+    }
+
+    if (workout === undefined || workoutExercises === undefined) return;
+    if (!workout) {
+      hasInitialized.current = true;
+      router.replace('/(main)/workout');
       return;
     }
 
@@ -195,7 +187,7 @@ export default function StartWorkoutScreen() {
   );
 
   const handleLogSet = useCallback(
-    async (setId: string, metrics: SetMetrics) => {
+    async (setId: string, metrics: NativeSetMetrics) => {
       await logSetMutation({ setId, ...metrics });
     },
     [logSetMutation]
@@ -219,111 +211,91 @@ export default function StartWorkoutScreen() {
     setPickerOpen(false);
   }, []);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text className="text-2xl text-green-1">⌄</Text>
-        </Pressable>
-      ),
-      headerTitle: () => (
-        <Text className="font-mono text-lg text-white">{formatted}</Text>
-      ),
-      headerRight: () => (
-        <View className="flex-row items-center gap-3">
-          <Pressable onPress={() => setPickerOpen(true)} hitSlop={8}>
-            <Text className="font-semibold text-2xl text-green-1">+</Text>
-          </Pressable>
-          <Pressable onPress={handleComplete} hitSlop={8}>
-            <Text className="font-semibold text-base text-green-1">Done</Text>
-          </Pressable>
-        </View>
-      ),
-    });
-  }, [navigation, formatted, handleComplete, router]);
-
-  if (workout === undefined || workoutExercises === undefined) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black-1">
-        <ActivityIndicator size="large" color="#00ff90" />
-        <Text className="mt-4 text-white/60">Loading workout…</Text>
-      </View>
-    );
-  }
-
   if (!workoutId) {
     return (
-      <View className="flex-1 items-center justify-center bg-black-1 px-6">
-        <Text className="font-semibold text-lg text-white">
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
           Invalid workout
         </Text>
-        <Text className="mt-2 text-center text-white/60">
-          This workout link is invalid.
-        </Text>
-      </View>
+        <Text textStyle={{ fontSize: 17 }}>This workout link is invalid.</Text>
+      </NativeScreen>
     );
   }
 
-  if (!workout) {
-    return (
-      <View className="flex-1 items-center justify-center bg-black-1 px-6">
-        <Text className="font-semibold text-lg text-white">
-          Workout not found
-        </Text>
-        <Text className="mt-2 text-center text-white/60">
-          This saved workout could not be loaded.
-        </Text>
-      </View>
-    );
+  if (activeSessionId) {
+    if (activeSession === undefined || sessionExercises === undefined) {
+      return (
+        <NativeScreen>
+          <Text textStyle={{ fontSize: 17 }}>Starting session…</Text>
+        </NativeScreen>
+      );
+    }
+  } else {
+    if (workout === undefined || workoutExercises === undefined) {
+      return (
+        <NativeScreen>
+          <Text textStyle={{ fontSize: 17 }}>Loading workout…</Text>
+        </NativeScreen>
+      );
+    }
+
+    if (!workout) {
+      return (
+        <NativeScreen>
+          <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
+            Workout not found
+          </Text>
+          <Text textStyle={{ fontSize: 17 }}>
+            This saved workout could not be loaded.
+          </Text>
+        </NativeScreen>
+      );
+    }
   }
 
   if (!activeSessionId || sessionExercises === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black-1">
-        <ActivityIndicator size="large" color="#00ff90" />
-        <Text className="mt-4 text-white/60">Starting session…</Text>
-      </View>
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 17 }}>Starting session…</Text>
+      </NativeScreen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-black-1" edges={['bottom']}>
-      <ScrollView className="flex-1 px-4 py-4">
-        {sessionExercises.length === 0 ? (
-          <View className="mt-8 rounded-2xl border border-dashed border-white/15 bg-black-3 px-4 py-8">
-            <Text className="text-center font-semibold text-lg text-white">
-              No exercises yet
-            </Text>
-            <Text className="mt-2 text-center text-white/60">
-              Tap + to add your first exercise
-            </Text>
-          </View>
-        ) : (
-          <View className="pb-6">
-            {sessionExercises.map((exercise) => (
-              <ActiveExerciseCard
-                key={exercise._id}
-                sessionExercise={exercise}
-                sets={(sessionSets ?? []).filter(
-                  (s) => s.sessionExerciseId === exercise._id
-                )}
-                weightUnit="kg"
-                onAddSet={() => handleAddSet(exercise._id)}
-                onLogSet={(setId, metrics) => handleLogSet(setId, metrics)}
-                onDeleteSet={(setId) => handleDeleteSet(setId)}
-                onRemoveExercise={() => handleRemoveExercise(exercise._id)}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
-
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>{formatted}</Text>
+      <Button label="Add exercise" onPress={() => setPickerOpen(true)} />
+      <Button
+        label="Finish workout"
+        variant="outlined"
+        onPress={handleComplete}
+      />
+      {sessionExercises.length === 0 ? (
+        <ListItem supportingText="Add an exercise to start tracking your workout.">
+          No exercises yet
+        </ListItem>
+      ) : (
+        sessionExercises.map((exercise) => (
+          <NativeActiveExerciseCard
+            key={exercise._id}
+            sessionExercise={exercise}
+            sets={(sessionSets ?? []).filter(
+              (set) => set.sessionExerciseId === exercise._id
+            )}
+            weightUnit="kg"
+            onAddSet={() => handleAddSet(exercise._id)}
+            onLogSet={handleLogSet}
+            onDeleteSet={handleDeleteSet}
+            onRemoveExercise={() => handleRemoveExercise(exercise._id)}
+          />
+        ))
+      )}
       <ExercisePicker
         sessionId={activeSessionId}
         isOpen={isPickerOpen}
         onClose={() => setPickerOpen(false)}
         onExerciseAdded={handleExerciseAdded}
       />
-    </SafeAreaView>
+    </NativeScreen>
   );
 }

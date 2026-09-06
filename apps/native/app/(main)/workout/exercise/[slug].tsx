@@ -1,18 +1,16 @@
+import { Button, ListItem, Text } from '@expo/ui';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
-import { commentsApi, exercisesApi, showToast } from '@/lib';
+import { NativeScreen } from '@/components/native/native-screen';
+import { NativeTextField } from '@/components/native/native-text-field';
+import { commentsApi, exercisesApi } from '@/lib';
 
 export default function ExerciseDetailScreen() {
   const params = useLocalSearchParams<{ slug: string }>();
   const [commentBody, setCommentBody] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const exercise = useQuery(
     exercisesApi.getExerciseBySlug,
     params.slug ? { slug: params.slug } : 'skip'
@@ -24,133 +22,89 @@ export default function ExerciseDetailScreen() {
   const addComment = useMutation(commentsApi.addComment);
 
   const handleAddComment = async () => {
-    if (!exercise) {
+    if (!exercise || commentBody.trim().length === 0) {
       return;
     }
 
     try {
-      await addComment({
-        exerciseId: exercise._id,
-        body: commentBody,
-      });
+      setErrorMessage(null);
+      await addComment({ exerciseId: exercise._id, body: commentBody.trim() });
       setCommentBody('');
-      showToast.success('Comment added', 'Your note has been posted.');
     } catch (error) {
-      showToast.error(
-        'Unable to add comment',
-        error instanceof Error ? error.message : 'Please try again.'
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Unable to add comment.'
       );
     }
   };
 
   if (exercise === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black-1">
-        <ActivityIndicator size="large" color="#00ff90" />
-        <Text className="mt-4 text-white/60">Loading exercise…</Text>
-      </View>
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 17 }}>Loading exercise…</Text>
+      </NativeScreen>
     );
   }
 
   if (exercise === null) {
     return (
-      <View className="flex-1 items-center justify-center bg-black-1 px-6">
-        <Text className="font-semibold text-lg text-white">
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
           Exercise not found
         </Text>
-        <Text className="mt-2 text-center text-white/60">
+        <Text textStyle={{ fontSize: 17 }}>
           This exercise could not be loaded.
         </Text>
-      </View>
+      </NativeScreen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-black-1" edges={['bottom']}>
-      <ScrollView className="flex-1 px-4 py-4">
-        <View className="mb-6 gap-4 rounded-3xl bg-black-3 px-4 py-5">
-          <View className="flex-row gap-4">
-            <Avatar className="size-20 rounded-3xl" alt={exercise.name}>
-              {exercise.imageUrl ? (
-                <AvatarImage source={{ uri: exercise.imageUrl }} />
-              ) : null}
-              <AvatarFallback className="rounded-3xl bg-green-1/20">
-                <Text className="font-semibold text-2xl text-green-1">
-                  {exercise.name.slice(0, 1)}
-                </Text>
-              </AvatarFallback>
-            </Avatar>
-
-            <View className="flex-1 gap-2">
-              <Text className="font-semibold text-2xl text-white">
-                {exercise.name}
-              </Text>
-              {exercise.category ? (
-                <Text className="text-green-1 text-sm">
-                  {exercise.category}
-                </Text>
-              ) : null}
-              <Text className="text-white/60">{exercise.description}</Text>
-            </View>
-          </View>
-
-          {exercise.instructions ? (
-            <View className="gap-2">
-              <Text className="font-semibold text-lg text-white">
-                Instructions
-              </Text>
-              <Text className="text-white/70">{exercise.instructions}</Text>
-            </View>
-          ) : null}
-
-          {exercise.muscleGroups?.length ? (
-            <View className="gap-2">
-              <Text className="font-semibold text-lg text-white">
-                Muscles worked
-              </Text>
-              <Text className="text-white/70">
-                {exercise.muscleGroups.join(' • ')}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        <View className="mb-4 gap-3 rounded-3xl bg-black-3 px-4 py-5">
-          <Text className="font-semibold text-lg text-white">Comments</Text>
-          <Input
-            value={commentBody}
-            onChangeText={setCommentBody}
-            placeholder="Leave a note about this exercise"
-            placeholderTextColor="#777"
-            className="h-12 border-white/10 bg-black-2 text-white"
-          />
-          <Button className="bg-green-1" onPress={handleAddComment}>
-            <Text>Add comment</Text>
-          </Button>
-        </View>
-
-        <View className="gap-3 pb-6">
-          {(comments ?? []).length === 0 ? (
-            <View className="rounded-2xl border border-white/15 border-dashed bg-black-3 px-4 py-5">
-              <Text className="text-white/60">
-                No comments yet. Be the first to add one.
-              </Text>
-            </View>
-          ) : (
-            (comments ?? []).map((comment) => (
-              <View
-                key={comment._id}
-                className="rounded-2xl border border-white/10 bg-black-3 px-4 py-4"
-              >
-                <Text className="font-semibold text-white">
-                  {comment.userId}
-                </Text>
-                <Text className="mt-2 text-white/70">{comment.body}</Text>
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
+        {exercise.name}
+      </Text>
+      {exercise.category ? (
+        <ListItem supportingText={exercise.category}>Category</ListItem>
+      ) : null}
+      <Text textStyle={{ fontSize: 17 }}>{exercise.description}</Text>
+      {exercise.instructions ? (
+        <ListItem supportingText={exercise.instructions}>Instructions</ListItem>
+      ) : null}
+      {exercise.muscleGroups?.length ? (
+        <ListItem supportingText={exercise.muscleGroups.join(' · ')}>
+          Muscles worked
+        </ListItem>
+      ) : null}
+      <NativeTextField
+        label="Comment"
+        multiline
+        numberOfLines={3}
+        onChangeText={setCommentBody}
+        placeholder="Leave a note about this exercise"
+        value={commentBody}
+      />
+      <Button
+        disabled={commentBody.trim().length === 0}
+        label="Add comment"
+        onPress={handleAddComment}
+      />
+      {errorMessage ? (
+        <ListItem supportingText={errorMessage}>Could not add comment</ListItem>
+      ) : null}
+      <ListItem>Comments</ListItem>
+      {comments === undefined ? (
+        <ListItem supportingText="Loading comments…">Comments</ListItem>
+      ) : comments.length === 0 ? (
+        <ListItem supportingText="Be the first to add one.">
+          No comments yet
+        </ListItem>
+      ) : (
+        comments.map((comment) => (
+          <ListItem key={comment._id} supportingText={comment.body}>
+            {comment.userId}
+          </ListItem>
+        ))
+      )}
+    </NativeScreen>
   );
 }

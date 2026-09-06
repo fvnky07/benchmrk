@@ -1,23 +1,17 @@
-import { Host, Picker, Text as SwiftText, Toggle } from '@expo/ui/swift-ui';
-import { pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers';
+import { ListItem, Picker, Switch, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
 
-import { Text } from '@/components/ui/text';
+import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
-import { showToast } from '@/lib/ui';
-
-const REST_TIMER_OPTIONS = [30, 60, 90, 120];
-const WEIGHT_UNITS = ['kg', 'lbs'] as const;
-const iconColor = '#00ff90';
 
 export default function WorkoutSettingsScreen() {
   const preferences = useQuery(api.userPreferences.getPreferences);
   const updatePreferences = useMutation(api.userPreferences.updatePreferences);
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -28,15 +22,19 @@ export default function WorkoutSettingsScreen() {
   const save = async (
     key: string,
     value: number | boolean | string,
-    trackFn: () => void
+    track: () => void
   ) => {
-    if (isSaving) return;
+    if (isSaving) {
+      return;
+    }
+
     try {
       setIsSaving(true);
+      setErrorMessage(null);
       await updatePreferences({ [key]: value });
-      trackFn();
+      track();
     } catch {
-      showToast.error('Failed', 'Could not save preference');
+      setErrorMessage('Could not save this workout preference. Try again.');
     } finally {
       setIsSaving(false);
     }
@@ -44,124 +42,88 @@ export default function WorkoutSettingsScreen() {
 
   if (preferences === undefined) {
     return (
-      <View className="flex-1 items-center justify-center bg-black-1">
-        <ActivityIndicator size="large" color={iconColor} />
-        <Text className="mt-4 text-gray-400">Loading workout settings…</Text>
-      </View>
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 17 }}>Loading workout settings…</Text>
+      </NativeScreen>
     );
   }
 
   if (preferences === null) {
     return (
-      <View className="flex-1 items-center justify-center bg-black-1">
-        <Text className="text-gray-400">
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 17 }}>
           Sign in to manage workout settings.
         </Text>
-      </View>
+      </NativeScreen>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-black-1">
-      {/* Rest Timer */}
-      <View className="mt-6">
-        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
-          DEFAULT REST TIMER
-        </Text>
-        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <Host matchContents>
-            <Picker
-              selection={preferences.defaultRestTimer}
-              onSelectionChange={(seconds) => {
-                if (typeof seconds !== 'number') return;
-                save('defaultRestTimer', seconds, () =>
-                  analytics.restTimerChanged(seconds)
-                );
-              }}
-              modifiers={[pickerStyle('segmented')]}
-            >
-              {REST_TIMER_OPTIONS.map((seconds) => (
-                <SwiftText key={seconds} modifiers={[tag(seconds)]}>
-                  {`${seconds}s`}
-                </SwiftText>
-              ))}
-            </Picker>
-          </Host>
-        </View>
-      </View>
-
-      {/* Weight Unit */}
-      <View className="mt-6">
-        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
-          WEIGHT UNIT
-        </Text>
-        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <Host matchContents>
-            <Picker
-              selection={preferences.weightUnit}
-              onSelectionChange={(unit) => {
-                if (unit !== 'kg' && unit !== 'lbs') return;
-                save('weightUnit', unit, () =>
-                  analytics.weightUnitChanged(unit)
-                );
-              }}
-              modifiers={[pickerStyle('segmented')]}
-            >
-              {WEIGHT_UNITS.map((unit) => (
-                <SwiftText key={unit} modifiers={[tag(unit)]}>
-                  {unit.toUpperCase()}
-                </SwiftText>
-              ))}
-            </Picker>
-          </Host>
-        </View>
-      </View>
-
-      {/* Tracking */}
-      <View className="mt-6 pb-8">
-        <Text className="px-4 pb-2 font-semibold text-white/60 text-xs">
-          TRACKING
-        </Text>
-        <View className="mx-4 overflow-hidden rounded-xl bg-[#1C1C1E]">
-          <View className="h-16 flex-row items-center border-gray-800 border-b px-4">
-            <View className="flex-1">
-              <Text className="text-base text-white">Auto-save Workouts</Text>
-              <Text className="text-gray-500 text-xs">
-                Save automatically after completion
-              </Text>
-            </View>
-            <Host matchContents>
-              <Toggle
-                isOn={preferences.autoSaveWorkouts}
-                onIsOnChange={(isOn) =>
-                  save('autoSaveWorkouts', isOn, () =>
-                    analytics.autoSaveToggled(isOn)
-                  )
-                }
-                modifiers={[tint(iconColor)]}
-              />
-            </Host>
-          </View>
-
-          <View className="h-16 flex-row items-center px-4">
-            <View className="flex-1">
-              <Text className="text-base text-white">Sync to Cloud</Text>
-              <Text className="text-gray-500 text-xs">
-                Backup workouts to your account
-              </Text>
-            </View>
-            <Host matchContents>
-              <Toggle
-                isOn={preferences.syncToCloud}
-                onIsOnChange={(isOn) =>
-                  save('syncToCloud', isOn, () => analytics.syncToggled(isOn))
-                }
-                modifiers={[tint(iconColor)]}
-              />
-            </Host>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
+        Workout settings
+      </Text>
+      <ListItem supportingText="Applied when starting a rest timer.">
+        Default rest timer
+      </ListItem>
+      <Picker
+        enabled={!isSaving}
+        selectedValue={preferences.defaultRestTimer}
+        onValueChange={(value) => {
+          if (typeof value === 'number') {
+            save('defaultRestTimer', value, () =>
+              analytics.restTimerChanged(value)
+            );
+          }
+        }}
+      >
+        {[30, 60, 90, 120].map((seconds) => (
+          <Picker.Item
+            key={seconds}
+            label={`${seconds} seconds`}
+            value={seconds}
+          />
+        ))}
+      </Picker>
+      <ListItem supportingText="Used for weights throughout the app.">
+        Weight unit
+      </ListItem>
+      <Picker
+        enabled={!isSaving}
+        selectedValue={preferences.weightUnit}
+        onValueChange={(value) => {
+          if (value === 'kg' || value === 'lbs') {
+            save('weightUnit', value, () => analytics.weightUnitChanged(value));
+          }
+        }}
+      >
+        <Picker.Item label="Kilograms (kg)" value="kg" />
+        <Picker.Item label="Pounds (lbs)" value="lbs" />
+      </Picker>
+      <Switch
+        disabled={isSaving}
+        label="Auto-save workouts"
+        value={preferences.autoSaveWorkouts}
+        onValueChange={(value) =>
+          save('autoSaveWorkouts', value, () =>
+            analytics.autoSaveToggled(value)
+          )
+        }
+      />
+      <Switch
+        disabled={isSaving}
+        label="Sync to cloud"
+        value={preferences.syncToCloud}
+        onValueChange={(value) =>
+          save('syncToCloud', value, () => analytics.syncToggled(value))
+        }
+      />
+      {isSaving ? (
+        <ListItem supportingText="Saving workout preference…">Saving</ListItem>
+      ) : null}
+      {errorMessage ? (
+        <ListItem supportingText={errorMessage}>Could not save</ListItem>
+      ) : null}
+    </NativeScreen>
   );
 }

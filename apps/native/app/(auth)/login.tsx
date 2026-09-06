@@ -1,18 +1,13 @@
-import { Feather } from '@expo/vector-icons';
+import { Button, ListItem, Text } from '@expo/ui';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
+import { NativeScreen } from '@/components/native/native-screen';
+import { NativeTextField } from '@/components/native/native-text-field';
 import {
   analytics,
   authClient,
   loginSchema,
-  showToast,
   useAuthStore,
   useFormValidation,
 } from '@/lib';
@@ -23,6 +18,7 @@ export default function LoginScreen() {
   const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: loginSchema,
@@ -30,28 +26,32 @@ export default function LoginScreen() {
   });
 
   const onSubmit = () => {
+    setErrorMessage(null);
+
     handleSubmit({ email, password }, async () => {
       try {
         setIsLoading(true);
 
-        const result = await authClient.signIn.email({
+        const { data, error } = await authClient.signIn.email({
           email,
           password,
         });
-
-        // Successfully logged in, navigate to main app index
-        if (result.data) {
-          analytics.loginSuccess();
-          setTimeout(() => {
-            router.replace('/(main)');
-          }, 100);
+        if (error) {
+          throw new Error(error.message ?? 'Unable to sign in');
         }
+        if (!data) {
+          throw new Error('Sign in did not complete');
+        }
+
+        analytics.loginSuccess();
+        setTimeout(() => {
+          router.replace('/(main)');
+        }, 100);
       } catch (error) {
-        const errorMessage =
+        const message =
           error instanceof Error ? error.message : 'Invalid credentials';
-        analytics.loginFailed(errorMessage);
-        showToast.error('Login failed', errorMessage);
-        // Clear password on error
+        analytics.loginFailed(message);
+        setErrorMessage(message);
         setPassword('');
       } finally {
         setIsLoading(false);
@@ -60,78 +60,54 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
-      <KeyboardAwareScrollView
-        className="flex-1 px-6"
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
-      >
-        <View className="flex w-full items-start justify-center gap-1">
-          <View className="mb-6 flex w-full flex-row items-center justify-center gap-2">
-            <Text className="text-4xl">Welcome Back!</Text>
-          </View>
-          <Input
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (hasSubmitted) clearError('email');
-            }}
-            placeholder="Email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            autoCorrect={false}
-            style={{ backgroundColor: '#202020' }}
-            className="h-12"
-            aria-invalid={!!errors.email}
-          />
-          <Input
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (hasSubmitted) clearError('password');
-            }}
-            placeholder="Password"
-            autoCapitalize="none"
-            secureTextEntry={true}
-            autoComplete="password"
-            autoCorrect={false}
-            style={{ backgroundColor: '#202020' }}
-            className="h-12"
-            aria-invalid={!!errors.password}
-          />
-          <Pressable
-            onPress={() => {
-              router.push('/forgot-password');
-            }}
-          >
-            <Text className="mt-1 pl-2 text-blue-400">Forgot Password?</Text>
-          </Pressable>
-        </View>
-
-        <View className="flex-1" />
-
-        <View className="mb-6 flex w-full items-center justify-center">
-          <Button className="w-full" onPress={onSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="black" />
-            ) : (
-              <>
-                <Text>Continue with email</Text>
-                <Feather name="arrow-right" size={24} color="black" />
-              </>
-            )}
-          </Button>
-          <Pressable
-            onPress={() => {
-              router.replace('/register');
-            }}
-          >
-            <Text className="mt-4 pl-2 text-blue-400">
-              Dont have an account?
-            </Text>
-          </Pressable>
-        </View>
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>Welcome back</Text>
+      <NativeTextField
+        autoCapitalize="none"
+        autoComplete="email"
+        autoCorrect={false}
+        error={errors.email}
+        keyboardType="email-address"
+        label="Email"
+        onChangeText={(value) => {
+          setEmail(value);
+          if (hasSubmitted) clearError('email');
+        }}
+        placeholder="you@example.com"
+        value={email}
+      />
+      <NativeTextField
+        autoCapitalize="none"
+        autoComplete="password"
+        autoCorrect={false}
+        error={errors.password}
+        label="Password"
+        onChangeText={(value) => {
+          setPassword(value);
+          if (hasSubmitted) clearError('password');
+        }}
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+      />
+      <Button
+        label="Forgot password?"
+        variant="text"
+        onPress={() => router.push('/forgot-password')}
+      />
+      {errorMessage ? (
+        <ListItem supportingText={errorMessage}>Log in failed</ListItem>
+      ) : null}
+      <Button
+        disabled={isLoading}
+        label={isLoading ? 'Logging in…' : 'Continue with email'}
+        onPress={onSubmit}
+      />
+      <Button
+        label="Create an account"
+        variant="outlined"
+        onPress={() => router.replace('/register')}
+      />
+    </NativeScreen>
   );
 }
