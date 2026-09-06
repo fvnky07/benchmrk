@@ -32,7 +32,7 @@ The Convex URLs come from running `cd packages/backend && pnpm run dev` for the 
 ## Parallel worktrees
 
 Use one worktree per feature or agent. This command creates an isolated,
-seven-day Convex development deployment for the current worktree, deploys its
+five-day Convex development deployment for the current worktree, deploys its
 functions once, and writes its ignored web and native Convex client URLs:
 
 ```bash
