@@ -1,6 +1,10 @@
 import { Button, ListItem } from '@expo/ui';
 import { useState } from 'react';
 
+import {
+  distanceKilometersToMeters,
+  distanceMetersToKilometers,
+} from '@/lib/workout/distance';
 import { NativeTextField } from './native-text-field';
 
 export type NativeSetMetrics = {
@@ -41,7 +45,9 @@ export function NativeSetRow({
     durationSeconds?.toString() ?? ''
   );
   const [localDistance, setLocalDistance] = useState(
-    distanceMeters?.toString() ?? ''
+    distanceMeters === undefined
+      ? ''
+      : String(distanceMetersToKilometers(distanceMeters))
   );
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
@@ -50,7 +56,11 @@ export function NativeSetRow({
     if (localReps) metrics.reps = Number(localReps);
     if (localWeight) metrics.weightKg = Number(localWeight);
     if (localDuration) metrics.durationSeconds = Number(localDuration);
-    if (localDistance) metrics.distanceMeters = Number(localDistance);
+    if (localDistance) {
+      metrics.distanceMeters = distanceKilometersToMeters(
+        Number(localDistance)
+      );
+    }
     onLog(metrics);
   };
 

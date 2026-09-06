@@ -1,6 +1,7 @@
 import { Button, ListItem, Text } from '@expo/ui';
 import { useQuery } from 'convex/react';
 import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
@@ -119,7 +120,7 @@ function NativeScreenSection({
   children,
   title,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
   title: string;
 }>) {
   return (

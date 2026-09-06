@@ -16,12 +16,14 @@ import {
   useWorkoutTimer,
   workoutSessionsApi,
 } from '@/lib';
+import { useAppearance } from '@/lib/ui';
 
 const TAB_BAR_HEIGHT = Platform.select({ android: 80, default: 49 });
 
 export function ActiveWorkoutMiniPlayer() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { navigationTheme } = useAppearance();
   const activeSessionId = useActiveSessionStore(
     (state) => state.activeSessionId
   );
@@ -74,14 +76,34 @@ export function ActiveWorkoutMiniPlayer() {
           { bottom: TAB_BAR_HEIGHT + insets.bottom + 8 },
         ]}
       >
-        <View style={styles.card}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: navigationTheme.colors.card,
+              borderColor: navigationTheme.colors.border,
+            },
+          ]}
+        >
           <View style={styles.details}>
-            <View style={styles.indicator} />
-            <Text numberOfLines={1} style={styles.name}>
+            <View
+              style={[
+                styles.indicator,
+                { backgroundColor: navigationTheme.colors.primary },
+              ]}
+            />
+            <Text
+              numberOfLines={1}
+              style={[styles.name, { color: navigationTheme.colors.text }]}
+            >
               {sessionName}
             </Text>
           </View>
-          <Text style={styles.duration}>{formatted}</Text>
+          <Text
+            style={[styles.duration, { color: navigationTheme.colors.primary }]}
+          >
+            {formatted}
+          </Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Discard active workout"
@@ -91,7 +113,11 @@ export function ActiveWorkoutMiniPlayer() {
               handleCancel();
             }}
           >
-            <Text style={styles.close}>×</Text>
+            <Text
+              style={[styles.close, { color: navigationTheme.colors.text }]}
+            >
+              ×
+            </Text>
           </Pressable>
         </View>
       </Pressable>
@@ -107,8 +133,6 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: 'center',
-    backgroundColor: '#202124',
-    borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
@@ -116,7 +140,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   close: {
-    color: '#a7aaad',
     fontSize: 24,
     lineHeight: 24,
   },
@@ -127,19 +150,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   duration: {
-    color: '#b8f397',
     fontSize: 15,
     fontVariant: ['tabular-nums'],
     marginHorizontal: 12,
   },
   indicator: {
-    backgroundColor: '#b8f397',
     borderRadius: 4,
     height: 8,
     width: 8,
   },
   name: {
-    color: '#f5f5f5',
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
