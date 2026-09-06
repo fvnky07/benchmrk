@@ -42,7 +42,7 @@ function AppProviders({
   }
 
   return (
-    <PostHogProvider client={posthog} autocapture={{ captureScreens: false }}>
+    <PostHogProvider client={posthog} autocapture={false}>
       {children}
     </PostHogProvider>
   );
