@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import type { SessionExercise, SessionSet } from '@/lib/convex/session-api';
 
-import { NativeSetRow, type NativeSetMetrics } from './native-set-row';
+import { type NativeSetMetrics, NativeSetRow } from './native-set-row';
 
 type NativeActiveExerciseCardProps = {
   onAddSet: () => void;
