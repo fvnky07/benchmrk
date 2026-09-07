@@ -12,7 +12,7 @@
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev --filter=website",
     "worktree:setup": "node scripts/setup-worktree.mjs",
-    "lint": "biome check .",
+    "lint": "biome check . --max-diagnostics=none",
     "format": "biome format --write .",
     "check-types": "turbo run check-types",
     "prepare": "husky"
