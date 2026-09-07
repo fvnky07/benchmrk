@@ -1,32 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
-import { useColorScheme, View } from 'react-native';
 
-// TODO: Re-enable interactive theme toggle once theme persistence
-// (userPreferences) is implemented. Renders a static indicator only.
-function ThemeIndicator() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  return (
-    <View style={{ marginRight: 16 }}>
-      <Ionicons
-        name={isDark ? 'sunny-outline' : 'moon-outline'}
-        size={24}
-        color="#00ff90"
-      />
-    </View>
-  );
-}
+import { useAppearance } from '@/lib/ui';
 
 export default function AuthLayout() {
+  const { navigationTheme } = useAppearance();
+
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: '#1f1f1f' },
-        headerTitleStyle: { color: 'white' },
-        headerRight: () => <ThemeIndicator />,
+        headerBackButtonDisplayMode: 'minimal',
+        headerStyle: { backgroundColor: navigationTheme.colors.card },
+        headerTintColor: navigationTheme.colors.primary,
+        headerTitleStyle: { color: navigationTheme.colors.text },
       }}
     >
       <Stack.Screen

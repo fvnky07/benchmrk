@@ -1,12 +1,8 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from '@react-navigation/native';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
 
 import { ActiveWorkoutMiniPlayer } from '@/components/workout/ActiveWorkoutMiniPlayer';
+import { useAppearance } from '@/lib/ui';
+import { useNavigationChrome } from '@/lib/ui/navigation-chrome';
 
 /**
  * Main app layout with native tabs navigation
@@ -22,34 +18,46 @@ import { ActiveWorkoutMiniPlayer } from '@/components/workout/ActiveWorkoutMiniP
  * Material Design icons support is available in SDK 55+.
  */
 export default function MainLayout() {
-  const colorScheme = useColorScheme();
-  const iconColour = '#00ff90';
+  const { resolvedAppearance } = useAppearance();
+  const navigationChrome = useNavigationChrome(resolvedAppearance);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <NativeTabs tintColor={iconColour}>
+    <>
+      <NativeTabs {...navigationChrome}>
         <NativeTabs.Trigger name="index">
-          <NativeTabs.Trigger.Icon sf="house.fill" />
+          <NativeTabs.Trigger.Icon
+            sf={{ default: 'house', selected: 'house.fill' }}
+            md={{ default: 'home', selected: 'home_filled' }}
+          />
           <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="explore">
-          <NativeTabs.Trigger.Icon sf="magnifyingglass" />
+          <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
           <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="workout">
-          <NativeTabs.Trigger.Icon sf="figure.strengthtraining.traditional" />
+          <NativeTabs.Trigger.Icon
+            sf="figure.strengthtraining.traditional"
+            md="fitness_center"
+          />
           <NativeTabs.Trigger.Label>Workout</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="profile">
-          <NativeTabs.Trigger.Icon sf="person.fill" />
+          <NativeTabs.Trigger.Icon
+            sf={{ default: 'person', selected: 'person.fill' }}
+            md={{ default: 'person', selected: 'person' }}
+          />
           <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="settings">
-          <NativeTabs.Trigger.Icon sf="gearshape.fill" />
+          <NativeTabs.Trigger.Icon
+            sf={{ default: 'gearshape', selected: 'gearshape.fill' }}
+            md={{ default: 'settings', selected: 'settings' }}
+          />
           <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       </NativeTabs>
       <ActiveWorkoutMiniPlayer />
-    </ThemeProvider>
+    </>
   );
 }

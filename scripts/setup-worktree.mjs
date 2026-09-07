@@ -95,6 +95,7 @@ if (!primaryDeployment) {
 }
 
 const deployment = `dev/${owner}/${worktreeName}`;
+const deploymentExpiration = 'in 5 days';
 const convexEnvironment = {
   ...process.env,
   CONVEX_DEPLOYMENT: primaryDeployment,
@@ -131,7 +132,7 @@ try {
       'dev',
       '--select',
       '--expiration',
-      'in 7 days',
+      deploymentExpiration,
     ],
     { env: convexEnvironment }
   );

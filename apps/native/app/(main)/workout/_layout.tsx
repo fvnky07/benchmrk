@@ -1,21 +1,25 @@
 import { Stack } from 'expo-router';
 
+import { useAppearance } from '@/lib/ui';
+
 export const unstable_settings = {
   initialRouteName: 'index',
 };
 
 export default function WorkoutLayout() {
+  const { navigationTheme } = useAppearance();
+
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: '#151515' },
+        headerStyle: { backgroundColor: navigationTheme.colors.card },
         headerTitleStyle: {
-          color: '#fff',
+          color: navigationTheme.colors.text,
           fontWeight: '700',
           fontSize: 22,
         },
-        headerTintColor: '#00ff90',
+        headerTintColor: navigationTheme.colors.primary,
         headerBackButtonDisplayMode: 'minimal',
       }}
     >

@@ -1,22 +1,11 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { Text } from '@/components/ui/text';
-
-/**
- * SplashScreen component shown while determining auth state
- *
- * NOTE: Simple implementation for now
- * TODO: Consider adding:
- * - Animated logo
- * - Brand colors
- * - Fade transitions
- */
 export function SplashScreen() {
   return (
-    <View style={styles.container} className="bg-background">
+    <View style={styles.container}>
       <View style={styles.content}>
-        <ActivityIndicator size="large" className="text-primary" />
-        <Text className="mt-4 text-muted-foreground">Loading...</Text>
+        <ActivityIndicator size="large" />
+        <Text style={styles.label}>Loading…</Text>
       </View>
     </View>
   );
@@ -30,5 +19,8 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
+  },
+  label: {
+    marginTop: 16,
   },
 });

@@ -1,12 +1,10 @@
+import { Button, ListItem, Text } from '@expo/ui';
 import { useQuery } from 'convex/react';
-import { router, useNavigation } from 'expo-router';
-import { useEffect } from 'react';
-import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
+import { NativeScreen } from '@/components/native/native-screen';
+import { NativeTextField } from '@/components/native/native-text-field';
 import {
   type ExerciseSummary,
   exerciseConfigSchema,
@@ -15,7 +13,6 @@ import {
 } from '@/lib';
 
 export default function ConfigureWorkoutScreen() {
-  const navigation = useNavigation();
   const selectedExerciseIds = useWorkoutStore(
     (state) => state.selectedExerciseIds
   );
@@ -26,33 +23,14 @@ export default function ConfigureWorkoutScreen() {
   const selectedExercises = (exercises ?? []).filter(
     (exercise: ExerciseSummary) => selectedExerciseIds.includes(exercise._id)
   );
-
   const canReview =
     selectedExercises.length > 0 &&
-    selectedExercises.every((exercise: ExerciseSummary) => {
-      const config = exerciseConfigs[exercise._id] ?? {
-        sets: 3,
-        reps: 10,
-        weight: 0,
-      };
-
-      return exerciseConfigSchema.safeParse(config).success;
-    });
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Button
-          size="sm"
-          className="bg-green-1"
-          disabled={!canReview}
-          onPress={() => router.push('/workout/create/review')}
-        >
-          <Text>Review</Text>
-        </Button>
-      ),
-    });
-  }, [canReview, navigation]);
+    selectedExercises.every(
+      (exercise: ExerciseSummary) =>
+        exerciseConfigSchema.safeParse(
+          exerciseConfigs[exercise._id] ?? { sets: 3, reps: 10, weight: 0 }
+        ).success
+    );
 
   const handleNumberChange = (
     exerciseId: string,
@@ -64,85 +42,91 @@ export default function ConfigureWorkoutScreen() {
       reps: 10,
       weight: 0,
     };
-
-    const numericValue = Number(value || 0);
+    const parsed = Number(value || 0);
 
     setExerciseConfig(exerciseId, {
       ...previous,
-      [field]: Number.isNaN(numericValue) ? 0 : numericValue,
+      [field]: Number.isNaN(parsed) ? 0 : parsed,
     });
   };
 
+  if (exercises === undefined) {
+    return (
+      <NativeScreen>
+        <Text textStyle={{ fontSize: 17 }}>Loading selected exercises…</Text>
+      </NativeScreen>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-black-1" edges={['bottom']}>
-      <ScrollView className="flex-1 px-4 py-4">
-        <View className="mb-5 gap-2">
-          <Text className="font-semibold text-2xl text-white">
-            Configure your exercises
-          </Text>
-          <Text className="text-white/60">
-            Tune the sets, reps, and weight for each selected movement.
-          </Text>
-        </View>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
+        Configure exercises
+      </Text>
+      <Text textStyle={{ fontSize: 17 }}>
+        Set the initial sets, reps, and weight for each movement.
+      </Text>
+      {selectedExercises.map((exercise: ExerciseSummary) => {
+        const config = exerciseConfigs[exercise._id] ?? {
+          sets: 3,
+          reps: 10,
+          weight: 0,
+        };
 
-        {selectedExercises.map((exercise: ExerciseSummary) => {
-          const config = exerciseConfigs[exercise._id] ?? {
-            sets: 3,
-            reps: 10,
-            weight: 0,
-          };
+        return (
+          <NativeScreenSection key={exercise._id} title={exercise.name}>
+            <NativeTextField
+              keyboardType="number-pad"
+              label="Sets"
+              onChangeText={(value) =>
+                handleNumberChange(exercise._id, 'sets', value)
+              }
+              value={String(config.sets)}
+            />
+            <NativeTextField
+              keyboardType="number-pad"
+              label="Reps"
+              onChangeText={(value) =>
+                handleNumberChange(exercise._id, 'reps', value)
+              }
+              value={String(config.reps)}
+            />
+            <NativeTextField
+              keyboardType="decimal-pad"
+              label="Weight (kg)"
+              onChangeText={(value) =>
+                handleNumberChange(exercise._id, 'weight', value)
+              }
+              value={String(config.weight)}
+            />
+          </NativeScreenSection>
+        );
+      })}
+      {selectedExercises.length === 0 ? (
+        <ListItem supportingText="Return to the previous screen and select at least one exercise.">
+          No exercises selected
+        </ListItem>
+      ) : null}
+      <Button
+        disabled={!canReview}
+        label="Review workout"
+        onPress={() => router.push('/workout/create/review')}
+      />
+    </NativeScreen>
+  );
+}
 
-          return (
-            <View
-              key={exercise._id}
-              className="mb-4 rounded-2xl border border-white/10 bg-black-3 px-4 py-4"
-            >
-              <Text className="font-semibold text-lg text-white">
-                {exercise.name}
-              </Text>
-              <Text className="mt-1 text-sm text-white/60">
-                {exercise.description}
-              </Text>
-
-              <View className="mt-4 flex-row gap-3">
-                <View className="flex-1 gap-1">
-                  <Text className="text-sm text-white/60">Sets</Text>
-                  <Input
-                    keyboardType="numeric"
-                    value={String(config.sets)}
-                    onChangeText={(value) =>
-                      handleNumberChange(exercise._id, 'sets', value)
-                    }
-                    className="border-white/10 bg-black-2 text-white"
-                  />
-                </View>
-                <View className="flex-1 gap-1">
-                  <Text className="text-sm text-white/60">Reps</Text>
-                  <Input
-                    keyboardType="numeric"
-                    value={String(config.reps)}
-                    onChangeText={(value) =>
-                      handleNumberChange(exercise._id, 'reps', value)
-                    }
-                    className="border-white/10 bg-black-2 text-white"
-                  />
-                </View>
-                <View className="flex-1 gap-1">
-                  <Text className="text-sm text-white/60">Weight</Text>
-                  <Input
-                    keyboardType="numeric"
-                    value={String(config.weight)}
-                    onChangeText={(value) =>
-                      handleNumberChange(exercise._id, 'weight', value)
-                    }
-                    className="border-white/10 bg-black-2 text-white"
-                  />
-                </View>
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
-    </SafeAreaView>
+function NativeScreenSection({
+  children,
+  title,
+}: Readonly<{
+  children: ReactNode;
+  title: string;
+}>) {
+  return (
+    <>
+      <ListItem>{title}</ListItem>
+      {children}
+    </>
   );
 }

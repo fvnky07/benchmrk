@@ -1,80 +1,30 @@
-import { AntDesign } from '@expo/vector-icons';
+import { Button, ListItem, Text } from '@expo/ui';
 import { router } from 'expo-router';
-import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Text } from '@/components/ui/text';
+import { NativeScreen } from '@/components/native/native-screen';
 
 export default function WelcomeScreen() {
-  // TODO: Implement password input and state
-  // const [password, setPassword] = useState('');
-
-  // TODO: Implement forgot password handler
-  // const handleForgotPassword = () => {
-  //   console.log('Forgot password pressed');
-  // };
-
-  // TODO: Implement login submission
-  // const handleSubmit = () => {
-  //   console.log('Login submitted:', { email, password });
-
   return (
-    <SafeAreaView
-      className="flex-1 justify-between bg-green-1 px-4 pb-6"
-      edges={['top', 'bottom']}
-    >
-      <View className="w-full items-center justify-center py-6">
-        <Text className="text-center text-4xl">Welcome</Text>
-      </View>
-      <View className="w-full items-center justify-center gap-4">
-        <View className="w-full flex-col gap-4">
-          {/* TODO: implement Apple/Google OAuth via Better Auth.
-              Buttons disabled until those flows are wired up. */}
-          <Button
-            variant={'default'}
-            className="grow opacity-50"
-            disabled={true}
-            accessibilityState={{ disabled: true }}
-          >
-            <AntDesign name="apple" size={24} color="black" />
-            <Text>Continue With Apple</Text>
-          </Button>
-          <Button
-            variant={'default'}
-            className="grow opacity-50"
-            disabled={true}
-            accessibilityState={{ disabled: true }}
-          >
-            <AntDesign name="google" size={24} color="black" />
-            <Text>Continue With Google</Text>
-          </Button>
-        </View>
-        <Separator />
-
-        <View className="mb-6 flex w-full flex-row gap-4">
-          <Button
-            variant={'secondary'}
-            className="grow"
-            onPress={() => {
-              router.replace('/register');
-            }}
-          >
-            <Text>Register</Text>
-          </Button>
-          <Separator orientation="vertical" />
-          <Button
-            variant={'secondary'}
-            className="grow"
-            onPress={() => {
-              router.replace('/login');
-            }}
-          >
-            <Text>Login</Text>
-          </Button>
-        </View>
-      </View>
-    </SafeAreaView>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>Welcome</Text>
+      <Text textStyle={{ fontSize: 17 }}>
+        Track training, build consistency, and review your progress.
+      </Text>
+      <ListItem supportingText="Apple sign-in is not configured for this app yet.">
+        Continue with Apple
+      </ListItem>
+      <ListItem supportingText="Google sign-in is not configured for this app yet.">
+        Continue with Google
+      </ListItem>
+      <Button
+        label="Create account"
+        onPress={() => router.replace('/register')}
+      />
+      <Button
+        label="Log in"
+        variant="outlined"
+        onPress={() => router.replace('/login')}
+      />
+    </NativeScreen>
   );
 }

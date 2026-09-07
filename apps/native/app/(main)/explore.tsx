@@ -1,65 +1,17 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ListItem, Text } from '@expo/ui';
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeScreen } from '@/components/native/native-screen';
 
-import { Text } from '@/components/ui/text';
-
-/**
- * Explore screen
- *
- * NOTE: This screen is only accessible when authenticated
- * TODO: Implement explore functionality:
- * - Search/discovery features
- * - Browse content
- * - Filters and sorting
- */
 export default function ExploreScreen() {
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-      >
-        <View style={styles.header}>
-          <Text variant="h1" className="font-bold text-foreground">
-            Explore
-          </Text>
-          <Text variant="large" className="mt-2 text-muted-foreground">
-            Discover new content
-          </Text>
-        </View>
-
-        <View style={styles.card} className="mt-6 rounded-2xl bg-card p-6">
-          <Text variant="h3" className="mb-2 text-card-foreground">
-            Coming Soon
-          </Text>
-          <Text variant="p" className="text-muted-foreground">
-            Explore functionality will be added here.
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>Explore</Text>
+      <Text textStyle={{ fontSize: 17 }}>
+        Discover athletes and training content.
+      </Text>
+      <ListItem supportingText="Search, discovery, filters, and browsing are not available yet.">
+        Explore is coming soon
+      </ListItem>
+    </NativeScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-  },
-  header: {
-    marginBottom: 8,
-  },
-  card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-});

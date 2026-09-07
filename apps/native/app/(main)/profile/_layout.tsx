@@ -1,50 +1,25 @@
-import { Feather } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'nativewind';
-import { Pressable } from 'react-native';
 
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
+import { useAppearance } from '@/lib/ui';
 
 export default function ProfileLayout() {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const { username } = useUserProfile();
+  const { navigationTheme } = useAppearance();
 
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: isDark ? '#151515' : '#f2f2f7',
-        },
-        headerTintColor: isDark ? '#fff' : '#000',
+        headerStyle: { backgroundColor: navigationTheme.colors.card },
+        headerTintColor: navigationTheme.colors.primary,
         headerTitleStyle: {
-          color: isDark ? '#fff' : '#000',
+          color: navigationTheme.colors.text,
           fontWeight: '700',
           fontSize: 22,
         },
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: String(username),
-          headerRight: () => (
-            <Pressable
-              onPress={() => {
-                // TODO: Implement share functionality
-              }}
-              hitSlop={8}
-            >
-              <Feather
-                name="share"
-                className="pl-1.5"
-                size={24}
-                color={isDark ? '#fff' : '#000'}
-              />
-            </Pressable>
-          ),
-        }}
-      />
+      <Stack.Screen name="index" options={{ title: String(username) }} />
     </Stack>
   );
 }

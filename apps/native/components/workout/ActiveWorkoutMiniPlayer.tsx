@@ -1,30 +1,40 @@
 import { Portal } from '@rn-primitives/portal';
 import { useMutation } from 'convex/react';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@/components/ui/text';
 import {
   useActiveSessionStore,
   useWorkoutTimer,
   workoutSessionsApi,
 } from '@/lib';
+import { useAppearance } from '@/lib/ui';
 
-const TAB_BAR_HEIGHT = 49;
+const TAB_BAR_HEIGHT = Platform.select({ android: 80, default: 49 });
 
 export function ActiveWorkoutMiniPlayer() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-
-  const activeSessionId = useActiveSessionStore((s) => s.activeSessionId);
-  const sessionStartTimestamp = useActiveSessionStore(
-    (s) => s.sessionStartTimestamp
+  const { navigationTheme } = useAppearance();
+  const activeSessionId = useActiveSessionStore(
+    (state) => state.activeSessionId
   );
-  const sessionName = useActiveSessionStore((s) => s.sessionName);
-  const workoutTemplateId = useActiveSessionStore((s) => s.workoutTemplateId);
-  const endSession = useActiveSessionStore((s) => s.endSession);
-
+  const sessionStartTimestamp = useActiveSessionStore(
+    (state) => state.sessionStartTimestamp
+  );
+  const sessionName = useActiveSessionStore((state) => state.sessionName);
+  const workoutTemplateId = useActiveSessionStore(
+    (state) => state.workoutTemplateId
+  );
+  const endSession = useActiveSessionStore((state) => state.endSession);
   const { formatted } = useWorkoutTimer(sessionStartTimestamp);
   const abandonSession = useMutation(workoutSessionsApi.abandonSession);
 
@@ -42,59 +52,116 @@ export function ActiveWorkoutMiniPlayer() {
           onPress: async () => {
             try {
               await abandonSession({ sessionId: activeSessionId });
-            } catch {
-              // Session may already be gone — still clear local state
+            } finally {
+              endSession();
             }
-            endSession();
           },
         },
       ]
     );
   };
 
-  const handleTap = () => {
-    if (workoutTemplateId) {
-      router.push(`/(main)/workout/${workoutTemplateId}/start`);
-    }
-  };
+  if (!workoutTemplateId) return null;
 
   return (
     <Portal name="workout-mini-player">
       <Pressable
-        onPress={handleTap}
-        style={{
-          position: 'absolute',
-          bottom: TAB_BAR_HEIGHT + insets.bottom + 8,
-          left: 16,
-          right: 16,
-        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Resume ${sessionName}`}
+        onPress={() =>
+          router.push(`/(main)/workout/${workoutTemplateId}/start`)
+        }
+        style={[
+          styles.container,
+          { bottom: TAB_BAR_HEIGHT + insets.bottom + 8 },
+        ]}
       >
-        <View className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-black-2 px-4 py-3 shadow-lg">
-          <View className="flex-1 flex-row items-center gap-3">
-            <View className="h-2 w-2 rounded-full bg-green-1" />
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: navigationTheme.colors.card,
+              borderColor: navigationTheme.colors.border,
+            },
+          ]}
+        >
+          <View style={styles.details}>
+            <View
+              style={[
+                styles.indicator,
+                { backgroundColor: navigationTheme.colors.primary },
+              ]}
+            />
             <Text
-              className="font-semibold text-sm text-white"
               numberOfLines={1}
+              style={[styles.name, { color: navigationTheme.colors.text }]}
             >
               {sessionName}
             </Text>
           </View>
-
-          <Text className="mx-3 font-mono text-green-1 text-sm">
+          <Text
+            style={[styles.duration, { color: navigationTheme.colors.primary }]}
+          >
             {formatted}
           </Text>
-
           <Pressable
-            onPress={(e) => {
-              e.stopPropagation();
+            accessibilityRole="button"
+            accessibilityLabel="Discard active workout"
+            hitSlop={12}
+            onPress={(event) => {
+              event.stopPropagation();
               handleCancel();
             }}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Text className="text-base text-white/50">✕</Text>
+            <Text
+              style={[styles.close, { color: navigationTheme.colors.text }]}
+            >
+              ×
+            </Text>
           </Pressable>
         </View>
       </Pressable>
     </Portal>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    left: 16,
+    position: 'absolute',
+    right: 16,
+  },
+  card: {
+    alignItems: 'center',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  close: {
+    fontSize: 24,
+    lineHeight: 24,
+  },
+  details: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  duration: {
+    fontSize: 15,
+    fontVariant: ['tabular-nums'],
+    marginHorizontal: 12,
+  },
+  indicator: {
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  name: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+});

@@ -1,27 +1,17 @@
-import { Feather } from '@expo/vector-icons';
+import { Button, ListItem, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  TextInput as RNTextInput,
-  View,
-} from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
+import { NativeScreen } from '@/components/native/native-screen';
+import { NativeTextField } from '@/components/native/native-text-field';
 import { analytics } from '@/lib/analytics';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 import { profileSchema } from '@/lib/schemas/auth';
-import { showToast } from '@/lib/ui';
 
 export default function CreateProfileScreen() {
   const [username, setUsername] = useState('');
@@ -30,6 +20,7 @@ export default function CreateProfileScreen() {
   const [imageStorageId, setImageStorageId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { user } = useUserProfile();
   const userId = user?.id as string | undefined;
@@ -46,12 +37,47 @@ export default function CreateProfileScreen() {
     mode: 'onChange',
   });
 
+  const uploadImage = async (uri: string) => {
+    try {
+      setIsUploading(true);
+      setErrorMessage(null);
+
+      const uploadUrl = await generateUploadUrl();
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error('Could not read the selected image.');
+      }
+
+      const blob = await response.blob();
+      const result = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': blob.type },
+        body: blob,
+      });
+      if (!result.ok) {
+        throw new Error('Could not upload the selected image.');
+      }
+
+      const json = (await result.json()) as { storageId: string };
+
+      setImageStorageId(json.storageId);
+      analytics.profilePhotoUploaded();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to upload image.'
+      );
+      setImageUri(null);
+      setImageStorageId(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      showToast.error(
-        'Permission denied',
-        'We need camera roll permissions to select a profile picture'
+      setErrorMessage(
+        'Camera-roll permission is required to select a profile picture.'
       );
       return;
     }
@@ -73,9 +99,8 @@ export default function CreateProfileScreen() {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      showToast.error(
-        'Permission denied',
-        'We need camera permissions to take a photo'
+      setErrorMessage(
+        'Camera permission is required to take a profile picture.'
       );
       return;
     }
@@ -93,59 +118,21 @@ export default function CreateProfileScreen() {
     }
   };
 
-  const uploadImage = async (uri: string) => {
-    try {
-      setIsUploading(true);
-
-      // Get upload URL from Convex
-      const uploadUrl = await generateUploadUrl();
-
-      // Fetch the image and convert to blob
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      // Upload to Convex storage
-      const result = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': blob.type },
-        body: blob,
-      });
-
-      const json = (await result.json()) as { storageId: string };
-      setImageStorageId(json.storageId);
-
-      analytics.profilePhotoUploaded();
-      showToast.success(
-        'Image uploaded',
-        'Profile picture uploaded successfully'
-      );
-    } catch (error) {
-      showToast.error(
-        'Upload failed',
-        error instanceof Error ? error.message : 'Failed to upload image'
-      );
-      setImageUri(null);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const onSubmit = () => {
+    setErrorMessage(null);
+
     if (!userId) {
-      showToast.error('Error', 'User not authenticated');
+      setErrorMessage('You must be signed in to complete your profile.');
       return;
     }
-
-    // Check username availability
     if (checkUsername === false) {
-      showToast.error('Username taken', 'This username is already in use');
+      setErrorMessage('This username is already in use.');
       return;
     }
 
     handleSubmit({ username, bio: bio || undefined }, async () => {
       try {
         setIsSubmitting(true);
-
         await updateProfile({
           userId,
           username,
@@ -154,14 +141,12 @@ export default function CreateProfileScreen() {
         });
 
         analytics.profileCompleted(!!imageStorageId, !!bio);
-        // Navigate to main app index
         setTimeout(() => {
           router.replace('/(main)');
         }, 300);
       } catch (error) {
-        showToast.error(
-          'Update failed',
-          error instanceof Error ? error.message : 'Failed to update profile'
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Failed to update profile.'
         );
       } finally {
         setIsSubmitting(false);
@@ -171,193 +156,130 @@ export default function CreateProfileScreen() {
 
   const onSkip = async () => {
     if (!userId) {
-      showToast.error('Error', 'User not authenticated');
+      setErrorMessage('You must be signed in to skip profile setup.');
       return;
     }
 
     try {
       setIsSubmitting(true);
+      setErrorMessage(null);
 
-      // Generate username from email
       const email = (user?.email as string) || '';
       const autoUsername =
         email.split('@')[0] + Math.floor(Math.random() * 1000);
 
-      await updateProfile({
-        userId,
-        username: autoUsername,
-      });
-
+      await updateProfile({ userId, username: autoUsername });
       analytics.profileSkipped();
-      // Navigate to main app index
       setTimeout(() => {
         router.replace('/(main)');
       }, 300);
     } catch (error) {
-      showToast.error(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to skip profile setup'
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Failed to skip profile setup.'
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const getInitials = () => {
-    const name = (user?.name as string) || (user?.email as string) || '?';
-    return name.slice(0, 2).toUpperCase();
-  };
-
+  const initials = ((user?.name as string) || (user?.email as string) || '?')
+    .slice(0, 2)
+    .toUpperCase();
   const isUsernameAvailable = checkUsername === true;
   const showUsernameCheck = username.length >= 3 && hasSubmitted;
 
   return (
-    <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
-      <KeyboardAwareScrollView
-        className="flex-1 px-6"
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
-      >
-        <View className="flex w-full items-center justify-center gap-6 pt-8">
-          <View className="flex w-full items-center justify-center gap-2">
-            <Text className="font-bold text-3xl">Complete Your Profile</Text>
-            <Text className="text-center text-gray-400">
-              Choose a profile picture and username
-            </Text>
-          </View>
-
-          {/* Profile Picture */}
-          <View className="flex items-center justify-center gap-4">
-            <Avatar alt="Profile picture" className="size-32">
-              {imageUri ? (
-                <AvatarImage source={{ uri: imageUri }} />
-              ) : (
-                <AvatarFallback className="bg-blue-600">
-                  <Text className="font-bold text-4xl text-white">
-                    {getInitials()}
-                  </Text>
-                </AvatarFallback>
-              )}
-            </Avatar>
-
-            <View className="flex flex-row gap-3">
-              <Pressable
-                onPress={pickImage}
-                disabled={isUploading}
-                className="rounded-lg bg-blue-600 px-4 py-2 active:opacity-70"
-              >
-                <Text className="text-white">Choose Photo</Text>
-              </Pressable>
-              <Pressable
-                onPress={takePhoto}
-                disabled={isUploading}
-                className="rounded-lg bg-gray-700 px-4 py-2 active:opacity-70"
-              >
-                <Text className="text-white">Take Photo</Text>
-              </Pressable>
-            </View>
-            {isUploading && <ActivityIndicator size="small" color="#3b82f6" />}
-          </View>
-
-          {/* Username Input */}
-          <View className="w-full gap-1">
-            <View className="relative">
-              <Input
-                value={username}
-                onChangeText={(text) => {
-                  setUsername(text);
-                  if (hasSubmitted) clearError('username');
-                }}
-                placeholder="Username"
-                autoCapitalize="none"
-                autoComplete="username"
-                autoCorrect={false}
-                style={{ backgroundColor: '#202020' }}
-                className="h-12"
-                aria-invalid={!!errors.username}
-              />
-              {showUsernameCheck && (
-                <View className="absolute top-3 right-3">
-                  {isUsernameAvailable ? (
-                    <Feather name="check-circle" size={20} color="#10b981" />
-                  ) : (
-                    <Feather name="x-circle" size={20} color="#ef4444" />
-                  )}
-                </View>
-              )}
-            </View>
-            {errors.username && (
-              <Text className="pl-2 text-red-400 text-sm">
-                {errors.username}
-              </Text>
-            )}
-            {showUsernameCheck && !errors.username && (
-              <Text
-                className={`pl-2 text-sm ${isUsernameAvailable ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {isUsernameAvailable
-                  ? 'Username is available'
-                  : 'Username is already taken'}
-              </Text>
-            )}
-          </View>
-
-          {/* Bio Input */}
-          <View className="w-full gap-1">
-            <RNTextInput
-              value={bio}
-              onChangeText={(text) => {
-                if (text.length <= 150) {
-                  setBio(text);
-                  if (hasSubmitted) clearError('bio');
-                }
-              }}
-              placeholder="Bio (optional)"
-              placeholderTextColor="#888"
-              multiline
-              numberOfLines={3}
-              maxLength={150}
-              style={{
-                backgroundColor: '#202020',
-                color: 'white',
-                padding: 12,
-                borderRadius: 8,
-                minHeight: 80,
-                textAlignVertical: 'top',
-              }}
-            />
-            <Text className="pl-2 text-right text-gray-400 text-sm">
-              {bio.length}/150
-            </Text>
-            {errors.bio && (
-              <Text className="pl-2 text-red-400 text-sm">{errors.bio}</Text>
-            )}
-          </View>
-        </View>
-
-        <View className="flex-1" />
-
-        {/* Actions */}
-        <View className="mb-6 flex w-full items-center justify-center gap-4">
-          <Button
-            className="w-full"
-            onPress={onSubmit}
-            disabled={isSubmitting || isUploading || !username}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color="black" />
-            ) : (
-              <>
-                <Text>Complete Profile</Text>
-                <Feather name="arrow-right" size={24} color="black" />
-              </>
-            )}
-          </Button>
-
-          <Pressable onPress={onSkip} disabled={isSubmitting}>
-            <Text className="text-blue-400">Skip for now</Text>
-          </Pressable>
-        </View>
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
+    <NativeScreen>
+      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>
+        Complete your profile
+      </Text>
+      <Text textStyle={{ fontSize: 17 }}>
+        Add a username and an optional profile picture.
+      </Text>
+      {imageUri ? (
+        <Image
+          accessibilityLabel="Selected profile picture"
+          source={{ uri: imageUri }}
+          style={{ width: 128, height: 128, borderRadius: 64 }}
+        />
+      ) : (
+        <ListItem supportingText="A profile picture is optional.">
+          {initials}
+        </ListItem>
+      )}
+      <Button
+        disabled={isUploading}
+        label="Choose photo"
+        variant="outlined"
+        onPress={pickImage}
+      />
+      <Button
+        disabled={isUploading}
+        label="Take photo"
+        variant="outlined"
+        onPress={takePhoto}
+      />
+      {isUploading ? (
+        <ListItem supportingText="Uploading profile picture…">
+          Uploading photo
+        </ListItem>
+      ) : null}
+      <NativeTextField
+        autoCapitalize="none"
+        autoComplete="username"
+        autoCorrect={false}
+        error={errors.username}
+        label="Username"
+        onChangeText={(value) => {
+          setUsername(value);
+          if (hasSubmitted) clearError('username');
+        }}
+        placeholder="Username"
+        value={username}
+      />
+      {showUsernameCheck && !errors.username ? (
+        <ListItem
+          supportingText={
+            isUsernameAvailable
+              ? 'This username is available.'
+              : 'This username is already taken.'
+          }
+        >
+          Username availability
+        </ListItem>
+      ) : null}
+      <NativeTextField
+        autoCapitalize="sentences"
+        autoCorrect
+        error={errors.bio}
+        label="Bio (optional)"
+        maxLength={150}
+        multiline
+        numberOfLines={3}
+        onChangeText={(value) => {
+          setBio(value);
+          if (hasSubmitted) clearError('bio');
+        }}
+        placeholder="Tell people about your training"
+        value={bio}
+      />
+      <Text textStyle={{ fontSize: 14 }}>{`${bio.length}/150`}</Text>
+      {errorMessage ? (
+        <ListItem supportingText={errorMessage}>
+          Could not update profile
+        </ListItem>
+      ) : null}
+      <Button
+        disabled={isSubmitting || isUploading || username.length === 0}
+        label={isSubmitting ? 'Saving profile…' : 'Complete profile'}
+        onPress={onSubmit}
+      />
+      <Button
+        disabled={isSubmitting}
+        label="Skip for now"
+        variant="text"
+        onPress={onSkip}
+      />
+    </NativeScreen>
   );
 }
