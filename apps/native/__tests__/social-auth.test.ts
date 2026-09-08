@@ -49,6 +49,35 @@ const statuses = () => {
 
 afterEach(() => jest.clearAllMocks());
 
+test('unconfigured provider fails before native SDK or status changes', async () => {
+  const state = statuses();
+  const googleResult = await runSocialAuth(
+    'google',
+    { apple: false, google: null },
+    false,
+    state.callback
+  );
+  expect(googleResult).toEqual({
+    status: 'failure',
+    message: 'Google sign-in is not configured.',
+  });
+  expect(GoogleSignin.signIn).not.toHaveBeenCalled();
+  expect(state.values).toEqual([]);
+
+  const appleResult = await runSocialAuth(
+    'apple',
+    { apple: false, google: config.google },
+    false,
+    state.callback
+  );
+  expect(appleResult).toEqual({
+    status: 'failure',
+    message: 'Apple sign-in is not configured.',
+  });
+  expect(Apple.signInAsync).not.toHaveBeenCalled();
+  expect(state.values).toEqual([]);
+});
+
 test('Apple success reports loading then idle and nests user payload', async () => {
   (Apple.signInAsync as jest.Mock).mockResolvedValue({
     identityToken: 'apple-token',

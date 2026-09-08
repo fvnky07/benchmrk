@@ -96,6 +96,14 @@ export async function runSocialAuth(
   linking = false,
   onStatus?: StatusCallback
 ): Promise<SocialResult> {
+  const configured =
+    provider === 'apple' ? config.apple : config.google !== null;
+  if (!configured) {
+    return {
+      status: 'failure',
+      message: `${provider === 'apple' ? 'Apple' : 'Google'} sign-in is not configured.`,
+    };
+  }
   onStatus?.('loading');
   try {
     if (provider === 'apple') {

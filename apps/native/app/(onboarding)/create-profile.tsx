@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import * as ImagePicker from 'expo-image-picker';
@@ -25,7 +26,9 @@ export default function CreateProfileScreen() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageStorageId, setImageStorageId] = useState<string | null>(null);
+  const [imageStorageId, setImageStorageId] = useState<Id<'_storage'> | null>(
+    null
+  );
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -112,7 +115,7 @@ export default function CreateProfileScreen() {
         body: blob,
       });
 
-      const json = (await result.json()) as { storageId: string };
+      const json = (await result.json()) as { storageId: Id<'_storage'> };
       setImageStorageId(json.storageId);
 
       analytics.profilePhotoUploaded();

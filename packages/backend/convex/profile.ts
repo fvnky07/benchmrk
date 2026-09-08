@@ -1,7 +1,6 @@
 // NOTE: Public profile management API - re-exports Better Auth component functions
 import { v } from 'convex/values';
 import { components } from './_generated/api';
-import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
 /**
@@ -62,7 +61,7 @@ export const updateProfile = mutation({
   args: {
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
-    imageStorageId: v.optional(v.string()),
+    imageStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -71,9 +70,7 @@ export const updateProfile = mutation({
       userId: identity.subject,
       username: args.username,
       bio: args.bio,
-      imageStorageId: args.imageStorageId
-        ? (args.imageStorageId as unknown as Id<'_storage'>)
-        : undefined,
+      imageStorageId: args.imageStorageId,
     });
   },
 });
