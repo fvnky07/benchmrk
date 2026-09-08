@@ -78,6 +78,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       'https://benchmrk.app',
       'http://localhost:3000',
       'native://',
+      'https://appleid.apple.com',
       // TODO: apparently dont use the following in prod:
       ...(process.env.NODE_ENV === 'development'
         ? [
@@ -90,6 +91,34 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     emailAndPassword: {
       requireEmailVerification: false,
       enabled: true,
+    },
+    socialProviders: {
+      ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+        ? {
+            google: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            },
+          }
+        : {}),
+      ...(process.env.APPLE_CLIENT_ID &&
+      process.env.APPLE_CLIENT_SECRET &&
+      process.env.APPLE_APP_BUNDLE_IDENTIFIER
+        ? {
+            apple: {
+              clientId: process.env.APPLE_CLIENT_ID,
+              clientSecret: process.env.APPLE_CLIENT_SECRET,
+              appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER,
+            },
+          }
+        : {}),
+    },
+    account: {
+      accountLinking: {
+        disableImplicitLinking: true,
+        allowDifferentEmails: true,
+        updateUserInfoOnLink: false,
+      },
     },
     // Custom user fields for premium tracking
     // premiumUntil: Unix timestamp (ms) when premium expires

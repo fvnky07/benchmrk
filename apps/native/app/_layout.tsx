@@ -1,14 +1,13 @@
 import '../global.css';
 
-import {
-  type AuthClient as ConvexAuthClient,
-  ConvexBetterAuthProvider,
-} from '@convex-dev/better-auth/react';
+import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/native';
+import { api } from '@repo/backend/convex/_generated/api';
 import { PortalHost } from '@rn-primitives/portal';
-import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexReactClient, useQuery } from 'convex/react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'nativewind';
 import { PostHogProvider } from 'posthog-react-native';
 import { type ReactNode, useEffect } from 'react';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -16,9 +15,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { SplashScreen } from '@/components/SplashScreen';
-import { identifyUser, posthog, resetAnalytics } from '@/lib/analytics';
+import { identifyUser, resetAnalytics } from '@/lib/analytics';
 import { authClient, useAuth } from '@/lib/auth';
-import { AppearanceProvider, toastConfig, useAppearance } from '@/lib/ui';
+import { NAV_THEME, toastConfig } from '@/lib/ui';
 
 const convex = new ConvexReactClient(
   process.env.EXPO_PUBLIC_CONVEX_URL as string,
@@ -29,54 +28,60 @@ const convex = new ConvexReactClient(
   }
 );
 
-// @convex-dev/better-auth supports expoClient at runtime but omits it from
-// ConvexBetterAuthProvider's client union.
-const convexAuthClient = authClient as unknown as ConvexAuthClient;
+const ENABLE_POSTHOG = process.env.EXPO_PUBLIC_ENABLE_POSTHOG !== 'false';
+
 function AppProviders({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
-  if (!posthog) {
+  if (!ENABLE_POSTHOG) {
     return children;
   }
 
   return (
-    <PostHogProvider client={posthog} autocapture={false}>
+    <PostHogProvider
+      apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY!}
+      options={{
+        host: process.env.EXPO_PUBLIC_POSTHOG_HOST!,
+      }}
+    >
       {children}
     </PostHogProvider>
   );
 }
 
-function NavigationContent({
+function AuthenticatedRoutes({
   isAuthenticated,
-}: Readonly<{
+}: {
   isAuthenticated: boolean;
-}>) {
-  const { navigationTheme, resolvedAppearance } = useAppearance();
+}) {
+  const profile = useQuery(
+    api.profile.getCurrentProfile,
+    isAuthenticated ? {} : 'skip'
+  );
+  if (isAuthenticated && profile === undefined) {
+    return <SplashScreen />;
+  }
+  const needsOnboarding = isAuthenticated && !profile?.username;
 
   return (
-    <SafeAreaProvider>
-      <KeyboardProvider>
-        <ThemeProvider value={navigationTheme}>
-          <StatusBar style={resolvedAppearance === 'dark' ? 'light' : 'dark'} />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Protected guard={isAuthenticated}>
-              <Stack.Screen name="(main)" />
-            </Stack.Protected>
-            <Stack.Protected guard={!isAuthenticated}>
-              <Stack.Screen name="(auth)" />
-            </Stack.Protected>
-          </Stack>
-          <PortalHost />
-          <Toast config={toastConfig} />
-        </ThemeProvider>
-      </KeyboardProvider>
-    </SafeAreaProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={needsOnboarding}>
+        <Stack.Screen name="(onboarding)" />
+      </Stack.Protected>
+      <Stack.Protected guard={isAuthenticated && !needsOnboarding}>
+        <Stack.Screen name="(main)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
 
-function RootNavigator() {
+export default function RootLayout() {
+  const { colorScheme } = useColorScheme();
   const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
@@ -90,25 +95,25 @@ function RootNavigator() {
     }
   }, [isAuthenticated, isLoading, user]);
 
+  // Show splash screen while determining auth state
   if (isLoading) {
     return <SplashScreen />;
   }
 
   return (
-    <AppProviders>
-      <AppearanceProvider isAuthenticated={isAuthenticated}>
-        <NavigationContent isAuthenticated={isAuthenticated} />
-      </AppearanceProvider>
-    </AppProviders>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    <ConvexProvider client={convex}>
-      <ConvexBetterAuthProvider client={convex} authClient={convexAuthClient}>
-        <RootNavigator />
-      </ConvexBetterAuthProvider>
-    </ConvexProvider>
+    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+      <AppProviders>
+        <SafeAreaProvider>
+          <KeyboardProvider>
+            <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <AuthenticatedRoutes isAuthenticated={isAuthenticated} />
+              <PortalHost />
+              <Toast config={toastConfig} />
+            </ThemeProvider>
+          </KeyboardProvider>
+        </SafeAreaProvider>
+      </AppProviders>
+    </ConvexBetterAuthProvider>
   );
 }

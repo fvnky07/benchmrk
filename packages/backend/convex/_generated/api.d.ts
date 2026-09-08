@@ -2064,7 +2064,24 @@ export declare const components: {
         { username: string },
         boolean
       >;
-      generateUploadUrl: FunctionReference<"mutation", "internal", {}, any>;
+      generateUploadUrl: FunctionReference<
+        "mutation",
+        "internal",
+        { userId: string },
+        any
+      >;
+      getCurrentProfile: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        any
+      >;
+      suggestUsername: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        string
+      >;
       updateProfile: FunctionReference<
         "mutation",
         "internal",

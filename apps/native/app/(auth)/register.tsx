@@ -1,13 +1,18 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { NativeScreen } from '@/components/native/native-screen';
-import { NativeTextField } from '@/components/native/native-text-field';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
 import { analytics } from '@/lib/analytics';
 import { authClient, useAuthStore } from '@/lib/auth';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { registerSchema } from '@/lib/schemas/auth';
+import { showToast } from '@/lib/ui';
 
 export default function RegisterScreen() {
   const email = useAuthStore((state) => state.email);
@@ -15,7 +20,6 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: registerSchema,
@@ -28,34 +32,27 @@ export default function RegisterScreen() {
   };
 
   const onSubmit = () => {
-    setErrorMessage(null);
-
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      showToast.error('Registration failed', 'Passwords do not match');
       resetPasswords();
       return;
     }
-
     handleSubmit({ email, password, confirmPassword }, async () => {
       try {
         setIsLoading(true);
 
-        const { error } = await authClient.signUp.email({
+        await authClient.signUp.email({
           email,
           password,
           name: email.split('@')[0],
         });
-        if (error) {
-          throw new Error(error.message ?? 'Unable to create your account');
-        }
 
         analytics.signupSuccess();
-        router.push('/create-profile');
       } catch (error) {
-        const message =
+        const errorMessage =
           error instanceof Error ? error.message : 'Invalid credentials';
-        analytics.signupFailed(message);
-        setErrorMessage(message);
+        analytics.signupFailed(errorMessage);
+        showToast.error('Sign up failed', errorMessage);
         resetPasswords();
         setEmail('');
       } finally {
@@ -65,67 +62,89 @@ export default function RegisterScreen() {
   };
 
   return (
-    <NativeScreen>
-      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>
-        Create an account
-      </Text>
-      <NativeTextField
-        autoCapitalize="none"
-        autoComplete="email"
-        autoCorrect={false}
-        error={errors.email}
-        keyboardType="email-address"
-        label="Email"
-        onChangeText={(value) => {
-          setEmail(value);
-          if (hasSubmitted) clearError('email');
-        }}
-        placeholder="you@example.com"
-        value={email}
-      />
-      <NativeTextField
-        autoCapitalize="none"
-        autoComplete="new-password"
-        autoCorrect={false}
-        error={errors.password}
-        label="Password"
-        onChangeText={(value) => {
-          setPassword(value);
-          if (hasSubmitted) clearError('password');
-        }}
-        placeholder="Choose a password"
-        secureTextEntry
-        value={password}
-      />
-      <NativeTextField
-        autoCapitalize="none"
-        autoComplete="new-password"
-        autoCorrect={false}
-        error={errors.confirmPassword}
-        label="Confirm password"
-        onChangeText={(value) => {
-          setConfirmPassword(value);
-          if (hasSubmitted) clearError('confirmPassword');
-        }}
-        placeholder="Repeat your password"
-        secureTextEntry
-        value={confirmPassword}
-      />
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Could not create account
-        </ListItem>
-      ) : null}
-      <Button
-        disabled={isLoading}
-        label={isLoading ? 'Creating account…' : 'Create account'}
-        onPress={onSubmit}
-      />
-      <Button
-        label="Log in instead"
-        variant="outlined"
-        onPress={() => router.replace('/login')}
-      />
-    </NativeScreen>
+    <SafeAreaView className="flex-1 bg-black-1" edges={['top']}>
+      <KeyboardAwareScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
+      >
+        <View className="flex w-full items-start justify-center gap-1">
+          <View className="mb-6 flex w-full flex-row items-center justify-center gap-2">
+            <Text className="text-4xl">Create an Account!</Text>
+          </View>
+          <Input
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (hasSubmitted) clearError('email');
+            }}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            autoCorrect={false}
+            style={{ backgroundColor: '#202020' }}
+            className="h-12"
+            aria-invalid={!!errors.email}
+          />
+          <Input
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (hasSubmitted) clearError('password');
+            }}
+            placeholder="Password"
+            autoCapitalize="none"
+            secureTextEntry={true}
+            autoComplete="new-password"
+            autoCorrect={false}
+            style={{ backgroundColor: '#202020' }}
+            className="h-12"
+            aria-invalid={!!errors.password}
+          />
+          <Input
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              if (hasSubmitted) clearError('confirmPassword');
+            }}
+            placeholder="Confirm Password"
+            autoCapitalize="none"
+            secureTextEntry={true}
+            autoComplete="new-password"
+            autoCorrect={false}
+            style={{ backgroundColor: '#202020' }}
+            className="h-12"
+            aria-invalid={!!errors.confirmPassword}
+          />
+          {/* <Pressable */}
+          {/*   onPress={() => { */}
+          {/*     router.push('/forgot-password'); */}
+          {/*   }} */}
+          {/* > */}
+          {/*   <Text className="mt-1 pl-2 text-blue-400">Forgot Password?</Text> */}
+          {/* </Pressable> */}
+        </View>
+        <View className="flex-1" />
+        <View className="mb-6 flex w-full items-center justify-center">
+          <Button className="w-full" onPress={onSubmit} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="black" />
+            ) : (
+              <>
+                <Text>Register with email</Text>
+                <Feather name="arrow-right" size={24} color="black" />
+              </>
+            )}
+          </Button>
+          <Pressable
+            onPress={() => {
+              router.replace('/login');
+            }}
+          >
+            <Text className="mt-4 pl-2 text-blue-400">Log in instead?</Text>
+          </Pressable>
+        </View>
+      </KeyboardAwareScrollView>
+    </SafeAreaView>
   );
 }

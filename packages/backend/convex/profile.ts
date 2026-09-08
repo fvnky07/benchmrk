@@ -1,6 +1,7 @@
 // NOTE: Public profile management API - re-exports Better Auth component functions
 import { v } from 'convex/values';
 import { components } from './_generated/api';
+import type { Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 
 /**
@@ -9,9 +10,11 @@ import { mutation, query } from './_generated/server';
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
     return await ctx.runMutation(
       components.betterAuth.profile.generateUploadUrl,
-      {}
+      { userId: identity.subject }
     );
   },
 });
@@ -29,22 +32,48 @@ export const checkUsername = query({
   },
 });
 
+export const getCurrentProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    return await ctx.runQuery(components.betterAuth.profile.getCurrentProfile, {
+      userId: identity.subject,
+    });
+  },
+});
+
+export const suggestUsername = query({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
+    return await ctx.runQuery(components.betterAuth.profile.suggestUsername, {
+      userId: identity.subject,
+    });
+  },
+});
+
 /**
  * Update user profile (username, bio, image)
  */
 export const updateProfile = mutation({
   args: {
-    userId: v.string(),
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     imageStorageId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Not authenticated');
     return await ctx.runMutation(components.betterAuth.profile.updateProfile, {
-      userId: args.userId as any,
+      userId: identity.subject,
       username: args.username,
       bio: args.bio,
-      imageStorageId: args.imageStorageId as any,
+      imageStorageId: args.imageStorageId
+        ? (args.imageStorageId as unknown as Id<'_storage'>)
+        : undefined,
     });
   },
 });

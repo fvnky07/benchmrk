@@ -27,17 +27,17 @@
   {
     "event_name": "profile_completed",
     "description": "User completed their profile setup with username and optional photo/bio",
-    "file_path": "app/(auth)/create-profile.tsx"
+    "file_path": "app/(onboarding)/create-profile.tsx"
   },
   {
     "event_name": "profile_skipped",
     "description": "User skipped profile setup during onboarding",
-    "file_path": "app/(auth)/create-profile.tsx"
+    "file_path": "app/(onboarding)/create-profile.tsx"
   },
   {
     "event_name": "profile_photo_uploaded",
     "description": "User uploaded a profile photo during onboarding",
-    "file_path": "app/(auth)/create-profile.tsx"
+    "file_path": "app/(onboarding)/create-profile.tsx"
   },
   {
     "event_name": "two_factor_verified",
