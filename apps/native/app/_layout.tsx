@@ -24,8 +24,6 @@ import { AppearanceProvider, toastConfig, useAppearance } from '@/lib/ui';
 const convex = new ConvexReactClient(
   process.env.EXPO_PUBLIC_CONVEX_URL as string,
   {
-    // Optionally pause queries until the user is authenticated
-    expectAuth: true,
     unsavedChangesWarning: false,
   }
 );

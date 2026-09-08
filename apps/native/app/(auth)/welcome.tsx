@@ -1,4 +1,4 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button, Text } from '@expo/ui';
 import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
@@ -55,11 +55,7 @@ export default function WelcomeScreen() {
             if (!busy) void signIn('apple');
           }}
         />
-      ) : (
-        <ListItem supportingText="Apple sign-in is not configured for this app.">
-          Continue with Apple
-        </ListItem>
-      )}
+      ) : null}
       {showGoogle ? (
         <GoogleSigninButton
           size={GoogleSigninButton.Size.Wide}
@@ -68,11 +64,7 @@ export default function WelcomeScreen() {
           onPress={() => void signIn('google')}
           disabled={busy !== null}
         />
-      ) : (
-        <ListItem supportingText="Google sign-in is not configured for this app.">
-          Continue with Google
-        </ListItem>
-      )}
+      ) : null}
       {busy ? <Text>{`Signing in with ${busy}…`}</Text> : null}
       <Button
         label="Create account"
