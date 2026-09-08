@@ -52,13 +52,6 @@ export default function AuthLayout() {
           headerBackVisible: true,
         }}
       />
-      <Stack.Screen
-        name="create-profile"
-        options={{
-          title: 'Create Profile',
-          headerBackVisible: false,
-        }}
-      />
     </Stack>
   );
 }

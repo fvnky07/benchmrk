@@ -1,10 +1,19 @@
 import { Button, ListItem, Text } from '@expo/ui';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useQuery } from 'convex/react';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
-import { authClient } from '@/lib/auth';
+import {
+  authClient,
+  isAppleAvailable,
+  isGoogleAvailable,
+  runSocialAuth,
+  type SocialProvider,
+} from '@/lib/auth';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 
 export default function ManageAccountScreen() {
@@ -12,12 +21,62 @@ export default function ManageAccountScreen() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const config = useQuery(api.auth.getSocialAuthConfig);
+  const [accounts, setAccounts] = useState<SocialProvider[]>([]);
+  const [linking, setLinking] = useState<SocialProvider | null>(null);
+  const [appleNativeAvailable, setAppleNativeAvailable] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       analytics.settingsScreenViewed('manage_account');
     }, [])
   );
+  useFocusEffect(
+    useCallback(() => {
+      void AppleAuthentication.isAvailableAsync().then(setAppleNativeAvailable);
+    }, [])
+  );
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      authClient
+        .listAccounts()
+        .then((result) => {
+          if (!active) return;
+          setAccounts(
+            (result.data ?? [])
+              .map((account) => account.providerId)
+              .filter(
+                (provider): provider is SocialProvider =>
+                  provider === 'apple' || provider === 'google'
+              )
+          );
+        })
+        .catch(() => setAccounts([]));
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
+
+  const linkProvider = async (provider: SocialProvider) => {
+    if (!config || linking) return;
+    setLinking(provider);
+    const result = await runSocialAuth(provider, config, true);
+    setLinking(null);
+    if (result.status === 'failure') setErrorMessage(result.message);
+    if (result.status === 'success') {
+      const refreshed = await authClient.listAccounts();
+      setAccounts(
+        (refreshed.data ?? [])
+          .map((account) => account.providerId)
+          .filter(
+            (value): value is SocialProvider =>
+              value === 'apple' || value === 'google'
+          )
+      );
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -40,11 +99,33 @@ export default function ManageAccountScreen() {
     );
   }
 
+  const availableProviders = (['apple', 'google'] as SocialProvider[]).filter(
+    (provider) =>
+      provider === 'apple'
+        ? isAppleAvailable(config, appleNativeAvailable)
+        : isGoogleAvailable(config)
+  );
+  const connectedProviders = new Set(accounts);
+
   return (
     <NativeScreen>
       <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
         Manage account
       </Text>
+      {availableProviders.map((provider) => (
+        <Button
+          key={provider}
+          disabled={Boolean(linking) || connectedProviders.has(provider)}
+          label={
+            connectedProviders.has(provider)
+              ? `${provider === 'apple' ? 'Apple' : 'Google'} connected`
+              : linking === provider
+                ? `Linking ${provider}…`
+                : `Link ${provider === 'apple' ? 'Apple' : 'Google'}`
+          }
+          onPress={() => void linkProvider(provider)}
+        />
+      ))}
       <ListItem supportingText={user.email ?? 'Not set'}>Email</ListItem>
       <ListItem supportingText={user.name ?? 'Not set'}>Name</ListItem>
       <ListItem supportingText={username}>Username</ListItem>
@@ -55,11 +136,10 @@ export default function ManageAccountScreen() {
       <ListItem supportingText="Password changes are not available yet.">
         Change password
       </ListItem>
-      <ListItem supportingText="Permanent account deletion is not available yet. This action will not sign you out or delete anything.">
-        Delete account
-      </ListItem>
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Could not log out</ListItem>
+        <ListItem supportingText={errorMessage}>
+          Could not complete action
+        </ListItem>
       ) : null}
       {isConfirmingLogout ? (
         <>
@@ -69,7 +149,7 @@ export default function ManageAccountScreen() {
           <Button
             disabled={isLoggingOut}
             label={isLoggingOut ? 'Logging out…' : 'Log out'}
-            onPress={handleLogout}
+            onPress={() => void handleLogout()}
           />
           <Button
             disabled={isLoggingOut}

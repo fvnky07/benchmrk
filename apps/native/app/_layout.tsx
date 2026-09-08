@@ -5,8 +5,9 @@ import {
   ConvexBetterAuthProvider,
 } from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/native';
+import { api } from '@repo/backend/convex/_generated/api';
 import { PortalHost } from '@rn-primitives/portal';
-import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexProvider, ConvexReactClient, useQuery } from 'convex/react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PostHogProvider } from 'posthog-react-native';
@@ -23,8 +24,6 @@ import { AppearanceProvider, toastConfig, useAppearance } from '@/lib/ui';
 const convex = new ConvexReactClient(
   process.env.EXPO_PUBLIC_CONVEX_URL as string,
   {
-    // Optionally pause queries until the user is authenticated
-    expectAuth: true,
     unsavedChangesWarning: false,
   }
 );
@@ -54,14 +53,24 @@ function NavigationContent({
   isAuthenticated: boolean;
 }>) {
   const { navigationTheme, resolvedAppearance } = useAppearance();
-
+  const profile = useQuery(
+    api.profile.getCurrentProfile,
+    isAuthenticated ? {} : 'skip'
+  );
+  if (isAuthenticated && profile === undefined) {
+    return <SplashScreen />;
+  }
+  const needsOnboarding = isAuthenticated && !profile?.username;
   return (
     <SafeAreaProvider>
       <KeyboardProvider>
         <ThemeProvider value={navigationTheme}>
           <StatusBar style={resolvedAppearance === 'dark' ? 'light' : 'dark'} />
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Protected guard={isAuthenticated}>
+            <Stack.Protected guard={needsOnboarding}>
+              <Stack.Screen name="(onboarding)" />
+            </Stack.Protected>
+            <Stack.Protected guard={isAuthenticated && !needsOnboarding}>
               <Stack.Screen name="(main)" />
             </Stack.Protected>
             <Stack.Protected guard={!isAuthenticated}>

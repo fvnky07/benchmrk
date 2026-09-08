@@ -27,7 +27,8 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "outputs": []
+      "outputs": [],
+      "env": ["EXPO_PUBLIC_CONVEX_URL", "EXPO_PUBLIC_CONVEX_SITE_URL"]
     },
     "start": {
       "cache": false,

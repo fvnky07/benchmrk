@@ -50,7 +50,6 @@ export default function RegisterScreen() {
         }
 
         analytics.signupSuccess();
-        router.push('/create-profile');
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Invalid credentials';
