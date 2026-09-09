@@ -1,10 +1,10 @@
 import { Button, ListItem, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-
+import { Alert } from 'react-native';
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
 import {
@@ -19,6 +19,8 @@ import { useUserProfile } from '@/lib/hooks/use-user-profile';
 export default function ManageAccountScreen() {
   const { user, username, bio } = useUserProfile();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const deleteAccount = useMutation(api.auth.deleteAccount);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const config = useQuery(api.auth.getSocialAuthConfig);
@@ -91,6 +93,45 @@ export default function ManageAccountScreen() {
     }
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account permanently?',
+      'This permanently deletes your profile, preferences, workouts, exercise data, comments, and sign-in identity. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete permanently',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setIsDeleting(true);
+              setErrorMessage(null);
+              try {
+                await deleteAccount({});
+              } catch {
+                setErrorMessage(
+                  'Failed to delete your account. Your data was not changed.'
+                );
+                setIsDeleting(false);
+                return;
+              }
+              try {
+                await authClient.signOut();
+                router.replace('/');
+              } catch {
+                setErrorMessage(
+                  'Your account was deleted, but this device could not finish signing out. Please restart the app.'
+                );
+              } finally {
+                setIsDeleting(false);
+              }
+            })();
+          },
+        },
+      ]
+    );
+  };
+
   if (!user) {
     return (
       <NativeScreen>
@@ -147,19 +188,35 @@ export default function ManageAccountScreen() {
             Confirm log out
           </ListItem>
           <Button
-            disabled={isLoggingOut}
+            disabled={isLoggingOut || isDeleting}
             label={isLoggingOut ? 'Logging out…' : 'Log out'}
             onPress={() => void handleLogout()}
           />
           <Button
-            disabled={isLoggingOut}
+            disabled={isLoggingOut || isDeleting}
             label="Cancel"
             variant="outlined"
             onPress={() => setIsConfirmingLogout(false)}
           />
         </>
       ) : (
-        <Button label="Log out" onPress={() => setIsConfirmingLogout(true)} />
+        <Button
+          disabled={isDeleting}
+          label="Log out"
+          onPress={() => setIsConfirmingLogout(true)}
+        />
+      )}
+      {isDeleting ? (
+        <ListItem supportingText="Deleting all account data…">
+          Delete account
+        </ListItem>
+      ) : (
+        <Button
+          disabled={isLoggingOut}
+          label="Delete account permanently"
+          variant="outlined"
+          onPress={handleDeleteAccount}
+        />
       )}
     </NativeScreen>
   );

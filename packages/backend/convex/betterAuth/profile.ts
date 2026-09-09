@@ -131,9 +131,13 @@ export const updateProfile = mutation({
     imageStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId as Id<'user'>);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.userId) {
+      throw new Error('Not authorized');
+    }
+    const { userId, username, bio, imageStorageId } = args;
+    const user = await ctx.db.get(userId as Id<'user'>);
     if (!user) throw new Error('User not found');
-    const { username, bio, imageStorageId } = args;
     if (username) {
       if (
         username.length < 3 ||
@@ -153,7 +157,17 @@ export const updateProfile = mutation({
       if (existingUser) throw new Error('Username already taken');
     }
     let imageUrl = user.image;
-    if (imageStorageId) imageUrl = await ctx.storage.getUrl(imageStorageId);
+    if (imageStorageId) {
+      imageUrl = await ctx.storage.getUrl(imageStorageId);
+      await ctx.db.insert(
+        'profile_media' as never,
+        {
+          userId: args.userId,
+          storageId: imageStorageId,
+          createdAt: Date.now(),
+        } as never
+      );
+    }
     await ctx.db.patch(user._id, {
       ...(username && { username }),
       ...(bio !== undefined && { bio }),
