@@ -1,36 +1,59 @@
-import { Button, Text } from '@expo/ui';
-import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { NativeScreen } from '@/components/native/native-screen';
+import { Text } from 'react-native';
+
+import {
+  AuthDivider,
+  AuthLegalPlaceholder,
+  AuthProviderGroup,
+  AuthRouteActions,
+  AuthShell,
+} from '@/components/native/auth-shell';
 import {
   isAppleAvailable,
   isGoogleAvailable,
   runSocialAuth,
   type SocialProvider,
 } from '@/lib/auth';
-import { showToast } from '@/lib/ui';
 
 export default function WelcomeScreen() {
   const config = useQuery(api.auth.getSocialAuthConfig);
   const [appleNativeAvailable, setAppleNativeAvailable] = useState(false);
+  const [appleCapabilityResolved, setAppleCapabilityResolved] = useState(false);
   const [busy, setBusy] = useState<SocialProvider | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    void AppleAuthentication.isAvailableAsync().then(setAppleNativeAvailable);
+    void AppleAuthentication.isAvailableAsync()
+      .then((available) => {
+        setAppleNativeAvailable(available);
+        setAppleCapabilityResolved(true);
+      })
+      .catch(() => {
+        setAppleCapabilityResolved(true);
+      });
   }, []);
 
   const signIn = async (provider: SocialProvider) => {
     if (!config || busy) return;
+    setStatus(null);
     setBusy(provider);
     try {
       const result = await runSocialAuth(provider, config, false);
-      if (result.status === 'failure') {
-        showToast.error('Sign in failed', result.message);
+      if (result.status === 'cancelled') {
+        setStatus('Sign-in cancelled. You can try again when ready.');
+      } else if (result.status === 'failure') {
+        setStatus(
+          result.message ||
+            'Sign-in failed. Check your connection and try again.'
+        );
+      } else {
+        setStatus('Signed in. Loading your Benchmrk identity…');
       }
+    } catch {
+      setStatus('Sign-in failed. Check your connection and try again.');
     } finally {
       setBusy(null);
     }
@@ -40,41 +63,28 @@ export default function WelcomeScreen() {
   const showGoogle = isGoogleAvailable(config);
 
   return (
-    <NativeScreen>
-      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>Welcome</Text>
-      <Text textStyle={{ fontSize: 17 }}>
+    <AuthShell>
+      <Text
+        accessibilityRole="header"
+        style={{ fontSize: 32, fontWeight: '700' }}
+      >
+        Welcome
+      </Text>
+      <Text style={{ fontSize: 17 }} selectable>
         Track training, build consistency, and review your progress.
       </Text>
-      {showApple ? (
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-          cornerRadius={8}
-          style={{ width: '100%', height: 48 }}
-          onPress={() => {
-            if (!busy) void signIn('apple');
-          }}
-        />
-      ) : null}
-      {showGoogle ? (
-        <GoogleSigninButton
-          size={GoogleSigninButton.Size.Wide}
-          color={GoogleSigninButton.Color.Dark}
-          style={{ width: '100%', height: 48 }}
-          onPress={() => void signIn('google')}
-          disabled={busy !== null}
-        />
-      ) : null}
-      {busy ? <Text>{`Signing in with ${busy}…`}</Text> : null}
-      <Button
-        label="Create account"
-        onPress={() => router.replace('/register')}
+      <AuthProviderGroup
+        appleAvailable={showApple}
+        appleCapabilityResolved={appleCapabilityResolved}
+        busy={busy}
+        configResolved={config !== undefined}
+        googleAvailable={showGoogle}
+        onPress={signIn}
+        status={status}
       />
-      <Button
-        label="Log in"
-        variant="outlined"
-        onPress={() => router.replace('/login')}
-      />
-    </NativeScreen>
+      <AuthDivider />
+      <AuthRouteActions />
+      <AuthLegalPlaceholder />
+    </AuthShell>
   );
 }
