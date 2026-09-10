@@ -2,7 +2,8 @@
 // auth queries. The auth config lives in betterAuth/auth.ts
 // per the official Convex integration docs.
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { mutation, query, type MutationCtx } from './_generated/server';
+import type { Doc, Id, TableNames } from './_generated/dataModel';
 import { authComponent } from './betterAuth/auth';
 
 export {
@@ -11,11 +12,15 @@ export {
   createAuthOptions,
 } from './betterAuth/auth';
 
-export function profileMediaDeletionAllowed(
+export function assertProfileMediaOwnership(
   imageUrl: string | null | undefined,
   ownedMediaCount: number
-): boolean {
-  return !imageUrl || ownedMediaCount > 0;
+): void {
+  if (imageUrl && ownedMediaCount === 0) {
+    throw new Error(
+      'Profile media ownership cannot be verified; retry after migration'
+    );
+  }
 }
 
 // NOTE: Get current authenticated user
@@ -32,6 +37,91 @@ export const getCurrentUser = query({
  * identity in one Convex transaction. Ownership is always derived from the
  * current session; callers cannot supply another user id.
  */
+type OwnedRecord<TableName extends TableNames> = Pick<Doc<TableName>, '_id'>;
+type OwnedMedia = Pick<Doc<'profile_media'>, '_id' | 'storageId'>;
+
+export async function deleteOwnedAccountData(
+  ctx: MutationCtx,
+  userId: string,
+  workouts: ReadonlyArray<OwnedRecord<'workouts'>>,
+  sessions: ReadonlyArray<OwnedRecord<'workoutSessions'>>,
+  customExercises: ReadonlyArray<OwnedRecord<'exercises'>>,
+  profileMedia: ReadonlyArray<OwnedMedia>
+): Promise<void> {
+  for (const workout of workouts) {
+    const joins = await ctx.db
+      .query('workoutExercises')
+      .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
+      .collect();
+    for (const join of joins) await ctx.db.delete(join._id);
+    await ctx.db.delete(workout._id);
+  }
+
+  const sessionExerciseIds = new Set<Id<'sessionExercises'>>();
+  for (const session of sessions) {
+    const sessionExercises = await ctx.db
+      .query('sessionExercises')
+      .withIndex('by_session', (q) => q.eq('sessionId', session._id))
+      .collect();
+    for (const sessionExercise of sessionExercises) {
+      sessionExerciseIds.add(sessionExercise._id);
+    }
+  }
+  for (const exercise of customExercises) {
+    const workoutExercises = await ctx.db
+      .query('workoutExercises')
+      .withIndex('by_exercise', (q) => q.eq('exerciseId', exercise._id))
+      .collect();
+    for (const workoutExercise of workoutExercises) {
+      await ctx.db.delete(workoutExercise._id);
+    }
+    const sessionExercises = await ctx.db
+      .query('sessionExercises')
+      .withIndex('by_exercise', (q) => q.eq('exerciseId', exercise._id))
+      .collect();
+    for (const sessionExercise of sessionExercises) {
+      sessionExerciseIds.add(sessionExercise._id);
+    }
+  }
+  for (const sessionExerciseId of sessionExerciseIds) {
+    const sets = await ctx.db
+      .query('sessionSets')
+      .withIndex('by_session_exercise', (q) =>
+        q.eq('sessionExerciseId', sessionExerciseId)
+      )
+      .collect();
+    for (const set of sets) await ctx.db.delete(set._id);
+    await ctx.db.delete(sessionExerciseId);
+  }
+  for (const session of sessions) await ctx.db.delete(session._id);
+
+  const commentIds = new Set<Id<'exerciseComments'>>();
+  const ownedComments = await ctx.db
+    .query('exerciseComments')
+    .withIndex('by_userId', (q) => q.eq('userId', userId))
+    .collect();
+  for (const comment of ownedComments) commentIds.add(comment._id);
+  for (const exercise of customExercises) {
+    const comments = await ctx.db
+      .query('exerciseComments')
+      .withIndex('by_exercise', (q) => q.eq('exerciseId', exercise._id))
+      .collect();
+    for (const comment of comments) commentIds.add(comment._id);
+  }
+  for (const commentId of commentIds) await ctx.db.delete(commentId);
+  for (const exercise of customExercises) await ctx.db.delete(exercise._id);
+
+  const preferences = await ctx.db
+    .query('user_preferences')
+    .withIndex('by_userId', (q) => q.eq('userId', userId))
+    .collect();
+  for (const preference of preferences) await ctx.db.delete(preference._id);
+  for (const media of profileMedia) {
+    await ctx.storage.delete(media.storageId);
+    await ctx.db.delete(media._id);
+  }
+}
+
 export const deleteAccount = mutation({
   args: {},
   returns: v.null(),
@@ -42,28 +132,11 @@ export const deleteAccount = mutation({
 
     // Preflight every operation that can fail before mutating user data.
     const authUser = await authComponent.getAnyUserById(ctx, userId);
-    // `profile_media` is in schema.ts but generated dataModel.ts cannot be
-    // refreshed without CONVEX_DEPLOYMENT; run `pnpm exec convex codegen`
-    // after configuring that deployment.
-    type ProfileMedia = { _id: string; userId: string; storageId: string };
-    const profileMediaQuery = ctx.db.query(
-      'profile_media' as never
-    ) as unknown as {
-      withIndex: (
-        name: 'by_userId',
-        callback: (query: {
-          eq: (field: 'userId', value: string) => unknown;
-        }) => unknown
-      ) => { collect: () => Promise<ProfileMedia[]> };
-    };
-    const profileMedia = await profileMediaQuery
-      .withIndex('by_userId', (query) => query.eq('userId', userId))
+    const profileMedia = await ctx.db
+      .query('profile_media')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
       .collect();
-    if (!profileMediaDeletionAllowed(authUser?.image, profileMedia.length)) {
-      throw new Error(
-        'Profile media ownership cannot be verified; retry after migration'
-      );
-    }
+    assertProfileMediaOwnership(authUser?.image, profileMedia.length);
     const workouts = await ctx.db
       .query('workouts')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
@@ -77,69 +150,15 @@ export const deleteAccount = mutation({
       .withIndex('by_createdBy', (q) => q.eq('createdBy', userId))
       .collect();
 
-    for (const workout of workouts) {
-      const joins = await ctx.db
-        .query('workoutExercises')
-        .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
-        .collect();
-      for (const join of joins) await ctx.db.delete(join._id);
-      await ctx.db.delete(workout._id);
-    }
-    for (const session of sessions) {
-      const sessionExercises = await ctx.db
-        .query('sessionExercises')
-        .withIndex('by_session', (q) => q.eq('sessionId', session._id))
-        .collect();
-      for (const sessionExercise of sessionExercises) {
-        const sets = await ctx.db
-          .query('sessionSets')
-          .withIndex('by_session_exercise', (q) =>
-            q.eq('sessionExerciseId', sessionExercise._id)
-          )
-          .collect();
-        for (const set of sets) await ctx.db.delete(set._id);
-        await ctx.db.delete(sessionExercise._id);
-      }
-      await ctx.db.delete(session._id);
-    }
-    const commentIds = new Set<string>();
-    const ownedComments = await ctx.db
-      .query('exerciseComments')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .collect();
-    for (const comment of ownedComments) commentIds.add(comment._id);
-    for (const exercise of customExercises) {
-      const comments = await ctx.db
-        .query('exerciseComments')
-        .withIndex('by_exercise', (q) => q.eq('exerciseId', exercise._id))
-        .collect();
-      for (const comment of comments) commentIds.add(comment._id);
-    }
-    for (const commentId of commentIds) {
-      await ctx.db.delete(commentId as never);
-    }
-    for (const exercise of customExercises) await ctx.db.delete(exercise._id);
-    const preferences = await ctx.db
-      .query('user_preferences')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .collect();
-    for (const preference of preferences) await ctx.db.delete(preference._id);
-    for (const media of profileMedia) {
-      await ctx.storage.delete(media.storageId as never);
-      await ctx.db.delete(media._id as never);
-    }
-    const adapter = (
-      authComponent.adapter(ctx) as unknown as (options: unknown) => {
-        deleteMany: (input: {
-          model: string;
-          where: Array<{ field: string; value: string }>;
-        }) => Promise<unknown>;
-        delete: (input: {
-          model: string;
-          where: Array<{ field: string; value: string }>;
-        }) => Promise<unknown>;
-      }
-    )({});
+    await deleteOwnedAccountData(
+      ctx,
+      userId,
+      workouts,
+      sessions,
+      customExercises,
+      profileMedia
+    );
+    const adapter = authComponent.adapter(ctx)({});
     for (const model of [
       'session',
       'account',
@@ -147,7 +166,7 @@ export const deleteAccount = mutation({
       'passkey',
       'oauthAccessToken',
       'oauthConsent',
-    ]) {
+    ] as const) {
       await adapter.deleteMany({
         model,
         where: [{ field: 'userId', value: userId }],

@@ -65,7 +65,9 @@ export default defineSchema({
     ),
     isCustom: v.optional(v.boolean()),
     createdBy: v.optional(v.string()),
-  }).index('by_slug', ['slug']).index('by_createdBy', ['createdBy']),
+  })
+    .index('by_slug', ['slug'])
+    .index('by_createdBy', ['createdBy']),
   // User saved workouts (max 3 for free tier)
   workouts: defineTable({
     userId: v.string(),
@@ -92,7 +94,9 @@ export default defineSchema({
     userId: v.string(),
     body: v.string(),
     createdAt: v.number(),
-  }).index('by_exercise', ['exerciseId']).index('by_userId', ['userId']),
+  })
+    .index('by_exercise', ['exerciseId'])
+    .index('by_userId', ['userId']),
 
   workoutSessions: defineTable({
     userId: v.string(),
@@ -118,6 +122,7 @@ export default defineSchema({
     notes: v.optional(v.string()),
   })
     .index('by_session', ['sessionId'])
+    .index('by_exercise', ['exerciseId'])
     .index('by_session_order', ['sessionId', 'order']),
 
   sessionSets: defineTable({
