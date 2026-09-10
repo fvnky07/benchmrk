@@ -2,8 +2,8 @@
 // auth queries. The auth config lives in betterAuth/auth.ts
 // per the official Convex integration docs.
 import { v } from 'convex/values';
-import { mutation, query, type MutationCtx } from './_generated/server';
 import type { Doc, Id, TableNames } from './_generated/dataModel';
+import { type MutationCtx, mutation, query } from './_generated/server';
 import { authComponent } from './betterAuth/auth';
 
 export {
@@ -122,6 +122,48 @@ export async function deleteOwnedAccountData(
   }
 }
 
+type AuthDeletionAdapter = {
+  deleteMany(input: {
+    model:
+      | 'session'
+      | 'account'
+      | 'twoFactor'
+      | 'passkey'
+      | 'oauthApplication'
+      | 'oauthAccessToken'
+      | 'oauthConsent';
+    where: Array<{ field: string; value: string }>;
+  }): Promise<unknown>;
+  delete(input: {
+    model: 'user';
+    where: Array<{ field: string; value: string }>;
+  }): Promise<unknown>;
+};
+
+export async function deleteOwnedAuthRecords(
+  adapter: AuthDeletionAdapter,
+  userId: string
+): Promise<void> {
+  for (const model of [
+    'session',
+    'account',
+    'twoFactor',
+    'passkey',
+    'oauthApplication',
+    'oauthAccessToken',
+    'oauthConsent',
+  ] as const) {
+    await adapter.deleteMany({
+      model,
+      where: [{ field: 'userId', value: userId }],
+    });
+  }
+  await adapter.delete({
+    model: 'user',
+    where: [{ field: 'id', value: userId }],
+  });
+}
+
 export const deleteAccount = mutation({
   args: {},
   returns: v.null(),
@@ -158,24 +200,7 @@ export const deleteAccount = mutation({
       customExercises,
       profileMedia
     );
-    const adapter = authComponent.adapter(ctx)({});
-    for (const model of [
-      'session',
-      'account',
-      'twoFactor',
-      'passkey',
-      'oauthAccessToken',
-      'oauthConsent',
-    ] as const) {
-      await adapter.deleteMany({
-        model,
-        where: [{ field: 'userId', value: userId }],
-      });
-    }
-    await adapter.delete({
-      model: 'user',
-      where: [{ field: 'id', value: userId }],
-    });
+    await deleteOwnedAuthRecords(authComponent.adapter(ctx)({}), userId);
     return null;
   },
 });

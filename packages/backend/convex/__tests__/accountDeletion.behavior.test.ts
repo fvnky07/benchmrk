@@ -1,6 +1,10 @@
 import { convexTest } from 'convex-test';
 import { expect, test } from 'vitest';
-import { assertProfileMediaOwnership, deleteOwnedAccountData } from '../auth';
+import {
+  assertProfileMediaOwnership,
+  deleteOwnedAccountData,
+  deleteOwnedAuthRecords,
+} from '../auth';
 import schema from '../schema';
 
 const modules = import.meta.glob<{ default: Record<string, unknown> }>(
@@ -157,4 +161,58 @@ test('actual preflight failure leaves persisted data and media untouched', async
     expect(await ctx.db.get(mediaId)).not.toBeNull();
     expect(await ctx.storage.getUrl(storageId)).not.toBeNull();
   });
+});
+
+test('removes all Better Auth records owned by the account', async () => {
+  const deleted: Array<{
+    model: string;
+    where: Array<{ field: string; value: string }>;
+  }> = [];
+
+  await deleteOwnedAuthRecords(
+    {
+      deleteMany: async (input) => {
+        deleted.push(input);
+      },
+      delete: async (input) => {
+        deleted.push(input);
+      },
+    },
+    'user-1'
+  );
+
+  expect(deleted).toEqual([
+    {
+      model: 'session',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'account',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'twoFactor',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'passkey',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'oauthApplication',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'oauthAccessToken',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'oauthConsent',
+      where: [{ field: 'userId', value: 'user-1' }],
+    },
+    {
+      model: 'user',
+      where: [{ field: 'id', value: 'user-1' }],
+    },
+  ]);
 });
