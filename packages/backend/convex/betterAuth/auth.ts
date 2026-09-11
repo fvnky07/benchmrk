@@ -5,7 +5,7 @@ import { convex } from '@convex-dev/better-auth/plugins';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { magicLink } from 'better-auth/plugins';
-import { components } from '../_generated/api';
+import { components, internal } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
 import schema from './schema';
@@ -38,8 +38,6 @@ async function sendEmailViaResend(
     return;
   }
 
-  console.log(`Sending magic link email to: ${to}`);
-
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -56,15 +54,15 @@ async function sendEmailViaResend(
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Resend API error:', response.status, error);
+      await response.text();
+      console.error('Resend API request failed:', response.status);
     } else {
       // Drain the body to release the underlying connection;
       // we don't need the JSON payload on success.
       await response.text();
     }
-  } catch (error) {
-    console.error('Failed to send email:', error);
+  } catch {
+    console.error('Failed to send transactional email');
   }
 }
 
@@ -150,7 +148,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
         const userId = newSession.user.id;
         const adapter = hookCtx.context.adapter;
 
-        console.log(`magic-link/verify: user ${userId}`);
+        const isWaitlistIdentity = await ctx.runQuery(
+          internal.waitlist.hasWaitlistEntry,
+          { email: newSession.user.email }
+        );
+        if (!isWaitlistIdentity) {
+          console.log('Magic-link verification is not waitlist eligible');
+          return;
+        }
 
         //Idempotency - check if already premium
         const existingUser = await adapter.findOne<{

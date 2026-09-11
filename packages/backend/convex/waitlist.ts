@@ -1,8 +1,18 @@
 import { v } from 'convex/values';
 import { z } from 'zod';
-import { api, components } from './_generated/api';
-import { action, mutation, query } from './_generated/server';
+import { components, internal } from './_generated/api';
+import {
+  internalAction,
+  internalQuery,
+  mutation,
+  query,
+} from './_generated/server';
 import { createAuth } from './auth';
+import {
+  isEligibleNativeMagicLinkIdentity,
+  NATIVE_MAGIC_LINK_COMPLETION,
+  normalizeNativeMagicLinkEmail,
+} from './nativeMagicLinkPolicy';
 
 const emailSchema = z
   .string()
@@ -75,7 +85,7 @@ export const addEmailToWaitlist = mutation({
     });
 
     // Schedule magic link email send
-    await ctx.scheduler.runAfter(0, api.waitlist.sendMagicLinkEmail, {
+    await ctx.scheduler.runAfter(0, internal.waitlist.sendMagicLinkEmail, {
       email,
     });
 
@@ -83,8 +93,69 @@ export const addEmailToWaitlist = mutation({
   },
 });
 
-// NOTE: Action to send magic link email via Better Auth
-export const sendMagicLinkEmail = action({
+export const hasWaitlistEntry = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const waitlistEntry = await ctx.db
+      .query('waitlist')
+      .withIndex('by_email', (q) => q.eq('email', args.email))
+      .first();
+    return waitlistEntry !== null;
+  },
+});
+
+export const isEligibleNativeMagicLink = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const waitlistEntry = await ctx.db
+      .query('waitlist')
+      .withIndex('by_email', (q) => q.eq('email', args.email))
+      .first();
+    const user = await ctx.runQuery(
+      components.betterAuth.users.getUserByEmail,
+      { email: args.email }
+    );
+    return isEligibleNativeMagicLinkIdentity(
+      waitlistEntry?.email ?? null,
+      user,
+      Date.now()
+    );
+  },
+});
+
+// All syntactically valid requests complete identically. Only eligible users
+// reach the internal action that asks Better Auth to create a mail token.
+export const requestNativeMagicLink = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = normalizeNativeMagicLinkEmail(args.email);
+    if (email === null) {
+      throw new Error('Invalid email address');
+    }
+
+    try {
+      const eligible = await ctx.runQuery(
+        internal.waitlist.isEligibleNativeMagicLink,
+        { email }
+      );
+      if (eligible) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.waitlist.sendNativeMagicLinkEmail,
+          { email }
+        );
+      }
+    } catch {
+      console.error('Native magic-link request could not be processed');
+    }
+
+    return NATIVE_MAGIC_LINK_COMPLETION;
+  },
+});
+
+// Actions are private so arbitrary callers cannot use Better Auth's default
+// magic-link behavior to create identities outside the waitlist flow.
+export const sendMagicLinkEmail = internalAction({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     const auth = createAuth(ctx);
@@ -102,5 +173,25 @@ export const sendMagicLinkEmail = action({
       },
       headers: new Headers(),
     });
+  },
+});
+
+export const sendNativeMagicLinkEmail = internalAction({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      const auth = createAuth(ctx);
+      await auth.api.signInMagicLink({
+        body: {
+          email: args.email,
+          callbackURL: 'native://',
+          newUserCallbackURL: 'native://',
+          errorCallbackURL: 'native://',
+        },
+        headers: new Headers(),
+      });
+    } catch {
+      console.error('Native magic-link delivery failed');
+    }
   },
 });
