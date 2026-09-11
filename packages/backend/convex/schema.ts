@@ -15,6 +15,11 @@ export default defineSchema({
     .index('by_email', ['email'])
     .index('by_position', ['position']),
 
+  native_magic_link_requests: defineTable({
+    email: v.string(),
+    lastSentAt: v.number(),
+  }).index('by_email', ['email']),
+
   // NOTE: User preferences — one row per user, lazily created
   // on first settings access with smart defaults
   user_preferences: defineTable({

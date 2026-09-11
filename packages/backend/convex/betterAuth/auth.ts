@@ -66,6 +66,89 @@ async function sendEmailViaResend(
   }
 }
 
+type MagicLinkFlow = 'native-login' | 'waitlist-enrollment';
+
+function magicLinkProofInput(email: string, flow: MagicLinkFlow): string {
+  const secret = process.env.BETTER_AUTH_SECRET;
+  if (!secret) {
+    throw new Error('BETTER_AUTH_SECRET is required for magic links');
+  }
+  return `${secret}:magic-link:${flow}:${email}`;
+}
+
+function encodeUtf8(value: string): Uint8Array {
+  const bytes: number[] = [];
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (codePoint <= 0x7f) {
+      bytes.push(codePoint);
+    } else if (codePoint <= 0x7ff) {
+      bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f));
+    } else if (codePoint <= 0xffff) {
+      bytes.push(
+        0xe0 | (codePoint >> 12),
+        0x80 | ((codePoint >> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f)
+      );
+    } else {
+      bytes.push(
+        0xf0 | (codePoint >> 18),
+        0x80 | ((codePoint >> 12) & 0x3f),
+        0x80 | ((codePoint >> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f)
+      );
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+export async function createMagicLinkProof(
+  email: string,
+  flow: MagicLinkFlow
+): Promise<string> {
+  const cryptoApi = (
+    globalThis as typeof globalThis & {
+      crypto?: {
+        subtle: {
+          digest(algorithm: string, data: Uint8Array): Promise<ArrayBuffer>;
+        };
+      };
+    }
+  ).crypto;
+  if (!cryptoApi) {
+    throw new Error('Web Crypto is required for magic links');
+  }
+  const digest = await cryptoApi.subtle.digest(
+    'SHA-256',
+    encodeUtf8(magicLinkProofInput(email, flow))
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
+}
+
+export async function isAuthorizedMagicLinkRequest(
+  email: string,
+  metadata: Record<string, unknown> | undefined
+): Promise<boolean> {
+  if (
+    metadata?.flow !== 'native-login' &&
+    metadata?.flow !== 'waitlist-enrollment'
+  ) {
+    return false;
+  }
+  if (typeof metadata.proof !== 'string') {
+    return false;
+  }
+  try {
+    return (
+      metadata.proof === (await createMagicLinkProof(email, metadata.flow))
+    );
+  } catch {
+    return false;
+  }
+}
+
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   return {
     appName: 'benchmrk',
@@ -203,8 +286,10 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     plugins: [
       magicLink({
         expiresIn: 60 * 60 * 24,
-        sendMagicLink: async ({ email, url }) => {
-          console.log(`Magic link for ${email}: ${url}`);
+        sendMagicLink: async ({ email, url, metadata }) => {
+          if (!(await isAuthorizedMagicLinkRequest(email, metadata))) {
+            return;
+          }
           await sendEmailViaResend(
             email,
             'Confirm your spot - benchmrk',

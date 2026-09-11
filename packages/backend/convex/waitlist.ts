@@ -8,6 +8,7 @@ import {
   query,
 } from './_generated/server';
 import { createAuth } from './auth';
+import { createMagicLinkProof } from './betterAuth/auth';
 import {
   isEligibleNativeMagicLinkIdentity,
   NATIVE_MAGIC_LINK_COMPLETION,
@@ -21,6 +22,7 @@ const emailSchema = z
   .email('Invalid email address');
 
 const MAX_PREMIUM_SPOTS = 100;
+const NATIVE_MAGIC_LINK_COOLDOWN_MS = 5 * 60 * 1000;
 
 // NOTE: Query to get the count of confirmed premium users
 export const getPremiumStats = query({
@@ -93,17 +95,6 @@ export const addEmailToWaitlist = mutation({
   },
 });
 
-export const hasWaitlistEntry = internalQuery({
-  args: { email: v.string() },
-  handler: async (ctx, args) => {
-    const waitlistEntry = await ctx.db
-      .query('waitlist')
-      .withIndex('by_email', (q) => q.eq('email', args.email))
-      .first();
-    return waitlistEntry !== null;
-  },
-});
-
 export const isEligibleNativeMagicLink = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, args) => {
@@ -139,6 +130,25 @@ export const requestNativeMagicLink = mutation({
         { email }
       );
       if (eligible) {
+        const now = Date.now();
+        const existingRequest = await ctx.db
+          .query('native_magic_link_requests')
+          .withIndex('by_email', (q) => q.eq('email', email))
+          .first();
+        if (
+          existingRequest &&
+          existingRequest.lastSentAt > now - NATIVE_MAGIC_LINK_COOLDOWN_MS
+        ) {
+          return NATIVE_MAGIC_LINK_COMPLETION;
+        }
+        if (existingRequest) {
+          await ctx.db.patch(existingRequest._id, { lastSentAt: now });
+        } else {
+          await ctx.db.insert('native_magic_link_requests', {
+            email,
+            lastSentAt: now,
+          });
+        }
         await ctx.scheduler.runAfter(
           0,
           internal.waitlist.sendNativeMagicLinkEmail,
@@ -170,6 +180,10 @@ export const sendMagicLinkEmail = internalAction({
         callbackURL: '/welcome',
         // NOTE: New users also go to welcome page
         newUserCallbackURL: '/welcome',
+        metadata: {
+          flow: 'waitlist-enrollment',
+          proof: await createMagicLinkProof(args.email, 'waitlist-enrollment'),
+        },
       },
       headers: new Headers(),
     });
@@ -187,6 +201,10 @@ export const sendNativeMagicLinkEmail = internalAction({
           callbackURL: 'native://',
           newUserCallbackURL: 'native://',
           errorCallbackURL: 'native://',
+          metadata: {
+            flow: 'native-login',
+            proof: await createMagicLinkProof(args.email, 'native-login'),
+          },
         },
         headers: new Headers(),
       });
