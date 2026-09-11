@@ -5,7 +5,7 @@ import { convex } from '@convex-dev/better-auth/plugins';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { magicLink } from 'better-auth/plugins';
-import { components, internal } from '../_generated/api';
+import { components } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
 import schema from './schema';
@@ -148,14 +148,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
         const userId = newSession.user.id;
         const adapter = hookCtx.context.adapter;
 
-        const isWaitlistIdentity = await ctx.runQuery(
-          internal.waitlist.hasWaitlistEntry,
-          { email: newSession.user.email }
-        );
-        if (!isWaitlistIdentity) {
-          console.log('Magic-link verification is not waitlist eligible');
-          return;
-        }
+        console.log(`magic-link/verify: user ${userId}`);
 
         //Idempotency - check if already premium
         const existingUser = await adapter.findOne<{

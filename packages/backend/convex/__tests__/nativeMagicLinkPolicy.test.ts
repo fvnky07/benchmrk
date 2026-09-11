@@ -30,6 +30,11 @@ describe('native magic-link completion policy', () => {
       { emailVerified: true, premiumUntil: null },
     ],
     [
+      'waitlist-created verification session without premium',
+      'member@example.com',
+      { emailVerified: true },
+    ],
+    [
       'expired premium identity',
       'member@example.com',
       { emailVerified: true, premiumUntil: 1_000 },
