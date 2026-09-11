@@ -124,14 +124,7 @@ export async function deleteOwnedAccountData(
 
 type AuthDeletionAdapter = {
   deleteMany(input: {
-    model:
-      | 'session'
-      | 'account'
-      | 'twoFactor'
-      | 'passkey'
-      | 'oauthApplication'
-      | 'oauthAccessToken'
-      | 'oauthConsent';
+    model: 'session' | 'account' | 'verification';
     where: Array<{ field: string; value: string }>;
   }): Promise<unknown>;
   delete(input: {
@@ -142,22 +135,19 @@ type AuthDeletionAdapter = {
 
 export async function deleteOwnedAuthRecords(
   adapter: AuthDeletionAdapter,
-  userId: string
+  userId: string,
+  email: string
 ): Promise<void> {
-  for (const model of [
-    'session',
-    'account',
-    'twoFactor',
-    'passkey',
-    'oauthApplication',
-    'oauthAccessToken',
-    'oauthConsent',
-  ] as const) {
+  for (const model of ['session', 'account'] as const) {
     await adapter.deleteMany({
       model,
       where: [{ field: 'userId', value: userId }],
     });
   }
+  await adapter.deleteMany({
+    model: 'verification',
+    where: [{ field: 'identifier', value: email }],
+  });
   await adapter.delete({
     model: 'user',
     where: [{ field: 'id', value: userId }],
@@ -174,11 +164,12 @@ export const deleteAccount = mutation({
 
     // Preflight every operation that can fail before mutating user data.
     const authUser = await authComponent.getAnyUserById(ctx, userId);
+    if (!authUser) throw new Error('Authenticated user record not found');
     const profileMedia = await ctx.db
       .query('profile_media')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
       .collect();
-    assertProfileMediaOwnership(authUser?.image, profileMedia.length);
+    assertProfileMediaOwnership(authUser.image, profileMedia.length);
     const workouts = await ctx.db
       .query('workouts')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
@@ -200,7 +191,11 @@ export const deleteAccount = mutation({
       customExercises,
       profileMedia
     );
-    await deleteOwnedAuthRecords(authComponent.adapter(ctx)({}), userId);
+    await deleteOwnedAuthRecords(
+      authComponent.adapter(ctx)({}),
+      userId,
+      authUser.email
+    );
     return null;
   },
 });

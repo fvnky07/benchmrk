@@ -178,7 +178,8 @@ test('removes all Better Auth records owned by the account', async () => {
         deleted.push(input);
       },
     },
-    'user-1'
+    'user-1',
+    'user-1@example.test'
   );
 
   expect(deleted).toEqual([
@@ -191,24 +192,8 @@ test('removes all Better Auth records owned by the account', async () => {
       where: [{ field: 'userId', value: 'user-1' }],
     },
     {
-      model: 'twoFactor',
-      where: [{ field: 'userId', value: 'user-1' }],
-    },
-    {
-      model: 'passkey',
-      where: [{ field: 'userId', value: 'user-1' }],
-    },
-    {
-      model: 'oauthApplication',
-      where: [{ field: 'userId', value: 'user-1' }],
-    },
-    {
-      model: 'oauthAccessToken',
-      where: [{ field: 'userId', value: 'user-1' }],
-    },
-    {
-      model: 'oauthConsent',
-      where: [{ field: 'userId', value: 'user-1' }],
+      model: 'verification',
+      where: [{ field: 'identifier', value: 'user-1@example.test' }],
     },
     {
       model: 'user',
