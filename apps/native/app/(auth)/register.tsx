@@ -1,11 +1,12 @@
 import { Button, ListItem, Text } from '@expo/ui';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { analytics } from '@/lib/analytics';
-import { authClient, useAuthStore } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth';
+import { registerWithEmail } from '@/lib/auth/registration';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { registerSchema } from '@/lib/schemas/auth';
 
@@ -16,51 +17,49 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const requestInFlight = useRef(false);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: registerSchema,
     mode: 'onChange',
   });
 
-  const resetPasswords = () => {
-    setPassword('');
-    setConfirmPassword('');
-  };
-
   const onSubmit = () => {
+    if (requestInFlight.current) return;
+
     setErrorMessage(null);
 
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
-      resetPasswords();
-      return;
-    }
+    handleSubmit(
+      { email, password, confirmPassword },
+      async ({ email: normalizedEmail, password: validatedPassword }) => {
+        if (requestInFlight.current) return;
 
-    handleSubmit({ email, password, confirmPassword }, async () => {
-      try {
+        requestInFlight.current = true;
         setIsLoading(true);
 
-        const { error } = await authClient.signUp.email({
-          email,
-          password,
-          name: email.split('@')[0],
-        });
-        if (error) {
-          throw new Error(error.message ?? 'Unable to create your account');
-        }
+        try {
+          await registerWithEmail({
+            email: normalizedEmail,
+            password: validatedPassword,
+          });
 
-        analytics.signupSuccess();
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Invalid credentials';
-        analytics.signupFailed(message);
-        setErrorMessage(message);
-        resetPasswords();
-        setEmail('');
-      } finally {
-        setIsLoading(false);
+          analytics.signupSuccess();
+          router.push('/create-profile');
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Unable to create account. Please try again.';
+          analytics.signupFailed(message);
+          setErrorMessage(message);
+          setPassword('');
+          setConfirmPassword('');
+        } finally {
+          requestInFlight.current = false;
+          setIsLoading(false);
+        }
       }
-    });
+    );
   };
 
   return (
@@ -77,6 +76,7 @@ export default function RegisterScreen() {
         label="Email"
         onChangeText={(value) => {
           setEmail(value);
+          setErrorMessage(null);
           if (hasSubmitted) clearError('email');
         }}
         placeholder="you@example.com"
@@ -90,6 +90,7 @@ export default function RegisterScreen() {
         label="Password"
         onChangeText={(value) => {
           setPassword(value);
+          setErrorMessage(null);
           if (hasSubmitted) clearError('password');
         }}
         placeholder="Choose a password"
@@ -104,6 +105,7 @@ export default function RegisterScreen() {
         label="Confirm password"
         onChangeText={(value) => {
           setConfirmPassword(value);
+          setErrorMessage(null);
           if (hasSubmitted) clearError('confirmPassword');
         }}
         placeholder="Repeat your password"
