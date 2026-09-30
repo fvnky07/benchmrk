@@ -7,7 +7,7 @@
 - Primary product surfaces: Native authentication routes in `apps/native/app/(auth)/`: `welcome.tsx`, `login.tsx`, and `register.tsx`.
 - Evidence reviewed:
   - Product language and identity boundaries in `CONTEXT.md`.
-  - Repository constraints and native conventions in `CLAUDE.md`.
+  - Repository contribution guidelines and development conventions in `CONTRIBUTING.md`.
   - Auth routes and navigation in `apps/native/app/(auth)/_layout.tsx`, `welcome.tsx`, `login.tsx`, and `register.tsx`.
   - Existing native shell and controls in `apps/native/components/native/native-screen.tsx` and `native-text-field.tsx`.
   - Existing appearance/theme implementation in `apps/native/lib/ui/appearance.tsx`, `appearance-state.ts`, `theme.ts`, and platform navigation-theme files.
