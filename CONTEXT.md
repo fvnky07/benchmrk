@@ -112,6 +112,26 @@ _Avoid_: Native web UI, mobile-only placeholder
 A tablet presentation chosen by workflow: list/detail content may split into panes, while focused tasks use a readable-width column or a useful two-column arrangement without replacing top-level tabs.
 _Avoid_: Enlarged phone layout, tablet sidebar shell
 
+**Group**:
+A live shared session of up to six **Group members**, each on their own **Workout** and **Routine**, in which everyone sees each other's progress.
+_Avoid_: Jam, Room, Lobby, Party, Squad, Crew
+
+**Group host**:
+The **Group member** who created the **Group**; they may remove members and end it.
+_Avoid_: Owner, Admin
+
+**Group member**:
+A **Benchmrk identity** currently in a **Group**.
+_Avoid_: Participant, Player
+
+**Pace**:
+How far a **Group member** has progressed through their own planned **Sets**, as a percentage, used to show who is ahead or behind and how close each is to finishing.
+_Avoid_: Score, Rank
+
+**Machine setup**:
+The adjustment positions a member saves for the machine they use for an **Exercise** (for example seat height, back pad, pin or bench angle), shown whenever that **Exercise** comes up.
+_Avoid_: Machine settings, Presets
+
 ## Relationships
 
 - A **Social sign-in** establishes access to one **Benchmrk identity**
@@ -144,6 +164,12 @@ _Avoid_: Enlarged phone layout, tablet sidebar shell
 - Android 11 and below derive light and dark semantic colors from the **Benchmrk Accent** because a **Dynamic Palette** is unavailable
 - The **Web Adapter** preserves workflow behavior, states, labels, keyboard access, and responsive layout; visual parity with Android or iOS is not required
 - Tablets retain top-level tabs and use an **Adaptive Workspace** rather than applying one layout pattern to every route
+- A **Group member**'s **Workout** stays their own; leaving a **Group** never ends it, and ending or abandoning the **Workout** removes them from the **Group**
+- A **Benchmrk identity** is in at most one **Group** at a time
+- A **Group** shows each member's **Pace**; a member's **Overload target** stays computed from their own history and only its met or missed status is shown
+- A **Group member**'s **Effort ratings**, notes and body data are never shown to the **Group**; set-by-set weights and reps are shown only if that member chooses
+- A **Group member** sees only progress made after they joined
+- A **Machine setup** belongs to one **Benchmrk identity** and one **Exercise**; there is at most one per **Exercise** until gyms are modelled
 
 
 ## Example dialogue
@@ -161,3 +187,5 @@ _Avoid_: Enlarged phone layout, tablet sidebar shell
 - "session" is overloaded: it can mean a signed-in member session (authentication) or a **Workout** — say "member session" or **Workout**
 - "Platform-native UI" could mean a fully native implementation or a platform-consistent experience — use **Native-Consistent Product UI**
 - "Theme" could mean an operating-system appearance or a member's choice — use **Appearance Preference** for the System, Light, or Dark choice
+- "group" is used informally for a cluster of **Exercises** in alternating sets — say **Alternating sets**, and reserve **Group** for the live shared session; the later Gym Crews idea needs a different name
+- The word "Jam" appears in older tickets and research — it means a **Group**
