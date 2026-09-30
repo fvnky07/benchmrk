@@ -59,3 +59,8 @@ yarn-error.log*
 # Expo export debug artifacts
 **/.expo-export-*/
 
+# Local agent tooling retained outside the approved consolidation inventory
+.omc/
+.claude/
+.agents/
+skills-lock.json
