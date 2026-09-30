@@ -72,6 +72,46 @@ _Avoid_: Stall (for the three-Workout state)
 Two or more **Exercises** in a **Routine** or **Workout** performed by rotating one **Set** of each in turn rather than finishing one **Exercise** at a time.
 _Avoid_: Superset (use only as an informal synonym in UI copy), Circuit
 
+**Native-Consistent Product UI**:
+Visible controls and surfaces that follow each operating system's appearance, interaction, and accessibility conventions, using platform-native components where available and narrow fallbacks for confirmed gaps.
+_Avoid_: Fully native screen, native-looking skin
+
+**Layout Glue**:
+Structure that composes routes and product UI without owning domain behavior.
+_Avoid_: Native screen implementation
+
+**Appearance Preference**:
+A **Benchmrk identity**'s choice of System, Light, or Dark that controls brightness behavior.
+_Avoid_: Theme, color theme
+
+**Dynamic Palette**:
+Android colors derived from the device wallpaper, expressed in light or dark tonal values according to the effective appearance.
+_Avoid_: Brand palette
+
+**Benchmrk Accent**:
+The product's green accent family, using darker foreground tones on light surfaces and the bright canonical tone on dark surfaces so primary actions and selection remain accessible.
+_Avoid_: Neon green, hard-coded green
+
+**Confirmed Appearance**:
+The latest **Appearance Preference** successfully saved for a specific **Benchmrk identity** and remembered locally for that identity's next launch.
+_Avoid_: Device theme, pending appearance
+
+**Unavailable Capability**:
+A discoverable product capability whose information screen explains that it cannot currently be used and exposes no action that simulates completion.
+_Avoid_: Coming soon action, placeholder workflow
+
+**Community**:
+The planned social area for discovering and interacting with other people's shared training activity.
+_Avoid_: Public Routine list, community feed
+
+**Web Adapter**:
+The accessible web presentation of mobile product workflows when platform-native components are unavailable, without a requirement to mimic either mobile platform.
+_Avoid_: Native web UI, mobile-only placeholder
+
+**Adaptive Workspace**:
+A tablet presentation chosen by workflow: list/detail content may split into panes, while focused tasks use a readable-width column or a useful two-column arrangement without replacing top-level tabs.
+_Avoid_: Enlarged phone layout, tablet sidebar shell
+
 ## Relationships
 
 - A **Social sign-in** establishes access to one **Benchmrk identity**
@@ -94,6 +134,16 @@ _Avoid_: Superset (use only as an informal synonym in UI copy), Circuit
 - An **Overload target** exists only for strength and bodyweight **Exercises**; timed and cardio **Exercises** show only their previous **Set**
 - An abandoned **Workout**, or a skipped **Exercise** in a completed **Workout**, is never a **Stalled Workout**
 - A **Plateau** is flagged to the member and never changes a **Routine** or an **Overload target** on its own
+- **Layout Glue** composes **Native-Consistent Product UI** without changing shared product behavior
+- On Android 12+, the **Dynamic Palette** supplies hue in every **Appearance Preference**; Light and Dark choose tonal brightness, while System follows the device appearance
+- Before saved preferences are available, a returning **Benchmrk identity** uses its locally remembered **Confirmed Appearance**; signed-out members and identities without one follow the device appearance
+- A **Confirmed Appearance** must never cross **Benchmrk identity** boundaries
+- Signing out immediately returns the product to device appearance but retains each **Benchmrk identity**'s non-sensitive **Confirmed Appearance** for future sign-in
+- An **Unavailable Capability** remains navigable, but its destination is explanatory and contains no enabled completion action or delivery-date promise
+- iOS uses the **Benchmrk Accent** as app tint while other surfaces use the operating system's semantic appearance roles
+- Android 11 and below derive light and dark semantic colors from the **Benchmrk Accent** because a **Dynamic Palette** is unavailable
+- The **Web Adapter** preserves workflow behavior, states, labels, keyboard access, and responsive layout; visual parity with Android or iOS is not required
+- Tablets retain top-level tabs and use an **Adaptive Workspace** rather than applying one layout pattern to every route
 
 
 ## Example dialogue
@@ -109,3 +159,5 @@ _Avoid_: Superset (use only as an informal synonym in UI copy), Circuit
 - "account" could mean either a **Benchmrk identity** or a **Provider identity** — use the specific term
 - The current code uses "workout" for a **Routine** and "workout session" for a **Workout** — use the specific terms **Routine** and **Workout** going forward
 - "session" is overloaded: it can mean a signed-in member session (authentication) or a **Workout** — say "member session" or **Workout**
+- "Platform-native UI" could mean a fully native implementation or a platform-consistent experience — use **Native-Consistent Product UI**
+- "Theme" could mean an operating-system appearance or a member's choice — use **Appearance Preference** for the System, Light, or Dark choice
