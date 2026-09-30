@@ -30,6 +30,7 @@
   - Give members three distinct entry routes: welcome, log in, and register, with one shared visual shell.
   - Keep complete email/password forms immediately visible on the log-in and register routes; do not use an identifier-first progressive state.
   - Offer native social sign-in only when the provider is usable on the current platform and configuration.
+  - Let an existing confirmed Waitlist identity request native magic-link sign-in without creating a second Benchmrk identity.
   - Make authentication outcomes and recovery paths understandable in light and dark appearance modes.
   - Preserve the existing Better Auth + Convex contract and keep Profile setup separate from registration.
 - Non-goals:
@@ -48,6 +49,7 @@
 - Primary personas: Existing or prospective Benchmrk members entering the app on an iOS or Android phone or tablet. No more specific persona is established in current product documentation.
 - User jobs:
   - Decide whether to create a Benchmrk identity, log into an existing identity, or use an available Social sign-in.
+  - Access an existing confirmed Waitlist identity without first establishing a password.
   - Enter and submit email/password credentials with confidence.
   - Understand validation, authentication, cancellation, connectivity, and completion feedback.
 - Key contexts of use: First launch, returning to the app, device-native provider authentication, portrait and tablet layouts, light/dark system appearance, and a software keyboard covering part of the form.
@@ -57,7 +59,7 @@
 - Primary navigation: Expo Router stack navigation supplied by `apps/native/app/(auth)/_layout.tsx`; use platform-native back behavior and transitions. Keep separate `welcome`, `login`, and `register` routes.
 - Core routes/screens:
   - `welcome.tsx`: shared brand/entry header, available provider actions, divider, then `Create account` and `Log in` route actions. Its current supporting copy is the exact repository text: “Track training, build consistency, and review your progress.”
-  - `login.tsx`: route title/intro, complete email and password form, `Forgot password?` action, primary `Continue with email` action, provider alternatives where usable, and route switch labeled `Create an account`.
+  - `login.tsx`: route title/intro, complete email and password form, `Forgot password?` action, primary `Continue with email` action, secondary `Email me a sign-in link` action for existing confirmed Waitlist identities, provider alternatives where usable, and route switch labeled `Create an account`.
   - `register.tsx`: route title/intro, complete email, password, and confirm-password form, primary `Create account` action, provider alternatives where usable, and route switch labeled `Log in instead`.
   - `forgot-password.tsx`: an explicit unavailable-state screen. It says “Password recovery is unavailable,” explains that no recovery request has been sent, labels the state “Coming soon,” and returns with `Back to log in` via `/login`.
   - `verify-2fa.tsx`: an explicit unavailable-state screen. It says “Two-factor verification is unavailable,” explains that no code can be accepted or resent, labels the state “Coming soon,” and returns with `Back to log in` via `/login`. Do not design a code-entry or resend state until the route behavior changes.
@@ -91,12 +93,12 @@
 - New/changed components: One shared auth visual shell/layout composition consumed by welcome, login, and register; route-specific form content and state messaging; an availability-aware provider group; and a semantic divider. Prefer existing files/components or a small native auth component under `apps/native/components/native/` over a new styling layer.
 - Control ordering:
   - Welcome: brand/route heading → supporting copy → usable Apple (iOS only) → usable Google → divider with `or` → `Create account` primary → `Log in` secondary/outlined → legal/footer copy.
-  - Login: heading → supporting copy → email → password → `Forgot password?` → primary `Continue with email` → provider group/divider as an alternative → route switch `Create an account` → legal/footer copy.
+  - Login: heading → supporting copy → email → password → `Forgot password?` → primary `Continue with email` → secondary `Email me a sign-in link` → provider group/divider as an alternative → route switch `Create an account` → legal/footer copy.
   - Register: heading → supporting copy → email → password → confirm password → primary `Create account` → provider group/divider as an alternative → route switch `Log in instead` → legal/footer copy.
   - The final implementation must keep labels, errors, and submit controls associated in accessibility order. Providers remain below the credential submit action on login/register; the complete form is always visible.
 - Divider: A full-column hairline using the theme border color with centered, muted `or` text; at least 16pt clear space above and below. It separates credential actions from provider alternatives and is not itself interactive.
 - Legal/footer content: The shared auth shell ends with a secondary, non-interactive footer after the route switch. On welcome, login, and register it displays the exact factual copy `Terms of Service and Privacy Policy coming soon.` as plain text with no links and no consent implication. Do not say `By continuing, you agree` (or equivalent) until finalized documents exist. Omit any `Secured by Benchmrk` badge. Replacing this placeholder copy is tracked by issue #100. The footer remains reachable after the form, uses muted readable styling, and wraps without truncation in Dynamic Type and dark mode.
-- Variants and states: welcome/login/register; light/dark; iOS/Android; phone/tablet; available/unavailable provider; idle/focused/filled/invalid/disabled; submitting; provider loading; provider cancelled; provider failure; server failure; offline/slow network; successful authentication pending navigation; keyboard open; reduced motion; VoiceOver/TalkBack and Dynamic Type.
+- Variants and states: welcome/login/register; light/dark; iOS/Android; phone/tablet; available/unavailable provider; eligible/ineligible magic-link email; idle/focused/filled/invalid/disabled; submitting; provider or magic-link loading; provider cancelled; provider, magic-link delivery, or server failure; offline/slow network; successful authentication pending navigation; keyboard open; reduced motion; VoiceOver/TalkBack and Dynamic Type.
 - Token/component ownership: Semantic colors and radius come from `apps/native/lib/ui/theme.ts` and platform navigation themes. Appearance resolution comes from `apps/native/lib/ui/appearance.tsx` / `appearance-state.ts`. Platform provider components own provider visual rules. The shared shell owns layout spacing and hierarchy; routes own copy, validation, and auth actions.
 
 ## Accessibility
@@ -115,17 +117,17 @@
 
 ## Interaction states
 
-- Loading: While social config is unresolved, do not present misleading provider actions; show a non-blocking loading state in the provider region. During submission, keep the route visible, disable duplicate submits, retain entered values, and announce the active operation.
+- Loading: While social config is unresolved, do not present misleading provider actions; show a non-blocking loading state in the provider region. During credential, provider, or magic-link submission, keep the route visible, disable duplicate submits, retain entered values, and announce the active operation.
 - Empty: Empty form fields are valid initial state with clear labels and no premature error noise. Missing provider configuration means the provider control is absent, not an empty placeholder.
-- Error: Inline field errors follow `apps/native/lib/schemas/auth.ts` messages/constraints where applicable. Form/server errors are explicit, adjacent to the action or in an announced status region, and provide a retry/correction path. Provider cancellation is not presented as a server failure; provider failure uses the existing `runSocialAuth` result/message contract.
-- Success: On successful authentication, communicate completion and transition to the existing auth/onboarding flow. Profile setup remains separate and must not be visually implied to be part of registration.
+- Error: Inline field errors follow `apps/native/lib/schemas/auth.ts` messages/constraints where applicable. Form/server errors are explicit, adjacent to the action or in an announced status region, and provide a retry/correction path. Provider cancellation is not presented as a server failure; provider failure uses the existing `runSocialAuth` result/message contract. Magic-link requests return the same user-visible response whether or not the email belongs to an eligible Waitlist identity, while delivery failures remain safely retryable.
+- Success: On successful authentication, communicate completion and transition to the existing auth/onboarding flow. A native magic link authenticates only an existing confirmed Waitlist identity and never creates another Benchmrk identity. Profile setup remains separate and must not be visually implied to be part of registration.
 - Disabled: Disabled controls retain readable labels and sufficient contrast. Disable only the controls affected by the active request, while preventing duplicate authentication attempts.
 - Offline/slow network, if applicable: Show an explicit connection/request state, preserve entered data, allow retry when safe, and never imply success before Better Auth/Convex confirms it. Native provider availability still controls whether provider actions are shown.
 
 ## Content voice
 
 - Tone: Direct, calm, concise, and reassuring without marketing claims.
-- Terminology: Follow `CONTEXT.md`: use “Benchmrk identity,” “Provider identity,” “Social sign-in,” and “Profile setup” where domain language is needed. Do not call a Benchmrk identity an “account” or a provider identity a “social account.” Route actions use familiar user-facing labels such as “Log in” and “Create account” because those are already present in the routes.
+- Terminology: Follow `CONTEXT.md`: use “Benchmrk identity,” “Waitlist identity,” “Provider identity,” “Social sign-in,” and “Profile setup” where domain language is needed. Do not call a Benchmrk identity an “account” or a provider identity a “social account.” Route actions use familiar user-facing labels such as “Log in” and “Create account” because those are already present in the routes.
 - Microcopy rules: Say what happened and what the member can do next. Keep labels sentence case. Avoid implementation terms, browser/OAuth wording, unexplained provider configuration details, and promises not supported by current product docs. Preserve existing validation wording unless implementation evidence requires a correction.
 
 ## Implementation constraints
@@ -133,11 +135,11 @@
 - Framework/styling system: Expo Router and React Native in `apps/native`; use existing `@expo/ui` native primitives, NativeWind/UI components where already appropriate, and platform-native Apple/Google components. Do not install Clerk or change Better Auth + Convex.
 - Design-token constraints: Extend `apps/native/lib/ui/theme.ts` and existing appearance/navigation tokens rather than creating parallel colors or radii. Provider brand styling remains owned by official provider components.
 - Performance constraints: Avoid unnecessary auth/provider probes and re-renders; do not block rendering the complete email/password forms on provider configuration. Keep native scroll/keyboard behavior responsive.
-- Compatibility constraints: Apple Social sign-in is iOS only and must use the existing `isAppleAvailable` contract. Google is configured for iOS/Android through existing `isGoogleAvailable`, `app.config.ts`, and environment configuration. Show actions only when they can complete. Keep Better Auth, Convex, existing route names, profile setup boundary, and platform navigation intact.
+- Compatibility constraints: Apple Social sign-in is iOS only and must use the existing `isAppleAvailable` contract. Google is configured for iOS/Android through existing `isGoogleAvailable`, `app.config.ts`, and environment configuration. Show actions only when they can complete. Native magic-link sign-in is limited to existing confirmed Waitlist identities, uses the existing Better Auth magic-link capability, returns enumeration-safe responses, and must not grant access or premium status to an unknown email. Keep Better Auth, Convex, existing route names, profile setup boundary, and platform navigation intact.
 - Test/screenshot expectations:
   - Capture welcome, login, and register on iOS and Android at phone and tablet sizes in light and dark modes: 3 routes × 2 platforms × 2 device classes × 2 appearances = 24 baseline screenshots (or an explicitly documented platform limitation).
   - Capture focused/keyboard-open and Dynamic Type/reflow variants for login and register; capture provider-present and provider-absent variants, including Apple absent on Android and Google absent when configuration is missing.
-  - Capture loading, validation error, provider cancellation/failure, server/offline error, disabled submit, and success/pending-navigation states. Screenshots must show no clipping, overlap, unreadable contrast, hidden errors, or controls below an inaccessible keyboard.
+  - Capture loading, validation error, provider cancellation/failure, magic-link eligible/ineligible/delivery-failure responses, server/offline error, disabled submit, and success/pending-navigation states. Screenshots must show no clipping, overlap, unreadable contrast, hidden errors, or controls below an inaccessible keyboard.
   - Compare hierarchy, spacing, native control treatment, safe areas, navigation/back behavior, and accessibility labels against this contract. The Clerk AuthView screenshots are a composition/hierarchy reference only, never a pixel-copy target or dependency.
 
 ## Open questions
