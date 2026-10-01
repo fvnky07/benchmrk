@@ -15,9 +15,11 @@ import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
 import type * as lib_exerciseCatalog from "../lib/exerciseCatalog.js";
+import type * as lib_exercises from "../lib/exercises.js";
 import type * as lib_identity from "../lib/identity.js";
 import type * as memberSettings from "../memberSettings.js";
 import type * as profile from "../profile.js";
+import type * as routines from "../routines.js";
 import type * as waitlist from "../waitlist.js";
 
 import type {
@@ -34,9 +36,11 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   init: typeof init;
   "lib/exerciseCatalog": typeof lib_exerciseCatalog;
+  "lib/exercises": typeof lib_exercises;
   "lib/identity": typeof lib_identity;
   memberSettings: typeof memberSettings;
   profile: typeof profile;
+  routines: typeof routines;
   waitlist: typeof waitlist;
 }>;
 

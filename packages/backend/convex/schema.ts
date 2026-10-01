@@ -63,6 +63,26 @@ export default defineSchema({
     .index('by_slug', ['slug'])
     .index('by_createdBy', ['createdBy']),
 
+  routines: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    targetDurationSeconds: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  routineExercises: defineTable({
+    routineId: v.id('routines'),
+    exerciseId: v.id('exercises'),
+    order: v.number(),
+    targetSets: v.number(),
+    repRangeMin: v.number(),
+    repRangeMax: v.number(),
+    setRepTargets: v.array(v.number()),
+    startingWeightKg: v.optional(v.number()),
+    stepKg: v.number(),
+    plannedRestSeconds: v.optional(v.number()),
+  }).index('by_routine', ['routineId', 'order']),
+
   // Comments on exercises
   exerciseComments: defineTable({
     exerciseId: v.id('exercises'),
