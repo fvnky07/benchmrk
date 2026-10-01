@@ -113,7 +113,7 @@ A tablet presentation chosen by workflow: list/detail content may split into pan
 _Avoid_: Enlarged phone layout, tablet sidebar shell
 
 **Group**:
-A live shared session of up to six **Group members**, each on their own **Workout** and **Routine**, in which everyone sees each other's progress.
+A live shared session of **Group members**, each on their own **Workout** and **Routine**, in which everyone sees each other's progress. There is no product member cap; the backend refuses joins beyond a safety limit.
 _Avoid_: Jam, Room, Lobby, Party, Squad, Crew
 
 **Group host**:
