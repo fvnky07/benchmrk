@@ -9,6 +9,8 @@ async function seedExercise(t: TestBackend) {
       slug: 'test-exercise',
       name: 'Test Exercise',
       description: 'A test exercise',
+      type: 'strength',
+      equipment: 'barbell',
     });
   });
 }

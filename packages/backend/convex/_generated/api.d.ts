@@ -9,10 +9,12 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as domain_units from "../domain/units.js";
 import type * as exerciseComments from "../exerciseComments.js";
 import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as lib_exerciseCatalog from "../lib/exerciseCatalog.js";
 import type * as lib_identity from "../lib/identity.js";
 import type * as memberSettings from "../memberSettings.js";
 import type * as profile from "../profile.js";
@@ -26,10 +28,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  "domain/units": typeof domain_units;
   exerciseComments: typeof exerciseComments;
   exercises: typeof exercises;
   http: typeof http;
   init: typeof init;
+  "lib/exerciseCatalog": typeof lib_exerciseCatalog;
   "lib/identity": typeof lib_identity;
   memberSettings: typeof memberSettings;
   profile: typeof profile;

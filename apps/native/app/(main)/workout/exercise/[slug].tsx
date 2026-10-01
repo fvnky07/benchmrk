@@ -12,7 +12,7 @@ export default function ExerciseDetailScreen() {
   const [commentBody, setCommentBody] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const exercise = useQuery(
-    api.exercises.getExerciseBySlug,
+    api.exercises.getBySlug,
     params.slug ? { slug: params.slug } : 'skip'
   );
   const comments = useQuery(

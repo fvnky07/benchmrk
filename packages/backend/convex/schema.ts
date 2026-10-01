@@ -14,6 +14,22 @@ export const memberSettingsFields = {
   analyticsOptOut: v.boolean(),
 };
 
+export const exerciseTypeValidator = v.union(
+  v.literal('strength'),
+  v.literal('bodyweight'),
+  v.literal('timed'),
+  v.literal('cardio')
+);
+
+export const equipmentValidator = v.union(
+  v.literal('barbell'),
+  v.literal('dumbbell'),
+  v.literal('machine'),
+  v.literal('cable'),
+  v.literal('bodyweight'),
+  v.literal('other')
+);
+
 export default defineSchema({
   // NOTE: Waitlist table for tracking users before they
   // confirm via magic link
@@ -31,26 +47,21 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
-  // Exercises catalog (seeded by init.ts)
+  // Shared catalog Exercises have no creator; custom ones belong to `createdBy`.
   exercises: defineTable({
     slug: v.string(),
     name: v.string(),
-    description: v.string(),
+    description: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     category: v.optional(v.string()),
     muscleGroups: v.optional(v.array(v.string())),
     instructions: v.optional(v.string()),
-    exerciseType: v.optional(
-      v.union(
-        v.literal('strength'), // weight + reps
-        v.literal('bodyweight'), // reps only
-        v.literal('cardio'), // distance + duration
-        v.literal('timed') // duration only
-      )
-    ),
-    isCustom: v.optional(v.boolean()),
+    type: exerciseTypeValidator,
+    equipment: equipmentValidator,
     createdBy: v.optional(v.string()),
-  }).index('by_slug', ['slug']),
+  })
+    .index('by_slug', ['slug'])
+    .index('by_createdBy', ['createdBy']),
 
   // Comments on exercises
   exerciseComments: defineTable({
