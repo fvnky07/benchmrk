@@ -9,8 +9,8 @@ Authentication initiated through a device-native Apple or Google identity picker
 _Avoid_: Browser sign-in, web OAuth
 
 **Waitlist identity**:
-A **Benchmrk identity** created when a prospective member confirms the website waitlist magic link and which may carry lifetime premium access.
-_Avoid_: Waitlist account, premium account
+A **Benchmrk identity** created when a prospective member confirms the website waitlist magic link.
+_Avoid_: Waitlist account, premium account (Benchmrk has no paid tier)
 
 **Benchmrk identity**:
 The member record that owns profile and workout data.
