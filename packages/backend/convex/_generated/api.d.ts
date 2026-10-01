@@ -13,6 +13,7 @@ import type * as exerciseComments from "../exerciseComments.js";
 import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as lib_identity from "../lib/identity.js";
 import type * as profile from "../profile.js";
 import type * as sessionExercises from "../sessionExercises.js";
 import type * as sessionSets from "../sessionSets.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   exercises: typeof exercises;
   http: typeof http;
   init: typeof init;
+  "lib/identity": typeof lib_identity;
   profile: typeof profile;
   sessionExercises: typeof sessionExercises;
   sessionSets: typeof sessionSets;
