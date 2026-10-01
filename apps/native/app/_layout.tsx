@@ -17,7 +17,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { SplashScreen } from '@/components/SplashScreen';
-import { identifyUser, posthog, resetAnalytics } from '@/lib/analytics';
+import {
+  identifyUser,
+  posthog,
+  resetAnalytics,
+  useAnalyticsOptOut,
+} from '@/lib/analytics';
 import { authClient, useAuth } from '@/lib/auth';
 import { AppearanceProvider, toastConfig, useAppearance } from '@/lib/ui';
 
@@ -53,6 +58,7 @@ function NavigationContent({
   isAuthenticated: boolean;
 }>) {
   const { navigationTheme, resolvedAppearance } = useAppearance();
+  useAnalyticsOptOut(isAuthenticated);
   const profile = useQuery(
     api.profile.getCurrentProfile,
     isAuthenticated ? {} : 'skip'

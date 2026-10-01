@@ -1,8 +1,18 @@
-// NOTE: Main app schema - waitlist table for tracking signups
-// before confirmation. Once confirmed via magic link, users
-// become Better Auth users with premiumUntil timestamp.
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+
+export const memberSettingsFields = {
+  appearance: v.union(
+    v.literal('system'),
+    v.literal('light'),
+    v.literal('dark')
+  ),
+  units: v.union(v.literal('kg'), v.literal('lb')),
+  effortScale: v.union(v.literal('RPE'), v.literal('RIR')),
+  defaultRestSeconds: v.number(),
+  haptics: v.boolean(),
+  analyticsOptOut: v.boolean(),
+};
 
 export default defineSchema({
   // NOTE: Waitlist table for tracking users before they
@@ -15,28 +25,9 @@ export default defineSchema({
     .index('by_email', ['email'])
     .index('by_position', ['position']),
 
-  // NOTE: User preferences — one row per user, lazily created
-  // on first settings access with smart defaults
-  user_preferences: defineTable({
+  memberSettings: defineTable({
     userId: v.string(),
-
-    // Appearance
-    theme: v.union(v.literal('light'), v.literal('dark'), v.literal('system')),
-
-    // Workout — general
-    defaultRestTimer: v.number(),
-    weightUnit: v.union(v.literal('kg'), v.literal('lbs')),
-
-    // Workout — tracking
-    autoSaveWorkouts: v.boolean(),
-    syncToCloud: v.boolean(),
-
-    // Integrations
-    appleHealthEnabled: v.boolean(),
-    stravaEnabled: v.boolean(),
-
-    // Metadata
-    createdAt: v.number(),
+    ...memberSettingsFields,
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
