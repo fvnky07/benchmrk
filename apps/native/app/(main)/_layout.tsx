@@ -2,23 +2,13 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { useAppearance } from '@/lib/ui';
 import { useNavigationChrome } from '@/lib/ui/navigation-chrome';
+import { useResumeActiveWorkout } from '@/lib/workout/use-resume-active-workout';
 
-/**
- * Main app layout with native tabs navigation
- *
- * NOTE: This is only accessible when user is authenticated
- * Protected by Stack.Protected guard in app/_layout.tsx
- *
- * Uses platform-native tab bars:
- * - iOS: Native UITabBar with SF Symbols
- * - Android: Uses SF Symbols (cross-platform fallback in SDK 54)
- *
- * Note: SDK 54 doesn't support Material icons via 'md' prop yet.
- * Material Design icons support is available in SDK 55+.
- */
+/** Main tabs, reachable only by a signed-in member who finished Profile setup. */
 export default function MainLayout() {
   const { resolvedAppearance } = useAppearance();
   const navigationChrome = useNavigationChrome(resolvedAppearance);
+  useResumeActiveWorkout();
 
   return (
     <NativeTabs {...navigationChrome}>

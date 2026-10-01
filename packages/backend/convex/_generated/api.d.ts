@@ -21,6 +21,7 @@ import type * as memberSettings from "../memberSettings.js";
 import type * as profile from "../profile.js";
 import type * as routines from "../routines.js";
 import type * as waitlist from "../waitlist.js";
+import type * as workouts from "../workouts.js";
 
 import type {
   ApiFromModules,
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   profile: typeof profile;
   routines: typeof routines;
   waitlist: typeof waitlist;
+  workouts: typeof workouts;
 }>;
 
 /**

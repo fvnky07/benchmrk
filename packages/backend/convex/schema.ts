@@ -30,6 +30,13 @@ export const equipmentValidator = v.union(
   v.literal('other')
 );
 
+export const setTypeValidator = v.union(
+  v.literal('normal'),
+  v.literal('warmup'),
+  v.literal('dropset'),
+  v.literal('failure')
+);
+
 export default defineSchema({
   // NOTE: Waitlist table for tracking users before they
   // confirm via magic link
@@ -82,6 +89,52 @@ export default defineSchema({
     stepKg: v.number(),
     plannedRestSeconds: v.optional(v.number()),
   }).index('by_routine', ['routineId', 'order']),
+
+  workouts: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    routineId: v.optional(v.id('routines')),
+    status: v.union(
+      v.literal('active'),
+      v.literal('completed'),
+      v.literal('abandoned')
+    ),
+    startedAt: v.number(),
+    finishedAt: v.optional(v.number()),
+    finishReason: v.optional(
+      v.union(v.literal('all_sets_done'), v.literal('terminated_early'))
+    ),
+  })
+    .index('by_user_status', ['userId', 'status'])
+    .index('by_user_started', ['userId', 'startedAt']),
+
+  // A Workout's Exercises; planning fields are copied from the Routine at start.
+  workoutExercises: defineTable({
+    workoutId: v.id('workouts'),
+    exerciseId: v.id('exercises'),
+    routineExerciseId: v.optional(v.id('routineExercises')),
+    order: v.number(),
+    repRangeMin: v.number(),
+    repRangeMax: v.number(),
+    stepKg: v.number(),
+    plannedRestSeconds: v.optional(v.number()),
+  }).index('by_workout', ['workoutId', 'order']),
+
+  sets: defineTable({
+    userId: v.string(),
+    workoutId: v.id('workouts'),
+    workoutExerciseId: v.id('workoutExercises'),
+    exerciseId: v.id('exercises'),
+    order: v.number(),
+    type: setTypeValidator,
+    weightKg: v.optional(v.number()),
+    reps: v.optional(v.number()),
+    durationSeconds: v.optional(v.number()),
+    distanceMeters: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  })
+    .index('by_workoutExercise', ['workoutExerciseId', 'order'])
+    .index('by_workout', ['workoutId']),
 
   // Comments on exercises
   exerciseComments: defineTable({

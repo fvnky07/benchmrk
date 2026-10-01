@@ -25,6 +25,11 @@ export default function WorkoutLayout() {
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="routine/[id]" options={{ title: 'Routine' }} />
+      <Stack.Screen name="active" options={{ title: '' }} />
+      <Stack.Screen
+        name="finished/[id]"
+        options={{ title: '', headerBackVisible: false, gestureEnabled: false }}
+      />
       <Stack.Screen
         name="exercise/[slug]"
         options={{

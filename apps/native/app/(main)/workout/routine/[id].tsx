@@ -10,6 +10,7 @@ import { NativeTextField } from '@/components/native/native-text-field';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { RoutineExerciseEditor } from '@/components/workout/routine-exercise-editor';
 import { formatWeight, parseWholeNumber } from '@/lib/workout/format';
+import { useStartWorkout } from '@/lib/workout/use-start-workout';
 
 export default function RoutineBuilderScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function RoutineBuilderScreen() {
   const setTargetDuration = useMutation(api.routines.setTargetDuration);
   const addExercise = useMutation(api.routines.addExercise);
   const removeRoutine = useMutation(api.routines.remove);
+  const startWorkout = useStartWorkout();
   const [name, setName] = useState('');
   const [targetMinutes, setTargetMinutes] = useState('');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -85,6 +87,16 @@ export default function RoutineBuilderScreen() {
           }
         />
       ) : null}
+      <Button
+        disabled={routine.exercises.length === 0}
+        label="Start Workout"
+        onPress={() =>
+          attempt(
+            () => startWorkout(routineId),
+            'Could not start this Workout.'
+          )
+        }
+      />
       <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Exercises</Text>
       {routine.exercises.length === 0 ? (
         <ListItem supportingText="Add the Exercises you plan to do, in order.">

@@ -6,9 +6,15 @@ import { useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { formatClock } from '@/lib/workout/format';
+import { useNow } from '@/lib/workout/use-now';
+import { useStartWorkout } from '@/lib/workout/use-start-workout';
 
 export default function WorkoutScreen() {
   const routines = useQuery(api.routines.list);
+  const activeWorkout = useQuery(api.workouts.getActive);
+  const startWorkout = useStartWorkout();
+  const now = useNow();
   const createRoutine = useMutation(api.routines.create);
   const [newName, setNewName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -31,6 +37,26 @@ export default function WorkoutScreen() {
   return (
     <NativeScreen>
       <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>Workouts</Text>
+      {activeWorkout ? (
+        <ListItem
+          onPress={() => router.push('/workout/active')}
+          supportingText={`In progress · ${formatClock(
+            (now - activeWorkout.startedAt) / 1000
+          )} · ${activeWorkout.progress.done}/${activeWorkout.progress.total} Sets`}
+        >
+          {`Resume ${activeWorkout.name}`}
+        </ListItem>
+      ) : (
+        <Button
+          label="Start empty Workout"
+          variant="outlined"
+          onPress={() =>
+            startWorkout().catch(() =>
+              setErrorMessage('Could not start a Workout. Try again.')
+            )
+          }
+        />
+      )}
       <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Routines</Text>
       {routines === undefined ? (
         <Text textStyle={{ fontSize: 17 }}>Loading Routines…</Text>
