@@ -117,7 +117,7 @@ export const getCurrentProfile = query({
   },
 });
 
-/** Stores profile changes the app has already validated. */
+/** Stores profile changes the app has already validated; a new photo replaces the old file. */
 export const updateProfile = mutation({
   args: {
     userId: v.string(),
@@ -131,10 +131,17 @@ export const updateProfile = mutation({
     const image = args.imageStorageId
       ? await ctx.storage.getUrl(args.imageStorageId)
       : null;
+    if (
+      image &&
+      user.imageStorageId &&
+      user.imageStorageId !== args.imageStorageId
+    ) {
+      await ctx.storage.delete(user.imageStorageId as Id<'_storage'>);
+    }
     await ctx.db.patch(user._id, {
       ...(args.username !== undefined && { username: args.username }),
       ...(args.bio !== undefined && { bio: args.bio }),
-      ...(image && { image }),
+      ...(image && { image, imageStorageId: args.imageStorageId }),
       updatedAt: Date.now(),
     });
     return { success: true };

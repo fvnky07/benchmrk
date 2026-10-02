@@ -31,6 +31,10 @@ export default function SettingsLayout() {
         options={{ title: 'Two-Factor Authentication' }}
       />
       <Stack.Screen
+        name="delete-account"
+        options={{ title: 'Delete Account' }}
+      />
+      <Stack.Screen
         name="change-password"
         options={{ title: 'Change Password' }}
       />
