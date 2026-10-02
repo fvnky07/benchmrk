@@ -38,8 +38,7 @@ export const setTypeValidator = v.union(
 );
 
 export default defineSchema({
-  // NOTE: Waitlist table for tracking users before they
-  // confirm via magic link
+  // Waitlist entries; confirming the emailed link creates a Waitlist identity.
   waitlist: defineTable({
     email: v.string(),
     position: v.optional(v.number()),
@@ -47,6 +46,12 @@ export default defineSchema({
   })
     .index('by_email', ['email'])
     .index('by_position', ['position']),
+
+  // Last native sign-in link mailed per email, to rate-limit requests.
+  magicLinkRequests: defineTable({
+    email: v.string(),
+    lastSentAt: v.number(),
+  }).index('by_email', ['email']),
 
   memberSettings: defineTable({
     userId: v.string(),

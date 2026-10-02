@@ -1,4 +1,4 @@
-export { authClient } from './client';
+export { authClient, completeMagicLinkSignIn } from './client';
 export { type UseAuthReturn, type User, useAuth } from './hooks';
 export {
   isAppleAvailable,

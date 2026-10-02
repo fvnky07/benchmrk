@@ -2102,13 +2102,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       >;
     };
     users: {
-      countPremiumUsers: FunctionReference<
-        "query",
-        "internal",
-        {},
-        number,
-        Name
-      >;
       getUser: FunctionReference<
         "query",
         "internal",

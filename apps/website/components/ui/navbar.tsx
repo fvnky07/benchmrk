@@ -166,7 +166,6 @@ const defaultNavigationLinks: NavbarNavLink[] = [
     },
   },
   { href: '/about', label: 'About' },
-  { href: '/pricing', label: 'Pricing' },
 ];
 
 // NOTE: Variant presets - predefined style combinations for common use cases

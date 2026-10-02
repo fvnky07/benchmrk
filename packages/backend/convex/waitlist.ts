@@ -1,8 +1,14 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { z } from 'zod';
-import { api, components } from './_generated/api';
-import { action, mutation, query } from './_generated/server';
+import { components, internal } from './_generated/api';
+import {
+  internalAction,
+  type MutationCtx,
+  mutation,
+  query,
+} from './_generated/server';
 import { createAuth } from './auth';
+import { magicLinkProof } from './lib/magicLinkProof';
 
 const emailSchema = z
   .string()
@@ -10,28 +16,10 @@ const emailSchema = z
   .toLowerCase()
   .email('Invalid email address');
 
-const MAX_PREMIUM_SPOTS = 100;
+/** Where a native sign-in link lands; the Expo auth plugin appends the session. */
+const NATIVE_SIGN_IN_CALLBACK = 'native://magic-link';
+const SIGN_IN_LINK_COOLDOWN_MS = 5 * 60 * 1000;
 
-// NOTE: Query to get the count of confirmed premium users
-export const getPremiumStats = query({
-  args: {},
-  handler: async (ctx) => {
-    // NOTE: Query Better Auth user table via component to count premium users
-    // The authComponent provides access to the Better Auth tables
-    const premiumCount = await ctx.runQuery(
-      components.betterAuth.users.countPremiumUsers,
-      {}
-    );
-
-    return {
-      claimed: premiumCount,
-      remaining: Math.max(0, MAX_PREMIUM_SPOTS - premiumCount),
-      total: MAX_PREMIUM_SPOTS,
-    };
-  },
-});
-
-// NOTE: Query to get waitlist count for position tracking
 export const getWaitlistCount = query({
   args: {},
   handler: async (ctx) => {
@@ -40,42 +28,33 @@ export const getWaitlistCount = query({
   },
 });
 
-// NOTE: Add email to waitlist and trigger magic link email
+// Adds an email to the waitlist and mails the confirmation link that creates
+// its Waitlist identity.
 export const addEmailToWaitlist = mutation({
   args: { email: v.string() },
   handler: async (ctx, args) => {
-    // Validate and normalize email with Zod
     const parsed = emailSchema.safeParse(args.email);
-
     if (!parsed.success) {
       throw new Error(parsed.error.issues[0].message);
     }
-
     const email = parsed.data;
 
-    // Check if email already exists in waitlist
     const existingWaitlist = await ctx.db
       .query('waitlist')
       .withIndex('by_email', (q) => q.eq('email', email))
       .first();
-
     if (existingWaitlist) {
       throw new Error('Email already on waitlist');
     }
 
-    // Get current waitlist count for position
-    const currentCount = await ctx.db.query('waitlist').collect();
-    const position = currentCount.length + 1;
-
-    // Insert to waitlist with position and timestamp
+    const position = (await ctx.db.query('waitlist').collect()).length + 1;
     const waitlistId = await ctx.db.insert('waitlist', {
       email,
       position,
       createdAt: Date.now(),
     });
 
-    // Schedule magic link email send
-    await ctx.scheduler.runAfter(0, api.waitlist.sendMagicLinkEmail, {
+    await ctx.scheduler.runAfter(0, internal.waitlist.sendConfirmationLink, {
       email,
     });
 
@@ -83,22 +62,85 @@ export const addEmailToWaitlist = mutation({
   },
 });
 
-// NOTE: Action to send magic link email via Better Auth
-export const sendMagicLinkEmail = action({
+export const sendConfirmationLink = internalAction({
   args: { email: v.string() },
   handler: async (ctx, args) => {
-    const auth = createAuth(ctx);
-
-    // NOTE: This triggers Better Auth's magic link flow
-    // which will call our sendMagicLink callback with Resend
-    // The headers are empty since this is server-side initiated
-    await auth.api.signInMagicLink({
+    await createAuth(ctx).api.signInMagicLink({
       body: {
         email: args.email,
-        // NOTE: Redirect to welcome page after confirmation
         callbackURL: '/welcome',
-        // NOTE: New users also go to welcome page
         newUserCallbackURL: '/welcome',
+        metadata: {
+          flow: 'waitlist-confirmation',
+          proof: await magicLinkProof(args.email, 'waitlist-confirmation'),
+        },
+      },
+      headers: new Headers(),
+    });
+  },
+});
+
+/** A confirmed Waitlist identity: on the waitlist and verified through its link. */
+async function isConfirmedWaitlistIdentity(ctx: MutationCtx, email: string) {
+  const onWaitlist = await ctx.db
+    .query('waitlist')
+    .withIndex('by_email', (q) => q.eq('email', email))
+    .first();
+  if (!onWaitlist) return false;
+  const identity = await ctx.runQuery(
+    components.betterAuth.users.getUserByEmail,
+    { email }
+  );
+  return identity?.emailVerified === true;
+}
+
+/**
+ * Requests a native sign-in link. Every valid email gets the same answer, so
+ * nobody can learn who is on the waitlist; only a confirmed Waitlist identity
+ * is ever mailed, at most once per cooldown. It never creates an identity.
+ */
+export const requestSignInLink = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const parsed = emailSchema.safeParse(args.email);
+    if (!parsed.success) throw new ConvexError('INVALID_EMAIL');
+    const email = parsed.data;
+
+    if (await isConfirmedWaitlistIdentity(ctx, email)) {
+      const now = Date.now();
+      const previous = await ctx.db
+        .query('magicLinkRequests')
+        .withIndex('by_email', (q) => q.eq('email', email))
+        .unique();
+      if (!previous || previous.lastSentAt <= now - SIGN_IN_LINK_COOLDOWN_MS) {
+        if (previous) {
+          await ctx.db.patch(previous._id, { lastSentAt: now });
+        } else {
+          await ctx.db.insert('magicLinkRequests', { email, lastSentAt: now });
+        }
+        await ctx.scheduler.runAfter(0, internal.waitlist.sendSignInLink, {
+          email,
+        });
+      }
+    }
+
+    return { status: 'accepted' as const };
+  },
+});
+
+export const sendSignInLink = internalAction({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    await createAuth(ctx).api.signInMagicLink({
+      body: {
+        email: args.email,
+        callbackURL: NATIVE_SIGN_IN_CALLBACK,
+        newUserCallbackURL: NATIVE_SIGN_IN_CALLBACK,
+        errorCallbackURL: NATIVE_SIGN_IN_CALLBACK,
+        metadata: {
+          flow: 'native-sign-in',
+          proof: await magicLinkProof(args.email, 'native-sign-in'),
+        },
       },
       headers: new Headers(),
     });

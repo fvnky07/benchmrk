@@ -1,4 +1,4 @@
-import { expoClient } from '@better-auth/expo/client';
+import { expoClient, getSetCookie } from '@better-auth/expo/client';
 import { convexClient } from '@convex-dev/better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 import Constants from 'expo-constants';
@@ -49,14 +49,30 @@ const chunkedSecureStore = {
   setItem: (key: string, value: string): void => chunkWrite(key, value),
 };
 
+const scheme = Constants.expoConfig?.scheme as string;
+
 export const authClient = createAuthClient({
   baseURL: process.env.EXPO_PUBLIC_CONVEX_SITE_URL,
   plugins: [
     expoClient({
-      scheme: Constants.expoConfig?.scheme as string,
-      storagePrefix: Constants.expoConfig?.scheme as string,
+      scheme,
+      storagePrefix: scheme,
       storage: chunkedSecureStore,
     }),
     convexClient(),
   ],
 });
+
+/**
+ * Stores the session a verified sign-in link handed back through the app's
+ * deep link (the server's Expo plugin appends it as `cookie`), the same way the
+ * Expo client stores sessions from in-app sign-in, then refreshes the session.
+ */
+export function completeMagicLinkSignIn(setCookie: string): void {
+  const cookieKey = `${scheme}_cookie`;
+  chunkedSecureStore.setItem(
+    cookieKey,
+    getSetCookie(setCookie, chunkedSecureStore.getItem(cookieKey) ?? undefined)
+  );
+  authClient.$store.notify('$sessionSignal');
+}
