@@ -16,6 +16,8 @@ const purgePhase = v.union(
   v.literal('routines'),
   v.literal('routineExercises'),
   v.literal('routineBlocks'),
+  v.literal('notes'),
+  v.literal('machineSetups'),
   v.literal('comments'),
   v.literal('customExercises'),
   v.literal('memberSettings'),
@@ -42,6 +44,8 @@ type PurgePhase =
   | 'routines'
   | 'routineExercises'
   | 'comments'
+  | 'notes'
+  | 'machineSetups'
   | 'routineBlocks'
   | 'customExercises'
   | 'memberSettings'
@@ -175,7 +179,7 @@ export const purgeIdentityBatch = internalMutation({
         if (!routine) {
           await scheduleBatch(ctx, {
             ...args,
-            phase: 'comments',
+            phase: 'notes',
             cursor: null,
           });
           return null;
@@ -227,6 +231,34 @@ export const purgeIdentityBatch = internalMutation({
         } else {
           await scheduleBatch(ctx, { ...args, cursor: page.continueCursor });
         }
+        return null;
+      }
+      case 'notes': {
+        const page = await ctx.db
+          .query('notes')
+          .withIndex('by_userId', (q) => q.eq('userId', args.userId))
+          .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+        for (const note of page.page) await ctx.db.delete(note._id);
+        await scheduleBatch(
+          ctx,
+          page.isDone
+            ? { ...args, phase: 'machineSetups', cursor: null }
+            : { ...args, cursor: page.continueCursor }
+        );
+        return null;
+      }
+      case 'machineSetups': {
+        const page = await ctx.db
+          .query('machineSetups')
+          .withIndex('by_user_exercise', (q) => q.eq('userId', args.userId))
+          .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+        for (const setup of page.page) await ctx.db.delete(setup._id);
+        await scheduleBatch(
+          ctx,
+          page.isDone
+            ? { ...args, phase: 'comments', cursor: null }
+            : { ...args, cursor: page.continueCursor }
+        );
         return null;
       }
       case 'comments': {

@@ -5,11 +5,13 @@ import type { SwipeableSetRowProps } from './swipeable-set-row';
 
 /**
  * SwiftUI List swipe actions: a full leading swipe completes, the trailing edge
- * offers Duplicate (full swipe) and Delete. VoiceOver lists them as actions.
+ * offers Duplicate (full swipe), Note and Delete. VoiceOver lists them as
+ * actions.
  */
 export function SwipeableSetRow({
   onComplete,
   onDuplicate,
+  onNote,
   onDelete,
   children,
 }: Readonly<SwipeableSetRowProps>) {
@@ -32,6 +34,12 @@ export function SwipeableSetRow({
           systemImage="plus.square.on.square"
           onPress={onDuplicate}
           modifiers={[tint('#2a6fd6')]}
+        />
+        <Button
+          label="Note"
+          systemImage="note.text"
+          onPress={onNote}
+          modifiers={[tint('#8a6d1f')]}
         />
         {onDelete ? (
           // biome-ignore lint/a11y/useValidAriaRole: SwiftUI ButtonRole, not an ARIA role

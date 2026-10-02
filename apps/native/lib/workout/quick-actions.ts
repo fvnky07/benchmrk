@@ -49,4 +49,6 @@ export const AVAILABLE_QUICK_ACTIONS: ReadonlySet<QuickActionId> = new Set([
   'addSet',
   'info',
   'swap',
+  'note',
+  'setup',
 ]);
