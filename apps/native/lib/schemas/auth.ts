@@ -35,6 +35,18 @@ export const registerSchema = z
     path: ['confirmPassword'], // Error on confirmPassword field
   });
 
+// Password change: the current password plus a new strong one, confirmed
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password'),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, 'Please confirm your new password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
 // Forgot password schema
 export const forgotPasswordSchema = z.object({
   email: emailSchema,

@@ -54,7 +54,10 @@ export default function ManageAccountScreen() {
       <ListItem supportingText="Profile editing is not available yet.">
         Edit profile
       </ListItem>
-      <ListItem supportingText="Password changes are not available yet.">
+      <ListItem
+        supportingText="Signs out your other devices"
+        onPress={() => router.push('/(main)/settings/change-password')}
+      >
         Change password
       </ListItem>
       <SignInMethods />

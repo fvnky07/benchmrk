@@ -3,6 +3,7 @@ import type { GenericCtx } from '@convex-dev/better-auth';
 import { createClient } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
+import { createAuthMiddleware } from 'better-auth/api';
 import { magicLink } from 'better-auth/plugins';
 import { components } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
@@ -107,6 +108,16 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
         updateUserInfoOnLink: false,
         allowUnlinkingAll: false,
       },
+    },
+    hooks: {
+      // A password change always signs out every other session; this device
+      // gets a fresh one. Enforced here rather than trusted from the client.
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== '/change-password') return;
+        return {
+          context: { body: { ...ctx.body, revokeOtherSessions: true } },
+        };
+      }),
     },
     plugins: [
       magicLink({
