@@ -7,12 +7,9 @@ import { Platform } from 'react-native';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import {
-  analytics,
-  authClient,
-  reauthenticateWithApple,
-  runSocialAuth,
-} from '@/lib';
+import { analytics } from '@/lib/analytics';
+import { authClient } from '@/lib/auth/client';
+import { reauthenticateWithApple, runSocialAuth } from '@/lib/auth/social';
 import { useHaptics } from '@/lib/haptics';
 
 /** Must match APPLE_AUTHORIZATION_CODE_HEADER in the backend auth config. */
@@ -31,7 +28,7 @@ const ERROR_COPY: Record<string, string> = {
 /**
  * Permanent deletion: re-authenticate (the password, or signing in again with
  * Apple or Google), confirm, and everything is removed at once on the server.
- * On any failure nothing is deleted and the account keeps working.
+ * On any failure nothing is deleted and the Benchmrk identity keeps working.
  */
 export default function DeleteAccountScreen() {
   const config = useQuery(api.auth.getSocialAuthConfig);
@@ -91,7 +88,7 @@ export default function DeleteAccountScreen() {
       if (error) {
         setErrorMessage(
           ERROR_COPY[error.code ?? ''] ??
-            'Couldn’t delete your account. Nothing was deleted; try again.'
+            'Couldn’t delete your Benchmrk identity. Nothing was deleted; try again.'
         );
         return;
       }
@@ -112,9 +109,9 @@ export default function DeleteAccountScreen() {
   return (
     <NativeScreen>
       <Text textStyle={{ fontSize: 17 }}>
-        This permanently deletes your account and everything in it: Routines,
-        Workouts, Sets, custom Exercises, settings and your profile. It happens
-        right away and can’t be undone.
+        This permanently deletes your Benchmrk identity and everything in it:
+        Routines, Workouts, Sets, custom Exercises, settings and your profile.
+        It happens right away and can’t be undone.
       </Text>
       {methods?.password ? (
         <NativeTextField
@@ -138,7 +135,7 @@ export default function DeleteAccountScreen() {
         </ListItem>
       ) : null}
       {appleUnavailable ? (
-        <ListItem supportingText="Your account uses Sign in with Apple, so deleting it needs an iPhone. You can also request deletion at benchmrk.app/delete-account.">
+        <ListItem supportingText="Your Benchmrk identity uses Sign in with Apple, so deleting it needs an iPhone. You can also request deletion at benchmrk.app/delete-account.">
           Delete from an iPhone
         </ListItem>
       ) : null}
@@ -152,12 +149,12 @@ export default function DeleteAccountScreen() {
           appleUnavailable ||
           (methods.password && password === '')
         }
-        label={busy ? 'Deleting…' : 'Delete account permanently'}
+        label={busy ? 'Deleting…' : 'Delete Benchmrk identity permanently'}
         onPress={deleteAccount}
       />
       <Button
         disabled={busy}
-        label="Keep my account"
+        label="Keep my Benchmrk identity"
         variant="text"
         onPress={() => router.back()}
       />

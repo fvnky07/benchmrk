@@ -1,17 +1,16 @@
 import { Button } from '@expo/ui';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { SocialProviderGroup } from '@/components/native/social-provider-group';
-import {
-  analytics,
-  authClient,
-  registerSchema,
-  useAuthStore,
-  useFormValidation,
-} from '@/lib';
+import { analytics } from '@/lib/analytics';
+import { authClient } from '@/lib/auth/client';
+import { authErrorCopy } from '@/lib/auth/error-copy';
+import { useAuthStore } from '@/lib/auth/store';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
+import { registerSchema } from '@/lib/schemas/auth';
 
 type Status = { message: string; tone: 'neutral' | 'error' } | null;
 
@@ -32,7 +31,9 @@ export default function RegisterScreen() {
   const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [busy, setBusy] = useState(false);
+  const pendingPath = useAuthStore((state) => state.pendingPath);
+  const beginPending = useAuthStore((state) => state.beginPending);
+  const endPending = useAuthStore((state) => state.endPending);
   const [status, setStatus] = useState<Status>(null);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
@@ -40,10 +41,13 @@ export default function RegisterScreen() {
     mode: 'onChange',
   });
 
-  const createAccount = () => {
+  // One pending lock covers this form and the provider buttons; leaving releases it.
+  useEffect(() => endPending, [endPending]);
+
+  const signUp = () => {
     setStatus(null);
     handleSubmit({ email, password, confirmPassword }, async () => {
-      setBusy(true);
+      if (!beginPending('register')) return;
       try {
         const { data, error } = await authClient.signUp.email({
           email,
@@ -53,19 +57,19 @@ export default function RegisterScreen() {
         if (error || !data) {
           const taken = error?.code ? EMAIL_TAKEN_CODES.has(error.code) : false;
           const message = taken
-            ? 'An account with this email already exists. Log in instead.'
-            : 'Couldn’t create your account. Try again.';
+            ? 'A Benchmrk identity with this email already exists. Log in instead.'
+            : authErrorCopy(error?.code, 'Couldn’t sign you up. Try again.');
           analytics.signupFailed(error?.code ?? 'unknown');
           setStatus({ message, tone: 'error' });
           setPassword('');
           setConfirmPassword('');
-          setBusy(false);
+          endPending();
           return;
         }
         analytics.signupSuccess();
         setStatus({
           message:
-            'Account created. We sent a link to verify your email. Setting up your profile…',
+            'You’re signed up. We sent a link to verify your email. Setting up your profile…',
           tone: 'neutral',
         });
       } catch {
@@ -75,21 +79,21 @@ export default function RegisterScreen() {
             'Couldn’t reach Benchmrk. Check your connection and try again.',
           tone: 'error',
         });
-        setBusy(false);
+        endPending();
       }
     });
   };
 
   return (
     <AuthShell
-      title="Create an account"
+      title="Sign up"
       supportingText="Use your email and a password, or continue with Apple or Google."
     >
       <NativeTextField
         autoCapitalize="none"
         autoComplete="email"
         autoCorrect={false}
-        editable={!busy}
+        editable={pendingPath === null}
         error={errors.email}
         keyboardType="email-address"
         label="Email"
@@ -104,7 +108,7 @@ export default function RegisterScreen() {
         autoCapitalize="none"
         autoComplete="new-password"
         autoCorrect={false}
-        editable={!busy}
+        editable={pendingPath === null}
         error={errors.password}
         label="Password"
         onChangeText={(value) => {
@@ -119,7 +123,7 @@ export default function RegisterScreen() {
         autoCapitalize="none"
         autoComplete="new-password"
         autoCorrect={false}
-        editable={!busy}
+        editable={pendingPath === null}
         error={errors.confirmPassword}
         label="Confirm password"
         onChangeText={(value) => {
@@ -131,16 +135,16 @@ export default function RegisterScreen() {
         value={confirmPassword}
       />
       <Button
-        disabled={busy}
-        label={busy ? 'Creating account…' : 'Create account'}
-        onPress={createAccount}
+        disabled={pendingPath !== null}
+        label={pendingPath === 'register' ? 'Signing up…' : 'Sign up'}
+        onPress={signUp}
       />
       {status ? (
         <AuthStatus message={status.message} tone={status.tone} />
       ) : null}
       <SocialProviderGroup dividerPosition="before" />
       <Button
-        disabled={busy}
+        disabled={pendingPath !== null}
         label="Log in instead"
         variant="text"
         onPress={() => router.replace('/login')}
