@@ -202,5 +202,7 @@ export default defineSchema({
     userId: v.string(),
     body: v.string(),
     createdAt: v.number(),
-  }).index('by_exercise', ['exerciseId']),
+  })
+    .index('by_exercise', ['exerciseId'])
+    .index('by_userId', ['userId']),
 });

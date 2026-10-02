@@ -37,6 +37,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   email: string;
                   emailVerified: boolean;
                   image?: null | string;
+                  imageStorageId?: null | string;
                   isAnonymous?: null | boolean;
                   name: string;
                   phoneNumber?: null | string;
@@ -202,6 +203,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "userId"
                     | "premiumUntil"
                     | "bio"
+                    | "imageStorageId"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -607,6 +609,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "userId"
                     | "premiumUntil"
                     | "bio"
+                    | "imageStorageId"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -1086,6 +1089,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   email?: string;
                   emailVerified?: boolean;
                   image?: null | string;
+                  imageStorageId?: null | string;
                   isAnonymous?: null | boolean;
                   name?: string;
                   phoneNumber?: null | string;
@@ -1114,6 +1118,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "userId"
                     | "premiumUntil"
                     | "bio"
+                    | "imageStorageId"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -1600,6 +1605,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   email?: string;
                   emailVerified?: boolean;
                   image?: null | string;
+                  imageStorageId?: null | string;
                   isAnonymous?: null | boolean;
                   name?: string;
                   phoneNumber?: null | string;
@@ -1628,6 +1634,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "userId"
                     | "premiumUntil"
                     | "bio"
+                    | "imageStorageId"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -2090,6 +2097,22 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           onUpdateHandle?: string;
         },
         any,
+        Name
+      >;
+    };
+    identity: {
+      deleteIdentity: FunctionReference<
+        "mutation",
+        "internal",
+        { userId: string },
+        null,
+        Name
+      >;
+      hasAppleAccount: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        boolean,
         Name
       >;
     };

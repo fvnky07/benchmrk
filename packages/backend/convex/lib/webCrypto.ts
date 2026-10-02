@@ -6,20 +6,61 @@ declare const crypto: {
   subtle: {
     digest(algorithm: 'SHA-256', data: Uint8Array): Promise<ArrayBuffer>;
     importKey(
-      format: 'raw',
+      format: 'raw' | 'pkcs8',
       keyData: Uint8Array,
-      algorithm: { name: 'HMAC'; hash: 'SHA-256' },
+      algorithm:
+        | { name: 'HMAC'; hash: 'SHA-256' }
+        | { name: 'ECDSA'; namedCurve: 'P-256' },
       extractable: false,
       usages: ['sign']
     ): Promise<unknown>;
     sign(
-      algorithm: 'HMAC',
+      algorithm: 'HMAC' | { name: 'ECDSA'; hash: 'SHA-256' },
       key: unknown,
       data: Uint8Array
     ): Promise<ArrayBuffer>;
   };
 };
 declare const TextEncoder: new () => { encode(input: string): Uint8Array };
+declare function atob(data: string): string;
+declare function btoa(data: string): string;
+
+function base64Url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * An ES256 JWT signed with a PKCS #8 PEM key, as Apple's client secrets are.
+ * Web Crypto's ECDSA signature is already the raw r‖s form JWS expects.
+ */
+export async function signEs256Jwt(
+  header: Record<string, unknown>,
+  payload: Record<string, unknown>,
+  privateKeyPem: string
+): Promise<string> {
+  const encoder = new TextEncoder();
+  const der = Uint8Array.from(
+    atob(privateKeyPem.replace(/-----[A-Z ]+-----|\s/g, '')),
+    (char) => char.charCodeAt(0)
+  );
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    der,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+  const signingInput = `${base64Url(encoder.encode(JSON.stringify({ ...header, alg: 'ES256' })))}.${base64Url(encoder.encode(JSON.stringify(payload)))}`;
+  const signature = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    key,
+    encoder.encode(signingInput)
+  );
+  return `${signingInput}.${base64Url(new Uint8Array(signature))}`;
+}
 
 function toHex(bytes: ArrayBuffer | Uint8Array): string {
   return Array.from(new Uint8Array(bytes), (byte) =>
