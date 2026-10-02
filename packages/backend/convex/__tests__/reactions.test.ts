@@ -2,12 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import {
-  createAuthIdentity,
-  createTest,
-  type TestBackend,
-  type TestMember,
-} from './harness.testing';
+import { createTest, type TestMember, verifiedMember } from './harness.testing';
 import {
   activeWorkout,
   exerciseId,
@@ -20,22 +15,12 @@ const TODAY = START + 24 * 60 * 60 * 1000;
 beforeEach(useWorkoutClock);
 afterEach(() => vi.useRealTimers());
 
-async function member(t: TestBackend, username: string): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
-
 /** Today's two Sets have saved targets from an earlier Workout. */
 async function groupWithLifter() {
   const t = createTest();
   await t.mutation(internal.init.seed, {});
-  const host = await member(t, 'host');
-  const lifter = await member(t, 'lifter');
+  const host = await verifiedMember(t, 'host');
+  const lifter = await verifiedMember(t, 'lifter');
   const routineId = await lifter.mutation(api.routines.create, {
     name: 'Push',
   });
@@ -226,7 +211,7 @@ describe('Group fist bumps', () => {
 
   test('repeat fist bumps are no-ops and reacted is specific to the sender', async () => {
     const { t, host, lifter, code, first } = await groupWithLifter();
-    const guest = await member(t, 'guest');
+    const guest = await verifiedMember(t, 'guest');
     await guest.mutation(api.groups.joinByCode, { code });
     vi.setSystemTime(TODAY + 1000);
     await logSet(lifter, first._id);
@@ -268,7 +253,7 @@ describe('Group fist bumps', () => {
     vi.setSystemTime(TODAY + 1000);
     await logSet(lifter, first._id);
     const { eventId } = await completedEvent(host);
-    const late = await member(t, 'late');
+    const late = await verifiedMember(t, 'late');
     vi.setSystemTime(TODAY + 2000);
     await late.mutation(api.groups.joinByCode, { code });
     await expect(

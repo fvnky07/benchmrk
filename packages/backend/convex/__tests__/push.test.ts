@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api } from '../_generated/api';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import { finishDue, pushService } from './pushService.testing';
 import { START, useWorkoutClock } from './workoutFixtures.testing';
@@ -21,22 +21,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function member(
-  t: TestBackend,
-  username: string,
-  verified = true
-): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: verified,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
-
 async function host(t: TestBackend, username: string) {
-  const signedIn = await member(t, username);
+  const signedIn = await verifiedMember(t, username);
   await signedIn.mutation(api.groups.create, {});
   return signedIn;
 }
@@ -57,7 +43,7 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService();
     const inviter = await host(t, 'spotter');
-    const invitee = await member(t, 'lifter');
+    const invitee = await verifiedMember(t, 'lifter');
     await twoDevices(invitee);
     await inviter.mutation(api.groupInvites.send, { username: 'lifter' });
     await finishDue(t);
@@ -82,7 +68,7 @@ describe('Group invite push', () => {
     const service = pushService();
     const first = await host(t, 'first');
     const second = await host(t, 'second');
-    const invitee = await member(t, 'lifter');
+    const invitee = await verifiedMember(t, 'lifter');
     await twoDevices(invitee);
     await first.mutation(api.groupInvites.send, { username: 'lifter' });
     await finishDue(t, 12 * HOUR);
@@ -101,7 +87,7 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService();
     const inviter = await host(t, 'spotter');
-    const invitee = await member(t, 'lifter');
+    const invitee = await verifiedMember(t, 'lifter');
     await twoDevices(invitee);
     await inviter.mutation(api.groupInvites.send, { username: 'lifter' });
     await finishDue(t);
@@ -118,8 +104,8 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService();
     const inviter = await host(t, 'spotter');
-    const invitee = await member(t, 'lifter');
-    const other = await member(t, 'other');
+    const invitee = await verifiedMember(t, 'lifter');
+    const other = await verifiedMember(t, 'other');
     await twoDevices(invitee);
     // App-start registration is an upsert, not another delivery destination.
     await invitee.mutation(api.deviceTokens.register, {
@@ -155,7 +141,7 @@ describe('Group invite push', () => {
     const service = pushService({ invalidTicketToken: PHONE });
     const first = await host(t, 'first');
     const second = await host(t, 'second');
-    const invitee = await member(t, 'lifter');
+    const invitee = await verifiedMember(t, 'lifter');
     await twoDevices(invitee);
 
     await first.mutation(api.groupInvites.send, { username: 'lifter' });
@@ -171,7 +157,7 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService({ invalidReceiptToken: PHONE });
     const first = await host(t, 'first');
-    const invitee = await member(t, 'lifter');
+    const invitee = await verifiedMember(t, 'lifter');
     await twoDevices(invitee);
 
     await first.mutation(api.groupInvites.send, { username: 'lifter' });
@@ -189,8 +175,8 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService();
     const inviter = await host(t, 'spotter');
-    const invitee = await member(t, 'lifter');
-    const other = await member(t, 'other');
+    const invitee = await verifiedMember(t, 'lifter');
+    const other = await verifiedMember(t, 'other');
     await twoDevices(invitee);
 
     await other.mutation(api.deviceTokens.unregister, { token: PHONE });
@@ -205,8 +191,8 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService();
     const inviter = await host(t, 'spotter');
-    const first = await member(t, 'first');
-    const second = await member(t, 'second');
+    const first = await verifiedMember(t, 'first');
+    const second = await verifiedMember(t, 'second');
     await first.mutation(api.deviceTokens.register, {
       token: PHONE,
       platform: 'ios',
@@ -229,7 +215,7 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService({ invalidReceiptToken: PHONE });
     const first = await host(t, 'first');
-    const invitee = await member(t, 'lifter');
+    const invitee = await verifiedMember(t, 'lifter');
     await invitee.mutation(api.deviceTokens.register, {
       token: PHONE,
       platform: 'ios',
@@ -254,8 +240,10 @@ describe('Group invite push', () => {
     const t = createTest();
     const service = pushService();
     const inviter = await host(t, 'spotter');
-    const privateMember = await member(t, 'private');
-    const unverified = await member(t, 'unverified', false);
+    const privateMember = await verifiedMember(t, 'private');
+    const unverified = await verifiedMember(t, 'unverified', {
+      verified: false,
+    });
     await privateMember.mutation(api.memberSettings.update, {
       invitesFrom: 'nobody',
     });
