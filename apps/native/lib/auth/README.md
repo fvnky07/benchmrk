@@ -115,8 +115,8 @@ const { user, isAuthenticated } = useAuth();
 // Use useUserProfile() for profile data
 const { username, bio, avatarUrl } = useUserProfile();
 
-// Export types from auth module
-import type { User, UseAuthReturn } from '@/lib/auth';
+// Import types from the module that owns them
+import type { User, UseAuthReturn } from '@/lib/auth/hooks';
 ```
 
 ### ❌ DON'T
@@ -147,7 +147,6 @@ lib/auth/
 ├── client.ts       # Better Auth client configuration
 ├── hooks.ts        # useAuth() - THE ONLY place calling useSession()
 ├── store.ts        # Zustand store for auth state
-├── index.ts        # Public exports
 └── README.md       # This file
 ```
 

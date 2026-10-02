@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { authClient } from '@/lib/auth';
+import { authClient } from '@/lib/auth/client';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { changePasswordSchema } from '@/lib/schemas/auth';
 

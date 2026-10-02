@@ -8,7 +8,7 @@ import { EmailVerificationRow } from '@/components/account/email-verification-ro
 import { SignInMethods } from '@/components/account/sign-in-methods';
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
-import { authClient } from '@/lib/auth';
+import { authClient } from '@/lib/auth/client';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 import { unregisterThisDevice } from '@/lib/push/use-push-registration';
 

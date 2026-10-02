@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Platform } from 'react-native';
 
 import { NativeScreen } from '@/components/native/native-screen';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth/hooks';
 import { completePushProfileSetup } from '@/lib/push/profile-setup-push-step';
 import {
   PUSH_PERMISSION_EXPLANATION,
