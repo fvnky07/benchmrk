@@ -172,6 +172,8 @@ export default defineSchema({
     reps: v.optional(v.number()),
     durationSeconds: v.optional(v.number()),
     distanceMeters: v.optional(v.number()),
+    /** Effort, stored canonically as RPE in 0.5 steps. */
+    rpe: v.optional(v.number()),
     completedAt: v.optional(v.number()),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])
