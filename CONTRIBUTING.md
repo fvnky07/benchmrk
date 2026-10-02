@@ -177,11 +177,11 @@ Each workspace can be filtered with `--filter=<name>` (e.g. `turbo run check-typ
 
 **Monorepo.** Turborepo orchestrates parallel builds and caching across pnpm workspaces. Each app and package has its own `package.json` and can be filtered independently with `--filter=<name>`.
 
-**Auth.** Better Auth via `@convex-dev/better-auth`. Email/password today; OAuth providers, 2FA, and password reset are planned.
+**Auth.** Better Auth via `@convex-dev/better-auth` implements email/password, native Apple and Google Social sign-in, magic links for confirmed Waitlist identities, email verification, password reset and optional TOTP two-factor authentication.
 
 **Data.** Convex provides reactive real-time queries and mutations. Components subscribe via `useQuery` and write via `useMutation`; updates propagate automatically without polling.
 
-**Styling.** Web uses Tailwind CSS 4 (`@tailwindcss/postcss`). Native uses NativeWind 4, which compiles Tailwind class names to React Native styles at build time.
+**Styling.** Web uses Tailwind CSS 4 (`@tailwindcss/postcss`). Native uses `@expo/ui` native-first universal components backed by SwiftUI and Jetpack Compose, plus system components and narrow native extensions for confirmed gaps. Embed React Native views in an `@expo/ui` layout through `RNHostView`. NativeWind and NativeWind fallbacks were retired in #168.
 
 ## Tests
 
@@ -202,13 +202,13 @@ pnpm run format                   # Auto-fix formatting
 
 ## Commit format
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) with workspace scopes. Examples drawn from recent history:
+We use [Conventional Commits](https://www.conventionalcommits.org/) with workspace scopes and issue references: `type(scope): description (#N)`. Examples:
 
 ```
-feat(native): add active workout mini player
-fix(backend): handle missing user identity in workout query
-chore(deps): bump @react-navigation/bottom-tabs to 7.15.11
-docs: clarify env var setup in README
+feat(native): add the Group view inside the Workout (#160)
+fix(backend): respect Group notification preferences (#170)
+refactor(native): retire NativeWind fallbacks (#168)
+docs(native): document the native-first UI standard (#168)
 ```
 
 Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `perf`. Common scopes: `native`, `website`, `backend`, `deps`.

@@ -6,6 +6,7 @@ import {
   type EffortScale,
   effortInScale,
 } from '@repo/backend/convex/domain/effort';
+import type { ComponentProps } from 'react';
 
 import { THEME, useAppearance } from '@/lib/ui';
 import { formatEffort } from '@/lib/workout/format';
@@ -67,8 +68,18 @@ type SetTableProps = {
 const LABEL_WIDTH = 48;
 const TARGET_WIDTH = 72;
 const CELL_WIDTH = 72;
-const SPARKLE = { ios: 'sparkles', android: StarShineIcon } as const;
-const NOTE = { ios: 'note.text', android: EditNoteIcon } as const;
+const SPARKLE = {
+  ios: 'sparkles',
+  android: StarShineIcon,
+} as const satisfies Readonly<
+  Record<'ios' | 'android', ComponentProps<typeof Icon>['name']>
+>;
+const NOTE = {
+  ios: 'note.text',
+  android: EditNoteIcon,
+} as const satisfies Readonly<
+  Record<'ios' | 'android', ComponentProps<typeof Icon>['name']>
+>;
 const WHY_ACTION = { id: 'why', label: 'Why this target' };
 
 /** What a screen reader announces for a value cell. */

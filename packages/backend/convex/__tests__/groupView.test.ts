@@ -2,12 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import {
-  createAuthIdentity,
-  createTest,
-  type TestBackend,
-  type TestMember,
-} from './harness.testing';
+import { createTest, type TestMember, verifiedMember } from './harness.testing';
 import {
   activeWorkout,
   exerciseId,
@@ -24,16 +19,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function member(t: TestBackend, username: string): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
-
 /**
  * A host and a lifter in one Group. The lifter has a Bench Press Routine
  * (2 Sets, 4–8 reps) and one earlier Workout, so today's Sets carry
@@ -42,8 +27,8 @@ async function member(t: TestBackend, username: string): Promise<TestMember> {
 async function groupWithLifter() {
   const t = createTest();
   await t.mutation(internal.init.seed, {});
-  const host = await member(t, 'host');
-  const lifter = await member(t, 'lifter');
+  const host = await verifiedMember(t, 'host');
+  const lifter = await verifiedMember(t, 'lifter');
   const routineId = await lifter.mutation(api.routines.create, {
     name: 'Push',
   });
@@ -177,7 +162,7 @@ describe('Group view', () => {
   test('showing weights needs a live Group', async () => {
     const t = createTest();
     await t.mutation(internal.init.seed, {});
-    const solo = await member(t, 'solo');
+    const solo = await verifiedMember(t, 'solo');
 
     await expect(
       solo.mutation(api.groups.setShowWeights, { shown: true })

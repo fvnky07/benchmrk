@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import { finishDue, pushService } from './pushService.testing';
 import {
@@ -24,16 +24,14 @@ afterEach(() => {
 type Member = { client: TestMember; id: string; username: string };
 
 async function member(t: TestBackend, username: string): Promise<Member> {
-  const id = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const client = t.withIdentity({ subject: id });
-  await client.mutation(api.profile.updateProfile, { username });
+  const client = await verifiedMember(t, username);
   await client.mutation(api.deviceTokens.register, {
     token: `ExpoPushToken[${username}]`,
     platform: 'ios',
   });
+  const id = await client.run(
+    async (ctx) => (await ctx.auth.getUserIdentity())?.subject ?? ''
+  );
   return { client, id, username };
 }
 
@@ -81,6 +79,27 @@ describe('Group safety', () => {
       expect(
         await host.client.mutation(api.groupInvites.send, { username: 'guest' })
       ).toBeNull();
+      expect(await guest.client.query(api.groupInvites.inbox, {})).toEqual([]);
+      await finishDue(t);
+      expect(service.messages).toEqual([]);
+    }
+  );
+
+  test.each(['sender', 'invitee'] as const)(
+    'a block by the %s after sending hides the invite and suppresses its scheduled push',
+    async (direction) => {
+      const t = createTest();
+      const service = pushService();
+      const { host } = await group(t);
+      const guest = await member(t, 'guest');
+      await finishDue(t, 60_000);
+      await host.client.mutation(api.groupInvites.send, { username: 'guest' });
+      const blocker = direction === 'sender' ? host : guest;
+      const blocked = direction === 'sender' ? guest : host;
+      await blocker.client.mutation(api.safety.block, {
+        username: blocked.username,
+      });
+
       expect(await guest.client.query(api.groupInvites.inbox, {})).toEqual([]);
       await finishDue(t);
       expect(service.messages).toEqual([]);
@@ -224,6 +243,21 @@ describe('Group safety', () => {
         'host',
         'guest',
       ]);
+      expect(
+        (await host.client.query(api.groups.events, {})).map(
+          (event) => event.username
+        )
+      ).toEqual(['observer', 'host']);
+      expect(
+        (await guest.client.query(api.groups.events, {})).map(
+          (event) => event.username
+        )
+      ).toEqual(['observer', 'guest']);
+      expect(
+        (await observer.client.query(api.groups.events, {})).map(
+          (event) => event.username
+        )
+      ).toEqual(['observer']);
       await blocker.client.mutation(api.safety.unblock, {
         username: blocked.username,
       });
@@ -271,30 +305,49 @@ describe('Group safety', () => {
     ).rejects.toThrow('NO_SUCH_USERNAME');
   });
 
-  test('reports outside a shared Group omit the Group and reject self or missing members', async () => {
+  test('reporting requires a live Group', async () => {
     const t = createTest();
-    const { host } = await group(t);
+    const { host, code } = await group(t);
     const guest = await member(t, 'guest');
-    await host.client.mutation(api.safety.report, {
-      username: 'guest',
-      reason: 'spam',
-    });
-    const reports = await t.run((ctx) => ctx.db.query('reports').collect());
-    expect(reports).toMatchObject([
-      { reporterId: host.id, reportedId: guest.id, reason: 'spam' },
-    ]);
-    expect(reports[0]?.groupId).toBeUndefined();
+    await expect(
+      guest.client.mutation(api.safety.report, {
+        username: 'host',
+        reason: 'spam',
+      })
+    ).rejects.toThrow('NOT_IN_GROUP');
+    await guest.client.mutation(api.groups.joinByCode, { code });
+    await host.client.mutation(api.groups.end, {});
+    await expect(
+      guest.client.mutation(api.safety.report, {
+        username: 'host',
+        reason: 'spam',
+      })
+    ).rejects.toThrow('NOT_IN_GROUP');
+  });
+
+  test('reports refuse usernames that are not current members of the caller’s Group', async () => {
+    const t = createTest();
+    const { host, code } = await group(t);
+    const outsider = await member(t, 'outsider');
+    const former = await member(t, 'former');
+    await former.client.mutation(api.groups.joinByCode, { code });
+    await former.client.mutation(api.groups.leave, {});
+    const other = await member(t, 'other');
+    await other.client.mutation(api.groups.create, {});
+    for (const username of ['outsider', 'former', 'other', 'missing']) {
+      await expect(
+        host.client.mutation(api.safety.report, {
+          username,
+          reason: 'spam',
+        })
+      ).rejects.toThrow('MEMBER_NOT_FOUND');
+    }
+    expect(await outsider.client.query(api.groups.getMine, {})).toBeNull();
     await expect(
       host.client.mutation(api.safety.report, {
         username: 'host',
         reason: 'other',
       })
     ).rejects.toThrow('CANNOT_REPORT_SELF');
-    await expect(
-      host.client.mutation(api.safety.report, {
-        username: 'missing',
-        reason: 'other',
-      })
-    ).rejects.toThrow('NO_SUCH_USERNAME');
   });
 });

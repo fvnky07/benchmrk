@@ -1,15 +1,12 @@
 import { Button, ListItem, Picker, Switch, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import type { FunctionArgs } from 'convex/server';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Platform } from 'react-native';
-
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 
 export default function PrivacySettingsScreen() {
   const settings = useQuery(api.memberSettings.get);
@@ -88,11 +85,7 @@ export default function PrivacySettingsScreen() {
       </Picker>
       <Button
         label="Blocked members"
-        modifiers={[
-          Platform.OS === 'ios'
-            ? accessibilityLabel('Blocked members')
-            : semantics({ contentDescription: 'Blocked members' }),
-        ]}
+        modifiers={[accessibilityModifier('Blocked members')]}
         onPress={() => router.push('/settings/blocked')}
         variant="outlined"
       />

@@ -34,6 +34,7 @@ import type * as lib_email from "../lib/email.js";
 import type * as lib_exerciseCatalog from "../lib/exerciseCatalog.js";
 import type * as lib_exercises from "../lib/exercises.js";
 import type * as lib_groupProgress from "../lib/groupProgress.js";
+import type * as lib_groupPushes from "../lib/groupPushes.js";
 import type * as lib_identity from "../lib/identity.js";
 import type * as lib_magicLinkProof from "../lib/magicLinkProof.js";
 import type * as lib_overload from "../lib/overload.js";
@@ -92,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   "lib/exerciseCatalog": typeof lib_exerciseCatalog;
   "lib/exercises": typeof lib_exercises;
   "lib/groupProgress": typeof lib_groupProgress;
+  "lib/groupPushes": typeof lib_groupPushes;
   "lib/identity": typeof lib_identity;
   "lib/magicLinkProof": typeof lib_magicLinkProof;
   "lib/overload": typeof lib_overload;

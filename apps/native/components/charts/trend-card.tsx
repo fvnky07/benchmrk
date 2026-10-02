@@ -1,4 +1,4 @@
-import { Text } from '@expo/ui';
+import { RNHostView, Text } from '@expo/ui';
 
 import { Chart } from '@/components/charts/chart';
 import { formatMinutes } from '@/lib/workout/time';
@@ -40,33 +40,37 @@ export function TrendCard({ duration, rest }: TrendCardProps) {
   return (
     <>
       <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Duration</Text>
-      <Chart
-        kind="trend"
-        points={duration.map((point) => ({
-          label: point.label,
-          value: point.value / 60,
-        }))}
-        summary={durationSummary}
-      />
+      <RNHostView matchContents>
+        <Chart
+          kind="trend"
+          points={duration.map((point) => ({
+            label: point.label,
+            value: point.value / 60,
+          }))}
+          summary={durationSummary}
+        />
+      </RNHostView>
       <Text>{durationSummary}</Text>
       <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Average rest</Text>
       {rest.points.length < 2 || restSummary === null ? (
         <Text>Trends appear after two Workouts</Text>
       ) : (
         <>
-          <Chart
-            kind="trend"
-            points={rest.points.map((point) => ({
-              label: point.label,
-              value: point.value,
-            }))}
-            reference={
-              rest.plannedSeconds === null
-                ? undefined
-                : { label: 'Planned', value: rest.plannedSeconds }
-            }
-            summary={restSummary}
-          />
+          <RNHostView matchContents>
+            <Chart
+              kind="trend"
+              points={rest.points.map((point) => ({
+                label: point.label,
+                value: point.value,
+              }))}
+              reference={
+                rest.plannedSeconds === null
+                  ? undefined
+                  : { label: 'Planned', value: rest.plannedSeconds }
+              }
+              summary={restSummary}
+            />
+          </RNHostView>
           <Text>{restSummary}</Text>
         </>
       )}

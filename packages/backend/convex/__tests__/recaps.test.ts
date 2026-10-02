@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { IDLE_END_AFTER_MS } from '../domain/presence';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import {
   activeWorkout,
@@ -20,16 +20,6 @@ const GROUP_START = START + 24 * 60 * MINUTE;
 
 beforeEach(useWorkoutClock);
 afterEach(() => vi.useRealTimers());
-
-async function member(t: TestBackend, username: string): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
 
 async function benchRoutine(t: TestBackend, lifter: TestMember) {
   const routineId = await lifter.mutation(api.routines.create, {
@@ -51,8 +41,8 @@ async function benchRoutine(t: TestBackend, lifter: TestMember) {
 async function groupWithWorkouts() {
   const t = createTest();
   await t.mutation(internal.init.seed, {});
-  const host = await member(t, 'host');
-  const guest = await member(t, 'guest');
+  const host = await verifiedMember(t, 'host');
+  const guest = await verifiedMember(t, 'guest');
   const hostRoutineId = await benchRoutine(t, host);
   const guestRoutineId = await benchRoutine(t, guest);
   const earlierId = await guest.mutation(api.workouts.start, {
@@ -70,9 +60,10 @@ async function groupWithWorkouts() {
     reason: 'finish',
   });
 
-  vi.setSystemTime(GROUP_START);
+  vi.setSystemTime(GROUP_START - MINUTE);
   const groupId = await host.mutation(api.groups.create, {});
   const { code } = await host.mutation(api.groups.shareCode, {});
+  vi.setSystemTime(GROUP_START);
   await guest.mutation(api.groups.joinByCode, { code });
   const hostWorkoutId = await host.mutation(api.workouts.start, {
     routineId: hostRoutineId,
@@ -104,6 +95,52 @@ async function groupWithWorkouts() {
 }
 
 describe('Group recaps', () => {
+  test.each(['host', 'guest'] as const)(
+    'a block by %s hides recap rows and timeline actors only from each other',
+    async (direction) => {
+      const { t, host, guest, groupId, code } = await groupWithWorkouts();
+      const observer = await verifiedMember(t, 'observer');
+      await observer.mutation(api.groups.joinByCode, { code });
+      vi.setSystemTime(GROUP_START + MINUTE);
+      await host.mutation(api.groups.end, {});
+      const blocker = direction === 'host' ? host : guest;
+      await blocker.mutation(api.safety.block, {
+        username: direction === 'host' ? 'guest' : 'host',
+      });
+
+      const hostRecap = await host.query(api.recaps.get, { groupId });
+      const guestRecap = await guest.query(api.recaps.get, { groupId });
+      const observerRecap = await observer.query(api.recaps.get, { groupId });
+      expect(hostRecap.rows.map((row) => row.username)).toEqual([
+        'host',
+        'observer',
+      ]);
+      expect(guestRecap.rows.map((row) => row.username)).toEqual([
+        'guest',
+        'observer',
+      ]);
+      expect(observerRecap.rows.map((row) => row.username)).toEqual([
+        'guest',
+        'host',
+        'observer',
+      ]);
+      expect(hostRecap.timeline.map((event) => event.username)).toEqual([
+        'host',
+        'observer',
+        'host',
+      ]);
+      expect(guestRecap.timeline.map((event) => event.username)).toEqual([
+        'guest',
+        'observer',
+      ]);
+      expect(observerRecap.timeline.map((event) => event.username)).toEqual([
+        'guest',
+        'observer',
+        'host',
+      ]);
+    }
+  );
+
   test('host end saves every member, including final Sets before a Workout ends', async () => {
     const {
       t,
@@ -115,7 +152,7 @@ describe('Group recaps', () => {
       hostSets,
       guestSets,
     } = await groupWithWorkouts();
-    const waiting = await member(t, 'waiting');
+    const waiting = await verifiedMember(t, 'waiting');
     await waiting.mutation(api.groups.joinByCode, { code });
     await guest.mutation(api.groups.setShowWeights, { shown: true });
     vi.setSystemTime(GROUP_START + MINUTE);
@@ -148,7 +185,7 @@ describe('Group recaps', () => {
     const recap = await guest.query(api.recaps.get, { groupId });
     expect(recap).toMatchObject({
       groupId,
-      createdAt: GROUP_START,
+      createdAt: GROUP_START - MINUTE,
       endedAt: GROUP_START + 6 * MINUTE,
       rows: [
         {
@@ -182,7 +219,7 @@ describe('Group recaps', () => {
     ).toBe(groupId);
     expect(recap.timeline[0]).toMatchObject({
       kind: 'joined',
-      username: 'host',
+      username: 'guest',
       exerciseName: null,
       at: GROUP_START,
     });
@@ -232,7 +269,7 @@ describe('Group recaps', () => {
   test("outsiders cannot read or hide a recap or discover another member's Workout", async () => {
     const { t, host, groupId, hostWorkoutId, hostSets } =
       await groupWithWorkouts();
-    const outsider = await member(t, 'outsider');
+    const outsider = await verifiedMember(t, 'outsider');
     vi.setSystemTime(GROUP_START + MINUTE);
     const first = hostSets[0];
     if (!first) throw new Error('missing host Set');
@@ -376,7 +413,7 @@ describe('Group recaps', () => {
     });
   });
 
-  test('a rejoined member has one row from their latest membership and a snapshotted username', async () => {
+  test('a rejoined member keeps the timeline from their first arrival and their latest row with a snapshotted username', async () => {
     const { host, guest, groupId, code, guestSets } = await groupWithWorkouts();
     vi.setSystemTime(GROUP_START + MINUTE);
     await guest.mutation(api.groups.leave, {});
@@ -415,6 +452,6 @@ describe('Group recaps', () => {
       recap.timeline
         .filter((event) => event.kind === 'joined')
         .map((event) => event.username)
-    ).toEqual(['host', 'guest', 'guest']);
+    ).toEqual(['guest', 'guest']);
   });
 });

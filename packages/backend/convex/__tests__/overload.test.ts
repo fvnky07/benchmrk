@@ -228,6 +228,87 @@ describe('Overload targets', () => {
     ]);
   });
 
+  test('an extra Set inserted between planned Working Sets never blocks progression', async () => {
+    const { member, routineId } = await routineFor();
+    const { workoutId, exercise } = await startNext(member, routineId);
+    const [first, second] = exercise.sets;
+    if (!first || !second) throw new Error('missing planned Sets');
+    const extraSetId = await member.mutation(api.workouts.duplicateSet, {
+      setId: first._id,
+    });
+    for (const [setId, reps, rpe] of [
+      [first._id, 8, 8],
+      [extraSetId, 3, 10],
+      [second._id, 8, 8],
+    ] as const) {
+      await member.mutation(api.workouts.completeSet, {
+        setId,
+        weightKg: 60,
+        reps,
+        effort: { scale: 'RPE', value: rpe },
+      });
+    }
+    await member.mutation(api.workouts.end, { workoutId, reason: 'finish' });
+
+    expect(targetsOf((await startNext(member, routineId)).exercise)).toEqual([
+      { weightKg: 62.5, reps: 4 },
+      { weightKg: 62.5, reps: 4 },
+    ]);
+  });
+
+  test('an extra Set cannot replace a missing planned Working Set to trigger progression', async () => {
+    const { member, routineId } = await routineFor();
+    const { workoutId, exercise } = await startNext(member, routineId);
+    const first = exercise.sets[0];
+    if (!first) throw new Error('missing planned Set');
+    const extraSetId = await member.mutation(api.workouts.duplicateSet, {
+      setId: first._id,
+    });
+    for (const setId of [first._id, extraSetId]) {
+      await member.mutation(api.workouts.completeSet, {
+        setId,
+        weightKg: 60,
+        reps: 8,
+        effort: { scale: 'RPE', value: 8 },
+      });
+    }
+    await member.mutation(api.workouts.end, { workoutId, reason: 'terminate' });
+
+    expect(targetsOf((await startNext(member, routineId)).exercise)).toEqual([
+      { weightKg: 60, reps: 8 },
+      { weightKg: 60, reps: 8 },
+    ]);
+  });
+
+  test('a free Workout progresses on the initial Sets of its added Exercise', async () => {
+    const t = createTest();
+    await t.mutation(internal.init.seed, {});
+    const member = t.withIdentity({ subject: 'member-a' });
+    const benchId = await exerciseId(t, 'bench-press');
+    const workoutId = await member.mutation(api.workouts.start, {});
+    await member.mutation(api.workouts.addExercise, {
+      workoutId,
+      exerciseId: benchId,
+    });
+    await logAndEnd(member, workoutId, [
+      { weightKg: 60, reps: 10, rpe: 8 },
+      { weightKg: 60, reps: 10, rpe: 8 },
+      { weightKg: 60, reps: 10, rpe: 8 },
+    ]);
+    tick();
+    const nextWorkoutId = await member.mutation(api.workouts.start, {});
+    await member.mutation(api.workouts.addExercise, {
+      workoutId: nextWorkoutId,
+      exerciseId: benchId,
+    });
+
+    expect(targetsOf(await firstExercise(member))).toEqual([
+      { weightKg: 62.5, reps: 6 },
+      { weightKg: 62.5, reps: 6 },
+      { weightKg: 62.5, reps: 6 },
+    ]);
+  });
+
   test('in pounds, an increase rounds to the step and stays strictly heavier', async () => {
     const { member, routineId } = await routineFor('bench-press', {
       units: 'lb',
@@ -333,6 +414,24 @@ describe('Overload targets', () => {
 });
 
 describe('Overload edge cases', () => {
+  test('a missed Overload target holds its saved weight and reps instead of actual reps + 1', async () => {
+    const { member, routineId, routineExerciseId } = await routineFor();
+    await member.mutation(api.routines.updateExercise, {
+      routineExerciseId,
+      startingWeightKg: 60,
+      setRepTargets: [8, 7],
+    });
+    await logWorkout(member, routineId, [
+      { weightKg: 55, reps: 5, rpe: 10 },
+      { weightKg: 60, reps: 7, rpe: 8 },
+    ]);
+
+    expect(targetsOf((await startNext(member, routineId)).exercise)).toEqual([
+      { weightKg: 60, reps: 8 },
+      { weightKg: 60, reps: 8 },
+    ]);
+  });
+
   test('below the range after an increase holds the weight at the bottom of the range; a second miss suggests a smaller jump', async () => {
     const { member, routineId } = await routineFor();
     await logWorkout(member, routineId, [
@@ -558,6 +657,37 @@ describe('target sheet', () => {
     const next = await startNext(fixture.member, fixture.routineId);
     return { ...fixture, ...next };
   }
+
+  test('added and duplicated Sets get no target when targets are reset or edited', async () => {
+    const { member, exercise } = await workoutWithTargets();
+    const first = exercise.sets[0];
+    if (!first) throw new Error('missing planned Set');
+    await member.mutation(api.workouts.duplicateSet, { setId: first._id });
+    await member.mutation(api.workouts.addSet, {
+      workoutExerciseId: exercise._id,
+    });
+    await member.mutation(api.overload.resetTargets, {
+      workoutExerciseId: exercise._id,
+    });
+
+    expect(targetsOf(await firstExercise(member))).toEqual([
+      { weightKg: 60, reps: 8 },
+      null,
+      { weightKg: 60, reps: 7 },
+      null,
+    ]);
+    await member.mutation(api.overload.editTarget, {
+      workoutExerciseId: exercise._id,
+      weightKg: 65,
+      reps: 6,
+    });
+    expect(targetsOf(await firstExercise(member))).toEqual([
+      { weightKg: 65, reps: 6 },
+      null,
+      { weightKg: 65, reps: 6 },
+      null,
+    ]);
+  });
 
   test('shows Last time, Suggested next and Why from the history and the saved target', async () => {
     const { member, exercise } = await workoutWithTargets();

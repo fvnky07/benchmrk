@@ -238,13 +238,16 @@ export const events = query({
     const group = membership ? await ctx.db.get(membership.groupId) : null;
     if (!membership || group?.status !== 'live') return [];
 
-    const groupEvents = await ctx.db
-      .query('groupEvents')
-      .withIndex('by_group_at', (q) =>
-        q.eq('groupId', group._id).gte('at', membership.joinedAt)
-      )
-      .order('desc')
-      .collect();
+    const blockedIds = await blockedEitherWayIds(ctx, userId);
+    const groupEvents = (
+      await ctx.db
+        .query('groupEvents')
+        .withIndex('by_group_at', (q) =>
+          q.eq('groupId', group._id).gte('at', membership.joinedAt)
+        )
+        .order('desc')
+        .collect()
+    ).filter((event) => !event.userId || !blockedIds.has(event.userId));
     const actorIds = [
       ...new Set(
         groupEvents.flatMap((event) => (event.userId ? [event.userId] : []))

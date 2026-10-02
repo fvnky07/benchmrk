@@ -43,6 +43,8 @@ type PlatesSheetProps = {
   inventory: PlateInventory;
   /** The weight being edited, in kg; null when none. */
   weightKg: number | null;
+  /** Called on every edit, so the Workout counts as active. */
+  onActivity: () => void;
   onDismiss: () => void;
 };
 
@@ -55,6 +57,7 @@ export function PlatesSheet({
   isPresented,
   inventory,
   weightKg,
+  onActivity,
   onDismiss,
 }: Readonly<PlatesSheetProps>) {
   const updateSettings = useMutation(api.memberSettings.update);
@@ -72,9 +75,13 @@ export function PlatesSheet({
   const bars = [...new Set([...BARS[draft.unit], draft.barWeight])].sort(
     (a, b) => b - a
   );
+  const editDraft: typeof setDraft = (update) => {
+    onActivity();
+    setDraft(update);
+  };
 
   const setPairs = (plateWeight: number, pairs: number) =>
-    setDraft((current) => ({
+    editDraft((current) => ({
       ...current,
       plates: current.plates.map((plate) =>
         plate.weight === plateWeight
@@ -84,6 +91,7 @@ export function PlatesSheet({
     }));
 
   const save = async () => {
+    onActivity();
     try {
       setErrorMessage(null);
       await updateSettings({ plates: draft });
@@ -144,7 +152,7 @@ export function PlatesSheet({
             selectedValue={draft.barWeight}
             onValueChange={(value) => {
               if (typeof value === 'number') {
-                setDraft((current) => ({ ...current, barWeight: value }));
+                editDraft((current) => ({ ...current, barWeight: value }));
               }
             }}
           >
@@ -163,7 +171,7 @@ export function PlatesSheet({
             selectedValue={draft.unit}
             onValueChange={(value) => {
               if (value === 'kg' || value === 'lb') {
-                setDraft(DEFAULT_PLATES[value]);
+                editDraft(DEFAULT_PLATES[value]);
               }
             }}
           >
@@ -205,7 +213,7 @@ export function PlatesSheet({
           <Button
             label="Reset to defaults"
             variant="text"
-            onPress={() => setDraft(DEFAULT_PLATES[draft.unit])}
+            onPress={() => editDraft(DEFAULT_PLATES[draft.unit])}
           />
         </Column>
       </ScrollView>

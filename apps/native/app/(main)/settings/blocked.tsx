@@ -1,13 +1,10 @@
 import { Button, Column, ListItem, Row, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
-import { Platform } from 'react-native';
-
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -58,11 +55,7 @@ export default function BlockedMembersScreen() {
                 disabled={busy}
                 label="Unblock"
                 modifiers={[
-                  Platform.OS === 'ios'
-                    ? accessibilityLabel(`Unblock ${member.username}`)
-                    : semantics({
-                        contentDescription: `Unblock ${member.username}`,
-                      }),
+                  accessibilityModifier(`Unblock ${member.username}`),
                 ]}
                 onPress={() =>
                   void perform(() => unblock({ username: member.username }))

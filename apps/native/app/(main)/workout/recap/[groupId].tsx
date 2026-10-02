@@ -1,15 +1,13 @@
 import { Button, Column, ListItem, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Platform } from 'react-native';
-
 import { NativeScreen } from '@/components/native/native-screen';
+import { groupEventText } from '@/lib/groups/event-text';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode, formatWeight } from '@/lib/workout/format';
 import { formatMinutes } from '@/lib/workout/time';
 
@@ -48,34 +46,12 @@ export default function GroupRecapScreen() {
 
   const units = settings?.units ?? 'kg';
   const ownUsername = recap.rows.find((row) => row.isYou)?.username;
-  const timelineText = recap.timeline.map((event) => {
-    const name =
-      event.username === ownUsername
-        ? 'You'
-        : (event.username ?? 'A Group member');
-    switch (event.kind) {
-      case 'joined':
-        return `${name} joined`;
-      case 'left':
-        return `${name} left`;
-      case 'dropped':
-        return `${name} dropped out`;
-      case 'removed':
-        return `${name} was removed`;
-      case 'hostChanged':
-        return `${name} is now the Group host`;
-      case 'ended':
-        return 'The Group ended';
-      case 'setCompleted':
-        return event.setNumber === null
-          ? `${name} finished a Set of ${event.exerciseName ?? 'Exercise'}`
-          : `${name} finished Set ${event.setNumber} of ${event.exerciseName ?? 'Exercise'}`;
-      case 'targetMet':
-        return `${name} met their targets on ${event.exerciseName ?? 'Exercise'}`;
-      default:
-        return null;
-    }
-  });
+  const timelineText = recap.timeline.map((event) =>
+    groupEventText({
+      ...event,
+      isYou: event.username !== null && event.username === ownUsername,
+    })
+  );
 
   return (
     <NativeScreen>
@@ -98,21 +74,15 @@ export default function GroupRecapScreen() {
       </Column>
       <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Timeline</Text>
       <Column spacing={8}>
-        {timelineText.map((line, index) =>
-          line === null ? null : (
-            // biome-ignore lint/suspicious/noArrayIndexKey: Timeline events are immutable and ordered
-            <Text key={`${index}:${line}`}>{line}</Text>
-          )
-        )}
+        {timelineText.map((line, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: Timeline events are immutable and ordered
+          <Text key={`${index}:${line}`}>{line}</Text>
+        ))}
       </Column>
       <Button
         disabled={busy}
         label="Hide from my history"
-        modifiers={[
-          Platform.OS === 'ios'
-            ? accessibilityLabel('Hide from my history')
-            : semantics({ contentDescription: 'Hide from my history' }),
-        ]}
+        modifiers={[accessibilityModifier('Hide from my history')]}
         onPress={async () => {
           setBusy(true);
           setErrorMessage(null);

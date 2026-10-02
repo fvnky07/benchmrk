@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import {
   activeWorkout,
@@ -28,22 +28,8 @@ async function backend() {
 }
 
 /** A member with a verified email (unless asked otherwise) and a username. */
-async function member(
-  t: TestBackend,
-  username: string,
-  { verified = true }: { verified?: boolean } = {}
-): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: verified,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
-
 async function hostWithCode(t: TestBackend) {
-  const host = await member(t, 'host');
+  const host = await verifiedMember(t, 'host');
   await host.mutation(api.groups.create, {});
   const { code } = await host.mutation(api.groups.shareCode, {});
   return { host, code };
@@ -65,7 +51,7 @@ describe('Groups', () => {
   test('creating and joining need a verified email', async () => {
     const t = await backend();
     const { code } = await hostWithCode(t);
-    const unverified = await member(t, 'newbie', { verified: false });
+    const unverified = await verifiedMember(t, 'newbie', { verified: false });
 
     await expect(unverified.mutation(api.groups.create, {})).rejects.toThrow(
       'EMAIL_NOT_VERIFIED'
@@ -78,7 +64,7 @@ describe('Groups', () => {
   test('a member is in one Group at a time', async () => {
     const t = await backend();
     const { host, code } = await hostWithCode(t);
-    const other = await member(t, 'other');
+    const other = await verifiedMember(t, 'other');
     await other.mutation(api.groups.create, {});
 
     await expect(host.mutation(api.groups.create, {})).rejects.toThrow(
@@ -93,7 +79,7 @@ describe('Groups', () => {
     const t = await backend();
     const { code } = await hostWithCode(t);
     for (let index = 1; index < 20; index += 1) {
-      await (await member(t, `lifter${index}`)).mutation(
+      await (await verifiedMember(t, `lifter${index}`)).mutation(
         api.groups.joinByCode,
         {
           code,
@@ -102,16 +88,19 @@ describe('Groups', () => {
     }
 
     await expect(
-      (await member(t, 'one_too_many')).mutation(api.groups.joinByCode, {
-        code,
-      })
+      (await verifiedMember(t, 'one_too_many')).mutation(
+        api.groups.joinByCode,
+        {
+          code,
+        }
+      )
     ).rejects.toThrow('GROUP_FULL');
   });
 
   test('the host can revoke a code, and codes expire after 24 hours unused', async () => {
     const t = await backend();
     const { host, code } = await hostWithCode(t);
-    const guest = await member(t, 'guest');
+    const guest = await verifiedMember(t, 'guest');
 
     await expect(guest.mutation(api.groups.revokeCode, {})).rejects.toThrow(
       'NOT_IN_GROUP'
@@ -135,7 +124,9 @@ describe('Groups', () => {
     await host.mutation(api.groups.end, {});
 
     await expect(
-      (await member(t, 'late')).mutation(api.groups.joinByCode, { code })
+      (await verifiedMember(t, 'late')).mutation(api.groups.joinByCode, {
+        code,
+      })
     ).rejects.toThrow('CODE_INVALID');
     expect(await host.query(api.groups.getMine, {})).toBeNull();
   });
@@ -143,8 +134,8 @@ describe('Groups', () => {
   test('leaving keeps your Workout; finishing it takes you out; hosting passes on', async () => {
     const t = await backend();
     const { host, code } = await hostWithCode(t);
-    const pat = await member(t, 'pat');
-    const sam = await member(t, 'sam');
+    const pat = await verifiedMember(t, 'pat');
+    const sam = await verifiedMember(t, 'sam');
     await pat.mutation(api.groups.joinByCode, { code });
     vi.setSystemTime(START + 1000);
     await sam.mutation(api.groups.joinByCode, { code });
@@ -167,14 +158,16 @@ describe('Groups', () => {
 
     await sam.mutation(api.groups.leave, {});
     await expect(
-      (await member(t, 'after')).mutation(api.groups.joinByCode, { code })
+      (await verifiedMember(t, 'after')).mutation(api.groups.joinByCode, {
+        code,
+      })
     ).rejects.toThrow('CODE_INVALID');
   });
 
   test('others see only your progress summary, and Pace counts Working Sets only', async () => {
     const t = await backend();
     const { host, code } = await hostWithCode(t);
-    const pat = await member(t, 'pat');
+    const pat = await verifiedMember(t, 'pat');
     await pat.mutation(api.groups.joinByCode, { code });
     const workout = await startBenchWorkout(t, pat);
     const bench = workout.exercises[0];
