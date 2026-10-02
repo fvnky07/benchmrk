@@ -174,6 +174,8 @@ export default defineSchema({
     repRangeMax: v.number(),
     stepKg: v.number(),
     plannedRestSeconds: v.optional(v.number()),
+    /** Skipped for this Workout: its unlogged Sets stop counting. */
+    skipped: v.optional(v.boolean()),
   }).index('by_workout', ['workoutId', 'order']),
 
   sets: defineTable({
