@@ -36,6 +36,9 @@ importers:
       '@convex-dev/better-auth':
         specifier: 0.12.5
         version: 0.12.5(@standard-schema/spec@1.1.0)(better-auth@1.6.29(@opentelemetry/api@1.9.0)(next@16.3.1(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@types/node@26.2.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.1.10(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@26.2.0)(jsdom@20.0.3)(vite@8.0.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(esbuild@0.27.0)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))))(convex@1.44.0(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
+      '@expo/material-symbols':
+        specifier: 0.1.1
+        version: 0.1.1
       '@expo/metro-runtime':
         specifier: ~57.0.11
         version: 57.0.11(@expo/log-box@57.0.3)(expo@57.0.14)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/jest-preset@0.86.2(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
@@ -1256,6 +1259,10 @@ packages:
       expo: '*'
       react: 19.2.3
       react-native: 0.86.2
+
+  '@expo/material-symbols@0.1.1':
+    resolution: {integrity: sha512-ruA6hZATOPKxo1qSd1NE3HI9FrmEDwcMDhsvzTAdMkP9AapdHfJ/0tKmBMWFJir85voxs1twYxLVrGW9OLGaOg==}
+    hasBin: true
 
   '@expo/metro-config@57.0.8':
     resolution: {integrity: sha512-cZOVjbljqRBMCXcloc5k23gsFOhWdiKXhDkp5jU/wY6IXR6G7cYtNOwxKfxI1QLhs0KcXY0gDmZ2UIueoHzY7g==}
@@ -8898,6 +8905,8 @@ snapshots:
       react-native: 0.87.0(@babel/core@7.29.7)(@react-native/metro-config@0.87.0(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
       stacktrace-parser: 0.1.11
     optional: true
+
+  '@expo/material-symbols@0.1.1': {}
 
   '@expo/metro-config@57.0.8(expo@57.0.14)(typescript@6.0.3)':
     dependencies:

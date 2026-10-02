@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { NativeScreen } from '@/components/native/native-screen';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { ExerciseStrip } from '@/components/workout/exercise-strip';
+import { QuickActionRow } from '@/components/workout/quick-action-row';
 import { SetValueField } from '@/components/workout/set-value-field';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
@@ -184,27 +185,28 @@ export default function ActiveWorkoutScreen() {
       {exercise ? (
         <>
           <Row spacing={8} alignment="center">
-            <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-              {exercise.name}
-            </Text>
+            <Column spacing={2}>
+              <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
+                {exercise.name}
+              </Text>
+              <Text textStyle={{ fontSize: 15 }}>
+                {currentSetIndex === -1
+                  ? `All ${exercise.sets.length} Sets logged`
+                  : `Set ${currentSetIndex + 1} of ${exercise.sets.length}`}
+              </Text>
+            </Column>
             <Spacer />
-            <Text textStyle={{ fontSize: 15 }}>
-              {`Set ${
-                currentSetIndex === -1
-                  ? exercise.sets.length
-                  : currentSetIndex + 1
-              } of ${exercise.sets.length}`}
-            </Text>
           </Row>
-          <Button
-            label="Add Set"
-            variant="outlined"
-            onPress={() =>
-              attempt(
-                () => addSet({ workoutExerciseId: exercise._id }),
-                'Could not add a Set.'
-              )
-            }
+          <QuickActionRow
+            actions={settings.quickActions}
+            handlers={{
+              addSet: () =>
+                attempt(
+                  () => addSet({ workoutExerciseId: exercise._id }),
+                  'Could not add a Set.'
+                ),
+              info: () => router.push(`/workout/exercise/${exercise.slug}`),
+            }}
           />
           <Row spacing={8} alignment="center">
             <Text textStyle={{ fontSize: 13, fontWeight: '600' }}>Set</Text>
