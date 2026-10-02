@@ -47,4 +47,5 @@ export const QUICK_ACTIONS: Record<
 export const AVAILABLE_QUICK_ACTIONS: ReadonlySet<QuickActionId> = new Set([
   'addSet',
   'info',
+  'swap',
 ]);
