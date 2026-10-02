@@ -68,6 +68,24 @@ export const setTypeValidator = v.union(
   v.literal('failure')
 );
 
+/** What other Group members see of a member's Workout, and nothing more. */
+export const groupProgressValidator = v.object({
+  status: v.union(
+    v.literal('not_started'),
+    v.literal('working'),
+    v.literal('resting'),
+    v.literal('finished')
+  ),
+  routineName: v.union(v.string(), v.null()),
+  startedAt: v.union(v.number(), v.null()),
+  currentExercise: v.union(v.string(), v.null()),
+  setNumber: v.number(),
+  setCount: v.number(),
+  setsDone: v.number(),
+  setsPlanned: v.number(),
+  restEndsAt: v.union(v.number(), v.null()),
+});
+
 export default defineSchema({
   // Waitlist entries; confirming the emailed link creates a Waitlist identity.
   waitlist: defineTable({
@@ -204,4 +222,36 @@ export default defineSchema({
   })
     .index('by_exercise', ['exerciseId'])
     .index('by_userId', ['userId']),
+
+  // A live shared session; each member runs their own Workout.
+  groups: defineTable({
+    hostId: v.string(),
+    status: v.union(v.literal('live'), v.literal('ended')),
+    createdAt: v.number(),
+    endedAt: v.optional(v.number()),
+    lastActivityAt: v.number(),
+  }),
+
+  // Membership in a Group, with the only Workout data others may read: the
+  // progress summary the member's own mutations keep current.
+  groupMemberships: defineTable({
+    groupId: v.id('groups'),
+    userId: v.string(),
+    joinedAt: v.number(),
+    leftAt: v.optional(v.number()),
+    progress: groupProgressValidator,
+  })
+    .index('by_user_left', ['userId', 'leftAt'])
+    .index('by_group_left', ['groupId', 'leftAt', 'joinedAt']),
+
+  // Short join codes; valid until revoked, the Group ends or 24 hours unused.
+  groupCodes: defineTable({
+    groupId: v.id('groups'),
+    code: v.string(),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index('by_code', ['code'])
+    .index('by_group', ['groupId']),
 });
