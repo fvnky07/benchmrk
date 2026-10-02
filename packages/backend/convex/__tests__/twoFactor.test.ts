@@ -16,6 +16,7 @@ const EMAIL = 'pat@example.com';
 beforeEach(() => {
   vi.stubEnv('BETTER_AUTH_SECRET', 'test-secret-for-two-factor-auth-0001');
   vi.stubEnv('SITE_URL', 'http://localhost:3000');
+  vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response('{}', { status: 200 }))

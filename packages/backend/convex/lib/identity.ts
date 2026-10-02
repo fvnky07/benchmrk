@@ -1,4 +1,5 @@
 import type { Auth } from 'convex/server';
+import { ConvexError } from 'convex/values';
 
 type AuthContext = { auth: Auth };
 
@@ -8,9 +9,9 @@ export async function getIdentityId(ctx: AuthContext): Promise<string | null> {
   return identity?.subject ?? null;
 }
 
-/** The signed-in Benchmrk identity's id; throws when signed out. */
+/** The signed-in Benchmrk identity's id; throws NOT_AUTHENTICATED when signed out. */
 export async function requireIdentityId(ctx: AuthContext): Promise<string> {
   const identityId = await getIdentityId(ctx);
-  if (!identityId) throw new Error('Not authenticated');
+  if (!identityId) throw new ConvexError('NOT_AUTHENTICATED');
   return identityId;
 }

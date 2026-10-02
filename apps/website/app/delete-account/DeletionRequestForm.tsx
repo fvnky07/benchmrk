@@ -2,13 +2,14 @@
 
 import { api } from '@repo/backend/convex/_generated/api';
 import { useAction } from 'convex/react';
+import { ConvexError } from 'convex/values';
 import { type FormEvent, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 
-type Status = 'idle' | 'sending' | 'sent' | 'error';
+type Status = 'idle' | 'sending' | 'sent' | 'error' | 'undelivered';
 
 export default function DeletionRequestForm() {
   const requestDeletion = useAction(api.deletionRequests.request);
@@ -21,16 +22,20 @@ export default function DeletionRequestForm() {
     try {
       await requestDeletion({ email });
       setStatus('sent');
-    } catch {
-      setStatus('error');
+    } catch (error) {
+      setStatus(
+        error instanceof ConvexError && error.data === 'EMAIL_DELIVERY_FAILED'
+          ? 'undelivered'
+          : 'error'
+      );
     }
   };
 
   if (status === 'sent') {
     return (
       <p role="status">
-        If that email has a benchmrk account, a confirmation link is on its way.
-        Open it within 24 hours to send the request.
+        If that email belongs to a Benchmrk identity, a confirmation link is on
+        its way. Open it within 24 hours to send the request.
       </p>
     );
   }
@@ -60,6 +65,11 @@ export default function DeletionRequestForm() {
       {status === 'error' && (
         <p className="text-destructive text-sm" role="alert">
           Check the email address and try again.
+        </p>
+      )}
+      {status === 'undelivered' && (
+        <p className="text-destructive text-sm" role="alert">
+          We couldn’t send the email. Try again.
         </p>
       )}
     </form>

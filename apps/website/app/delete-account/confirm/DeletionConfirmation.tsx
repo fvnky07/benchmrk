@@ -2,6 +2,7 @@
 
 import { api } from '@repo/backend/convex/_generated/api';
 import { useAction } from 'convex/react';
+import { ConvexError } from 'convex/values';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
-type Status = 'ready' | 'confirming' | 'confirmed' | 'invalid';
+type Status = 'ready' | 'confirming' | 'confirmed' | 'invalid' | 'undelivered';
 
 /** Confirms on a button press, so link scanners that open the URL don't. */
 export default function DeletionConfirmation() {
@@ -23,16 +24,20 @@ export default function DeletionConfirmation() {
     try {
       await confirmDeletion({ token });
       setStatus('confirmed');
-    } catch {
-      setStatus('invalid');
+    } catch (error) {
+      setStatus(
+        error instanceof ConvexError && error.data === 'EMAIL_DELIVERY_FAILED'
+          ? 'undelivered'
+          : 'invalid'
+      );
     }
   };
 
   if (status === 'confirmed') {
     return (
       <p role="status" className="text-muted-foreground">
-        Your request is confirmed. We&apos;ll delete your account within 30 days
-        and email you when it&apos;s done.
+        Your request is confirmed. We&apos;ll delete your Benchmrk identity
+        within 30 days and email you when it&apos;s done.
       </p>
     );
   }
@@ -52,8 +57,13 @@ export default function DeletionConfirmation() {
   return (
     <div className="flex flex-col items-start gap-4">
       <p className="text-muted-foreground">
-        Confirm to ask us to delete your benchmrk account and all its data.
+        Confirm to ask us to delete your Benchmrk identity and all its data.
       </p>
+      {status === 'undelivered' && (
+        <p className="text-destructive text-sm" role="alert">
+          We couldn’t send the email. Try again.
+        </p>
+      )}
       <Button
         disabled={status === 'confirming'}
         variant="destructive"

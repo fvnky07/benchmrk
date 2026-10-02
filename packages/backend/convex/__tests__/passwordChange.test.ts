@@ -14,6 +14,7 @@ beforeEach(() => {
   vi.stubEnv('BETTER_AUTH_SECRET', 'test-secret-for-password-change-0123');
   vi.stubEnv('SITE_URL', 'http://localhost:3000');
   vi.stubGlobal(
+  vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
     'fetch',
     vi.fn(async () => new Response('{}', { status: 200 }))
   );

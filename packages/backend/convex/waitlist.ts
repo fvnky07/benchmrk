@@ -2,9 +2,12 @@ import { ConvexError, v } from 'convex/values';
 import { z } from 'zod';
 import { components, internal } from './_generated/api';
 import {
+  action,
   internalAction,
-  type MutationCtx,
+  internalMutation,
+  internalQuery,
   mutation,
+  type QueryCtx,
   query,
 } from './_generated/server';
 import { createAuth } from './auth';
@@ -81,7 +84,7 @@ export const sendConfirmationLink = internalAction({
 });
 
 /** A confirmed Waitlist identity: on the waitlist and verified through its link. */
-async function isConfirmedWaitlistIdentity(ctx: MutationCtx, email: string) {
+async function isConfirmedWaitlistIdentity(ctx: QueryCtx, email: string) {
   const onWaitlist = await ctx.db
     .query('waitlist')
     .withIndex('by_email', (q) => q.eq('email', email))
@@ -99,32 +102,55 @@ async function isConfirmedWaitlistIdentity(ctx: MutationCtx, email: string) {
  * nobody can learn who is on the waitlist; only a confirmed Waitlist identity
  * is ever mailed, at most once per cooldown. It never creates an identity.
  */
-export const requestSignInLink = mutation({
+export const requestSignInLink = action({
   args: { email: v.string() },
+  returns: v.object({ status: v.literal('accepted') }),
   handler: async (ctx, args) => {
     const parsed = emailSchema.safeParse(args.email);
     if (!parsed.success) throw new ConvexError('INVALID_EMAIL');
     const email = parsed.data;
-
-    if (await isConfirmedWaitlistIdentity(ctx, email)) {
-      const now = Date.now();
-      const previous = await ctx.db
-        .query('magicLinkRequests')
-        .withIndex('by_email', (q) => q.eq('email', email))
-        .unique();
-      if (!previous || previous.lastSentAt <= now - SIGN_IN_LINK_COOLDOWN_MS) {
-        if (previous) {
-          await ctx.db.patch(previous._id, { lastSentAt: now });
-        } else {
-          await ctx.db.insert('magicLinkRequests', { email, lastSentAt: now });
-        }
-        await ctx.scheduler.runAfter(0, internal.waitlist.sendSignInLink, {
-          email,
-        });
+    if (await ctx.runQuery(internal.waitlist.canSendSignInLink, { email })) {
+      try {
+        await ctx.runAction(internal.waitlist.sendSignInLink, { email });
+      } catch {
+        throw new ConvexError('EMAIL_DELIVERY_FAILED');
       }
+      await ctx.runMutation(internal.waitlist.markSignInLinkSent, { email });
     }
-
     return { status: 'accepted' as const };
+  },
+});
+
+export const canSendSignInLink = internalQuery({
+  args: { email: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, { email }) => {
+    if (!(await isConfirmedWaitlistIdentity(ctx, email))) return false;
+    const previous = await ctx.db
+      .query('magicLinkRequests')
+      .withIndex('by_email', (q) => q.eq('email', email))
+      .unique();
+    return (
+      !previous || previous.lastSentAt <= Date.now() - SIGN_IN_LINK_COOLDOWN_MS
+    );
+  },
+});
+
+export const markSignInLinkSent = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const previous = await ctx.db
+      .query('magicLinkRequests')
+      .withIndex('by_email', (q) => q.eq('email', email))
+      .unique();
+    if (previous) {
+      await ctx.db.patch(previous._id, { lastSentAt: Date.now() });
+    } else {
+      await ctx.db.insert('magicLinkRequests', {
+        email,
+        lastSentAt: Date.now(),
+      });
+    }
   },
 });
 

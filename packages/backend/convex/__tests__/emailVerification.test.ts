@@ -70,6 +70,32 @@ describe('email verification', () => {
     ]);
   });
 
+  test.each([
+    ['registration', '/api/auth/sign-up/email'],
+    ['verification resend', '/api/auth/send-verification-email'],
+  ])('%s surfaces a retryable delivery error', async (flow, path) => {
+    const t = createTest();
+    if (flow === 'verification resend') {
+      await createAuthIdentity(t, {
+        email: 'member@example.com',
+        emailVerified: false,
+      });
+    }
+    resend.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+    const response = await t.fetch(
+      path,
+      nativeRequest({
+        email: 'member@example.com',
+        password: 'a-long-password-1',
+        name: 'New Member',
+      })
+    );
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      code: 'EMAIL_DELIVERY_FAILED',
+    });
+  });
+
   test('the app sees whether the signed-in member’s email is verified', async () => {
     const t = createTest();
     const verified = await createAuthIdentity(t, {
