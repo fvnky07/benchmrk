@@ -1,3 +1,4 @@
+import { components } from '../_generated/api';
 import type { TestBackend } from './harness.testing';
 
 /** A JSON POST as the native app sends it, with an optional session cookie. */
@@ -37,6 +38,17 @@ export async function register(t: TestBackend, email: string) {
 /** Signs in with email and password; returns the response for its cookie. */
 export async function signIn(t: TestBackend, email: string, password: string) {
   return t.fetch('/api/auth/sign-in/email', nativePost({ email, password }));
+}
+
+/** Marks an identity's email verified, as following the emailed link would. */
+export async function markEmailVerified(t: TestBackend, email: string) {
+  await t.mutation(components.betterAuth.adapter.updateOne, {
+    input: {
+      model: 'user',
+      where: [{ field: 'email', value: email }],
+      update: { emailVerified: true },
+    },
+  });
 }
 
 /** Whether a cookie still belongs to a live session. */

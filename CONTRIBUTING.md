@@ -67,6 +67,7 @@ production). Never commit their values.
 | `DELETION_REQUEST_NOTIFY_EMAIL` | production | Maintainer inbox for confirmed website deletion requests |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_IOS_CLIENT_ID` | for Google sign-in | Google OAuth clients |
 | `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`, `APPLE_APP_BUNDLE_IDENTIFIER` | for Apple sign-in | Sign in with Apple |
+| `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` | for Apple sign-in | Sign in with Apple key (`.p8` contents) used to revoke a member's Apple authorization when they delete their account |
 
 ## Deletion requests
 

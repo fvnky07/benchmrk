@@ -3,6 +3,7 @@ export { type UseAuthReturn, type User, useAuth } from './hooks';
 export {
   isAppleAvailable,
   isGoogleAvailable,
+  reauthenticateWithApple,
   runSocialAuth,
   type SocialAuthConfig,
   type SocialProvider,
