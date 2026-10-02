@@ -1,67 +1,93 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button } from '@expo/ui';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useMutation } from 'convex/react';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { NativeScreen } from '@/components/native/native-screen';
+import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { SocialProviderGroup } from '@/components/native/social-provider-group';
 import {
   analytics,
   authClient,
+  emailSchema,
   loginSchema,
   useAuthStore,
   useFormValidation,
 } from '@/lib';
 
+type Status = { message: string; tone: 'neutral' | 'error' } | null;
+
 export default function LoginScreen() {
   const router = useRouter();
   const email = useAuthStore((state) => state.email);
   const setEmail = useAuthStore((state) => state.setEmail);
+  const requestSignInLink = useMutation(api.waitlist.requestSignInLink);
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState<'password' | 'link' | null>(null);
+  const [status, setStatus] = useState<Status>(null);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: loginSchema,
     mode: 'onChange',
   });
 
-  const onSubmit = () => {
-    setErrorMessage(null);
-
+  const signInWithPassword = () => {
+    setStatus(null);
     handleSubmit({ email, password }, async () => {
       try {
-        setIsLoading(true);
-
+        setBusy('password');
         const { data, error } = await authClient.signIn.email({
           email,
           password,
         });
-        if (error) {
-          throw new Error(error.message ?? 'Unable to sign in');
-        }
-        if (!data) {
-          throw new Error('Sign in did not complete');
-        }
-
+        if (error || !data) throw new Error('Sign in did not complete');
         analytics.loginSuccess();
-        setTimeout(() => {
-          router.replace('/(main)');
-        }, 100);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Invalid credentials';
+        setStatus({
+          message: 'Signed in. Loading your Benchmrk identity…',
+          tone: 'neutral',
+        });
+      } catch {
+        const message = 'Unable to sign in. Check your email and password.';
         analytics.loginFailed(message);
-        setErrorMessage(message);
+        setStatus({ message, tone: 'error' });
         setPassword('');
-      } finally {
-        setIsLoading(false);
+        setBusy(null);
       }
     });
   };
 
+  const emailMeALink = async () => {
+    setStatus(null);
+    const parsed = emailSchema.safeParse(email);
+    if (!parsed.success) {
+      setStatus({ message: 'Enter a valid email address.', tone: 'error' });
+      return;
+    }
+    try {
+      setBusy('link');
+      await requestSignInLink({ email: parsed.data });
+      setStatus({
+        message:
+          'If this email belongs to a confirmed waitlist member, a sign-in link is on its way. Open it on this phone.',
+        tone: 'neutral',
+      });
+    } catch {
+      setStatus({
+        message:
+          'Couldn’t request a sign-in link. Check your connection and try again.',
+        tone: 'error',
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
-    <NativeScreen>
-      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>Welcome back</Text>
+    <AuthShell
+      title="Log in"
+      supportingText="Sign in with your email and password, or ask for a sign-in link if you joined the waitlist."
+    >
       <NativeTextField
         autoCapitalize="none"
         autoComplete="email"
@@ -95,19 +121,26 @@ export default function LoginScreen() {
         variant="text"
         onPress={() => router.push('/forgot-password')}
       />
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Log in failed</ListItem>
-      ) : null}
       <Button
-        disabled={isLoading}
-        label={isLoading ? 'Logging in…' : 'Continue with email'}
-        onPress={onSubmit}
+        disabled={busy !== null}
+        label={busy === 'password' ? 'Signing in…' : 'Continue with email'}
+        onPress={signInWithPassword}
       />
+      <Button
+        disabled={busy !== null}
+        label={busy === 'link' ? 'Requesting…' : 'Email me a sign-in link'}
+        variant="outlined"
+        onPress={emailMeALink}
+      />
+      {status ? (
+        <AuthStatus message={status.message} tone={status.tone} />
+      ) : null}
+      <SocialProviderGroup dividerPosition="before" />
       <Button
         label="Create an account"
-        variant="outlined"
+        variant="text"
         onPress={() => router.replace('/register')}
       />
-    </NativeScreen>
+    </AuthShell>
   );
 }

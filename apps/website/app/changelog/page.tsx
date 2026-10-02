@@ -90,7 +90,6 @@ export default function HomePage() {
             },
           },
           { href: '/about', label: 'About' },
-          { href: '/pricing', label: 'Pricing', active: true },
         ]}
         customStyles={{
           ctaButton: 'bg-green-1 text-black',

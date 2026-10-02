@@ -22,9 +22,8 @@ export const tables = {
     phoneNumber: v.optional(v.union(v.null(), v.string())),
     phoneNumberVerified: v.optional(v.union(v.null(), v.boolean())),
     userId: v.optional(v.union(v.null(), v.string())),
-    // NOTE: Custom field — Unix timestamp (ms) when premium
-    // expires. null = not premium. Far-future = lifetime.
-    // Computed at query time: premiumUntil > Date.now()
+    // Legacy waitlist premium marker. Benchmrk is free, so nothing reads it;
+    // stored values are kept untouched.
     premiumUntil: v.optional(v.union(v.null(), v.number())),
     // NOTE: Custom field — User bio/description (max 150 chars)
     bio: v.optional(v.union(v.null(), v.string())),

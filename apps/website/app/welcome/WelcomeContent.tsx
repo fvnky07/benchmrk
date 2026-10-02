@@ -6,11 +6,11 @@ import {
   CheckCircle2,
   Clock,
   Dumbbell,
-  HeadphonesIcon,
   Rocket,
   Sparkles,
   TrendingUp,
   Trophy,
+  Users,
 } from 'lucide-react';
 import { domAnimation, LazyMotion, m } from 'motion/react';
 import Link from 'next/link';
@@ -34,34 +34,33 @@ export default function WelcomeContent() {
   // NOTE: Get session from Better Auth client
   const { data: session } = useSession();
 
-  // NOTE: Premium benefits list
-  const benefits = [
+  // NOTE: What the app does, all of it free
+  const features = [
     {
       icon: Dumbbell,
-      title: 'AI Workout Coach',
-      description:
-        'Personalized recommendations that adapt to your progress and goals',
+      title: 'Routines and Rep ranges',
+      description: 'Plan your Exercises, Sets and Rep ranges before you lift',
     },
     {
       icon: TrendingUp,
-      title: 'Advanced Analytics',
+      title: 'Overload targets',
       description:
-        'Deep insights into your performance with beautiful visualizations',
+        'See what to lift next time, with the reason behind every target',
     },
     {
       icon: Clock,
-      title: 'Unlimited History',
-      description: 'Access your complete workout history, forever',
+      title: 'Rest and time tracking',
+      description: 'A rest timer and an honest look at where your time goes',
     },
     {
-      icon: HeadphonesIcon,
-      title: 'Priority Support',
-      description: 'Get help when you need it with dedicated premium support',
+      icon: Users,
+      title: 'Groups',
+      description: 'Train alongside friends and see each other’s progress live',
     },
     {
       icon: Rocket,
-      title: 'All Future Features',
-      description: 'Every new premium feature we release, automatically yours',
+      title: 'Free and open source',
+      description: 'No paid tier, no paywall, and the code is on GitHub',
     },
   ];
 
@@ -115,11 +114,11 @@ export default function WelcomeContent() {
 
             <StaggerItem>
               <p className="mb-2 text-gray-300 text-xl sm:text-2xl">
-                You&apos;re officially a{' '}
+                You&apos;re on the list. Benchmrk is{' '}
                 <span className="font-semibold text-emerald-400">
-                  Lifetime Premium
-                </span>{' '}
-                member
+                  completely free
+                </span>
+                .
               </p>
             </StaggerItem>
 
@@ -137,7 +136,7 @@ export default function WelcomeContent() {
           <FadeInView delay={0.6}>
             <div className="mb-10 rounded-3xl border border-gray-800 bg-gray-900/50 p-6">
               <h2 className="mb-6 font-semibold text-cyan-1 text-lg">
-                What you get - forever
+                What you&apos;ll get
               </h2>
 
               <StaggerChildren
@@ -145,7 +144,7 @@ export default function WelcomeContent() {
                 initialDelay={0.2}
                 className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
               >
-                {benefits.map((benefit) => (
+                {features.map((benefit) => (
                   <StaggerItem key={benefit.title} variants={scaleInVariants}>
                     <div className="rounded-2xl border border-gray-800 bg-gray-800/50 p-4 text-left transition-all hover:border-cyan-500/30 hover:bg-gray-800">
                       <benefit.icon className="mb-3 h-6 w-6 text-cyan-1" />
