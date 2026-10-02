@@ -8,6 +8,7 @@ import { v } from 'convex/values';
 import { components } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { internalMutation, type MutationCtx } from './_generated/server';
+import { leaveGroup } from './lib/groupProgress';
 
 async function deleteWorkouts(ctx: MutationCtx, userId: string) {
   const workouts = await ctx.db
@@ -94,10 +95,68 @@ async function deleteByEmail(
   for (const row of rows) await ctx.db.delete(row._id);
 }
 
+/** Remove only this identity's Group data; other members keep their recaps. */
+async function deleteGroupData(ctx: MutationCtx, userId: string) {
+  const rows = await Promise.all([
+    ctx.db
+      .query('groupMemberships')
+      .withIndex('by_user_left', (q) => q.eq('userId', userId))
+      .collect(),
+    ctx.db
+      .query('groupInvites')
+      .withIndex('by_inviter', (q) => q.eq('inviterId', userId))
+      .collect(),
+    ctx.db
+      .query('groupInvites')
+      .withIndex('by_invitee', (q) => q.eq('inviteeId', userId))
+      .collect(),
+    ctx.db
+      .query('blocks')
+      .withIndex('by_blocker', (q) => q.eq('blockerId', userId))
+      .collect(),
+    ctx.db
+      .query('blocks')
+      .withIndex('by_blocked', (q) => q.eq('blockedId', userId))
+      .collect(),
+    ctx.db
+      .query('reports')
+      .withIndex('by_reporter', (q) => q.eq('reporterId', userId))
+      .collect(),
+    ctx.db
+      .query('groupReactions')
+      .withIndex('by_from', (q) => q.eq('fromUserId', userId))
+      .collect(),
+    ctx.db
+      .query('groupReactions')
+      .withIndex('by_to_at', (q) => q.eq('toUserId', userId))
+      .collect(),
+    ctx.db
+      .query('groupRecapRows')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect(),
+    ctx.db
+      .query('groupEvents')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect(),
+    ctx.db
+      .query('deviceTokens')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect(),
+  ]);
+  const ids = new Set(rows.flat().map((row) => row._id));
+  for (const id of ids) await ctx.db.delete(id);
+  // Ended Groups whose hostId is this identity stay: other members' recap
+  // rows still reference the Group, even after its host's identity is gone.
+}
+
 export const deleteIdentity = internalMutation({
   args: { userId: v.string(), email: v.string() },
   returns: v.null(),
   handler: async (ctx, { userId, email }) => {
+    // Leave before deleting Workouts so the final summary and host handoff
+    // happen in the same transaction as Better Auth's beforeDelete hook.
+    await leaveGroup(ctx, userId);
+    await deleteGroupData(ctx, userId);
     await deleteWorkouts(ctx, userId);
     await deleteRoutines(ctx, userId);
     // Notes and Machine setups first: they can point at custom Exercises.
