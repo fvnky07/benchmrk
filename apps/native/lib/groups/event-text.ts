@@ -4,7 +4,7 @@ export type GroupEventKind = Doc<'groupEvents'>['kind'];
 
 export type GroupEventTextInput = Readonly<{
   kind: GroupEventKind;
-  /** The member the event is about; null once their account is gone. */
+  /** The member the event is about; null once their Benchmrk identity is deleted. */
   username: string | null;
   /** The viewer is this member, so the sentence says "You". */
   isYou: boolean;

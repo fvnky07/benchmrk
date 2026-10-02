@@ -25,7 +25,7 @@ describe('Group event wording', () => {
     );
   });
 
-  test('falls back to a generic member when the account is gone', () => {
+  test('falls back to a generic member when the Benchmrk identity is deleted', () => {
     expect(groupEventText(event({ kind: 'left', username: null }))).toBe(
       'A Group member left'
     );
