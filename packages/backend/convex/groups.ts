@@ -14,6 +14,7 @@ import {
   joinGroup,
   leaveGroup,
   requireMembership,
+  syncGroupProgress,
 } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
@@ -149,9 +150,10 @@ export const end = mutation({
     const userId = await requireIdentityId(ctx);
     const { group } = await requireMembership(ctx, userId);
     requireHost(group, userId);
-    await endGroup(ctx, group);
+    await endGroup(ctx, group, userId);
   },
 });
+
 /** Presence does not count as Group activity for the idle-end window. */
 export const heartbeat = mutation({
   args: {},
@@ -162,6 +164,22 @@ export const heartbeat = mutation({
     if (membership) {
       await ctx.db.patch(membership._id, { lastSeenAt: Date.now() });
     }
+    return null;
+  },
+});
+
+/**
+ * Shows or hides the caller's weights, reps and volume from their Group;
+ * hidden by default. Their summary is rewritten in the same mutation.
+ */
+export const setShowWeights = mutation({
+  args: { shown: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { membership } = await requireMembership(ctx, userId);
+    await ctx.db.patch(membership._id, { showWeights: args.shown });
+    await syncGroupProgress(ctx, userId);
     return null;
   },
 });
@@ -250,13 +268,20 @@ export const getMine = query({
           joinedAt: member.joinedAt,
           lastSeenAt: member.lastSeenAt ?? member.joinedAt,
           presence: presenceOf(member.lastSeenAt ?? member.joinedAt, now),
-          progress: member.progress,
+          progress: {
+            ...member.progress,
+            exercises: member.progress.exercises ?? [],
+            currentSet: member.progress.currentSet ?? null,
+            volumeKg: member.progress.volumeKg ?? null,
+            weightsShown: member.progress.weightsShown ?? false,
+          },
         };
       })
     );
     return {
       createdAt: group.createdAt,
       isHost: group.hostId === userId,
+      showWeights: membership?.showWeights ?? false,
       members: [
         ...boxes.filter((box) => box.isYou),
         ...boxes.filter((box) => !box.isYou),

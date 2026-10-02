@@ -56,6 +56,11 @@ const DEFAULT_SETTINGS: MemberSettings = {
   plates: DEFAULT_PLATES.kg,
   aheadBehind: true,
   invitesFrom: 'everyone',
+  pushNotifications: true,
+  pushInvites: true,
+  pushJoins: true,
+  pushLeaves: true,
+  pushGroupEnded: true,
 };
 
 async function findSettings(
