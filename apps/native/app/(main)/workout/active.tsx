@@ -16,6 +16,8 @@ import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 
+import { GroupChip } from '@/components/groups/group-chip';
+import { GroupDrawer } from '@/components/groups/group-drawer';
 import { DockedScreen } from '@/components/native/docked-screen';
 import { NativeScreen } from '@/components/native/native-screen';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
@@ -98,6 +100,7 @@ function openTarget(set: WorkoutSet, targetsEnabled: boolean) {
 export default function ActiveWorkoutScreen() {
   const workout = useQuery(api.workouts.getActive);
   const settings = useQuery(api.memberSettings.get);
+  const group = useQuery(api.groups.getMine);
   // Logging is instant: the shared round engine applies the Set, round and
   // rest locally exactly as the backend will.
   const completeSet = useMutation(
@@ -159,6 +162,7 @@ export default function ActiveWorkoutScreen() {
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const [setupFor, setSetupFor] = useState<Id<'workoutExercises'> | null>(null);
   const [isPlatesOpen, setIsPlatesOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
   const touchSet = useMutation(api.workouts.touchSet);
   const touched = useRef(new Set<Id<'sets'>>());
   // Set once ending is possible; the idle notification's Finish calls it.
@@ -691,6 +695,14 @@ export default function ActiveWorkoutScreen() {
             </Row>
           ) : null}
           <QuickActionRow
+            leading={
+              group ? (
+                <GroupChip
+                  members={group.members}
+                  onPress={() => setGroupOpen(true)}
+                />
+              ) : null
+            }
             actions={settings.quickActions}
             badges={{
               note:
@@ -889,6 +901,10 @@ export default function ActiveWorkoutScreen() {
           />
         </Column>
       </BottomSheet>
+      <GroupDrawer
+        isPresented={groupOpen}
+        onDismiss={() => setGroupOpen(false)}
+      />
       {exercise ? (
         <RestOptionsSheet
           isPresented={isRestSheetOpen}
