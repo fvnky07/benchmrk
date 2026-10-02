@@ -1,3 +1,4 @@
+import EditNoteIcon from '@expo/material-symbols/edit_note.xml';
 import StarShineIcon from '@expo/material-symbols/star_shine.xml';
 import { Button, Checkbox, Column, Icon, Row, Spacer, Text } from '@expo/ui';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
@@ -32,6 +33,8 @@ export type SetTableSet = {
   type: SetType;
   rpe: number | null;
   done: boolean;
+  /** A note is attached to this Set. */
+  hasNote: boolean;
   /** The Target column ("60 × 8", or the previous Set for timed and cardio); null when none. */
   target: string | null;
   cells: readonly SetTableCell[];
@@ -50,6 +53,8 @@ type SetTableProps = {
   onFillFromTarget: (setId: Id<'sets'>, field: SetField) => void;
   onToggleDone: (set: SetTableSet, done: boolean) => void;
   onDuplicate: (setId: Id<'sets'>) => void;
+  /** Opens the note composer on this Set. */
+  onNote: (setId: Id<'sets'>) => void;
   onDelete: (setId: Id<'sets'>) => void;
   onOpenType: (setId: Id<'sets'>) => void;
   /** The Target cell and the sparkle explain the target. */
@@ -63,6 +68,7 @@ const LABEL_WIDTH = 48;
 const TARGET_WIDTH = 72;
 const CELL_WIDTH = 72;
 const SPARKLE = { ios: 'sparkles', android: StarShineIcon } as const;
+const NOTE = { ios: 'note.text', android: EditNoteIcon } as const;
 const WHY_ACTION = { id: 'why', label: 'Why this target' };
 
 /** What a screen reader announces for a value cell. */
@@ -94,6 +100,7 @@ export function SetTable({
   onFillFromTarget,
   onToggleDone,
   onDuplicate,
+  onNote,
   onDelete,
   onOpenType,
   onOpenTarget,
@@ -158,6 +165,7 @@ export function SetTable({
           key={set._id}
           onComplete={set.done ? undefined : () => onToggleDone(set, true)}
           onDuplicate={() => onDuplicate(set._id)}
+          onNote={() => onNote(set._id)}
           onDelete={set.done ? undefined : () => onDelete(set._id)}
         >
           <Row spacing={8} alignment="center">
@@ -176,6 +184,14 @@ export function SetTable({
                   {`${effortScale} ${formatEffort(effortInScale(set.rpe, effortScale))}`}
                 </Text>
               )}
+              {set.hasNote ? (
+                <GestureBox
+                  label={`Note on Set ${labels[index]}`}
+                  onTap={() => onNote(set._id)}
+                >
+                  <Icon name={NOTE} size={14} color={colors.mutedForeground} />
+                </GestureBox>
+              ) : null}
             </Column>
             <Spacer />
             {showTargets ? (

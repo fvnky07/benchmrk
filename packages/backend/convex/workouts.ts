@@ -34,7 +34,9 @@ import {
   workoutExercisesOf,
 } from './lib/workoutData';
 import { workoutMutation } from './lib/workoutMutation';
+import { hasMachineSetup } from './machineSetups';
 import { readMemberSettings } from './memberSettings';
+import { deleteSetNote } from './notes';
 import { routineExercisesOf } from './routines';
 import { memberSettingsFields, setTypeValidator } from './schema';
 
@@ -67,12 +69,35 @@ async function planExercise(
 }
 
 async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
+  const notes = await ctx.db
+    .query('notes')
+    .withIndex('by_user_workout', (q) =>
+      q.eq('userId', workout.userId).eq('workoutId', workout._id)
+    )
+    .collect();
   const exercises = await Promise.all(
     (await workoutExercisesOf(ctx, workout._id)).map(
       async (workoutExercise) => {
         const exercise = await ctx.db.get(workoutExercise.exerciseId);
         if (!exercise) throw new ConvexError('EXERCISE_NOT_FOUND');
         const sets = await setsOfExercise(ctx, workoutExercise._id);
+        const standingNote = await ctx.db
+          .query('notes')
+          .withIndex('by_user_exercise', (q) =>
+            q
+              .eq('userId', workout.userId)
+              .eq('kind', 'exercise')
+              .eq('exerciseId', exercise._id)
+          )
+          .unique();
+        const machineSetup = hasMachineSetup(exercise.equipment)
+          ? await ctx.db
+              .query('machineSetups')
+              .withIndex('by_user_exercise', (q) =>
+                q.eq('userId', workout.userId).eq('exerciseId', exercise._id)
+              )
+              .unique()
+          : null;
         return {
           _id: workoutExercise._id,
           exerciseId: exercise._id,
@@ -87,6 +112,10 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
           skipped: workoutExercise.skipped ?? false,
           overload: workoutExercise.overload ?? null,
           blockId: workoutExercise.blockId ?? null,
+          standingNote: standingNote?.text ?? null,
+          machineSetup: machineSetup
+            ? { positions: machineSetup.positions, custom: machineSetup.custom }
+            : null,
           sets: sets.map((set) => ({
             _id: set._id,
             order: set.order,
@@ -100,6 +129,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             target: set.target ?? null,
             fromTarget: set.fromTarget ?? null,
             previous: set.previous ?? null,
+            note: notes.find((note) => note.setId === set._id)?.text ?? null,
           })),
         };
       }
@@ -122,6 +152,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
         }
       : null,
     exercises,
+    note: notes.find((note) => note.kind === 'workout')?.text ?? null,
     blocks: (
       await ctx.db
         .query('workoutBlocks')
@@ -327,6 +358,7 @@ export const deleteSet = workoutMutation({
     requireActive(workout);
     if (set.completedAt !== undefined) throw new ConvexError('SET_LOGGED');
     await ctx.db.delete(set._id);
+    await deleteSetNote(ctx, set._id);
     const workoutExercise = await ctx.db.get(set.workoutExerciseId);
     await settleBlock(ctx, workout._id, workoutExercise?.blockId);
   },

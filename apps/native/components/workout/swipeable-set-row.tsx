@@ -4,6 +4,8 @@ export type SwipeableSetRowProps = {
   /** Swiping right completes; omitted for logged Sets. */
   onComplete?: () => void;
   onDuplicate: () => void;
+  /** Opens the note composer for this Set. */
+  onNote: () => void;
   /** Delete is only offered for unlogged Sets. */
   onDelete?: () => void;
   children: ReactNode;

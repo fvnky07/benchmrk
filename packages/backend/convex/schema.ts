@@ -136,6 +136,14 @@ export const roundValidator = v.object({
   skipped: v.array(v.id('workoutExercises')),
 });
 
+/** A Machine setup's labelled positions. */
+export const machinePositionsValidator = v.object({
+  seat: v.optional(v.number()),
+  back: v.optional(v.number()),
+  pin: v.optional(v.number()),
+  angle: v.optional(v.number()),
+});
+
 export default defineSchema({
   // Waitlist entries; confirming the emailed link creates a Waitlist identity.
   waitlist: defineTable({
@@ -304,6 +312,36 @@ export default defineSchema({
     .index('by_workout', ['workoutId'])
     .index('by_user_exercise', ['userId', 'exerciseId'])
     .index('by_userId', ['userId']),
+
+  // A member's note, attached to exactly one target: a Set, an Exercise (a
+  // standing note shown every time it comes up) or a Workout.
+  notes: defineTable({
+    userId: v.string(),
+    kind: v.union(
+      v.literal('set'),
+      v.literal('exercise'),
+      v.literal('workout')
+    ),
+    setId: v.optional(v.id('sets')),
+    exerciseId: v.optional(v.id('exercises')),
+    /** The Workout of a Workout note, and of a Set note for listing. */
+    workoutId: v.optional(v.id('workouts')),
+    text: v.string(),
+    updatedAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_user_workout', ['userId', 'workoutId'])
+    .index('by_user_exercise', ['userId', 'kind', 'exerciseId'])
+    .index('by_set', ['setId']),
+
+  // One Machine setup per member per machine or cable Exercise.
+  machineSetups: defineTable({
+    userId: v.string(),
+    exerciseId: v.id('exercises'),
+    positions: machinePositionsValidator,
+    custom: v.array(v.object({ label: v.string(), value: v.string() })),
+    updatedAt: v.number(),
+  }).index('by_user_exercise', ['userId', 'exerciseId']),
 
   // Comments on exercises
   exerciseComments: defineTable({
