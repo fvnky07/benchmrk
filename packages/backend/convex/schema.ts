@@ -28,6 +28,8 @@ export const memberSettingsFields = {
   ),
   /** The first-run "swipe right on a Set" hint was dismissed. */
   swipeHintDismissed: v.boolean(),
+  /** Rest-end notifications play a sound. */
+  restEndSound: v.boolean(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -40,6 +42,7 @@ export const memberSettingsChangeFields = {
   analyticsOptOut: v.optional(memberSettingsFields.analyticsOptOut),
   quickActions: v.optional(memberSettingsFields.quickActions),
   swipeHintDismissed: v.optional(memberSettingsFields.swipeHintDismissed),
+  restEndSound: v.optional(memberSettingsFields.restEndSound),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -147,6 +150,14 @@ export default defineSchema({
     finishedAt: v.optional(v.number()),
     finishReason: v.optional(
       v.union(v.literal('all_sets_done'), v.literal('terminated_early'))
+    ),
+    /** Rest between Sets; Groups and the live status read it. */
+    rest: v.optional(
+      v.object({
+        startedAt: v.number(),
+        plannedSeconds: v.number(),
+        adjustedSeconds: v.number(),
+      })
     ),
   })
     .index('by_user_status', ['userId', 'status'])

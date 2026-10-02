@@ -123,6 +123,12 @@ export default function WorkoutSettingsScreen() {
         value={settings.haptics}
         onValueChange={(haptics) => save({ haptics })}
       />
+      <Switch
+        disabled={isSaving}
+        label="Rest-end sound"
+        value={settings.restEndSound}
+        onValueChange={(restEndSound) => save({ restEndSound })}
+      />
       <ListItem
         supportingText="Choose and reorder the chips under the Exercise title."
         onPress={() => router.push('/(main)/settings/quick-actions')}

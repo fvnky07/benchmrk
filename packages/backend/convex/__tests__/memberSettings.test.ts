@@ -22,6 +22,7 @@ const DEFAULTS = {
   analyticsOptOut: false,
   quickActions: DEFAULT_QUICK_ACTIONS,
   swipeHintDismissed: false,
+  restEndSound: true,
 };
 
 describe('member settings', () => {

@@ -142,6 +142,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
           repRangeMin: workoutExercise.repRangeMin,
           repRangeMax: workoutExercise.repRangeMax,
           stepKg: workoutExercise.stepKg,
+          plannedRestSeconds: workoutExercise.plannedRestSeconds ?? null,
           sets: sets.map((set) => ({
             _id: set._id,
             order: set.order,
@@ -167,8 +168,18 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
     finishedAt: workout.finishedAt ?? null,
     finishReason: workout.finishReason ?? null,
     progress: progressOf(await setsOfWorkout(ctx, workout._id)),
+    rest: workout.rest
+      ? {
+          ...workout.rest,
+          endsAt: restEndsAt(workout.rest),
+        }
+      : null,
     exercises,
   };
+}
+
+function restEndsAt(rest: NonNullable<Doc<'workouts'>['rest']>): number {
+  return rest.startedAt + (rest.plannedSeconds + rest.adjustedSeconds) * 1000;
 }
 
 export const getActive = query({
@@ -405,14 +416,36 @@ export const completeSet = mutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
   handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
-    const { workout } = await requireOwnedSet(ctx, userId, setId);
+    const { set, workout } = await requireOwnedSet(ctx, userId, setId);
     requireActive(workout);
-    await ctx.db.patch(setId, {
-      ...setPatch(changes),
-      completedAt: Date.now(),
-    });
+    const now = Date.now();
+    await ctx.db.patch(setId, { ...setPatch(changes), completedAt: now });
+    await startRestAfter(ctx, workout, set.workoutExerciseId, now);
   },
 });
+
+/**
+ * Rest starts on every completed Set except the final planned one, at the
+ * Exercise's planned rest or else the member's default.
+ */
+async function startRestAfter(
+  ctx: MutationCtx,
+  workout: Doc<'workouts'>,
+  workoutExerciseId: Id<'workoutExercises'>,
+  now: number
+) {
+  const { done, total } = progressOf(await setsOfWorkout(ctx, workout._id));
+  const workoutExercise = await ctx.db.get(workoutExerciseId);
+  const plannedSeconds =
+    workoutExercise?.plannedRestSeconds ??
+    (await readMemberSettings(ctx, workout.userId)).defaultRestSeconds;
+  await ctx.db.patch(workout._id, {
+    rest:
+      done < total && plannedSeconds > 0
+        ? { startedAt: now, plannedSeconds, adjustedSeconds: 0 }
+        : undefined,
+  });
+}
 
 export const uncompleteSet = mutation({
   args: { setId: v.id('sets') },
@@ -421,6 +454,83 @@ export const uncompleteSet = mutation({
     const { workout } = await requireOwnedSet(ctx, userId, args.setId);
     requireActive(workout);
     await ctx.db.patch(args.setId, { completedAt: undefined });
+  },
+});
+
+async function requireResting(
+  ctx: QueryCtx,
+  userId: string,
+  workoutId: Id<'workouts'>
+) {
+  const workout = await requireOwnedWorkout(ctx, userId, workoutId);
+  requireActive(workout);
+  if (!workout.rest) throw new ConvexError('NOT_RESTING');
+  return { workout, rest: workout.rest };
+}
+
+/** Adds or removes rest time; the end never moves before now. */
+export const adjustRest = mutation({
+  args: { workoutId: v.id('workouts'), seconds: v.number() },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, rest } = await requireResting(ctx, userId, args.workoutId);
+    if (!Number.isInteger(args.seconds)) {
+      throw new ConvexError('INVALID_REST_ADJUSTMENT');
+    }
+    const endsAt = Math.max(restEndsAt(rest) + args.seconds * 1000, Date.now());
+    await ctx.db.patch(workout._id, {
+      rest: {
+        ...rest,
+        adjustedSeconds: (endsAt - rest.startedAt) / 1000 - rest.plannedSeconds,
+      },
+    });
+  },
+});
+
+export const skipRest = mutation({
+  args: { workoutId: v.id('workouts') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout } = await requireResting(ctx, userId, args.workoutId);
+    await ctx.db.patch(workout._id, { rest: undefined });
+  },
+});
+
+/** Restarts the planned rest from now, dropping adjustments. */
+export const resetRest = mutation({
+  args: { workoutId: v.id('workouts') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, rest } = await requireResting(ctx, userId, args.workoutId);
+    await ctx.db.patch(workout._id, {
+      rest: { ...rest, startedAt: Date.now(), adjustedSeconds: 0 },
+    });
+  },
+});
+
+/**
+ * Sets this Workout's default rest for an Exercise. It's a structure change:
+ * the Routine keeps its value unless the member saves changes at finish.
+ */
+export const setExerciseRest = mutation({
+  args: {
+    workoutExerciseId: v.id('workoutExercises'),
+    seconds: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.workoutExerciseId
+    );
+    requireActive(workout);
+    if (!Number.isInteger(args.seconds) || args.seconds < 0) {
+      throw new ConvexError('INVALID_REST');
+    }
+    await ctx.db.patch(workoutExercise._id, {
+      plannedRestSeconds: args.seconds,
+    });
   },
 });
 
@@ -450,6 +560,7 @@ export const end = mutation({
       await ctx.db.patch(workout._id, {
         status: 'abandoned',
         finishedAt: Date.now(),
+        rest: undefined,
       });
       return 'abandoned' as const;
     }
@@ -457,6 +568,7 @@ export const end = mutation({
     await ctx.db.patch(workout._id, {
       status: 'completed',
       finishedAt: Math.max(...completedTimes),
+      rest: undefined,
       finishReason:
         args.reason === 'finish' ? 'all_sets_done' : 'terminated_early',
     });

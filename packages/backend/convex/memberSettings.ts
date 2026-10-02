@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: MemberSettings = {
   analyticsOptOut: false,
   quickActions: DEFAULT_QUICK_ACTIONS,
   swipeHintDismissed: false,
+  restEndSound: true,
 };
 
 async function findSettings(
