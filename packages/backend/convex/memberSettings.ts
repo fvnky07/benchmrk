@@ -1,7 +1,13 @@
 import { ConvexError, type Infer, v } from 'convex/values';
 
 import type { Doc } from './_generated/dataModel';
-import { mutation, type QueryCtx, query } from './_generated/server';
+import {
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from './_generated/server';
+import { toKg, type WeightUnit } from './domain/units';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import {
   memberSettingsChangeFields,
@@ -26,6 +32,12 @@ const DEFAULT_QUICK_ACTIONS: MemberSettings['quickActions'] = [
   { id: 'plates', visible: false },
 ];
 
+/** 1.25 kg, or 2.5 lb for members who train in pounds. */
+const DEFAULT_SMALLEST_INCREMENT_KG: Record<WeightUnit, number> = {
+  kg: 1.25,
+  lb: toKg(2.5, 'lb'),
+};
+
 const DEFAULT_SETTINGS: MemberSettings = {
   appearance: 'system',
   units: 'kg',
@@ -36,6 +48,9 @@ const DEFAULT_SETTINGS: MemberSettings = {
   quickActions: DEFAULT_QUICK_ACTIONS,
   swipeHintDismissed: false,
   restEndSound: true,
+  overloadTargets: true,
+  targetsOffExerciseIds: [],
+  smallestIncrementKg: DEFAULT_SMALLEST_INCREMENT_KG.kg,
 };
 
 async function findSettings(
@@ -77,8 +92,38 @@ export async function readMemberSettings(
   return {
     ...settings,
     quickActions: withEveryQuickAction(settings.quickActions),
+    smallestIncrementKg:
+      changes.smallestIncrementKg ??
+      DEFAULT_SMALLEST_INCREMENT_KG[settings.units],
   };
 }
+
+type SettingsChanges = Partial<
+  Omit<Doc<'memberSettings'>, '_id' | '_creationTime' | 'userId' | 'updatedAt'>
+>;
+
+/** Saves a member's changed settings, creating their settings on first save. */
+export async function saveMemberSettings(
+  ctx: MutationCtx,
+  userId: string,
+  changes: SettingsChanges
+) {
+  const saved = await findSettings(ctx, userId);
+  const updatedAt = Date.now();
+  if (saved) {
+    await ctx.db.patch(saved._id, { ...changes, updatedAt });
+  } else {
+    await ctx.db.insert('memberSettings', { ...changes, userId, updatedAt });
+  }
+}
+
+// Switching Overload targets replans the active Workout, so it has its own
+// mutation (overload.setTargetsEnabled).
+const {
+  overloadTargets: _overloadTargets,
+  targetsOffExerciseIds: _targetsOffExerciseIds,
+  ...updatableFields
+} = memberSettingsChangeFields;
 
 export const get = query({
   args: {},
@@ -91,7 +136,7 @@ export const get = query({
 });
 
 export const update = mutation({
-  args: memberSettingsChangeFields,
+  args: updatableFields,
   returns: v.null(),
   handler: async (ctx, changes) => {
     const userId = await requireIdentityId(ctx);
@@ -110,14 +155,14 @@ export const update = mutation({
     ) {
       throw new ConvexError('INVALID_QUICK_ACTIONS');
     }
-
-    const saved = await findSettings(ctx, userId);
-    const updatedAt = Date.now();
-    if (saved) {
-      await ctx.db.patch(saved._id, { ...changes, updatedAt });
-    } else {
-      await ctx.db.insert('memberSettings', { ...changes, userId, updatedAt });
+    if (
+      changes.smallestIncrementKg !== undefined &&
+      !(changes.smallestIncrementKg > 0 && changes.smallestIncrementKg <= 10)
+    ) {
+      throw new ConvexError('INVALID_SMALLEST_INCREMENT');
     }
+
+    await saveMemberSettings(ctx, userId, changes);
     return null;
   },
 });

@@ -32,7 +32,7 @@ export type SetTableSet = {
   type: SetType;
   rpe: number | null;
   done: boolean;
-  /** The Target column, e.g. "60 × 8"; null when the Set has none. */
+  /** The Target column ("60 × 8", or the previous Set for timed and cardio); null when none. */
   target: string | null;
   cells: readonly SetTableCell[];
 };
@@ -52,13 +52,18 @@ type SetTableProps = {
   onDuplicate: (setId: Id<'sets'>) => void;
   onDelete: (setId: Id<'sets'>) => void;
   onOpenType: (setId: Id<'sets'>) => void;
+  /** The Target cell and the sparkle explain the target. */
+  onOpenTarget: () => void;
   onDismissSwipeHint: () => void;
+  /** "Target", or "Last time" for timed and cardio Exercises. */
+  targetHeading: string;
 };
 
 const LABEL_WIDTH = 48;
 const TARGET_WIDTH = 72;
 const CELL_WIDTH = 72;
 const SPARKLE = { ios: 'sparkles', android: StarShineIcon } as const;
+const WHY_ACTION = { id: 'why', label: 'Why this target' };
 
 /** What a screen reader announces for a value cell. */
 function cellLabel(cell: SetTableCell, setLabel: string): string {
@@ -75,9 +80,9 @@ function cellLabel(cell: SetTableCell, setLabel: string): string {
 
 /**
  * The Set rows. Tap a value to type it on the keypad, tap a faded target to
- * fill the Set from it, tap the label for its type; swipe right to complete,
- * left to duplicate or delete. Each row is its own child so a List can give
- * it native swipe actions.
+ * fill the Set from it, tap the Target cell or a sparkle for why; tap the
+ * label for its type; swipe right to complete, left to duplicate or delete.
+ * Each row is its own child so a List can give it native swipe actions.
  */
 export function SetTable({
   sets,
@@ -91,7 +96,9 @@ export function SetTable({
   onDuplicate,
   onDelete,
   onOpenType,
+  onOpenTarget,
   onDismissSwipeHint,
+  targetHeading,
 }: Readonly<SetTableProps>) {
   const { resolvedAppearance } = useAppearance();
   const colors = THEME[resolvedAppearance];
@@ -107,7 +114,9 @@ export function SetTable({
         <Spacer />
         {showTargets ? (
           <Column alignment="center" style={{ width: TARGET_WIDTH }}>
-            <Text textStyle={{ fontSize: 13, fontWeight: '600' }}>Target</Text>
+            <Text textStyle={{ fontSize: 13, fontWeight: '600' }}>
+              {targetHeading}
+            </Text>
           </Column>
         ) : null}
         {headings.map((heading) => (
@@ -166,19 +175,30 @@ export function SetTable({
             </Column>
             <Spacer />
             {showTargets ? (
-              <Column alignment="center" style={{ width: TARGET_WIDTH }}>
-                <Text textStyle={{ fontSize: 14 }}>{set.target ?? '—'}</Text>
-              </Column>
+              <GestureBox
+                label={`${targetHeading}, Set ${labels[index]}: ${set.target ?? 'none'}`}
+                onTap={onOpenTarget}
+              >
+                <Column
+                  alignment="center"
+                  style={{ width: TARGET_WIDTH, paddingVertical: 10 }}
+                >
+                  <Text textStyle={{ fontSize: 14 }}>{set.target ?? '—'}</Text>
+                </Column>
+              </GestureBox>
             ) : null}
             {set.cells.map((cell) => {
               const focused =
                 focus?.setId === set._id && focus.field === cell.field;
               const isPlaceholder =
                 cell.value === '' && cell.placeholder !== '';
+              const hasSparkle = cell.fromTarget && cell.value !== '';
               return (
                 <GestureBox
                   key={cell.field}
                   label={cellLabel(cell, labels[index] ?? '')}
+                  actions={hasSparkle ? [WHY_ACTION] : []}
+                  onAction={onOpenTarget}
                   onTap={() =>
                     isPlaceholder
                       ? onFillFromTarget(set._id, cell.field)
@@ -211,12 +231,17 @@ export function SetTable({
                             ? cell.placeholder
                             : FIELD_LABELS[cell.field]}
                       </Text>
-                      {cell.fromTarget && cell.value !== '' ? (
-                        <Icon
-                          name={SPARKLE}
-                          size={12}
-                          color={colors.mutedForeground}
-                        />
+                      {hasSparkle ? (
+                        <GestureBox
+                          label={WHY_ACTION.label}
+                          onTap={onOpenTarget}
+                        >
+                          <Icon
+                            name={SPARKLE}
+                            size={12}
+                            color={colors.mutedForeground}
+                          />
+                        </GestureBox>
                       ) : null}
                     </Row>
                   </Column>
