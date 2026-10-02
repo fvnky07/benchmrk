@@ -4,6 +4,7 @@ export default function OnboardingLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="create-profile" />
+      <Stack.Screen name="push-permission" />
     </Stack>
   );
 }

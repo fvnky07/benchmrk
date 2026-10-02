@@ -194,6 +194,15 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
+  deviceTokens: defineTable({
+    userId: v.string(),
+    token: v.string(),
+    platform: v.union(v.literal('ios'), v.literal('android')),
+    updatedAt: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_token', ['token']),
+
   // Shared catalog Exercises have no creator; custom ones belong to `createdBy`.
   exercises: defineTable({
     slug: v.string(),
@@ -264,6 +273,7 @@ export default defineSchema({
     ),
   })
     .index('by_user_status', ['userId', 'status'])
+    .index('by_user_status_finished', ['userId', 'status', 'finishedAt'])
     .index('by_user_started', ['userId', 'startedAt'])
     .index('by_routine_status', ['routineId', 'status', 'startedAt']),
 
@@ -385,7 +395,7 @@ export default defineSchema({
     createdAt: v.number(),
     endedAt: v.optional(v.number()),
     lastActivityAt: v.number(),
-  }),
+  }).index('by_status', ['status', 'lastActivityAt']),
 
   // Membership in a Group, with the only Workout data others may read: the
   // progress summary the member's own mutations keep current.
@@ -393,11 +403,25 @@ export default defineSchema({
     groupId: v.id('groups'),
     userId: v.string(),
     joinedAt: v.number(),
+    lastSeenAt: v.optional(v.number()),
     leftAt: v.optional(v.number()),
     progress: groupProgressValidator,
   })
     .index('by_user_left', ['userId', 'leftAt'])
     .index('by_group_left', ['groupId', 'leftAt', 'joinedAt']),
+
+  groupEvents: defineTable({
+    groupId: v.id('groups'),
+    kind: v.union(
+      v.literal('joined'),
+      v.literal('left'),
+      v.literal('dropped'),
+      v.literal('hostChanged'),
+      v.literal('ended')
+    ),
+    userId: v.optional(v.string()),
+    at: v.number(),
+  }).index('by_group_at', ['groupId', 'at']),
 
   // Short join codes; valid until revoked, the Group ends or 24 hours unused.
   groupCodes: defineTable({

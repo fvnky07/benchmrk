@@ -6,6 +6,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
+import { Chart } from '@/components/charts/chart';
 import { NativeScreen } from '@/components/native/native-screen';
 import { SaveToRoutine } from '@/components/workout/save-to-routine';
 import { formatClock } from '@/lib/workout/format';
@@ -76,6 +77,35 @@ export default function WorkoutFinishedScreen() {
       >
         {`Duration ${formatClock(durationSeconds)}`}
       </ListItem>
+      <RNHostView matchContents>
+        <Chart
+          kind="stackedBar"
+          horizontal
+          bars={[
+            {
+              label: 'Time',
+              segments: [
+                {
+                  label: 'Working',
+                  value: time.workingSeconds,
+                  tone: 'accent',
+                },
+                {
+                  label: 'Rest',
+                  value: time.restSeconds,
+                  tone: 'secondary',
+                },
+                {
+                  label: 'Transitions',
+                  value: time.transitionSeconds,
+                  tone: 'tertiary',
+                },
+              ],
+            },
+          ]}
+          summary={`Time breakdown: working ${formatMinutes(time.workingSeconds)}, rest ${formatMinutes(time.restSeconds)}, transitions ${formatMinutes(time.transitionSeconds)}`}
+        />
+      </RNHostView>
       <ListItem supportingText="Estimates, from when you edited and logged each Set">
         {`Working ≈ ${formatMinutes(time.workingSeconds)} · Rest ≈ ${formatMinutes(time.restSeconds)} · Transitions ≈ ${formatMinutes(time.transitionSeconds)}`}
       </ListItem>

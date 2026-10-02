@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
+import { TrendCard } from '@/components/charts/trend-card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
@@ -16,6 +17,10 @@ export default function RoutineBuilderScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const routineId = params.id as Id<'routines'>;
   const routine = useQuery(api.routines.get, { routineId });
+  const trends = useQuery(
+    api.trends.forRoutine,
+    routine ? { routineId } : 'skip'
+  );
   const settings = useQuery(api.memberSettings.get);
   const rename = useMutation(api.routines.rename);
   const setTargetDuration = useMutation(api.routines.setTargetDuration);
@@ -162,6 +167,11 @@ export default function RoutineBuilderScreen() {
           }
         />
       ) : null}
+      {trends === undefined ? (
+        <Text>Loading trends…</Text>
+      ) : (
+        <TrendCard duration={trends.duration} rest={trends.rest} />
+      )}
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>Something went wrong</ListItem>
       ) : null}

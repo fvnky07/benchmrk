@@ -10,6 +10,7 @@ export default ({ config }: { config: AppConfig }) => {
   const plugins = [
     ...(config.plugins ?? []),
     'expo-apple-authentication',
+    'expo-notifications',
     // The Workout's Live Activity (expo-widgets registers it at runtime).
     [
       'expo-widgets',
