@@ -27,6 +27,10 @@ export default function SettingsLayout() {
       />
       <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile' }} />
       <Stack.Screen
+        name="two-factor"
+        options={{ title: 'Two-Factor Authentication' }}
+      />
+      <Stack.Screen
         name="change-password"
         options={{ title: 'Change Password' }}
       />
