@@ -83,6 +83,10 @@ async function devicesFor(
   userId: string,
   type: PushType
 ): Promise<PushDevice[]> {
+  const identity = await ctx.runQuery(components.betterAuth.users.getUser, {
+    userId,
+  });
+  if (!identity) return [];
   const settings = await readMemberSettings(ctx, userId);
   if (!settings.pushNotifications || !settings[SWITCHES[type]]) return [];
   const devices = await ctx.db
