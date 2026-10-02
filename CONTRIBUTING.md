@@ -53,6 +53,31 @@ New cloud development deployments receive only project environment-variable
 defaults. Configure required backend secrets such as `BETTER_AUTH_SECRET` in
 the Convex project's development defaults before creating agent worktrees.
 
+## Backend environment variables
+
+Set these on each Convex deployment with
+`pnpm -F @repo/backend exec convex env set NAME value` (add `--prod` for
+production). Never commit their values.
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `BETTER_AUTH_SECRET` | yes | Signs sessions and magic-link proofs |
+| `SITE_URL` | yes | Website origin for auth callbacks and emailed links |
+| `RESEND_API_KEY` | yes | Sends transactional email; without it nothing is mailed |
+| `DELETION_REQUEST_NOTIFY_EMAIL` | production | Maintainer inbox for confirmed website deletion requests |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_IOS_CLIENT_ID` | for Google sign-in | Google OAuth clients |
+| `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`, `APPLE_APP_BUNDLE_IDENTIFIER` | for Apple sign-in | Sign in with Apple |
+
+## Deletion requests
+
+Google Play requires a web page for deleting an account without the app:
+`/delete-account` on the website (linked from the privacy policy). A request
+is recorded in the `deletionRequests` table only after the requester opens the
+emailed confirmation link, and the same email never creates a second request.
+Each confirmed request emails `DELETION_REQUEST_NOTIFY_EMAIL`. Delete that
+identity and its data within 30 days, then reply to the requester to say it's
+done; the page promises both.
+
 ## Running the apps
 
 ```bash
