@@ -58,6 +58,49 @@ async function groupOf(t: TestBackend, hostName: string) {
 }
 
 describe('Group event pushes', () => {
+  test.each(
+    (['joined', 'left', 'ended'] as const).flatMap((kind) =>
+      (['actor', 'recipient'] as const).map((blocker) => ({ kind, blocker }))
+    )
+  )(
+    '$kind pushes honor a block by the $blocker made after scheduling',
+    async ({ kind, blocker }) => {
+      const t = createTest();
+      const service = pushService();
+      const { host, code } = await groupOf(t, 'host');
+      const observer = await member(t, 'observer');
+      await observer.mutation(api.groups.joinByCode, { code });
+      await finishDue(t, MINUTE);
+      const sam = await member(t, 'sam');
+      service.messages.length = 0;
+      await sam.mutation(api.groups.joinByCode, { code });
+      if (kind !== 'joined') {
+        await finishDue(t, MINUTE);
+        service.messages.length = 0;
+        if (kind === 'left') await sam.mutation(api.groups.leave, {});
+        else await host.mutation(api.groups.end, {});
+      }
+      const actor = kind === 'ended' ? host : sam;
+      const recipient = kind === 'ended' ? sam : host;
+      const actorName = kind === 'ended' ? 'host' : 'sam';
+      const recipientName = kind === 'ended' ? 'sam' : 'host';
+      await (blocker === 'actor' ? actor : recipient).mutation(
+        api.safety.block,
+        { username: blocker === 'actor' ? recipientName : actorName }
+      );
+      await finishDue(t, kind === 'joined' ? MINUTE : 0);
+
+      expect(received(service.messages, recipientName)).toEqual([]);
+      expect(received(service.messages, 'observer')).toEqual([
+        kind === 'joined'
+          ? 'sam joined your Group'
+          : kind === 'left'
+            ? 'sam left'
+            : 'Your Group ended',
+      ]);
+    }
+  );
+
   test('joins within 60 s merge into one push; the joiners hear only of later joins', async () => {
     const t = createTest();
     const service = pushService();

@@ -70,9 +70,10 @@ async function groupWithWorkouts() {
     reason: 'finish',
   });
 
-  vi.setSystemTime(GROUP_START);
+  vi.setSystemTime(GROUP_START - MINUTE);
   const groupId = await host.mutation(api.groups.create, {});
   const { code } = await host.mutation(api.groups.shareCode, {});
+  vi.setSystemTime(GROUP_START);
   await guest.mutation(api.groups.joinByCode, { code });
   const hostWorkoutId = await host.mutation(api.workouts.start, {
     routineId: hostRoutineId,
@@ -104,6 +105,52 @@ async function groupWithWorkouts() {
 }
 
 describe('Group recaps', () => {
+  test.each(['host', 'guest'] as const)(
+    'a block by %s hides recap rows and timeline actors only from each other',
+    async (direction) => {
+      const { t, host, guest, groupId, code } = await groupWithWorkouts();
+      const observer = await member(t, 'observer');
+      await observer.mutation(api.groups.joinByCode, { code });
+      vi.setSystemTime(GROUP_START + MINUTE);
+      await host.mutation(api.groups.end, {});
+      const blocker = direction === 'host' ? host : guest;
+      await blocker.mutation(api.safety.block, {
+        username: direction === 'host' ? 'guest' : 'host',
+      });
+
+      const hostRecap = await host.query(api.recaps.get, { groupId });
+      const guestRecap = await guest.query(api.recaps.get, { groupId });
+      const observerRecap = await observer.query(api.recaps.get, { groupId });
+      expect(hostRecap.rows.map((row) => row.username)).toEqual([
+        'host',
+        'observer',
+      ]);
+      expect(guestRecap.rows.map((row) => row.username)).toEqual([
+        'guest',
+        'observer',
+      ]);
+      expect(observerRecap.rows.map((row) => row.username)).toEqual([
+        'guest',
+        'host',
+        'observer',
+      ]);
+      expect(hostRecap.timeline.map((event) => event.username)).toEqual([
+        'host',
+        'observer',
+        'host',
+      ]);
+      expect(guestRecap.timeline.map((event) => event.username)).toEqual([
+        'guest',
+        'observer',
+      ]);
+      expect(observerRecap.timeline.map((event) => event.username)).toEqual([
+        'guest',
+        'observer',
+        'host',
+      ]);
+    }
+  );
+
   test('host end saves every member, including final Sets before a Workout ends', async () => {
     const {
       t,
@@ -148,7 +195,7 @@ describe('Group recaps', () => {
     const recap = await guest.query(api.recaps.get, { groupId });
     expect(recap).toMatchObject({
       groupId,
-      createdAt: GROUP_START,
+      createdAt: GROUP_START - MINUTE,
       endedAt: GROUP_START + 6 * MINUTE,
       rows: [
         {
@@ -182,7 +229,7 @@ describe('Group recaps', () => {
     ).toBe(groupId);
     expect(recap.timeline[0]).toMatchObject({
       kind: 'joined',
-      username: 'host',
+      username: 'guest',
       exerciseName: null,
       at: GROUP_START,
     });
@@ -376,7 +423,7 @@ describe('Group recaps', () => {
     });
   });
 
-  test('a rejoined member has one row from their latest membership and a snapshotted username', async () => {
+  test('a rejoined member keeps the timeline from their first arrival and their latest row with a snapshotted username', async () => {
     const { host, guest, groupId, code, guestSets } = await groupWithWorkouts();
     vi.setSystemTime(GROUP_START + MINUTE);
     await guest.mutation(api.groups.leave, {});
@@ -415,6 +462,6 @@ describe('Group recaps', () => {
       recap.timeline
         .filter((event) => event.kind === 'joined')
         .map((event) => event.username)
-    ).toEqual(['host', 'guest', 'guest']);
+    ).toEqual(['guest', 'guest']);
   });
 });

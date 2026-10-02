@@ -11,12 +11,13 @@ import {
   internalQuery,
   type QueryCtx,
 } from './_generated/server';
+import { blockedEitherWay, blockedEitherWayIds } from './lib/blocks';
+import { INVITE_LIFETIME_MS } from './lib/groupPushes';
 import { readMemberSettings } from './memberSettings';
 
 const SEND_URL = 'https://exp.host/--/api/v2/push/send';
 const RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
 const RECEIPT_DELAY_MS = 15 * 60 * 1000;
-const INVITE_LIFETIME_MS = 24 * 60 * 60 * 1000;
 const SEND_BATCH_SIZE = 100;
 type PushType = 'invites' | 'joins' | 'leaves' | 'groupEnded';
 
@@ -56,11 +57,15 @@ const pushDataValidator = v.union(
   })
 );
 
-/** One push: the same copy and data to each of these devices. */
+/** One push: the same alert (none for a badge-only push) to each device. */
 const outgoingValidator = v.object({
-  copy: v.string(),
-  data: pushDataValidator,
-  channelId: v.string(),
+  alert: v.optional(
+    v.object({
+      copy: v.string(),
+      data: pushDataValidator,
+      channelId: v.string(),
+    })
+  ),
   badge: v.optional(v.number()),
   devices: v.array(deviceValidator),
 });
@@ -117,6 +122,31 @@ function isActionable(
   );
 }
 
+/** The invitee's invites they can still accept, minus blocked inviters. */
+async function actionableInviteCount(
+  ctx: QueryCtx,
+  inviteeId: string,
+  now: number
+) {
+  const pending = await ctx.db
+    .query('groupInvites')
+    .withIndex('by_invitee', (q) =>
+      q.eq('inviteeId', inviteeId).eq('delivered', true).eq('status', 'pending')
+    )
+    .collect();
+  const blockedIds = await blockedEitherWayIds(ctx, inviteeId);
+  let count = 0;
+  for (const invite of pending) {
+    if (
+      !blockedIds.has(invite.inviterId) &&
+      isActionable(invite, await ctx.db.get(invite.groupId), now)
+    ) {
+      count++;
+    }
+  }
+  return count;
+}
+
 /** "sam", "sam and alex", or "sam, alex and others": never a number. */
 function joinedCopy(usernames: readonly string[]) {
   const [first, second] = usernames;
@@ -139,28 +169,39 @@ export const getGroupInvite = internalQuery({
     if (!isActionable(invite, await ctx.db.get(invite.groupId), now)) {
       return null;
     }
+    if (await blockedEitherWay(ctx, invite.inviterId, invite.inviteeId)) {
+      return null;
+    }
     const username = await usernameOf(ctx, invite.inviterId);
     if (!username) return null;
-    const pending = await ctx.db
-      .query('groupInvites')
-      .withIndex('by_invitee', (q) =>
-        q
-          .eq('inviteeId', invite.inviteeId)
-          .eq('delivered', true)
-          .eq('status', 'pending')
-      )
-      .collect();
-    let badge = 0;
-    for (const other of pending) {
-      if (isActionable(other, await ctx.db.get(other.groupId), now)) badge++;
-    }
     return {
-      copy: `${username} invited you to a Group`,
-      data: { type: 'groupInvite', inviteId },
-      channelId: CHANNELS.invites,
-      badge,
+      alert: {
+        copy: `${username} invited you to a Group`,
+        data: { type: 'groupInvite', inviteId },
+        channelId: CHANNELS.invites,
+      },
+      badge: await actionableInviteCount(ctx, invite.inviteeId, now),
       devices: await devicesFor(ctx, invite.inviteeId, 'invites'),
     };
+  },
+});
+
+/** The invitees' current badges, for those who allow invite pushes. */
+export const getBadgeRefreshes = internalQuery({
+  args: { inviteeIds: v.array(v.string()) },
+  returns: v.array(outgoingValidator),
+  handler: async (ctx, { inviteeIds }): Promise<Outgoing[]> => {
+    const now = Date.now();
+    const outgoing: Outgoing[] = [];
+    for (const inviteeId of inviteeIds) {
+      const devices = await devicesFor(ctx, inviteeId, 'invites');
+      if (!devices.length) continue;
+      outgoing.push({
+        badge: await actionableInviteCount(ctx, inviteeId, now),
+        devices,
+      });
+    }
+    return outgoing;
   },
 });
 
@@ -197,10 +238,12 @@ export const getJoins = internalQuery({
 
     const outgoing: Outgoing[] = [];
     for (const member of members) {
+      const blockedIds = await blockedEitherWayIds(ctx, member.userId);
       const names = joins.flatMap((join) =>
         join.userId !== member.userId &&
         join.at > member.joinedAt &&
-        join.userId
+        join.userId &&
+        !blockedIds.has(join.userId)
           ? [usernames.get(join.userId) ?? '']
           : []
       );
@@ -209,9 +252,11 @@ export const getJoins = internalQuery({
       const devices = await devicesFor(ctx, member.userId, 'joins');
       if (!devices.length) continue;
       outgoing.push({
-        copy: joinedCopy(named),
-        data: { type: 'groupEvent', kind: 'joined' },
-        channelId: CHANNELS.joins,
+        alert: {
+          copy: joinedCopy(named),
+          data: { type: 'groupEvent', kind: 'joined' },
+          channelId: CHANNELS.joins,
+        },
         devices,
       });
     }
@@ -240,15 +285,20 @@ export const getGroupEvent = internalQuery({
     const type: PushType = kind === 'left' ? 'leaves' : 'groupEnded';
     const devices: PushDevice[] = [];
     for (const userId of recipientIds) {
-      if (userId !== actorId) {
+      if (
+        userId !== actorId &&
+        (!actorId || !(await blockedEitherWay(ctx, userId, actorId)))
+      ) {
         devices.push(...(await devicesFor(ctx, userId, type)));
       }
     }
     return devices.length
       ? {
-          copy,
-          data: { type: 'groupEvent', kind },
-          channelId: CHANNELS[type],
+          alert: {
+            copy,
+            data: { type: 'groupEvent', kind },
+            channelId: CHANNELS[type],
+          },
           devices,
         }
       : null;
@@ -291,11 +341,13 @@ async function deliver(ctx: ActionCtx, outgoing: Outgoing) {
       body: JSON.stringify(
         devices.map((device) => ({
           to: device.token,
-          title: outgoing.copy,
-          body: outgoing.copy,
-          sound: 'default',
-          channelId: outgoing.channelId,
-          data: outgoing.data,
+          ...(outgoing.alert && {
+            title: outgoing.alert.copy,
+            body: outgoing.alert.copy,
+            sound: 'default',
+            channelId: outgoing.alert.channelId,
+            data: outgoing.alert.data,
+          }),
           ...(outgoing.badge !== undefined && { badge: outgoing.badge }),
         }))
       ),
@@ -374,6 +426,20 @@ export const sendGroupEvent = internalAction({
       args
     );
     if (outgoing) await deliver(ctx, outgoing);
+    return null;
+  },
+});
+
+/** Badge-only pushes: no alert, just the invitee's current invite count. */
+export const sendBadgeRefreshes = internalAction({
+  args: { inviteeIds: v.array(v.string()) },
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
+    const outgoing: Outgoing[] = await ctx.runQuery(
+      internal.push.getBadgeRefreshes,
+      args
+    );
+    for (const push of outgoing) await deliver(ctx, push);
     return null;
   },
 });

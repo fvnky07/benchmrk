@@ -13,6 +13,7 @@ import { START, useWorkoutClock } from './workoutFixtures.testing';
 const RECEIPT_DELAY = 15 * 60 * 1000;
 const PHONE = 'ExpoPushToken[phone]';
 const TABLET = 'ExpoPushToken[tablet]';
+const HOUR = 60 * 60 * 1000;
 
 beforeEach(useWorkoutClock);
 afterEach(() => {
@@ -52,6 +53,67 @@ async function twoDevices(invitee: TestMember) {
 }
 
 describe('Group invite push', () => {
+  test('ending a Group refreshes pending invite badges on every invitee device without an alert', async () => {
+    const t = createTest();
+    const service = pushService();
+    const inviter = await host(t, 'spotter');
+    const invitee = await member(t, 'lifter');
+    await twoDevices(invitee);
+    await inviter.mutation(api.groupInvites.send, { username: 'lifter' });
+    await finishDue(t);
+    expect(service.messages.map((message) => message.badge)).toEqual([1, 1]);
+    service.messages.length = 0;
+
+    await inviter.mutation(api.groups.end, {});
+    await finishDue(t);
+
+    expect(service.messages).toEqual(
+      [PHONE, TABLET].map((to) => ({ to, badge: 0 }))
+    );
+    expect(
+      (await invitee.query(api.groupInvites.inbox, {})).map(
+        (invite) => invite.state
+      )
+    ).toEqual(['ended']);
+  });
+
+  test('an invite expiring after 24 hours drops the badge on every invitee device without an alert', async () => {
+    const t = createTest();
+    const service = pushService();
+    const first = await host(t, 'first');
+    const second = await host(t, 'second');
+    const invitee = await member(t, 'lifter');
+    await twoDevices(invitee);
+    await first.mutation(api.groupInvites.send, { username: 'lifter' });
+    await finishDue(t, 12 * HOUR);
+    await second.mutation(api.groupInvites.send, { username: 'lifter' });
+    await finishDue(t);
+    service.messages.length = 0;
+
+    await finishDue(t, 12 * HOUR + 1);
+
+    expect(service.messages).toEqual(
+      [PHONE, TABLET].map((to) => ({ to, badge: 1 }))
+    );
+  });
+
+  test('badge refreshes respect the invite push switches', async () => {
+    const t = createTest();
+    const service = pushService();
+    const inviter = await host(t, 'spotter');
+    const invitee = await member(t, 'lifter');
+    await twoDevices(invitee);
+    await inviter.mutation(api.groupInvites.send, { username: 'lifter' });
+    await finishDue(t);
+    service.messages.length = 0;
+    await invitee.mutation(api.memberSettings.update, { pushInvites: false });
+
+    await inviter.mutation(api.groups.end, {});
+    await finishDue(t, 24 * HOUR + 1);
+
+    expect(service.messages).toEqual([]);
+  });
+
   test('sends exactly one message per invitee device with fixed copy and inbox data', async () => {
     const t = createTest();
     const service = pushService();

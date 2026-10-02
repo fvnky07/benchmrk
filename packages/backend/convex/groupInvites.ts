@@ -3,17 +3,17 @@
 // username.
 import { ConvexError, v } from 'convex/values';
 
-import { components, internal } from './_generated/api';
+import { components } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { mutation, type QueryCtx, query } from './_generated/server';
-import { blockedEitherWay } from './lib/blocks';
+import { blockedEitherWay, blockedEitherWayIds } from './lib/blocks';
 import { joinGroup, requireMembership } from './lib/groupProgress';
+import { INVITE_LIFETIME_MS, notifyInviteSent } from './lib/groupPushes';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
 import { readMemberSettings } from './memberSettings';
 
 const HOUR_MS = 60 * 60 * 1000;
-const INVITE_LIFETIME_MS = 24 * HOUR_MS;
 const INVITES_PER_HOUR = 10;
 const COOLDOWN_AFTER_DECLINE_MS = HOUR_MS;
 
@@ -160,11 +160,7 @@ export const send = mutation({
       delivered,
       status: 'pending',
     });
-    if (delivered) {
-      await ctx.scheduler.runAfter(0, internal.push.sendGroupInvite, {
-        inviteId,
-      });
-    }
+    if (delivered) await notifyInviteSent(ctx, { inviteId, inviteeId });
     return null;
   },
 });
@@ -191,6 +187,7 @@ export const inbox = query({
     const userId = await getIdentityId(ctx);
     if (!userId) return [];
     const now = Date.now();
+    const blockedIds = await blockedEitherWayIds(ctx, userId);
     const invites = await ctx.db
       .query('groupInvites')
       .withIndex('by_invitee', (q) =>
@@ -199,18 +196,20 @@ export const inbox = query({
       .order('desc')
       .collect();
     return Promise.all(
-      invites.map(async (invite) => {
-        const inviter = await ctx.runQuery(
-          components.betterAuth.users.getUser,
-          { userId: invite.inviterId }
-        );
-        return {
-          inviteId: invite._id,
-          inviterUsername: inviter?.username ?? 'member',
-          sentAt: invite.createdAt,
-          state: stateOf(invite, await ctx.db.get(invite.groupId), now),
-        };
-      })
+      invites
+        .filter((invite) => !blockedIds.has(invite.inviterId))
+        .map(async (invite) => {
+          const inviter = await ctx.runQuery(
+            components.betterAuth.users.getUser,
+            { userId: invite.inviterId }
+          );
+          return {
+            inviteId: invite._id,
+            inviterUsername: inviter?.username ?? 'member',
+            sentAt: invite.createdAt,
+            state: stateOf(invite, await ctx.db.get(invite.groupId), now),
+          };
+        })
     );
   },
 });

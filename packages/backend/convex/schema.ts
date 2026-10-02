@@ -547,7 +547,8 @@ export default defineSchema({
   })
     .index('by_invitee', ['inviteeId', 'delivered', 'status', 'createdAt'])
     .index('by_inviter', ['inviterId', 'createdAt'])
-    .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt']),
+    .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt'])
+    .index('by_group', ['groupId']),
 
   blocks: defineTable({
     blockerId: v.string(),
@@ -560,7 +561,7 @@ export default defineSchema({
   reports: defineTable({
     reporterId: v.string(),
     reportedId: v.string(),
-    groupId: v.optional(v.id('groups')),
+    groupId: v.id('groups'),
     reason: v.union(
       v.literal('harassment'),
       v.literal('spam'),
