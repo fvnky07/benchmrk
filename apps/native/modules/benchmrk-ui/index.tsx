@@ -1,4 +1,4 @@
-import { requireNativeView } from 'expo';
+import { requireNativeView, requireOptionalNativeModule } from 'expo';
 import type { ReactNode } from 'react';
 
 /**
@@ -78,3 +78,15 @@ export function GestureBox({
     />
   );
 }
+
+/** Android only: the Workout's ongoing notification (see WorkoutLiveStatus.kt). */
+export const LiveStatus = requireOptionalNativeModule<{
+  show(status: {
+    startedAt: number;
+    setsDone: number;
+    setsPlanned: number;
+    restEndsAt: number | null;
+    url: string;
+  }): void;
+  clear(): void;
+}>('BenchmrkLiveStatus');
