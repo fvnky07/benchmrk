@@ -11,6 +11,8 @@ public final class GestureBoxAction: Record {
 public final class GestureBoxViewProps: ExpoSwiftUI.ViewProps {
   @Field var label: String = ""
   @Field var actions: [GestureBoxAction] = []
+  @Field var swipeable: Bool = true
+  @Field var longPressable: Bool = true
   var onTap = EventDispatcher()
   var onLongPress = EventDispatcher()
   var onSwipe = EventDispatcher()
@@ -19,8 +21,8 @@ public final class GestureBoxViewProps: ExpoSwiftUI.ViewProps {
 
 /**
  * Hosts Expo UI children with the gestures Expo UI doesn't expose on iOS:
- * a horizontal swipe (direction 1 = right, -1 = left) next to tap and
- * long-press. VoiceOver gets the label and the named actions instead.
+ * tap, and when enabled long-press and a horizontal swipe (direction 1 =
+ * right, -1 = left). VoiceOver gets the label and the named actions instead.
  */
 public struct GestureBoxView: ExpoSwiftUI.View {
   @ObservedObject public var props: GestureBoxViewProps
@@ -32,10 +34,14 @@ public struct GestureBoxView: ExpoSwiftUI.View {
   }
 
   public var body: some View {
-    let base = Children()
+    let tappable = Children()
       .contentShape(Rectangle())
       .onTapGesture { props.onTap() }
-      .onLongPressGesture { props.onLongPress() }
+    // A recognized long-press cancels the tap, so only one of them fires.
+    let pressable = props.longPressable
+      ? AnyView(tappable.onLongPressGesture { props.onLongPress() })
+      : AnyView(tappable)
+    let base = pressable
       .simultaneousGesture(
         DragGesture(minimumDistance: 12).onEnded { value in
           if value.translation.width >= swipeDistance {
@@ -43,7 +49,8 @@ public struct GestureBoxView: ExpoSwiftUI.View {
           } else if value.translation.width <= -swipeDistance {
             props.onSwipe(["direction": -1])
           }
-        }
+        },
+        including: props.swipeable ? .all : .subviews
       )
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(props.label)

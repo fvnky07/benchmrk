@@ -45,6 +45,7 @@ export const QUICK_ACTIONS: Record<
 
 /** Chips whose features exist; later Workout features add theirs here. */
 export const AVAILABLE_QUICK_ACTIONS: ReadonlySet<QuickActionId> = new Set([
+  'wand',
   'addSet',
   'info',
   'swap',
