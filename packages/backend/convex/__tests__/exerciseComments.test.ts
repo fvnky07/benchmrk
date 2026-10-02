@@ -62,3 +62,33 @@ test('unauthenticated post is rejected', async () => {
     })
   ).rejects.toThrow('Not authenticated');
 });
+
+test('custom Exercise comments are private to their owning Benchmrk identity', async () => {
+  const t = createTest();
+  const owner = t.withIdentity({ subject: 'member-owner' });
+  const other = t.withIdentity({ subject: 'member-other' });
+  const { exerciseId } = await owner.mutation(api.exercises.createCustom, {
+    name: 'Private Press',
+    type: 'strength',
+    equipment: 'barbell',
+  });
+  await owner.mutation(api.exerciseComments.addComment, {
+    exerciseId,
+    body: 'Private training note',
+  });
+
+  for (const requester of [other, t]) {
+    await expect(
+      requester.query(api.exerciseComments.listComments, { exerciseId })
+    ).rejects.toThrow('EXERCISE_NOT_FOUND');
+  }
+  await expect(
+    other.mutation(api.exerciseComments.addComment, {
+      exerciseId,
+      body: 'An unauthorized note',
+    })
+  ).rejects.toThrow('EXERCISE_NOT_FOUND');
+  expect(
+    await owner.query(api.exerciseComments.listComments, { exerciseId })
+  ).toMatchObject([{ body: 'Private training note' }]);
+});
