@@ -8,6 +8,21 @@
       "developmentClient": true,
       "distribution": "internal",
       "autoIncrement": true
+    },
+    "production": {
+      "autoIncrement": true,
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://friendly-finch-491.convex.cloud",
+        "EXPO_PUBLIC_CONVEX_SITE_URL": "https://friendly-finch-491.convex.site"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal"
+      }
     }
   }
 }
