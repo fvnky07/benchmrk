@@ -33,7 +33,6 @@ export function AboutContent() {
             },
           },
           { href: '/about', label: 'About', active: true },
-          { href: '/pricing', label: 'Pricing' },
         ]}
         customStyles={{
           ctaButton: 'bg-green-1 text-black',

@@ -5,8 +5,7 @@ import WelcomeContent from './WelcomeContent';
 
 export const metadata: Metadata = {
   title: 'Welcome to benchmrk',
-  description:
-    'Congratulations! You are now a lifetime premium member of benchmrk.',
+  description: 'Your email is confirmed and you are on the benchmrk waitlist.',
 };
 
 export default function WelcomePage() {
