@@ -20,7 +20,6 @@ interface FooterProps extends React.HTMLAttributes<HTMLElement> {
 const navigationLinks = [
   { href: '/about', label: 'About' },
   { href: '/blog', label: 'Blog' },
-  { href: '/pricing', label: 'Pricing' },
   { href: '/changelog', label: 'Changelog' },
 ];
 

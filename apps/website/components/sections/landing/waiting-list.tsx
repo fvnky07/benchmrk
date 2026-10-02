@@ -29,13 +29,11 @@ export default function WaitingList() {
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // NOTE: Query real-time stats from Convex
-  const premiumStats = useQuery(api.waitlist.getPremiumStats);
-  const waitlistCount = useQuery(api.waitlist.getWaitlistCount) ?? 0;
+  const waitlistCount = useQuery(api.waitlist.getWaitlistCount);
 
   // NOTE: Exaggerated waitlist count for social proof (easy to adjust)
   const MULTIPLIER = 300;
-  const exaggeratedCount = (waitlistCount + 1) * MULTIPLIER;
+  const exaggeratedCount = ((waitlistCount ?? 0) + 1) * MULTIPLIER;
 
   const mutateEmail = useMutation(api.waitlist.addEmailToWaitlist);
 
@@ -78,10 +76,9 @@ export default function WaitingList() {
 
     try {
       await mutateEmail({ email: email.trim() });
-      toast.success(
-        'Check your inbox for the magic link to confirm and claim your lifetime premium!',
-        { position: 'bottom-center' }
-      );
+      toast.success('Check your inbox for the link to confirm your spot.', {
+        position: 'bottom-center',
+      });
       setEmail('');
       fireConfetti();
     } catch (error) {
@@ -152,8 +149,8 @@ export default function WaitingList() {
                   <span>
                     <Sparkle className="size-12" />
                   </span>
-                  First 100 people to sign up on the waitlist will recieve
-                  LIFETIME premium membership
+                  Benchmrk is free and open source. Join the list to be first in
+                  when the app launches.
                 </h1>
               </div>
             </div>
@@ -165,31 +162,11 @@ export default function WaitingList() {
             initialDelay={0.3}
             className="flex h-auto w-full flex-1 flex-col items-center justify-between gap-4 rounded-4xl border-2 bg-black-2 p-6 shadow-2xl"
           >
-            {/* NOTE: Stats Row - 2 stats side-by-side, always horizontal */}
+            {/* NOTE: Waitlist size */}
             <StaggerItem className="flex w-full flex-1 items-center justify-center">
               <div className="flex w-full flex-row items-center justify-center gap-6 sm:gap-10">
-                {/* Stat 1: X/100 Premiums Claimed */}
                 <div className="flex flex-col items-center justify-center text-center">
-                  {premiumStats === undefined ? (
-                    <LoadingSpinner className="size-10 text-green-1 sm:size-16" />
-                  ) : (
-                    <>
-                      <span className="font-[nippo] font-bold text-2xl text-white sm:text-5xl lg:text-8xl 2xl:text-9xl">
-                        {premiumStats.claimed}/100
-                      </span>
-                      <span className="font-medium text-[10px] text-white/40 uppercase tracking-widest sm:text-sm">
-                        Premiums Claimed
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                {/* Separator */}
-                <div className="h-12 w-px shrink-0 bg-white/20 sm:h-16" />
-
-                {/* Stat 2: X People Waiting */}
-                <div className="flex flex-col items-center justify-center text-center">
-                  {premiumStats === undefined ? (
+                  {waitlistCount === undefined ? (
                     <LoadingSpinner className="size-10 text-green-1 sm:size-16" />
                   ) : (
                     <>

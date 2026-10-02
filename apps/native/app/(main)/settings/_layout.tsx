@@ -25,6 +25,11 @@ export default function SettingsLayout() {
         name="manage-account"
         options={{ title: 'Manage Account' }}
       />
+      <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile' }} />
+      <Stack.Screen
+        name="change-password"
+        options={{ title: 'Change Password' }}
+      />
       <Stack.Screen name="appearance" options={{ title: 'Appearance' }} />
       <Stack.Screen
         name="workout-settings"
