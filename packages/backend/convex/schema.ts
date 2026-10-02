@@ -26,6 +26,8 @@ export const memberSettingsFields = {
   quickActions: v.array(
     v.object({ id: quickActionIdValidator, visible: v.boolean() })
   ),
+  /** The first-run "swipe right on a Set" hint was dismissed. */
+  swipeHintDismissed: v.boolean(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -37,6 +39,7 @@ export const memberSettingsChangeFields = {
   haptics: v.optional(memberSettingsFields.haptics),
   analyticsOptOut: v.optional(memberSettingsFields.analyticsOptOut),
   quickActions: v.optional(memberSettingsFields.quickActions),
+  swipeHintDismissed: v.optional(memberSettingsFields.swipeHintDismissed),
 };
 
 export const exerciseTypeValidator = v.union(

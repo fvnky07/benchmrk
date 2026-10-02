@@ -106,14 +106,14 @@ function progressOf(sets: Doc<'sets'>[]) {
   };
 }
 
+/** The planned Sets of an Exercise just added to a Workout. */
 async function insertPlannedSets(
   ctx: MutationCtx,
   workout: Doc<'workouts'>,
   workoutExercise: Pick<Doc<'workoutExercises'>, '_id' | 'exerciseId'>,
-  count: number,
-  firstOrder = 0
+  count: number
 ) {
-  for (let order = firstOrder; order < firstOrder + count; order += 1) {
+  for (let order = 0; order < count; order += 1) {
     await ctx.db.insert('sets', {
       userId: workout.userId,
       workoutId: workout._id,
@@ -266,6 +266,21 @@ export const addExercise = mutation({
   },
 });
 
+/** Inserts a Set before `sets[index]` (or last), shifting the later Sets down. */
+async function insertSetAt(
+  ctx: MutationCtx,
+  sets: Doc<'sets'>[],
+  index: number,
+  set: Omit<Doc<'sets'>, '_id' | '_creationTime' | 'order'>
+) {
+  const at = sets[index];
+  const order = at ? at.order : (sets.at(-1)?.order ?? -1) + 1;
+  for (const later of sets.slice(index)) {
+    await ctx.db.patch(later._id, { order: later.order + 1 });
+  }
+  return ctx.db.insert('sets', { ...set, order });
+}
+
 /** Adds a Set: Working Sets go last, Warm-up Sets before the first Working Set. */
 export const addSet = mutation({
   args: {
@@ -281,24 +296,55 @@ export const addSet = mutation({
     );
     requireActive(workout);
     const sets = await setsOfExercise(ctx, workoutExercise._id);
-    if (args.type !== 'warmup') {
-      await insertPlannedSets(ctx, workout, workoutExercise, 1, sets.length);
-      return;
-    }
-
+    const type = args.type ?? 'normal';
     const firstWorking = sets.findIndex((set) => set.type !== 'warmup');
-    const order = firstWorking === -1 ? sets.length : firstWorking;
-    for (const later of sets.slice(order)) {
-      await ctx.db.patch(later._id, { order: later.order + 1 });
-    }
-    await ctx.db.insert('sets', {
-      userId: workout.userId,
-      workoutId: workout._id,
-      workoutExerciseId: workoutExercise._id,
-      exerciseId: workoutExercise.exerciseId,
-      order,
-      type: 'warmup',
+    await insertSetAt(
+      ctx,
+      sets,
+      type === 'warmup' && firstWorking !== -1 ? firstWorking : sets.length,
+      {
+        userId: workout.userId,
+        workoutId: workout._id,
+        workoutExerciseId: workoutExercise._id,
+        exerciseId: workoutExercise.exerciseId,
+        type,
+      }
+    );
+  },
+});
+
+/** Adds an unlogged copy of a Set (type and values, not effort) right after it. */
+export const duplicateSet = mutation({
+  args: { setId: v.id('sets') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
+    requireActive(workout);
+    const sets = await setsOfExercise(ctx, set.workoutExerciseId);
+    const index = sets.findIndex((item) => item._id === set._id);
+    return insertSetAt(ctx, sets, index + 1, {
+      userId: set.userId,
+      workoutId: set.workoutId,
+      workoutExerciseId: set.workoutExerciseId,
+      exerciseId: set.exerciseId,
+      type: set.type,
+      weightKg: set.weightKg,
+      reps: set.reps,
+      durationSeconds: set.durationSeconds,
+      distanceMeters: set.distanceMeters,
     });
+  },
+});
+
+/** Deletes a Set that hasn't been logged; logged Sets are history. */
+export const deleteSet = mutation({
+  args: { setId: v.id('sets') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
+    requireActive(workout);
+    if (set.completedAt !== undefined) throw new ConvexError('SET_LOGGED');
+    await ctx.db.delete(set._id);
   },
 });
 
