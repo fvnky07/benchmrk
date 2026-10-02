@@ -2056,7 +2056,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       checkUsername: FunctionReference<
         "query",
         "internal",
-        { username: string },
+        { exceptUserId?: string; username: string },
         boolean,
         Name
       >;

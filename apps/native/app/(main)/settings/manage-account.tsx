@@ -51,7 +51,10 @@ export default function ManageAccountScreen() {
       <ListItem supportingText={user.name ?? 'Not set'}>Name</ListItem>
       <ListItem supportingText={username}>Username</ListItem>
       <ListItem supportingText={bio ?? 'Not set'}>Bio</ListItem>
-      <ListItem supportingText="Profile editing is not available yet.">
+      <ListItem
+        supportingText="Username, bio and photo"
+        onPress={() => router.push('/(main)/settings/edit-profile')}
+      >
         Edit profile
       </ListItem>
       <ListItem
