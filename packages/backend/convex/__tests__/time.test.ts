@@ -110,7 +110,7 @@ describe('time tracking', () => {
   });
 
   test('Sets logged within 10 s count in totals but not in adherence', async () => {
-    const { t, member, routineId } = await legsRoutine();
+    const { member, routineId } = await legsRoutine();
     const workoutId = await member.mutation(api.workouts.start, { routineId });
     const [squat1, squat2] = await setIds(member);
 
@@ -119,22 +119,22 @@ describe('time tracking', () => {
     at(105);
     await log(member, squat2 as Id<'sets'>);
 
-    const flags = await t.run(async (ctx) =>
-      (
-        await ctx.db
-          .query('sets')
-          .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
-          .collect()
-      ).map((set) => set.loggedTogether ?? false)
-    );
-    expect(flags).toEqual([true, true, false]);
-    const workout = await member.query(api.workouts.get, { workoutId });
-    expect(workout?.time).toEqual({
+    const expected = {
       workingSeconds: 0,
       restSeconds: 5,
       transitionSeconds: 0,
       adherence: null,
+    };
+    const workout = await member.query(api.workouts.get, { workoutId });
+    expect(workout?.time).toEqual(expected);
+
+    await member.mutation(api.workouts.end, {
+      workoutId,
+      reason: 'terminate',
     });
+    const recorded = await member.query(api.history.get, { workoutId });
+    expect(recorded.time).toEqual(expected);
+    expect(recorded.exercises[0]?.time).toEqual(expected);
   });
 
   test('unchecking then relogging after 10 seconds restores rest adherence', async () => {
