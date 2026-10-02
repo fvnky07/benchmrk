@@ -1,77 +1,95 @@
-import { Button, ListItem, Text } from '@expo/ui';
-import { router } from 'expo-router';
+import { Button } from '@expo/ui';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { NativeScreen } from '@/components/native/native-screen';
+import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { analytics } from '@/lib/analytics';
-import { authClient, useAuthStore } from '@/lib/auth';
-import { useFormValidation } from '@/lib/hooks/use-form-validation';
-import { registerSchema } from '@/lib/schemas/auth';
+import { SocialProviderGroup } from '@/components/native/social-provider-group';
+import {
+  analytics,
+  authClient,
+  registerSchema,
+  useAuthStore,
+  useFormValidation,
+} from '@/lib';
 
+type Status = { message: string; tone: 'neutral' | 'error' } | null;
+
+/** Better Auth's code when the email already has an identity. */
+const EMAIL_TAKEN_CODES = new Set([
+  'USER_ALREADY_EXISTS',
+  'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL',
+]);
+
+/**
+ * Email, password and confirmation together. A successful sign-up keeps the
+ * form locked: the root onboarding gate takes over once the session lands, and
+ * Profile setup stays its own checkpoint.
+ */
 export default function RegisterScreen() {
+  const router = useRouter();
   const email = useAuthStore((state) => state.email);
   const setEmail = useAuthStore((state) => state.setEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<Status>(null);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: registerSchema,
     mode: 'onChange',
   });
 
-  const resetPasswords = () => {
-    setPassword('');
-    setConfirmPassword('');
-  };
-
-  const onSubmit = () => {
-    setErrorMessage(null);
-
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
-      resetPasswords();
-      return;
-    }
-
+  const createAccount = () => {
+    setStatus(null);
     handleSubmit({ email, password, confirmPassword }, async () => {
+      setBusy(true);
       try {
-        setIsLoading(true);
-
-        const { error } = await authClient.signUp.email({
+        const { data, error } = await authClient.signUp.email({
           email,
           password,
-          name: email.split('@')[0],
+          name: email.split('@')[0] ?? email,
         });
-        if (error) {
-          throw new Error(error.message ?? 'Unable to create your account');
+        if (error || !data) {
+          const taken = error?.code ? EMAIL_TAKEN_CODES.has(error.code) : false;
+          const message = taken
+            ? 'An account with this email already exists. Log in instead.'
+            : 'Couldn’t create your account. Try again.';
+          analytics.signupFailed(error?.code ?? 'unknown');
+          setStatus({ message, tone: 'error' });
+          setPassword('');
+          setConfirmPassword('');
+          setBusy(false);
+          return;
         }
-
         analytics.signupSuccess();
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Invalid credentials';
-        analytics.signupFailed(message);
-        setErrorMessage(message);
-        resetPasswords();
-        setEmail('');
-      } finally {
-        setIsLoading(false);
+        setStatus({
+          message:
+            'Account created. We sent a link to verify your email. Setting up your profile…',
+          tone: 'neutral',
+        });
+      } catch {
+        analytics.signupFailed('network');
+        setStatus({
+          message:
+            'Couldn’t reach Benchmrk. Check your connection and try again.',
+          tone: 'error',
+        });
+        setBusy(false);
       }
     });
   };
 
   return (
-    <NativeScreen>
-      <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>
-        Create an account
-      </Text>
+    <AuthShell
+      title="Create an account"
+      supportingText="Use your email and a password, or continue with Apple or Google."
+    >
       <NativeTextField
         autoCapitalize="none"
         autoComplete="email"
         autoCorrect={false}
+        editable={!busy}
         error={errors.email}
         keyboardType="email-address"
         label="Email"
@@ -86,13 +104,14 @@ export default function RegisterScreen() {
         autoCapitalize="none"
         autoComplete="new-password"
         autoCorrect={false}
+        editable={!busy}
         error={errors.password}
         label="Password"
         onChangeText={(value) => {
           setPassword(value);
           if (hasSubmitted) clearError('password');
         }}
-        placeholder="Choose a password"
+        placeholder="8+ characters, upper and lower case, a number"
         secureTextEntry
         value={password}
       />
@@ -100,6 +119,7 @@ export default function RegisterScreen() {
         autoCapitalize="none"
         autoComplete="new-password"
         autoCorrect={false}
+        editable={!busy}
         error={errors.confirmPassword}
         label="Confirm password"
         onChangeText={(value) => {
@@ -110,21 +130,21 @@ export default function RegisterScreen() {
         secureTextEntry
         value={confirmPassword}
       />
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Could not create account
-        </ListItem>
-      ) : null}
       <Button
-        disabled={isLoading}
-        label={isLoading ? 'Creating account…' : 'Create account'}
-        onPress={onSubmit}
+        disabled={busy}
+        label={busy ? 'Creating account…' : 'Create account'}
+        onPress={createAccount}
       />
+      {status ? (
+        <AuthStatus message={status.message} tone={status.tone} />
+      ) : null}
+      <SocialProviderGroup dividerPosition="before" />
       <Button
+        disabled={busy}
         label="Log in instead"
-        variant="outlined"
+        variant="text"
         onPress={() => router.replace('/login')}
       />
-    </NativeScreen>
+    </AuthShell>
   );
 }
