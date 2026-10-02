@@ -1,12 +1,9 @@
 import { Button, ListItem, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { usePaginatedQuery } from 'convex/react';
 import { type ErrorBoundaryProps, router } from 'expo-router';
-import { Platform } from 'react-native';
-
 import { NativeScreen } from '@/components/native/native-screen';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock } from '@/lib/workout/format';
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
@@ -18,13 +15,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
       <Text textStyle={{ fontSize: 17 }}>Try again to load your Workouts.</Text>
       <Button
         label="Try again"
-        modifiers={[
-          Platform.OS === 'ios'
-            ? accessibilityLabel('Try loading Workout history again')
-            : semantics({
-                contentDescription: 'Try loading Workout history again',
-              }),
-        ]}
+        modifiers={[accessibilityModifier('Try loading Workout history again')]}
         onPress={() => void retry()}
       />
     </NativeScreen>
@@ -62,11 +53,7 @@ export default function WorkoutHistoryScreen() {
           return (
             <ListItem
               key={workout.workoutId}
-              modifiers={[
-                Platform.OS === 'ios'
-                  ? accessibilityLabel(label)
-                  : semantics({ contentDescription: label }),
-              ]}
+              modifiers={[accessibilityModifier(label)]}
               supportingText={summary}
               onPress={() =>
                 router.push(`/workout/history/${workout.workoutId}`)
@@ -81,13 +68,7 @@ export default function WorkoutHistoryScreen() {
         <Button
           disabled={status === 'LoadingMore'}
           label={status === 'LoadingMore' ? 'Loading…' : 'Load more Workouts'}
-          modifiers={[
-            Platform.OS === 'ios'
-              ? accessibilityLabel('Load more completed Workouts')
-              : semantics({
-                  contentDescription: 'Load more completed Workouts',
-                }),
-          ]}
+          modifiers={[accessibilityModifier('Load more completed Workouts')]}
           onPress={() => loadMore(20)}
           variant="outlined"
         />

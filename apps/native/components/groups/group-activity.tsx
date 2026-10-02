@@ -1,12 +1,10 @@
 import { Button, Column, ListItem, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
-import { Platform } from 'react-native';
-
+import { groupEventText } from '@/lib/groups/event-text';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -41,37 +39,7 @@ export function GroupActivity() {
     <Column spacing={12}>
       <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Activity</Text>
       {events.map((event) => {
-        const name = event.isYou ? 'You' : (event.username ?? 'A Group member');
-        let line: string;
-        switch (event.kind) {
-          case 'joined':
-            line = `${name} joined`;
-            break;
-          case 'left':
-            line = `${name} left`;
-            break;
-          case 'dropped':
-            line = `${name} dropped out`;
-            break;
-          case 'removed':
-            line = `${name} was removed`;
-            break;
-          case 'hostChanged':
-            line = `${name} is now the Group host`;
-            break;
-          case 'ended':
-            line = 'The Group ended';
-            break;
-          case 'setCompleted':
-            line =
-              event.setNumber === null
-                ? `${name} finished a Set of ${event.exerciseName ?? 'Exercise'}`
-                : `${name} finished Set ${event.setNumber} of ${event.exerciseName ?? 'Exercise'}`;
-            break;
-          case 'targetMet':
-            line = `${name} met their targets on ${event.exerciseName ?? 'Exercise'}`;
-            break;
-        }
+        const line = groupEventText(event);
         const canReact =
           !event.isYou &&
           (event.kind === 'setCompleted' || event.kind === 'targetMet');
@@ -83,11 +51,7 @@ export function GroupActivity() {
               <Button
                 disabled={event.reacted || busyEvent === event.eventId}
                 label={event.reacted ? 'Fist bumped' : 'Fist bump'}
-                modifiers={[
-                  Platform.OS === 'ios'
-                    ? accessibilityLabel(label)
-                    : semantics({ contentDescription: label }),
-                ]}
+                modifiers={[accessibilityModifier(label)]}
                 onPress={() => void react(event.eventId)}
                 variant="text"
               />

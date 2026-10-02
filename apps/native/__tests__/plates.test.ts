@@ -1,6 +1,6 @@
 import { DEFAULT_PLATES } from '@repo/backend/convex/domain/plates';
 
-import { plateLoad, plateStrip } from '@/lib/workout/plates';
+import { plateLoad } from '@/lib/workout/plates';
 
 describe('plate calculator', () => {
   test('loads an exact weight heaviest plate first', () => {
@@ -9,13 +9,14 @@ describe('plate calculator', () => {
       perSide: [25, 5, 1.25],
       short: 0,
     });
-    expect(plateStrip(82.5, DEFAULT_PLATES.kg)).toBe(
-      '20 kg bar + 25 + 5 + 1.25 per side'
-    );
-    expect(plateStrip(20, DEFAULT_PLATES.kg)).toBe('Just the 20 kg bar');
+    expect(plateLoad(20, DEFAULT_PLATES.kg)).toEqual({
+      kind: 'loaded',
+      perSide: [],
+      short: 0,
+    });
   });
 
-  test('says how much the inventory falls short', () => {
+  test('reports the inventory shortfall in kilograms', () => {
     const fewPlates = {
       unit: 'kg' as const,
       barWeight: 20,
@@ -27,20 +28,30 @@ describe('plate calculator', () => {
       perSide: [20],
       short: 50,
     });
-    expect(plateStrip(23, DEFAULT_PLATES.kg)).toBe(
-      '20 kg bar + 1.25 per side · 0.5 kg short'
-    );
+    expect(plateLoad(23, DEFAULT_PLATES.kg)).toEqual({
+      kind: 'loaded',
+      perSide: [1.25],
+      short: 0.5,
+    });
   });
 
   test('a weight under the bar is below the bar', () => {
-    expect(plateStrip(15, DEFAULT_PLATES.kg)).toBe('Below the 20 kg bar');
-    expect(plateStrip(40, DEFAULT_PLATES.lb)).toBe('Below the 45 lb bar');
+    expect(plateLoad(15, DEFAULT_PLATES.kg)).toEqual({
+      kind: 'below',
+      barWeight: 20,
+    });
+    expect(plateLoad(40, DEFAULT_PLATES.lb)).toEqual({
+      kind: 'below',
+      barWeight: 45,
+    });
   });
 
   test('pound plates load from the 45 lb bar', () => {
-    expect(plateStrip(225, DEFAULT_PLATES.lb)).toBe(
-      '45 lb bar + 45 + 45 per side'
-    );
+    expect(plateLoad(225, DEFAULT_PLATES.lb)).toEqual({
+      kind: 'loaded',
+      perSide: [45, 45],
+      short: 0,
+    });
     expect(plateLoad(140, DEFAULT_PLATES.lb)).toEqual({
       kind: 'loaded',
       perSide: [45, 2.5],
@@ -57,6 +68,10 @@ describe('plate calculator', () => {
       ),
     };
 
-    expect(plateStrip(65, noTwentyFives)).toBe('15 kg bar + 20 + 5 per side');
+    expect(plateLoad(65, noTwentyFives)).toEqual({
+      kind: 'loaded',
+      perSide: [20, 5],
+      short: 0,
+    });
   });
 });

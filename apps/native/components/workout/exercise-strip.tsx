@@ -1,11 +1,13 @@
 import LinkIcon from '@expo/material-symbols/link.xml';
 import { Column, Icon, Row, ScrollView, Text } from '@expo/ui';
-import { Fragment } from 'react';
+import { type ComponentProps, Fragment } from 'react';
 
 import { useAppearance } from '@/lib/ui';
 import { BENCHMRK_ACCENT } from '@/lib/ui/accent';
 
-const LINK = { ios: 'link', android: LinkIcon } as const;
+const LINK = { ios: 'link', android: LinkIcon } as const satisfies Readonly<
+  Record<'ios' | 'android', ComponentProps<typeof Icon>['name']>
+>;
 
 export type StripExercise = {
   key: string;
