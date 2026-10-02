@@ -1,62 +1,20 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import {
-  createTest,
-  type TestBackend,
-  type TestMember,
-} from './harness.testing';
+  activeWorkout,
+  exerciseId,
+  memberWithRoutine,
+  START,
+  useWorkoutClock,
+} from './workoutFixtures.testing';
 
-const START = new Date('2026-10-01T08:00:00Z').getTime();
-
-beforeEach(() => {
-  vi.useFakeTimers();
-  vi.setSystemTime(START);
-});
+beforeEach(useWorkoutClock);
 
 afterEach(() => {
   vi.useRealTimers();
 });
-
-async function exerciseId(t: TestBackend, slug: string) {
-  const exercise = await t.run((ctx) =>
-    ctx.db
-      .query('exercises')
-      .withIndex('by_slug', (q) => q.eq('slug', slug))
-      .unique()
-  );
-  if (!exercise) throw new Error(`missing ${slug}`);
-  return exercise._id as Id<'exercises'>;
-}
-
-async function memberWithRoutine() {
-  const t = createTest();
-  await t.mutation(internal.init.seed, {});
-  const member = t.withIdentity({ subject: 'member-a' });
-  const routineId = await member.mutation(api.routines.create, {
-    name: 'Upper A',
-  });
-  const benchId = await member.mutation(api.routines.addExercise, {
-    routineId,
-    exerciseId: await exerciseId(t, 'bench-press'),
-  });
-  await member.mutation(api.routines.updateExercise, {
-    routineExerciseId: benchId,
-    targetSets: 2,
-  });
-  await member.mutation(api.routines.addExercise, {
-    routineId,
-    exerciseId: await exerciseId(t, 'bent-over-row'),
-  });
-  return { t, member, routineId };
-}
-
-async function activeWorkout(member: TestMember) {
-  const workout = await member.query(api.workouts.getActive, {});
-  if (!workout) throw new Error('no active Workout');
-  return workout;
-}
 
 describe('Workout lifecycle', () => {
   test('starting from a Routine creates its Exercises and planned Sets', async () => {

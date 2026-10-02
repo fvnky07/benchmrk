@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as deletionRequests from "../deletionRequests.js";
+import type * as domain_effort from "../domain/effort.js";
 import type * as domain_units from "../domain/units.js";
 import type * as exerciseComments from "../exerciseComments.js";
 import type * as exercises from "../exercises.js";
@@ -37,6 +38,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   deletionRequests: typeof deletionRequests;
+  "domain/effort": typeof domain_effort;
   "domain/units": typeof domain_units;
   exerciseComments: typeof exerciseComments;
   exercises: typeof exercises;
