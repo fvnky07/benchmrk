@@ -63,6 +63,14 @@ export default function ManageAccountScreen() {
       >
         Change password
       </ListItem>
+      <ListItem
+        supportingText={
+          user.twoFactorEnabled === true ? 'On' : 'Authenticator app codes'
+        }
+        onPress={() => router.push('/(main)/settings/two-factor')}
+      >
+        Two-factor authentication
+      </ListItem>
       <SignInMethods />
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>
