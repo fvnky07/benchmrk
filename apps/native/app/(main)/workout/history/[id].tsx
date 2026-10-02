@@ -75,6 +75,9 @@ export default function WorkoutHistoryDetailScreen() {
     workoutId: id as Id<'workouts'>,
   });
   const settings = useQuery(api.memberSettings.get);
+  const groupRecapId = useQuery(api.recaps.forWorkout, {
+    workoutId: id as Id<'workouts'>,
+  });
 
   if (workout === undefined || settings === undefined) {
     return (
@@ -122,6 +125,17 @@ export default function WorkoutHistoryDetailScreen() {
       <Text textStyle={{ fontSize: 17 }}>
         {new Date(workout.startedAt).toLocaleString()}
       </Text>
+      {groupRecapId ? (
+        <Button
+          label="Group recap"
+          onPress={() =>
+            router.push({
+              pathname: '/workout/recap/[groupId]',
+              params: { groupId: groupRecapId },
+            })
+          }
+        />
+      ) : null}
       <ListItem
         supportingText={
           targetDurationSeconds === null || difference === null
