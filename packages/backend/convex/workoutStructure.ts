@@ -26,6 +26,7 @@ import {
 } from './lib/workoutData';
 import { workoutMutation } from './lib/workoutMutation';
 import { readMemberSettings } from './memberSettings';
+import { deleteSetNote } from './notes';
 import { routineExercisesOf } from './routines';
 
 const blockOf = (item: { blockId?: string }) => item.blockId;
@@ -85,6 +86,7 @@ export const removeExercise = workoutMutation({
     requireActive(workout);
     for (const set of await requireNothingLogged(ctx, workoutExercise._id)) {
       await ctx.db.delete(set._id);
+      await deleteSetNote(ctx, set._id);
     }
     await ctx.db.delete(workoutExercise._id);
     await writeOrder(

@@ -100,6 +100,17 @@ export const deleteIdentity = internalMutation({
   handler: async (ctx, { userId, email }) => {
     await deleteWorkouts(ctx, userId);
     await deleteRoutines(ctx, userId);
+    // Notes and Machine setups first: they can point at custom Exercises.
+    const notes = await ctx.db
+      .query('notes')
+      .withIndex('by_user_workout', (q) => q.eq('userId', userId))
+      .collect();
+    for (const note of notes) await ctx.db.delete(note._id);
+    const setups = await ctx.db
+      .query('machineSetups')
+      .withIndex('by_user_exercise', (q) => q.eq('userId', userId))
+      .collect();
+    for (const setup of setups) await ctx.db.delete(setup._id);
     await deleteCustomExercises(ctx, userId);
     await deleteComments(
       ctx,

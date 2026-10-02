@@ -5,6 +5,7 @@ import type { SwipeableSetRowProps } from './swipeable-set-row';
 export function SwipeableSetRow({
   onComplete,
   onDuplicate,
+  onNote,
   onDelete,
   children,
 }: Readonly<SwipeableSetRowProps>) {
@@ -14,6 +15,7 @@ export function SwipeableSetRow({
       canDelete={onDelete !== undefined}
       onComplete={() => onComplete?.()}
       onDuplicate={onDuplicate}
+      onNote={onNote}
       onDelete={() => onDelete?.()}
     >
       {children}

@@ -1,4 +1,6 @@
-import { Button, Column, ListItem, Row, Spacer, Text } from '@expo/ui';
+import EditNoteIcon from '@expo/material-symbols/edit_note.xml';
+import KeepIcon from '@expo/material-symbols/keep.xml';
+import { Button, Column, Icon, ListItem, Row, Spacer, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
@@ -10,6 +12,8 @@ import { NativeScreen } from '@/components/native/native-screen';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { ExerciseStrip } from '@/components/workout/exercise-strip';
 import { ExerciseTitlePager } from '@/components/workout/exercise-title-pager';
+import { MachineSetupSheet } from '@/components/workout/machine-setup-sheet';
+import { NotesSheet, type NoteTarget } from '@/components/workout/notes-sheet';
 import { QuickActionRow } from '@/components/workout/quick-action-row';
 import { RestOptionsSheet } from '@/components/workout/rest-options-sheet';
 import { RestTimer } from '@/components/workout/rest-timer';
@@ -20,7 +24,9 @@ import { StructureSheet } from '@/components/workout/structure-sheet';
 import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
+import { THEME, useAppearance } from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
+import { setupSummary } from '@/lib/workout/machine-setup';
 import {
   type ActiveWorkout,
   blockPartners,
@@ -56,6 +62,9 @@ type WorkoutExercise = ActiveWorkout['exercises'][number];
 type WorkoutSet = WorkoutExercise['sets'][number];
 type Focus = { setId: Id<'sets'>; field: SetField };
 type Drafts = Record<string, Partial<Record<SetField, string>>>;
+
+const NOTE_ICON = { ios: 'note.text', android: EditNoteIcon } as const;
+const PIN_ICON = { ios: 'pin.fill', android: KeepIcon } as const;
 
 /** A Set's Overload target while it is a Working Set. */
 function workingTarget(set: WorkoutSet) {
@@ -111,6 +120,8 @@ export default function ActiveWorkoutScreen() {
   const skipForNow = useMutation(api.workouts.skipForNow);
   const haptic = useHaptics();
   const now = useNow();
+  const { resolvedAppearance } = useAppearance();
+  const colors = THEME[resolvedAppearance];
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Drafts>({});
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
@@ -125,6 +136,8 @@ export default function ActiveWorkoutScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // After an auto-advance within a round: the Exercise to stay on instead.
   const [stayOn, setStayOn] = useState<number | null>(null);
+  const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
+  const [setupFor, setSetupFor] = useState<Id<'workoutExercises'> | null>(null);
 
   useRestEndNotification(workout?.rest?.endsAt ?? null, {
     sound: settings?.restEndSound ?? true,
@@ -167,6 +180,9 @@ export default function ActiveWorkoutScreen() {
   // Timed and cardio Exercises show the previous Set instead of a target.
   const showsPrevious =
     exercise?.type === 'timed' || exercise?.type === 'cardio';
+  // Machine setup is for machine and cable Exercises only.
+  const usesMachineSetup =
+    exercise?.equipment === 'machine' || exercise?.equipment === 'cable';
   const partners = exercise ? blockPartners(workout, exercise._id) : [];
   const block = workout.blocks.find((item) => item._id === exercise?.blockId);
   // In Alternating sets, rest comes after each round, at the block's rest.
@@ -387,6 +403,16 @@ export default function ActiveWorkoutScreen() {
           onPress={() => setIsConfirmingTerminate(true)}
         />
       </Row>
+      {workout.note ? (
+        <Row
+          spacing={6}
+          alignment="center"
+          onPress={() => setNoteTarget({ kind: 'workout' })}
+        >
+          <Icon name={NOTE_ICON} size={14} color={colors.mutedForeground} />
+          <Text textStyle={{ fontSize: 14 }}>{workout.note}</Text>
+        </Row>
+      ) : null}
       <Row spacing={12} alignment="center">
         <Column style={{ width: 260 }}>
           <WorkoutProgress
@@ -514,9 +540,56 @@ export default function ActiveWorkoutScreen() {
               ) : null}
             </Row>
           ) : null}
+          {exercise.standingNote ? (
+            <Row
+              spacing={6}
+              alignment="center"
+              onPress={() =>
+                setNoteTarget({
+                  kind: 'exercise',
+                  workoutExerciseId: exercise._id,
+                })
+              }
+            >
+              <Icon name={PIN_ICON} size={14} color={colors.mutedForeground} />
+              <Text textStyle={{ fontSize: 14 }}>{exercise.standingNote}</Text>
+            </Row>
+          ) : null}
+          {usesMachineSetup && exercise.machineSetup ? (
+            <Row spacing={8} alignment="center">
+              <Text textStyle={{ fontSize: 14 }}>
+                {setupSummary(exercise.machineSetup)}
+              </Text>
+              <Spacer />
+              <Button
+                label="Edit setup"
+                variant="text"
+                onPress={() => setSetupFor(exercise._id)}
+              />
+            </Row>
+          ) : null}
           <QuickActionRow
             actions={settings.quickActions}
+            badges={{
+              note:
+                exercise.sets.filter((set) => set.note !== null).length +
+                (exercise.standingNote ? 1 : 0),
+            }}
             handlers={{
+              note: () =>
+                setNoteTarget(
+                  focusSet
+                    ? {
+                        kind: 'set',
+                        workoutExerciseId: exercise._id,
+                        setId: focusSet._id,
+                      }
+                    : { kind: 'exercise', workoutExerciseId: exercise._id }
+                ),
+              ...(usesMachineSetup &&
+                !exercise.machineSetup && {
+                  setup: () => setSetupFor(exercise._id),
+                }),
               ...(exercise.sets.some(
                 (set) =>
                   openTarget(set) !== null &&
@@ -549,6 +622,7 @@ export default function ActiveWorkoutScreen() {
                 type: set.type,
                 rpe: set.rpe,
                 done: set.completedAt !== null,
+                hasNote: set.note !== null,
                 target: showsPrevious
                   ? set.previous &&
                     setSummary(
@@ -601,6 +675,13 @@ export default function ActiveWorkoutScreen() {
                   'Could not update this Set.'
                 );
             }}
+            onNote={(setId) =>
+              setNoteTarget({
+                kind: 'set',
+                workoutExerciseId: exercise._id,
+                setId,
+              })
+            }
             onDuplicate={(setId) =>
               attempt(
                 () => duplicateSet({ setId }),
@@ -681,6 +762,18 @@ export default function ActiveWorkoutScreen() {
         units={units}
         effortScale={effortScale}
         onDismiss={() => setTargetSheetId(null)}
+      />
+      <NotesSheet
+        workout={workout}
+        opened={noteTarget}
+        onDismiss={() => setNoteTarget(null)}
+      />
+      <MachineSetupSheet
+        key={setupFor ?? 'closed'}
+        exercise={
+          workout.exercises.find((item) => item._id === setupFor) ?? null
+        }
+        onDismiss={() => setSetupFor(null)}
       />
       <SetTypeSheet
         current={
