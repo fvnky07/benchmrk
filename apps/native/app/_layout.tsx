@@ -14,8 +14,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import { SplashScreen } from '@/components/SplashScreen';
-import { posthog, resetAnalytics, useAnalyticsOptOut } from '@/lib/analytics';
-import { authClient, useAuth } from '@/lib/auth';
+import { posthog, resetAnalytics } from '@/lib/analytics';
+import { useAnalyticsOptOut } from '@/lib/analytics/use-analytics-opt-out';
+import { authClient } from '@/lib/auth/client';
+import { useAuth } from '@/lib/auth/hooks';
 import { usePushProfileSetupStep } from '@/lib/push/profile-setup-push-step';
 import { AppearanceProvider, toastConfig, useAppearance } from '@/lib/ui';
 

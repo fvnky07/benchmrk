@@ -6,7 +6,8 @@ import { Linking } from 'react-native';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { authClient, useAuth } from '@/lib';
+import { authClient } from '@/lib/auth/client';
+import { useAuth } from '@/lib/auth/hooks';
 
 /**
  * Enrollment state. Secret material lives only here, only while it's shown,

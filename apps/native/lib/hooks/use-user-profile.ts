@@ -1,4 +1,4 @@
-import { type User, useAuth } from '../auth';
+import { type User, useAuth } from '../auth/hooks';
 
 export interface ExtendedUser extends User {
   displayUsername?: string;

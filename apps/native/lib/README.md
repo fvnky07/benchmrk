@@ -9,7 +9,9 @@ lib/
 ├── auth/              # Authentication utilities
 │   ├── client.ts      # Better Auth client configuration
 │   ├── hooks.ts       # useAuth hook
-│   └── store.ts       # Auth state management
+│   ├── social.ts      # Social sign-in and Account linking
+│   ├── error-copy.ts  # Copy for backend auth error codes
+│   └── store.ts       # Auth form state and the shared pending lock
 │
 ├── analytics/         # Analytics & tracking
 │   └── posthog.ts     # PostHog configuration and helpers
@@ -29,19 +31,16 @@ lib/
 
 ## Usage
 
-### Import from category
+### Import from the owning module
 
 ```ts
-import { authClient, useAuth } from '@/lib/auth';
+import { authClient } from '@/lib/auth/client';
+import { useAuth } from '@/lib/auth/hooks';
 import { analytics, identifyUser } from '@/lib/analytics';
 import { showToast, NAV_THEME } from '@/lib/ui';
 ```
 
-### Import from main index
-
-```ts
-import { authClient, analytics, showToast } from '@/lib';
-```
+Auth and analytics have no barrel; import from the file that owns the helper.
 
 ## Guidelines
 
@@ -52,4 +51,4 @@ import { authClient, analytics, showToast } from '@/lib';
 - **hooks/**: Reusable React hooks
 - **schemas/**: Zod or validation schemas
 
-Each category exports an `index.ts` for clean imports.
+Import from the module that defines the helper rather than a re-export.

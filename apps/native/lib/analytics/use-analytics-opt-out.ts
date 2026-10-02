@@ -2,7 +2,7 @@ import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { useEffect } from 'react';
 
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth/hooks';
 
 import { identifyUser, posthog, setAnalyticsEnabled } from './posthog';
 
