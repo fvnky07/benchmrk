@@ -82,6 +82,60 @@ describe('deletion requests from the website', () => {
     ).toHaveLength(1);
   });
 
+  test.each(['provider 503', 'network failure', 'missing configuration'])(
+    '%s leaves maintainer notification retryable until a successful confirmation',
+    async (failure) => {
+      const t = createTest();
+      await request(t, 'former@example.com');
+      const token = confirmationToken('former@example.com');
+      if (failure === 'provider 503') {
+        resend.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+      } else if (failure === 'network failure') {
+        resend.mockRejectedValueOnce(new TypeError('Network unavailable'));
+      } else {
+        vi.stubEnv('DELETION_REQUEST_NOTIFY_EMAIL', '');
+      }
+      await expect(
+        t.action(api.deletionRequests.confirm, { token })
+      ).rejects.toThrow('EMAIL_DELIVERY_FAILED');
+      vi.stubEnv('DELETION_REQUEST_NOTIFY_EMAIL', MAINTAINER);
+      await expect(
+        t.action(api.deletionRequests.confirm, { token })
+      ).resolves.toEqual({ status: 'confirmed' });
+      await t.action(api.deletionRequests.confirm, { token });
+      expect(mails().filter((mail) => mail.to[0] === MAINTAINER)).toHaveLength(
+        failure === 'missing configuration' ? 1 : 2
+      );
+    }
+  );
+
+  test.each(['provider 503', 'network failure'])(
+    '%s leaves deletion confirmation delivery immediately retryable',
+    async (failure) => {
+      const t = createTest();
+      if (failure === 'provider 503') {
+        resend.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+      } else {
+        resend.mockRejectedValueOnce(new TypeError('Network unavailable'));
+      }
+      await expect(request(t, 'former@example.com')).rejects.toThrow(
+        'EMAIL_DELIVERY_FAILED'
+      );
+      await request(t, 'former@example.com');
+      expect(
+        mails().filter((mail) => mail.to[0] === 'former@example.com')
+      ).toHaveLength(2);
+      await expect(
+        t.action(api.deletionRequests.confirm, {
+          token: confirmationToken('former@example.com'),
+        })
+      ).resolves.toEqual({ status: 'confirmed' });
+      expect(mails().filter((mail) => mail.to[0] === MAINTAINER)).toHaveLength(
+        1
+      );
+    }
+  );
+
   test('an unknown or expired link is refused', async () => {
     const t = createTest();
     await request(t, 'former@example.com');

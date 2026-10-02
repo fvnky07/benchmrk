@@ -1,20 +1,19 @@
 import { Button } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
-import { useMutation } from 'convex/react';
+import { useAction } from 'convex/react';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { SocialProviderGroup } from '@/components/native/social-provider-group';
-import {
-  analytics,
-  authClient,
-  emailSchema,
-  loginSchema,
-  useAuthStore,
-  useFormValidation,
-} from '@/lib';
+import { analytics } from '@/lib/analytics';
+import { authClient } from '@/lib/auth/client';
+import { authErrorCopy } from '@/lib/auth/error-copy';
+import { useAuthStore } from '@/lib/auth/store';
+import { useFormValidation } from '@/lib/hooks/use-form-validation';
+import { emailSchema, loginSchema } from '@/lib/schemas/auth';
+import { errorCode } from '@/lib/workout/format';
 
 type Status = { message: string; tone: 'neutral' | 'error' } | null;
 
@@ -22,9 +21,11 @@ export default function LoginScreen() {
   const router = useRouter();
   const email = useAuthStore((state) => state.email);
   const setEmail = useAuthStore((state) => state.setEmail);
-  const requestSignInLink = useMutation(api.waitlist.requestSignInLink);
+  const requestSignInLink = useAction(api.waitlist.requestSignInLink);
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<'password' | 'link' | null>(null);
+  const pendingPath = useAuthStore((state) => state.pendingPath);
+  const beginPending = useAuthStore((state) => state.beginPending);
+  const endPending = useAuthStore((state) => state.endPending);
   const [status, setStatus] = useState<Status>(null);
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
@@ -32,11 +33,14 @@ export default function LoginScreen() {
     mode: 'onChange',
   });
 
+  // One pending lock covers this form and the provider buttons; leaving releases it.
+  useEffect(() => endPending, [endPending]);
+
   const signInWithPassword = () => {
     setStatus(null);
     handleSubmit({ email, password }, async () => {
+      if (!beginPending('password')) return;
       try {
-        setBusy('password');
         const { data, error } = await authClient.signIn.email({
           email,
           password,
@@ -44,7 +48,7 @@ export default function LoginScreen() {
         if (error || !data) throw new Error('Sign in did not complete');
         if ('twoFactorRedirect' in data && data.twoFactorRedirect) {
           setPassword('');
-          setBusy(null);
+          endPending();
           router.push('/verify-2fa');
           return;
         }
@@ -58,7 +62,7 @@ export default function LoginScreen() {
         analytics.loginFailed(message);
         setStatus({ message, tone: 'error' });
         setPassword('');
-        setBusy(null);
+        endPending();
       }
     });
   };
@@ -70,22 +74,24 @@ export default function LoginScreen() {
       setStatus({ message: 'Enter a valid email address.', tone: 'error' });
       return;
     }
+    if (!beginPending('link')) return;
     try {
-      setBusy('link');
       await requestSignInLink({ email: parsed.data });
       setStatus({
         message:
           'If this email belongs to a confirmed waitlist member, a sign-in link is on its way. Open it on this phone.',
         tone: 'neutral',
       });
-    } catch {
+    } catch (error) {
       setStatus({
-        message:
-          'Couldn’t request a sign-in link. Check your connection and try again.',
+        message: authErrorCopy(
+          errorCode(error),
+          'Couldn’t request a sign-in link. Check your connection and try again.'
+        ),
         tone: 'error',
       });
     } finally {
-      setBusy(null);
+      endPending();
     }
   };
 
@@ -98,6 +104,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         autoComplete="email"
         autoCorrect={false}
+        editable={pendingPath === null}
         error={errors.email}
         keyboardType="email-address"
         label="Email"
@@ -112,6 +119,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         autoComplete="password"
         autoCorrect={false}
+        editable={pendingPath === null}
         error={errors.password}
         label="Password"
         onChangeText={(value) => {
@@ -123,18 +131,23 @@ export default function LoginScreen() {
         value={password}
       />
       <Button
+        disabled={pendingPath !== null}
         label="Forgot password?"
         variant="text"
         onPress={() => router.push('/forgot-password')}
       />
       <Button
-        disabled={busy !== null}
-        label={busy === 'password' ? 'Signing in…' : 'Continue with email'}
+        disabled={pendingPath !== null}
+        label={
+          pendingPath === 'password' ? 'Signing in…' : 'Continue with email'
+        }
         onPress={signInWithPassword}
       />
       <Button
-        disabled={busy !== null}
-        label={busy === 'link' ? 'Requesting…' : 'Email me a sign-in link'}
+        disabled={pendingPath !== null}
+        label={
+          pendingPath === 'link' ? 'Requesting…' : 'Email me a sign-in link'
+        }
         variant="outlined"
         onPress={emailMeALink}
       />
@@ -143,7 +156,8 @@ export default function LoginScreen() {
       ) : null}
       <SocialProviderGroup dividerPosition="before" />
       <Button
-        label="Create an account"
+        disabled={pendingPath !== null}
+        label="Sign up"
         variant="text"
         onPress={() => router.replace('/register')}
       />

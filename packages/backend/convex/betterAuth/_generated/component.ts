@@ -2158,6 +2158,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         {
           bio?: string;
           imageStorageId?: string;
+          name?: string;
           userId: string;
           username?: string;
         },

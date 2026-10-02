@@ -4,7 +4,8 @@ import { useState } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { analytics, authClient } from '@/lib';
+import { analytics } from '@/lib/analytics';
+import { authClient } from '@/lib/auth/client';
 
 type Factor = 'totp' | 'backup';
 

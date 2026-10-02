@@ -31,6 +31,22 @@ function withNativeCallback(url: string, callback: string): string {
   return link.toString();
 }
 
+/** HTTP auth routes return a retryable, stable code rather than a raw Convex error. */
+async function sendAuthEmail(email: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  try {
+    await sendEmail(email);
+  } catch {
+    throw new APIError('BAD_GATEWAY', {
+      code: 'EMAIL_DELIVERY_FAILED',
+      message: 'We couldn’t send the email. Try again.',
+    });
+  }
+}
+
 // Component client with the local schema (username, bio, two-factor fields).
 export const authComponent = createClient<DataModel, typeof schema>(
   components.betterAuth,
@@ -81,7 +97,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             if (!code) {
               throw new APIError('BAD_REQUEST', {
                 code: 'APPLE_REAUTHENTICATION_REQUIRED',
-                message: 'Confirm with Apple to delete this account.',
+                message: 'Confirm with Apple to delete your Benchmrk identity.',
               });
             }
             try {
@@ -110,7 +126,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       // Every request gets the same answer; only verified emails get mail.
       sendResetPassword: async ({ user, url }) => {
         if (!user.emailVerified) return;
-        await sendEmail({
+        await sendAuthEmail({
           to: user.email,
           subject: 'Reset your password - benchmrk',
           html: actionEmail({
@@ -129,7 +145,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        await sendEmail({
+        await sendAuthEmail({
           to: user.email,
           subject: 'Verify your email - benchmrk',
           html: actionEmail({
@@ -139,7 +155,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             actionLabel: 'Verify email',
             url: withNativeCallback(url, EMAIL_VERIFIED_CALLBACK),
             footnote:
-              'If you didn’t create a benchmrk account, ignore this email.',
+              'If you didn’t create a Benchmrk identity, ignore this email.',
           }),
         });
       },
@@ -178,7 +194,17 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     hooks: {
       // A password change always signs out every other session; this device
       // gets a fresh one. Enforced here rather than trusted from the client.
+      // The password is never removed: only providers unlink (ADR 0001).
       before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === '/unlink-account') {
+          if (ctx.body?.providerId === 'credential') {
+            throw new APIError('BAD_REQUEST', {
+              code: 'PASSWORD_CANNOT_BE_REMOVED',
+              message: 'The password can’t be removed.',
+            });
+          }
+          return;
+        }
         if (ctx.path !== '/change-password') return;
         return {
           context: { body: { ...ctx.body, revokeOtherSessions: true } },
@@ -186,12 +212,24 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       }),
     },
     plugins: [
+      {
+        id: 'await-auth-delivery',
+        // Better Auth otherwise catches even awaited registration/reset email
+        // failures. Delivery is part of these requests, not background work.
+        init: () => ({
+          context: {
+            runInBackgroundOrAwait: async (promise: unknown) => {
+              await promise;
+            },
+          },
+        }),
+      },
       magicLink({
         expiresIn: 60 * 60 * 24,
         sendMagicLink: async ({ email, url, metadata }) => {
           const flow = await authorizedMagicLinkFlow(email, metadata);
           if (flow === 'waitlist-confirmation') {
-            await sendEmail({
+            await sendAuthEmail({
               to: email,
               subject: 'Confirm your spot - benchmrk',
               html: actionEmail({
@@ -204,7 +242,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
               }),
             });
           } else if (flow === 'native-sign-in') {
-            await sendEmail({
+            await sendAuthEmail({
               to: email,
               subject: 'Your benchmrk sign-in link',
               html: actionEmail({

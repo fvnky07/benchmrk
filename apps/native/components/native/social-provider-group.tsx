@@ -6,13 +6,13 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useNetworkState } from 'expo-network';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-
 import {
   isAppleAvailable,
   isGoogleAvailable,
   runSocialAuth,
   type SocialProvider,
-} from '@/lib/auth';
+} from '@/lib/auth/social';
+import { useAuthStore } from '@/lib/auth/store';
 import { useAppearance } from '@/lib/ui';
 
 import { AuthDivider, AuthStatus, useAuthColumnWidth } from './auth-shell';
@@ -39,7 +39,9 @@ export function SocialProviderGroup({
   const [appleNative, setAppleNative] = useState<boolean | null>(
     Platform.OS === 'ios' ? null : false
   );
-  const [busy, setBusy] = useState<SocialProvider | null>(null);
+  const pendingPath = useAuthStore((state) => state.pendingPath);
+  const beginPending = useAuthStore((state) => state.beginPending);
+  const endPending = useAuthStore((state) => state.endPending);
   const [isPendingNavigation, setIsPendingNavigation] = useState(false);
   const [status, setStatus] = useState<Status>(null);
 
@@ -53,11 +55,10 @@ export function SocialProviderGroup({
   const isResolved = config !== undefined && appleNative !== null;
   const showApple = isAppleAvailable(config, appleNative ?? false);
   const showGoogle = isGoogleAvailable(config);
-  const isLocked = busy !== null || isPendingNavigation || isOffline;
+  const isLocked = pendingPath !== null || isPendingNavigation || isOffline;
 
   const signIn = async (provider: SocialProvider) => {
-    if (!config || isLocked) return;
-    setBusy(provider);
+    if (!config || isLocked || !beginPending(provider)) return;
     setStatus({
       message: `Signing in with ${PROVIDER_NAME[provider]}…`,
       tone: 'neutral',
@@ -79,7 +80,7 @@ export function SocialProviderGroup({
         setStatus({ message: `${result.message} Try again.`, tone: 'error' });
       }
     } finally {
-      setBusy(null);
+      endPending();
     }
   };
 

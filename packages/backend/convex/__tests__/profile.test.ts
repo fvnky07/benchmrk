@@ -72,11 +72,40 @@ describe('profile editing', () => {
     ).rejects.toThrow('BIO_TOO_LONG');
   });
 
+  test('a member edits their display name; it is trimmed and stored on the identity', async () => {
+    const t = createTest();
+    const pat = await member(t, 'pat@example.com');
+
+    await pat.mutation(api.profile.updateProfile, {
+      name: '  Patricia Lifter ',
+    });
+
+    expect(await pat.query(api.profile.getCurrentProfile, {})).toMatchObject({
+      name: 'Patricia Lifter',
+    });
+  });
+
+  test('a display name needs 1–50 characters once trimmed and changes nothing when refused', async () => {
+    const t = createTest();
+    const pat = await member(t, 'pat@example.com');
+
+    for (const name of ['', '   ', 'x'.repeat(51)]) {
+      await expect(
+        pat.mutation(api.profile.updateProfile, { name })
+      ).rejects.toThrow('INVALID_NAME');
+    }
+    await pat.mutation(api.profile.updateProfile, { name: 'x'.repeat(50) });
+
+    expect(await pat.query(api.profile.getCurrentProfile, {})).toMatchObject({
+      name: 'x'.repeat(50),
+    });
+  });
+
   test('a signed-out caller can’t change a profile', async () => {
     const t = createTest();
 
     await expect(
       t.mutation(api.profile.updateProfile, { bio: 'hello' })
-    ).rejects.toThrow('Not authenticated');
+    ).rejects.toThrow('NOT_AUTHENTICATED');
   });
 });

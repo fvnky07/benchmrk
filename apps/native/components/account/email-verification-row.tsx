@@ -3,14 +3,17 @@ import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { useState } from 'react';
 
-import { authClient } from '@/lib/auth';
+import { authClient } from '@/lib/auth/client';
+import { authErrorCopy } from '@/lib/auth/error-copy';
+
+type Resend =
+  | { state: 'idle' | 'sending' | 'sent' }
+  | { state: 'failed'; code: string | null };
 
 /** The member's email, whether it is verified, and a way to resend the link. */
 export function EmailVerificationRow() {
   const verification = useQuery(api.auth.getEmailVerification);
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>(
-    'idle'
-  );
+  const [resendStatus, setResendStatus] = useState<Resend>({ state: 'idle' });
 
   if (!verification) return null;
 
@@ -23,12 +26,14 @@ export function EmailVerificationRow() {
   }
 
   const resend = async () => {
-    setStatus('sending');
+    setResendStatus({ state: 'sending' });
     const { error } = await authClient.sendVerificationEmail({
       email: verification.email,
       callbackURL: 'native://email-verified',
     });
-    setStatus(error ? 'failed' : 'sent');
+    setResendStatus(
+      error ? { state: 'failed', code: error.code ?? null } : { state: 'sent' }
+    );
   };
 
   return (
@@ -39,19 +44,24 @@ export function EmailVerificationRow() {
         Email
       </ListItem>
       <Button
-        disabled={status === 'sending'}
+        disabled={resendStatus.state === 'sending'}
         label={
-          status === 'sending'
+          resendStatus.state === 'sending'
             ? 'Sending…'
-            : status === 'sent'
+            : resendStatus.state === 'sent'
               ? 'Verification email sent'
               : 'Resend verification email'
         }
         variant="outlined"
         onPress={() => void resend()}
       />
-      {status === 'failed' ? (
-        <ListItem supportingText="Couldn’t send it. Check your connection and try again.">
+      {resendStatus.state === 'failed' ? (
+        <ListItem
+          supportingText={authErrorCopy(
+            resendStatus.code,
+            'Couldn’t send it. Check your connection and try again.'
+          )}
+        >
           Not sent
         </ListItem>
       ) : null}

@@ -7,7 +7,8 @@ import { internal } from './_generated/api';
 import {
   action,
   internalMutation,
-  type MutationCtx,
+  internalQuery,
+  type QueryCtx,
 } from './_generated/server';
 import { actionEmail, escapeHtml, sendEmail } from './lib/email';
 import { randomToken, sha256Hex } from './lib/webCrypto';
@@ -19,7 +20,7 @@ export const DELETION_PROCESSING_DAYS = 30;
 
 const emailSchema = z.string().trim().toLowerCase().email();
 
-async function findByEmail(ctx: MutationCtx, email: string) {
+async function findByEmail(ctx: QueryCtx, email: string) {
   return await ctx.db
     .query('deletionRequests')
     .withIndex('by_email', (q) => q.eq('email', email))
@@ -39,9 +40,9 @@ export const request = action({
     const email = parsed.data;
     const token = randomToken();
 
-    const shouldMail = await ctx.runMutation(
-      internal.deletionRequests.issueLink,
-      { email, tokenHash: await sha256Hex(token) }
+    const shouldMail = await ctx.runQuery(
+      internal.deletionRequests.canIssueLink,
+      { email }
     );
     if (shouldMail) {
       const siteUrl = process.env.SITE_URL ?? 'https://benchmrk.app';
@@ -51,15 +52,31 @@ export const request = action({
         html: actionEmail({
           title: 'Confirm your deletion request',
           heading: 'Confirm your deletion request',
-          body: `Someone asked to delete the Benchmrk account for this email. Confirm to send the request; we process it within ${DELETION_PROCESSING_DAYS} days.`,
+          body: `Someone asked to delete the Benchmrk identity for this email. Confirm to send the request; we process it within ${DELETION_PROCESSING_DAYS} days.`,
           actionLabel: 'Confirm deletion request',
           url: `${siteUrl}/delete-account/confirm?token=${token}`,
           footnote:
             'This link expires in 24 hours. If you didn’t ask for this, ignore this email and nothing happens.',
         }),
       });
+      await ctx.runMutation(internal.deletionRequests.issueLink, {
+        email,
+        tokenHash: await sha256Hex(token),
+      });
     }
     return { status: 'accepted' as const };
+  },
+});
+
+export const canIssueLink = internalQuery({
+  args: { email: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, { email }) => {
+    const existing = await findByEmail(ctx, email);
+    return (
+      existing?.confirmedAt === undefined &&
+      (!existing || Date.now() - existing.linkSentAt >= RESEND_COOLDOWN_MS)
+    );
   },
 });
 
@@ -103,17 +120,17 @@ export const confirm = action({
     if (confirmation === 'invalid') {
       throw new ConvexError('INVALID_DELETION_LINK');
     }
-    if (confirmation.isNew) {
+    if (confirmation.needsNotification) {
       const maintainer = process.env.DELETION_REQUEST_NOTIFY_EMAIL;
-      if (maintainer) {
-        await sendEmail({
-          to: maintainer,
-          subject: 'New Benchmrk deletion request',
-          html: `<p>A deletion request for <strong>${escapeHtml(confirmation.email)}</strong> was confirmed on ${new Date(confirmation.confirmedAt).toISOString()}.</p><p>Delete the identity and its data within ${DELETION_PROCESSING_DAYS} days.</p>`,
-        });
-      } else {
-        console.error('DELETION_REQUEST_NOTIFY_EMAIL not configured');
-      }
+      if (!maintainer) throw new ConvexError('EMAIL_DELIVERY_FAILED');
+      await sendEmail({
+        to: maintainer,
+        subject: 'New Benchmrk deletion request',
+        html: `<p>A deletion request for <strong>${escapeHtml(confirmation.email)}</strong> was confirmed on ${new Date(confirmation.confirmedAt).toISOString()}.</p><p>Delete the identity and its data within ${DELETION_PROCESSING_DAYS} days.</p>`,
+      });
+      await ctx.runMutation(internal.deletionRequests.markNotified, {
+        tokenHash: await sha256Hex(args.token),
+      });
     }
     return { status: 'confirmed' as const };
   },
@@ -130,7 +147,7 @@ export const markConfirmed = internalMutation({
     if (!pending) return 'invalid' as const;
     if (pending.confirmedAt !== undefined) {
       return {
-        isNew: false,
+        needsNotification: pending.notifiedAt === undefined,
         email: pending.email,
         confirmedAt: pending.confirmedAt,
       };
@@ -138,6 +155,19 @@ export const markConfirmed = internalMutation({
     if (now - pending.linkSentAt > LINK_LIFETIME_MS) return 'invalid' as const;
 
     await ctx.db.patch(pending._id, { confirmedAt: now });
-    return { isNew: true, email: pending.email, confirmedAt: now };
+    return { needsNotification: true, email: pending.email, confirmedAt: now };
+  },
+});
+
+export const markNotified = internalMutation({
+  args: { tokenHash: v.string() },
+  handler: async (ctx, { tokenHash }) => {
+    const request = await ctx.db
+      .query('deletionRequests')
+      .withIndex('by_tokenHash', (q) => q.eq('tokenHash', tokenHash))
+      .unique();
+    if (request && request.notifiedAt === undefined) {
+      await ctx.db.patch(request._id, { notifiedAt: Date.now() });
+    }
   },
 });

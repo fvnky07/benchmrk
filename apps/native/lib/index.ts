@@ -2,8 +2,6 @@
 
 // Analytics
 export * from './analytics';
-// Authentication
-export * from './auth';
 // Hooks
 export * from './hooks/use-form-validation';
 export * from './hooks/use-user-profile';

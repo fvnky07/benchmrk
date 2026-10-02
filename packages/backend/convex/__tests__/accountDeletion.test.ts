@@ -25,6 +25,7 @@ const outbound = vi.fn<typeof fetch>();
 beforeEach(() => {
   vi.stubEnv('BETTER_AUTH_SECRET', 'test-secret-for-account-deletion-001');
   vi.stubEnv('SITE_URL', 'http://localhost:3000');
+  vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
   vi.stubEnv('APPLE_TEAM_ID', 'TEAM123456');
   vi.stubEnv('APPLE_KEY_ID', 'KEY1234567');
   vi.stubEnv('APPLE_APP_BUNDLE_IDENTIFIER', 'com.benchmrk.app');

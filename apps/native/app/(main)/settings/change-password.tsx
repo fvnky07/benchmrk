@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { authClient } from '@/lib/auth';
+import { authClient } from '@/lib/auth/client';
 import { useFormValidation } from '@/lib/hooks/use-form-validation';
 import { changePasswordSchema } from '@/lib/schemas/auth';
 
@@ -46,7 +46,7 @@ export default function ChangePasswordScreen() {
         <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
           No password to change
         </Text>
-        <ListItem supportingText="You sign in with Apple or Google, so your provider secures sign-in. There is no Benchmrk password on this account.">
+        <ListItem supportingText="You sign in with Apple or Google, so your provider secures sign-in. There is no Benchmrk password to change.">
           Password
         </ListItem>
       </NativeScreen>
@@ -94,7 +94,7 @@ export default function ChangePasswordScreen() {
         <ListItem supportingText="Your other devices were signed out. This one stays signed in.">
           Done
         </ListItem>
-        <Button label="Back to account" onPress={() => router.back()} />
+        <Button label="Back to Manage Account" onPress={() => router.back()} />
       </NativeScreen>
     );
   }

@@ -5,13 +5,13 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
+import { authClient } from '@/lib/auth/client';
 import {
-  authClient,
   isAppleAvailable,
   isGoogleAvailable,
   runSocialAuth,
   type SocialProvider,
-} from '@/lib/auth';
+} from '@/lib/auth/social';
 
 type Method = 'credential' | SocialProvider;
 
@@ -78,7 +78,7 @@ export function SignInMethods() {
       return result.status === 'failure' ? result.message : null;
     });
 
-  const unlink = (method: Method) =>
+  const unlink = (method: SocialProvider) =>
     run(method, async () => {
       const { error } = await authClient.unlinkAccount({ providerId: method });
       if (!error) return null;
@@ -115,14 +115,18 @@ export function SignInMethods() {
           >
             {METHOD_LABEL[method]}
           </ListItem>
-          <Button
-            disabled={busy !== null || isOnlyMethod}
-            label={
-              busy === method ? 'Unlinking…' : `Unlink ${METHOD_LABEL[method]}`
-            }
-            variant="text"
-            onPress={() => void unlink(method)}
-          />
+          {method === 'credential' ? null : (
+            <Button
+              disabled={busy !== null || isOnlyMethod}
+              label={
+                busy === method
+                  ? 'Unlinking…'
+                  : `Unlink ${METHOD_LABEL[method]}`
+              }
+              variant="text"
+              onPress={() => void unlink(method)}
+            />
+          )}
         </Column>
       ))}
       {offered

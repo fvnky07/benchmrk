@@ -8,13 +8,16 @@ import { useEffect, useState } from 'react';
 
 import { NativeTextField } from '@/components/native/native-text-field';
 import { analytics } from '@/lib/analytics';
+import { authErrorCopy } from '@/lib/auth/error-copy';
 import { THEME, useAppearance } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 
 const AVATAR_SIZE = 112;
 const BIO_MAX_LENGTH = 150;
+const NAME_MAX_LENGTH = 50;
 
 const ERROR_COPY: Record<string, string> = {
+  INVALID_NAME: `Names are 1–${NAME_MAX_LENGTH} characters.`,
   INVALID_USERNAME:
     'Usernames are 3–20 letters, numbers or underscores, without spaces or accents.',
   USERNAME_TAKEN: 'That username is taken. Try another.',
@@ -27,7 +30,7 @@ type ProfileFormProps = {
   onSaved?: () => void;
 };
 
-/** Username, bio and photo, for Profile setup and for editing in settings. */
+/** Name, username, bio and photo, for Profile setup and for editing in settings. */
 export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
   const { resolvedAppearance } = useAppearance();
   const colors = THEME[resolvedAppearance];
@@ -38,6 +41,7 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
   );
   const generateUploadUrl = useMutation(api.profile.generateUploadUrl);
   const updateProfile = useMutation(api.profile.updateProfile);
+  const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -53,6 +57,7 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
 
   useEffect(() => {
     if (!profile) return;
+    setName((current) => current || profile.name);
     if (mode === 'edit') {
       setUsername(profile.username ?? '');
       setBio(profile.bio ?? '');
@@ -121,6 +126,7 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
       setIsSaving(true);
       setErrorMessage(null);
       await updateProfile({
+        name: name.trim(),
         username: chosenUsername,
         bio: bio.trim() || (mode === 'edit' ? '' : undefined),
         imageStorageId: photoId ?? undefined,
@@ -134,7 +140,10 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
     } catch (error) {
       setErrorMessage(
         ERROR_COPY[errorCode(error) ?? ''] ??
-          'Couldn’t save your profile. Try again.'
+          authErrorCopy(
+            errorCode(error),
+            'Couldn’t save your profile. Try again.'
+          )
       );
     } finally {
       setIsSaving(false);
@@ -204,6 +213,13 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
         </Column>
       </Row>
       <NativeTextField
+        autoCapitalize="words"
+        label="Name"
+        maxLength={NAME_MAX_LENGTH}
+        value={name}
+        onChangeText={setName}
+      />
+      <NativeTextField
         autoCapitalize="none"
         autoCorrect={false}
         label="Username"
@@ -229,7 +245,9 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
         <ListItem supportingText={errorMessage}>Not saved</ListItem>
       ) : null}
       <Button
-        disabled={isSaving || isUploading || isAvailable !== true}
+        disabled={
+          isSaving || isUploading || isAvailable !== true || name.trim() === ''
+        }
         label={
           isSaving ? 'Saving…' : mode === 'setup' ? 'Continue' : 'Save profile'
         }

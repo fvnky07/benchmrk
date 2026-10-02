@@ -8,7 +8,7 @@ import { EmailVerificationRow } from '@/components/account/email-verification-ro
 import { SignInMethods } from '@/components/account/sign-in-methods';
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
-import { authClient } from '@/lib/auth';
+import { authClient } from '@/lib/auth/client';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 import { unregisterThisDevice } from '@/lib/push/use-push-registration';
 
@@ -42,7 +42,9 @@ export default function ManageAccountScreen() {
   if (!user) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>Loading account…</Text>
+        <Text textStyle={{ fontSize: 17 }}>
+          Loading your Benchmrk identity…
+        </Text>
       </NativeScreen>
     );
   }
@@ -84,7 +86,7 @@ export default function ManageAccountScreen() {
       ) : null}
       {isConfirmingLogout ? (
         <>
-          <ListItem supportingText="You will need to sign in again to access this account.">
+          <ListItem supportingText="You will need to sign in again to access this Benchmrk identity.">
             Confirm log out
           </ListItem>
           <Button
@@ -103,7 +105,7 @@ export default function ManageAccountScreen() {
         <Button label="Log out" onPress={() => setIsConfirmingLogout(true)} />
       )}
       <ListItem
-        supportingText="Permanently delete your account and all its data"
+        supportingText="Permanently delete your Benchmrk identity and all its data"
         onPress={() => router.push('/(main)/settings/delete-account')}
       >
         Delete account

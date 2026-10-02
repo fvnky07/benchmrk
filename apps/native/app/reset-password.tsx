@@ -4,7 +4,8 @@ import { useState } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { authClient, passwordSchema } from '@/lib';
+import { authClient } from '@/lib/auth/client';
+import { passwordSchema } from '@/lib/schemas/auth';
 
 type Status = { message: string; tone: 'neutral' | 'error' } | null;
 
