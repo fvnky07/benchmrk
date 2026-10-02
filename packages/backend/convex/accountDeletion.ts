@@ -25,6 +25,11 @@ async function deleteWorkouts(ctx: MutationCtx, userId: string) {
       .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
       .collect();
     for (const item of workoutExercises) await ctx.db.delete(item._id);
+    const workoutBlocks = await ctx.db
+      .query('workoutBlocks')
+      .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
+      .collect();
+    for (const block of workoutBlocks) await ctx.db.delete(block._id);
     await ctx.db.delete(workout._id);
   }
 }
@@ -40,6 +45,11 @@ async function deleteRoutines(ctx: MutationCtx, userId: string) {
       .withIndex('by_routine', (q) => q.eq('routineId', routine._id))
       .collect();
     for (const item of routineExercises) await ctx.db.delete(item._id);
+    const routineBlocks = await ctx.db
+      .query('routineBlocks')
+      .withIndex('by_routine', (q) => q.eq('routineId', routine._id))
+      .collect();
+    for (const block of routineBlocks) await ctx.db.delete(block._id);
     await ctx.db.delete(routine._id);
   }
 }

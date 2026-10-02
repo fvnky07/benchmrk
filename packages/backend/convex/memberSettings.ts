@@ -51,6 +51,7 @@ const DEFAULT_SETTINGS: MemberSettings = {
   overloadTargets: true,
   targetsOffExerciseIds: [],
   smallestIncrementKg: DEFAULT_SMALLEST_INCREMENT_KG.kg,
+  autoAdvance: true,
 };
 
 async function findSettings(

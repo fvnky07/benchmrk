@@ -29,6 +29,12 @@ function describe(change: Change): string {
       return `${change.exercise}: ${change.from} → ${change.to} Sets`;
     case 'rest':
       return `${change.exercise}: ${restText(change.from)} → ${restText(change.to)}`;
+    case 'linked':
+      return `Linked ${change.exercises.join(' ↔ ')} as Alternating sets`;
+    case 'unlinked':
+      return `Unlinked ${change.exercises.join(' ↔ ')}`;
+    case 'blockRest':
+      return `${change.exercises.join(' ↔ ')}: ${restText(change.from)} → ${restText(change.to)} after each round`;
     case 'order':
       return 'Exercise order changed';
   }
@@ -50,7 +56,7 @@ function ShapeList({
           key={index}
           textStyle={{ fontSize: 15 }}
         >
-          {`${index + 1}. ${shape.name} · ${shape.sets} Sets · ${restText(shape.restSeconds)}`}
+          {`${index + 1}. ${shape.name} · ${shape.sets} Sets · ${restText(shape.restSeconds)}${shape.linkedToNext ? ' · alternates with the next' : ''}`}
         </Text>
       ))}
     </Column>

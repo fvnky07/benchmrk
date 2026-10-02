@@ -27,6 +27,7 @@ const DEFAULTS = {
   overloadTargets: true,
   targetsOffExerciseIds: [],
   smallestIncrementKg: 1.25,
+  autoAdvance: true,
 };
 
 describe('member settings', () => {

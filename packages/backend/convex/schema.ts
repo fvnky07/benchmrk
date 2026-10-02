@@ -36,6 +36,8 @@ export const memberSettingsFields = {
   targetsOffExerciseIds: v.array(v.id('exercises')),
   /** The smallest weight change a smaller jump can use, in kg. */
   smallestIncrementKg: v.number(),
+  /** After a Set in Alternating sets, move to the next Exercise of the round. */
+  autoAdvance: v.boolean(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -52,6 +54,7 @@ export const memberSettingsChangeFields = {
   overloadTargets: v.optional(memberSettingsFields.overloadTargets),
   targetsOffExerciseIds: v.optional(memberSettingsFields.targetsOffExerciseIds),
   smallestIncrementKg: v.optional(memberSettingsFields.smallestIncrementKg),
+  autoAdvance: v.optional(memberSettingsFields.autoAdvance),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -125,6 +128,14 @@ export const overloadBasisValidator = v.object({
   declined: v.boolean(),
 });
 
+/** An Alternating sets round: one Set of every block Exercise with Sets left. */
+export const roundValidator = v.object({
+  number: v.number(),
+  required: v.array(v.id('workoutExercises')),
+  done: v.array(v.id('workoutExercises')),
+  skipped: v.array(v.id('workoutExercises')),
+});
+
 export default defineSchema({
   // Waitlist entries; confirming the emailed link creates a Waitlist identity.
   waitlist: defineTable({
@@ -192,7 +203,15 @@ export default defineSchema({
     startingWeightKg: v.optional(v.number()),
     stepKg: v.number(),
     plannedRestSeconds: v.optional(v.number()),
+    /** Its Alternating sets block in this Routine. */
+    blockId: v.optional(v.id('routineBlocks')),
   }).index('by_routine', ['routineId', 'order']),
+
+  // A Routine's Alternating sets blocks, each with its own planned rest.
+  routineBlocks: defineTable({
+    routineId: v.id('routines'),
+    plannedRestSeconds: v.optional(v.number()),
+  }).index('by_routine', ['routineId']),
 
   workouts: defineTable({
     userId: v.string(),
@@ -236,7 +255,21 @@ export default defineSchema({
     overload: v.optional(overloadBasisValidator),
     /** The Plateau flag was dismissed while this was the newest exposure; it shows again after a newer one. */
     plateauDismissed: v.optional(v.boolean()),
+    /** Its Alternating sets block in this Workout. */
+    blockId: v.optional(v.id('workoutBlocks')),
   }).index('by_workout', ['workoutId', 'order']),
+
+  // A Workout's Alternating sets blocks: planned rest, the open round and the
+  // rounds credited so far. Membership is on the Workout Exercises.
+  workoutBlocks: defineTable({
+    workoutId: v.id('workouts'),
+    routineBlockId: v.optional(v.id('routineBlocks')),
+    plannedRestSeconds: v.optional(v.number()),
+    round: v.optional(roundValidator),
+    completedRounds: v.array(
+      v.object({ ...roundValidator.fields, completedAt: v.number() })
+    ),
+  }).index('by_workout', ['workoutId']),
 
   sets: defineTable({
     userId: v.string(),

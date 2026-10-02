@@ -2,7 +2,6 @@ import { Button, Column, ListItem, Row, Spacer, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
-import type { FunctionReturnType } from 'convex/server';
 import { router } from 'expo-router';
 import { useState } from 'react';
 
@@ -22,6 +21,13 @@ import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
 import { formatClock } from '@/lib/workout/format';
+import {
+  type ActiveWorkout,
+  blockPartners,
+  canSkipForNow,
+  roundNumber,
+  withSetLogged,
+} from '@/lib/workout/rounds';
 import {
   displayDraft,
   draftToStored,
@@ -46,9 +52,6 @@ import {
   useRestEndNotification,
 } from '@/lib/workout/use-rest-end-notification';
 
-type ActiveWorkout = NonNullable<
-  FunctionReturnType<typeof api.workouts.getActive>
->;
 type WorkoutExercise = ActiveWorkout['exercises'][number];
 type WorkoutSet = WorkoutExercise['sets'][number];
 type Focus = { setId: Id<'sets'>; field: SetField };
@@ -67,7 +70,24 @@ function openTarget(set: WorkoutSet) {
 export default function ActiveWorkoutScreen() {
   const workout = useQuery(api.workouts.getActive);
   const settings = useQuery(api.memberSettings.get);
-  const completeSet = useMutation(api.workouts.completeSet);
+  // Logging is instant: the shared round engine applies the Set, round and
+  // rest locally exactly as the backend will.
+  const completeSet = useMutation(
+    api.workouts.completeSet
+  ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.workouts.getActive, {});
+    const memberSettings = localStore.getQuery(api.memberSettings.get, {});
+    if (!current || !memberSettings) return;
+    const logged = withSetLogged(
+      current,
+      args.setId,
+      Date.now(),
+      memberSettings
+    );
+    if (logged) {
+      localStore.setQuery(api.workouts.getActive, {}, logged.workout);
+    }
+  });
   const uncompleteSet = useMutation(api.workouts.uncompleteSet);
   const updateSet = useMutation(api.workouts.updateSet);
   const fillFromTarget = useMutation(api.workouts.fillFromTarget);
@@ -86,6 +106,9 @@ export default function ActiveWorkoutScreen() {
   const setSkipped = useMutation(api.workoutStructure.setSkipped);
   const removeExercise = useMutation(api.workoutStructure.removeExercise);
   const swapExercise = useMutation(api.workoutStructure.swapExercise);
+  const linkExercise = useMutation(api.workoutStructure.linkExercise);
+  const unlinkExercise = useMutation(api.workoutStructure.unlinkExercise);
+  const skipForNow = useMutation(api.workouts.skipForNow);
   const haptic = useHaptics();
   const now = useNow();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -100,6 +123,8 @@ export default function ActiveWorkoutScreen() {
   const [isStructureOpen, setIsStructureOpen] = useState(false);
   const [isConfirmingTerminate, setIsConfirmingTerminate] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // After an auto-advance within a round: the Exercise to stay on instead.
+  const [stayOn, setStayOn] = useState<number | null>(null);
 
   useRestEndNotification(workout?.rest?.endsAt ?? null, {
     sound: settings?.restEndSound ?? true,
@@ -142,8 +167,13 @@ export default function ActiveWorkoutScreen() {
   // Timed and cardio Exercises show the previous Set instead of a target.
   const showsPrevious =
     exercise?.type === 'timed' || exercise?.type === 'cardio';
+  const partners = exercise ? blockPartners(workout, exercise._id) : [];
+  const block = workout.blocks.find((item) => item._id === exercise?.blockId);
+  // In Alternating sets, rest comes after each round, at the block's rest.
   const exercisePlannedRest =
-    exercise?.plannedRestSeconds ?? settings.defaultRestSeconds;
+    partners.length > 0
+      ? (block?.plannedRestSeconds ?? settings.defaultRestSeconds)
+      : (exercise?.plannedRestSeconds ?? settings.defaultRestSeconds);
   const currentSetIndex = exercise
     ? exercise.sets.findIndex((set) => set.completedAt === null)
     : -1;
@@ -213,21 +243,29 @@ export default function ActiveWorkoutScreen() {
     setIsKeypadOpen(true);
   };
 
-  const logSet = (set: WorkoutSet) =>
-    attempt(async () => {
+  const logSet = (set: WorkoutSet) => {
+    const local = withSetLogged(workout, set._id, Date.now(), settings);
+    const nextIndex = workout.exercises.findIndex(
+      (item) => item._id === local?.next
+    );
+    setChosenFocus(null);
+    if (nextIndex >= 0 && nextIndex !== index) setSelectedIndex(nextIndex);
+    setStayOn(
+      nextIndex >= 0 &&
+        nextIndex !== index &&
+        partners.length > 0 &&
+        !local?.roundCompleted
+        ? index
+        : null
+    );
+    return attempt(async () => {
       const { targetMet } = await completeSet({
         setId: set._id,
         ...valuesOf(set),
       });
       haptic(targetMet ? 'target-met' : 'set-completed');
-      setChosenFocus(null);
-      const remaining = exercise?.sets.filter(
-        (item) => item.completedAt === null && item._id !== set._id
-      );
-      if (remaining?.length === 0 && index < workout.exercises.length - 1) {
-        setSelectedIndex(index + 1);
-      }
     }, 'Could not log this Set.');
+  };
 
   const pressKey = (key: KeypadKey) => {
     if (!focus || !focusSet) return;
@@ -259,6 +297,7 @@ export default function ActiveWorkoutScreen() {
   const selectExercise = (next: number) => {
     if (focusSet) void saveDrafts(focusSet);
     setChosenFocus(null);
+    setStayOn(null);
     setSelectedIndex(next);
   };
 
@@ -378,10 +417,13 @@ export default function ActiveWorkoutScreen() {
         </Column>
       ) : null}
       <ExerciseStrip
-        exercises={workout.exercises.map((item) => ({
+        exercises={workout.exercises.map((item, itemIndex) => ({
           key: item._id,
           name: item.name,
           skipped: item.skipped,
+          linkedToNext:
+            item.blockId !== null &&
+            workout.exercises[itemIndex + 1]?.blockId === item.blockId,
           sets: item.sets.map((set) => ({ done: set.completedAt !== null })),
         }))}
         selectedIndex={index}
@@ -433,6 +475,45 @@ export default function ActiveWorkoutScreen() {
               onOpenOptions={() => setIsRestSheetOpen(true)}
             />
           </Row>
+          {partners.length > 0 ? (
+            <Row spacing={8} alignment="center">
+              <Column spacing={2}>
+                <Text textStyle={{ fontSize: 14, fontWeight: '600' }}>
+                  {`Alternating sets · Round ${roundNumber(workout, exercise._id) ?? (block?.roundsCompleted ?? 0) + 1}`}
+                </Text>
+                <Text textStyle={{ fontSize: 13 }}>
+                  {`With ${partners.map((partner) => partner.name).join(', ')}`}
+                </Text>
+              </Column>
+              <Spacer />
+              {stayOn !== null && workout.exercises[stayOn] ? (
+                <Button
+                  label={`Stay on ${workout.exercises[stayOn].name}`}
+                  variant="text"
+                  onPress={() => {
+                    setSelectedIndex(stayOn);
+                    setStayOn(null);
+                  }}
+                />
+              ) : canSkipForNow(workout, exercise._id) ? (
+                <Button
+                  label="Skip for now"
+                  variant="text"
+                  onPress={() =>
+                    attempt(async () => {
+                      const { next } = await skipForNow({
+                        workoutExerciseId: exercise._id,
+                      });
+                      const nextIndex = workout.exercises.findIndex(
+                        (item) => item._id === next
+                      );
+                      if (nextIndex >= 0) selectExercise(nextIndex);
+                    }, 'Could not skip this Exercise for now.')
+                  }
+                />
+              ) : null}
+            </Row>
+          ) : null}
           <QuickActionRow
             actions={settings.quickActions}
             handlers={{
@@ -566,7 +647,11 @@ export default function ActiveWorkoutScreen() {
         <RestOptionsSheet
           isPresented={isRestSheetOpen}
           isResting={workout.rest !== null && workout.rest.endsAt > now}
-          exerciseName={exercise.name}
+          exerciseName={
+            partners.length > 0
+              ? `${[exercise, ...partners].map((item) => item.name).join(' ↔ ')} (after each round)`
+              : exercise.name
+          }
           defaultSeconds={exercisePlannedRest}
           onAdjust={(seconds) =>
             attempt(
@@ -614,7 +699,27 @@ export default function ActiveWorkoutScreen() {
           name: item.name,
           skipped: item.skipped,
           hasLoggedSets: item.sets.some((set) => set.completedAt !== null),
+          blockKey: item.blockId,
         }))}
+        onLink={(key, withKey) =>
+          attempt(
+            () =>
+              linkExercise({
+                workoutExerciseId: withKey as Id<'workoutExercises'>,
+                withWorkoutExerciseId: key as Id<'workoutExercises'>,
+              }),
+            'Could not link these Exercises.'
+          )
+        }
+        onUnlink={(key) =>
+          attempt(
+            () =>
+              unlinkExercise({
+                workoutExerciseId: key as Id<'workoutExercises'>,
+              }),
+            'Could not unlink this Exercise.'
+          )
+        }
         onMove={(key, toIndex) =>
           attempt(
             () =>
