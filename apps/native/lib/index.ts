@@ -11,5 +11,3 @@ export * from './hooks/use-user-profile';
 export * from './schemas/auth';
 // UI utilities
 export * from './ui';
-// General utilities
-export * from './utils';
