@@ -29,13 +29,15 @@ export type StoredExposure = Exposure & {
 /**
  * The member's most recent exposures to an Exercise, newest first: completed
  * Workouts (never abandoned or active ones) where it wasn't skipped and has a
- * logged Working Set. Walks the Sets newest first, so reads stay bounded no
- * matter how long the history is.
+ * logged Working Set. Walks the Sets newest first until enough exposures are
+ * found. `before` restricts them to Workouts started before that moment, so a
+ * past Workout's Last time excludes itself and later Workouts.
  */
 export async function recentExposures(
   ctx: QueryCtx,
   userId: string,
-  exerciseId: Id<'exercises'>
+  exerciseId: Id<'exercises'>,
+  before?: number
 ): Promise<StoredExposure[]> {
   const exposures: StoredExposure[] = [];
   const checked = new Set<Id<'workoutExercises'>>();
@@ -53,7 +55,12 @@ export async function recentExposures(
     const workoutExercise = await ctx.db.get(set.workoutExerciseId);
     if (!workoutExercise || workoutExercise.skipped) continue;
     const workout = await ctx.db.get(workoutExercise.workoutId);
-    if (workout?.status !== 'completed') continue;
+    if (
+      workout?.status !== 'completed' ||
+      (before !== undefined && workout.startedAt >= before)
+    ) {
+      continue;
+    }
 
     const working = (await setsOfExercise(ctx, workoutExercise._id)).filter(
       isWorkingSet

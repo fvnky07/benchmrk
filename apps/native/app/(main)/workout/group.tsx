@@ -1,13 +1,18 @@
 import { Button, ListItem, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Share } from 'react-native';
 
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
 import { GroupGrid } from '@/components/groups/group-grid';
+import { GroupQr } from '@/components/groups/group-qr';
+import { InviteByUsername } from '@/components/groups/invite-by-username';
+import { InviteInbox } from '@/components/groups/invite-inbox';
+import { ScanToJoin } from '@/components/groups/scan-to-join';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { usePushPermissionReoffer } from '@/lib/push/use-push-permission-reoffer';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
 
@@ -37,6 +42,13 @@ export default function GroupScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
+  const [qrLink, setQrLink] = useState<string | null>(null);
+  // Members who skipped notifications get one more offer when Groups matter.
+  const reofferPush = usePushPermissionReoffer();
+
+  useEffect(() => {
+    void reofferPush();
+  }, [reofferPush]);
 
   const attempt = async (action: () => Promise<unknown>) => {
     setErrorMessage(null);
@@ -72,6 +84,7 @@ export default function GroupScreen() {
   if (group === null) {
     return (
       <NativeScreen>
+        <InviteInbox />
         <Text textStyle={{ fontSize: 17 }}>
           Train with friends: everyone runs their own Workout and sees each
           other’s progress.
@@ -79,7 +92,12 @@ export default function GroupScreen() {
         <Button
           disabled={busy}
           label="Create a Group"
-          onPress={() => attempt(() => create({}))}
+          onPress={() =>
+            attempt(async () => {
+              await create({});
+              await reofferPush();
+            })
+          }
         />
         <NativeTextField
           autoCapitalize="characters"
@@ -96,6 +114,7 @@ export default function GroupScreen() {
           variant="outlined"
           onPress={() => attempt(() => joinByCode({ code }))}
         />
+        <ScanToJoin />
         {status}
       </NativeScreen>
     );
@@ -109,19 +128,41 @@ export default function GroupScreen() {
       });
     });
 
+  const toggleQr = () =>
+    qrLink
+      ? setQrLink(null)
+      : attempt(async () => {
+          const { code: current } = await shareCode({});
+          setQrLink(`${JOIN_LINK_BASE}/${current}`);
+        });
+
   return (
     <NativeScreen>
+      <InviteInbox />
+      <InviteByUsername />
       <Row spacing={8}>
         <Button disabled={busy} label="Share code" onPress={share} />
+        <Button
+          disabled={busy}
+          label={qrLink ? 'Hide QR' : 'Show QR'}
+          variant="outlined"
+          onPress={toggleQr}
+        />
         {group.isHost ? (
           <Button
             disabled={busy}
             label="Revoke code"
             variant="outlined"
-            onPress={() => attempt(() => revokeCode({}))}
+            onPress={() =>
+              attempt(async () => {
+                await revokeCode({});
+                setQrLink(null);
+              })
+            }
           />
         ) : null}
       </Row>
+      {qrLink ? <GroupQr link={qrLink} /> : null}
       <GroupGrid members={group.members} now={now} />
       {status}
       {isConfirmingEnd ? (

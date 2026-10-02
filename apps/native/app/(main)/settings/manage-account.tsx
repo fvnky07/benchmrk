@@ -1,4 +1,6 @@
 import { Button, ListItem, Text } from '@expo/ui';
+import { api } from '@repo/backend/convex/_generated/api';
+import { useMutation } from 'convex/react';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
@@ -8,9 +10,11 @@ import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
 import { authClient } from '@/lib/auth';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
+import { unregisterThisDevice } from '@/lib/push/use-push-registration';
 
 export default function ManageAccountScreen() {
   const { user, username, bio } = useUserProfile();
+  const unregister = useMutation(api.deviceTokens.unregister);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -25,6 +29,7 @@ export default function ManageAccountScreen() {
     try {
       setIsLoggingOut(true);
       setErrorMessage(null);
+      await unregisterThisDevice(unregister);
       await authClient.signOut();
       router.replace('/');
     } catch {

@@ -46,6 +46,12 @@ export const memberSettingsFields = {
   }),
   /** Quiet ahead/behind text beside the progress row. */
   aheadBehind: v.boolean(),
+  /** Who may invite the member to a Group by username. */
+  invitesFrom: v.union(
+    v.literal('everyone'),
+    v.literal('groupmates'),
+    v.literal('nobody')
+  ),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -65,6 +71,7 @@ export const memberSettingsChangeFields = {
   autoAdvance: v.optional(memberSettingsFields.autoAdvance),
   plates: v.optional(memberSettingsFields.plates),
   aheadBehind: v.optional(memberSettingsFields.aheadBehind),
+  invitesFrom: v.optional(memberSettingsFields.invitesFrom),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -187,6 +194,15 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
+  deviceTokens: defineTable({
+    userId: v.string(),
+    token: v.string(),
+    platform: v.union(v.literal('ios'), v.literal('android')),
+    updatedAt: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_token', ['token']),
+
   // Shared catalog Exercises have no creator; custom ones belong to `createdBy`.
   exercises: defineTable({
     slug: v.string(),
@@ -257,6 +273,7 @@ export default defineSchema({
     ),
   })
     .index('by_user_status', ['userId', 'status'])
+    .index('by_user_status_finished', ['userId', 'status', 'finishedAt'])
     .index('by_user_started', ['userId', 'startedAt'])
     .index('by_routine_status', ['routineId', 'status', 'startedAt']),
 
@@ -378,7 +395,7 @@ export default defineSchema({
     createdAt: v.number(),
     endedAt: v.optional(v.number()),
     lastActivityAt: v.number(),
-  }),
+  }).index('by_status', ['status', 'lastActivityAt']),
 
   // Membership in a Group, with the only Workout data others may read: the
   // progress summary the member's own mutations keep current.
@@ -386,11 +403,25 @@ export default defineSchema({
     groupId: v.id('groups'),
     userId: v.string(),
     joinedAt: v.number(),
+    lastSeenAt: v.optional(v.number()),
     leftAt: v.optional(v.number()),
     progress: groupProgressValidator,
   })
     .index('by_user_left', ['userId', 'leftAt'])
     .index('by_group_left', ['groupId', 'leftAt', 'joinedAt']),
+
+  groupEvents: defineTable({
+    groupId: v.id('groups'),
+    kind: v.union(
+      v.literal('joined'),
+      v.literal('left'),
+      v.literal('dropped'),
+      v.literal('hostChanged'),
+      v.literal('ended')
+    ),
+    userId: v.optional(v.string()),
+    at: v.number(),
+  }).index('by_group_at', ['groupId', 'at']),
 
   // Short join codes; valid until revoked, the Group ends or 24 hours unused.
   groupCodes: defineTable({
@@ -402,4 +433,26 @@ export default defineSchema({
   })
     .index('by_code', ['code'])
     .index('by_group', ['groupId']),
+
+  // Username invites to a Group. One the invitee's invite permission refuses
+  // is kept undelivered: it looks sent and counts toward the hourly limit, but
+  // never reaches the invitee.
+  groupInvites: defineTable({
+    groupId: v.id('groups'),
+    inviterId: v.string(),
+    inviteeId: v.string(),
+    createdAt: v.number(),
+    delivered: v.boolean(),
+    /** Dismissed: the invitee cleared it after it expired or the Group ended. */
+    status: v.union(
+      v.literal('pending'),
+      v.literal('accepted'),
+      v.literal('declined'),
+      v.literal('dismissed')
+    ),
+    respondedAt: v.optional(v.number()),
+  })
+    .index('by_invitee', ['inviteeId', 'delivered', 'status', 'createdAt'])
+    .index('by_inviter', ['inviterId', 'createdAt'])
+    .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt']),
 });

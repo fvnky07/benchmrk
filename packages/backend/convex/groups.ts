@@ -4,37 +4,24 @@ import { ConvexError, v } from 'convex/values';
 
 import { components } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
-import {
-  type MutationCtx,
-  mutation,
-  type QueryCtx,
-  query,
-} from './_generated/server';
+import { mutation, query } from './_generated/server';
+import { presenceOf } from './domain/presence';
 import {
   activeMembership,
+  addMember,
   endGroup,
   groupMembers,
+  joinGroup,
   leaveGroup,
-  progressSummary,
+  requireMembership,
 } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
 
-/** Safety limit; Groups have no product cap. */
-const MAX_MEMBERS = 20;
 const CODE_IDLE_MS = 24 * 60 * 60 * 1000;
 /** No 0/O or 1/I, so codes survive being read aloud. */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 6;
-
-async function requireMembership(ctx: QueryCtx, userId: string) {
-  const membership = await activeMembership(ctx, userId);
-  const group = membership ? await ctx.db.get(membership.groupId) : null;
-  if (!membership || !group || group.status !== 'live') {
-    throw new ConvexError('NOT_IN_GROUP');
-  }
-  return { membership, group };
-}
 
 function requireHost(group: Doc<'groups'>, userId: string) {
   if (group.hostId !== userId) throw new ConvexError('NOT_HOST');
@@ -45,21 +32,6 @@ function isUsable(code: Doc<'groupCodes'>, now: number) {
     code.revokedAt === undefined &&
     now - (code.lastUsedAt ?? code.createdAt) <= CODE_IDLE_MS
   );
-}
-
-async function addMember(
-  ctx: MutationCtx,
-  group: Doc<'groups'>,
-  userId: string
-) {
-  const now = Date.now();
-  await ctx.db.insert('groupMemberships', {
-    groupId: group._id,
-    userId,
-    joinedAt: now,
-    progress: await progressSummary(ctx, userId),
-  });
-  await ctx.db.patch(group._id, { lastActivityAt: now });
 }
 
 /** Creates a Group with the caller as host, before or during their Workout. */
@@ -156,13 +128,7 @@ export const joinByCode = mutation({
       throw new ConvexError('CODE_INVALID');
     }
 
-    const current = await activeMembership(ctx, userId);
-    if (current?.groupId === group._id) return group._id;
-    if (current) throw new ConvexError('IN_ANOTHER_GROUP');
-    if ((await groupMembers(ctx, group)).length >= MAX_MEMBERS) {
-      throw new ConvexError('GROUP_FULL');
-    }
-    await addMember(ctx, group, userId);
+    await joinGroup(ctx, group, userId);
     await ctx.db.patch(code._id, { lastUsedAt: now });
     return group._id;
   },
@@ -188,6 +154,72 @@ export const end = mutation({
     await endGroup(ctx, group);
   },
 });
+/** Presence does not count as Group activity for the idle-end window. */
+export const heartbeat = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const userId = await requireIdentityId(ctx);
+    const membership = await activeMembership(ctx, userId);
+    if (membership) {
+      await ctx.db.patch(membership._id, { lastSeenAt: Date.now() });
+    }
+    return null;
+  },
+});
+
+/** Only events from the caller's current arrival in a live Group. */
+export const events = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      kind: v.union(
+        v.literal('joined'),
+        v.literal('left'),
+        v.literal('dropped'),
+        v.literal('hostChanged'),
+        v.literal('ended')
+      ),
+      username: v.union(v.string(), v.null()),
+      at: v.number(),
+    })
+  ),
+  handler: async (ctx) => {
+    const userId = await getIdentityId(ctx);
+    if (!userId) return [];
+    const membership = await activeMembership(ctx, userId);
+    const group = membership ? await ctx.db.get(membership.groupId) : null;
+    if (!membership || group?.status !== 'live') return [];
+
+    const groupEvents = await ctx.db
+      .query('groupEvents')
+      .withIndex('by_group_at', (q) =>
+        q.eq('groupId', group._id).gte('at', membership.joinedAt)
+      )
+      .order('desc')
+      .collect();
+    const actorIds = [
+      ...new Set(
+        groupEvents.flatMap((event) => (event.userId ? [event.userId] : []))
+      ),
+    ];
+    const profiles = await Promise.all(
+      actorIds.map(async (actorId) => {
+        const profile = await ctx.runQuery(
+          components.betterAuth.users.getUser,
+          { userId: actorId }
+        );
+        return [actorId, profile?.username ?? null] as const;
+      })
+    );
+    const usernames = new Map(profiles);
+    return groupEvents.map((event) => ({
+      kind: event.kind,
+      username: event.userId ? (usernames.get(event.userId) ?? null) : null,
+      at: event.at,
+    }));
+  },
+});
 
 /**
  * The caller's live Group: one box per member, the caller first, then by
@@ -203,6 +235,7 @@ export const getMine = query({
     if (group?.status !== 'live') return null;
 
     const members = await groupMembers(ctx, group);
+    const now = Date.now();
     const boxes = await Promise.all(
       members.map(async (member) => {
         const profile = await ctx.runQuery(
@@ -217,6 +250,8 @@ export const getMine = query({
           isYou: member.userId === userId,
           isHost: member.userId === group.hostId,
           joinedAt: member.joinedAt,
+          lastSeenAt: member.lastSeenAt ?? member.joinedAt,
+          presence: presenceOf(member.lastSeenAt ?? member.joinedAt, now),
           progress: member.progress,
         };
       })
