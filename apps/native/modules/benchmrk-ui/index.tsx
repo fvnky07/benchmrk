@@ -29,30 +29,51 @@ export type GestureBoxProps = {
   /** What screen readers announce for the whole box. */
   label: string;
   /** Named screen-reader actions, the accessible path to the gestures. */
-  actions: readonly GestureBoxAction[];
+  actions?: readonly GestureBoxAction[];
   onTap: () => void;
-  onLongPress: () => void;
-  /** 1 = swiped right, -1 = swiped left. */
-  onSwipe: (direction: 1 | -1) => void;
-  onAction: (id: string) => void;
+  /** Long-press is only recognized when handled. */
+  onLongPress?: () => void;
+  /**
+   * 1 = swiped right, -1 = swiped left. Only handled boxes claim horizontal
+   * drags, so an unhandled box leaves them to an enclosing swipe row.
+   */
+  onSwipe?: (direction: 1 | -1) => void;
+  onAction?: (id: string) => void;
   children: ReactNode;
 };
 
-type NativeGestureBoxProps = Omit<GestureBoxProps, 'onSwipe' | 'onAction'> & {
-  onSwipe: (event: { nativeEvent: { direction: 1 | -1 } }) => void;
-  onAction: (event: { nativeEvent: { id: string } }) => void;
+type NativeGestureBoxProps = {
+  label: string;
+  actions: readonly GestureBoxAction[];
+  swipeable: boolean;
+  longPressable: boolean;
+  onTap: () => void;
+  onLongPress?: () => void;
+  onSwipe?: (event: { nativeEvent: { direction: 1 | -1 } }) => void;
+  onAction?: (event: { nativeEvent: { id: string } }) => void;
+  children: ReactNode;
 };
 
 const NativeGestureBox: React.ComponentType<NativeGestureBoxProps> =
   requireNativeView('BenchmrkUI', 'GestureBoxView');
 
-/** Tap, long-press and horizontal swipe around Expo UI children. */
-export function GestureBox({ onSwipe, onAction, ...props }: GestureBoxProps) {
+/** Tap, and optionally long-press and horizontal swipe, around Expo UI children. */
+export function GestureBox({
+  actions = [],
+  onLongPress,
+  onSwipe,
+  onAction,
+  ...props
+}: GestureBoxProps) {
   return (
     <NativeGestureBox
       {...props}
-      onSwipe={(event) => onSwipe(event.nativeEvent.direction)}
-      onAction={(event) => onAction(event.nativeEvent.id)}
+      actions={actions}
+      swipeable={onSwipe !== undefined}
+      longPressable={onLongPress !== undefined}
+      onLongPress={onLongPress}
+      onSwipe={onSwipe && ((event) => onSwipe(event.nativeEvent.direction))}
+      onAction={onAction && ((event) => onAction(event.nativeEvent.id))}
     />
   );
 }

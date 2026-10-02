@@ -86,6 +86,19 @@ export const groupProgressValidator = v.object({
   restEndsAt: v.union(v.number(), v.null()),
 });
 
+export const overloadReasonValidator = v.union(
+  v.literal('routine-target'),
+  v.literal('rep-progression'),
+  v.literal('weight-increase')
+);
+
+export const setTargetValidator = v.object({
+  weightKg: v.union(v.number(), v.null()),
+  reps: v.number(),
+  reason: overloadReasonValidator,
+  effortNotChecked: v.boolean(),
+});
+
 export default defineSchema({
   // Waitlist entries; confirming the emailed link creates a Waitlist identity.
   waitlist: defineTable({
@@ -209,9 +222,16 @@ export default defineSchema({
     /** Effort, stored canonically as RPE in 0.5 steps. */
     rpe: v.optional(v.number()),
     completedAt: v.optional(v.number()),
+    /** The Overload target shown for this planned Set, saved when it was planned. */
+    target: v.optional(setTargetValidator),
+    /** Which logged values came from the target (cleared when the member edits them). */
+    fromTarget: v.optional(
+      v.object({ weight: v.boolean(), reps: v.boolean() })
+    ),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])
-    .index('by_workout', ['workoutId']),
+    .index('by_workout', ['workoutId'])
+    .index('by_user_exercise', ['userId', 'exerciseId']),
 
   // Comments on exercises
   exerciseComments: defineTable({

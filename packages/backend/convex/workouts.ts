@@ -12,6 +12,7 @@ import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { leaveGroup } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
+import { applyOverloadTargets } from './lib/overload';
 import {
   findActiveWorkout,
   progressOf,
@@ -32,23 +33,29 @@ import { memberSettingsFields, setTypeValidator } from './schema';
 const DEFAULT_SETS_FOR_ADDED_EXERCISE = 3;
 const DEFAULT_REP_RANGE = { min: 6, max: 10 };
 
-/** The planned Sets of an Exercise just added to a Workout. */
-async function insertPlannedSets(
+/**
+ * Plans an Exercise that just entered a Workout: its planned Sets, then the
+ * Overload targets saved on them.
+ */
+async function planExercise(
   ctx: MutationCtx,
   workout: Doc<'workouts'>,
-  workoutExercise: Pick<Doc<'workoutExercises'>, '_id' | 'exerciseId'>,
+  workoutExerciseId: Id<'workoutExercises'>,
   count: number
 ) {
+  const workoutExercise = await ctx.db.get(workoutExerciseId);
+  if (!workoutExercise) throw new ConvexError('WORKOUT_NOT_FOUND');
   for (let order = 0; order < count; order += 1) {
     await ctx.db.insert('sets', {
       userId: workout.userId,
       workoutId: workout._id,
-      workoutExerciseId: workoutExercise._id,
+      workoutExerciseId,
       exerciseId: workoutExercise.exerciseId,
       order,
       type: 'normal',
     });
   }
+  await applyOverloadTargets(ctx, workoutExercise);
 }
 
 async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
@@ -80,6 +87,8 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             distanceMeters: set.distanceMeters ?? null,
             rpe: set.rpe ?? null,
             completedAt: set.completedAt ?? null,
+            target: set.target ?? null,
+            fromTarget: set.fromTarget ?? null,
           })),
         };
       }
@@ -162,10 +171,10 @@ export const start = workoutMutation({
         stepKg: routineExercise.stepKg,
         plannedRestSeconds: routineExercise.plannedRestSeconds,
       });
-      await insertPlannedSets(
+      await planExercise(
         ctx,
         workout,
-        { _id: workoutExerciseId, exerciseId: routineExercise.exerciseId },
+        workoutExerciseId,
         routineExercise.targetSets
       );
     }
@@ -190,10 +199,10 @@ export const addExercise = workoutMutation({
       repRangeMax: DEFAULT_REP_RANGE.max,
       stepKg: defaultStepKg(exercise.equipment, units),
     });
-    await insertPlannedSets(
+    await planExercise(
       ctx,
       workout,
-      { _id: workoutExerciseId, exerciseId: exercise._id },
+      workoutExerciseId,
       DEFAULT_SETS_FOR_ADDED_EXERCISE
     );
     return workoutExerciseId;
@@ -325,25 +334,128 @@ function setPatch({
   };
 }
 
-export const updateSet = workoutMutation({
-  args: { setId: v.id('sets'), ...setChangeArgs },
-  handler: async (ctx, { setId, ...changes }) => {
-    const userId = await requireIdentityId(ctx);
-    const { workout } = await requireOwnedSet(ctx, userId, setId);
-    requireActive(workout);
-    await ctx.db.patch(setId, setPatch(changes));
-  },
-});
+/**
+ * Which values came from the target after a change: a field the member sets
+ * is theirs; an untouched one keeps what it had.
+ */
+function provenanceAfter(
+  set: Doc<'sets'>,
+  patch: Partial<Doc<'sets'>>
+): Doc<'sets'>['fromTarget'] {
+  if (!set.target) return undefined;
+  return {
+    weight: patch.weightKg === undefined && set.fromTarget?.weight === true,
+    reps: patch.reps === undefined && set.fromTarget?.reps === true,
+  };
+}
 
-export const completeSet = workoutMutation({
+export const updateSet = workoutMutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
   handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
     const { set, workout } = await requireOwnedSet(ctx, userId, setId);
     requireActive(workout);
+    const patch = setPatch(changes);
+    await ctx.db.patch(setId, {
+      ...patch,
+      fromTarget: provenanceAfter(set, patch),
+    });
+  },
+});
+
+/**
+ * A Set's Overload target while it is a Working Set. A planned Set turned into
+ * a Warm-up or Dropset keeps its target for if it turns back.
+ */
+function workingTarget(set: Doc<'sets'>) {
+  return set.type === 'normal' || set.type === 'failure'
+    ? set.target
+    : undefined;
+}
+
+/** The target's values for a Set's empty fields, marked as from the target. */
+function targetFill(set: Doc<'sets'>): Partial<Doc<'sets'>> {
+  const target = workingTarget(set);
+  if (!target || set.completedAt !== undefined) return {};
+  const weightKg =
+    set.weightKg === undefined && target.weightKg !== null
+      ? target.weightKg
+      : undefined;
+  const reps = set.reps === undefined ? target.reps : undefined;
+  return {
+    ...(weightKg !== undefined && { weightKg }),
+    ...(reps !== undefined && { reps }),
+    fromTarget: {
+      weight: weightKg !== undefined || set.fromTarget?.weight === true,
+      reps: reps !== undefined || set.fromTarget?.reps === true,
+    },
+  };
+}
+
+/**
+ * Logs a Set. Fields the member never touched log the Overload target; the
+ * result says whether the target was met (for the target-met haptic).
+ */
+export const completeSet = workoutMutation({
+  args: { setId: v.id('sets'), ...setChangeArgs },
+  returns: v.object({ targetMet: v.boolean() }),
+  handler: async (ctx, { setId, ...changes }) => {
+    const userId = await requireIdentityId(ctx);
+    const { set, workout } = await requireOwnedSet(ctx, userId, setId);
+    requireActive(workout);
     const now = Date.now();
-    await ctx.db.patch(setId, { ...setPatch(changes), completedAt: now });
+    const patch = setPatch(changes);
+    const edited = {
+      ...set,
+      ...patch,
+      fromTarget: provenanceAfter(set, patch),
+    };
+    const fill = targetFill(edited);
+    const logged = { ...edited, ...fill };
+    await ctx.db.patch(setId, {
+      ...patch,
+      ...fill,
+      fromTarget: logged.fromTarget,
+      completedAt: now,
+    });
     await startRestAfter(ctx, workout, set.workoutExerciseId, now);
+    const target = workingTarget(logged);
+    return {
+      targetMet:
+        target !== undefined &&
+        (logged.reps ?? 0) >= target.reps &&
+        (target.weightKg === null || (logged.weightKg ?? 0) >= target.weightKg),
+    };
+  },
+});
+
+/** Tapping a faded field: the Set takes its target's values. */
+export const fillFromTarget = workoutMutation({
+  args: { setId: v.id('sets') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
+    requireActive(workout);
+    await ctx.db.patch(set._id, targetFill(set));
+  },
+});
+
+/** The wand: every empty Set of the Exercise takes its target's values. */
+export const fillFromTargets = workoutMutation({
+  args: { workoutExerciseId: v.id('workoutExercises') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.workoutExerciseId
+    );
+    requireActive(workout);
+    for (const set of await setsOfExercise(ctx, workoutExercise._id)) {
+      if (set.weightKg === undefined && set.reps === undefined) {
+        await ctx.db.patch(set._id, targetFill(set));
+      }
+    }
   },
 });
 
