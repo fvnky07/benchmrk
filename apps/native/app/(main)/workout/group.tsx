@@ -1,11 +1,28 @@
-import { Button, ListItem, Row, Text } from '@expo/ui';
+import {
+  BottomSheet,
+  Button,
+  Column,
+  Host,
+  ListItem,
+  Row,
+  ScrollView,
+  Switch,
+  Text,
+} from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Share } from 'react-native';
+import {
+  ScrollView as NativeScrollView,
+  Share,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
 import { GroupGrid } from '@/components/groups/group-grid';
+import { GroupHeader } from '@/components/groups/group-header';
 import { GroupQr } from '@/components/groups/group-qr';
 import { InviteByUsername } from '@/components/groups/invite-by-username';
 import { InviteInbox } from '@/components/groups/invite-inbox';
@@ -13,6 +30,7 @@ import { ScanToJoin } from '@/components/groups/scan-to-join';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { usePushPermissionReoffer } from '@/lib/push/use-push-permission-reoffer';
+import { THEME, useAppearance } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
 
@@ -26,6 +44,7 @@ const ERROR_COPY: Record<string, string> = {
   CODE_INVALID:
     'That code isn’t valid. It may have expired or the Group ended.',
   NOT_HOST: 'Only the Group host can do that.',
+  NOT_IN_GROUP: 'This Group has ended. Create or join another Group.',
 };
 
 export default function GroupScreen() {
@@ -36,6 +55,10 @@ export default function GroupScreen() {
   const revokeCode = useMutation(api.groups.revokeCode);
   const leave = useMutation(api.groups.leave);
   const end = useMutation(api.groups.end);
+  const setShowWeights = useMutation(api.groups.setShowWeights);
+  const { resolvedAppearance } = useAppearance();
+  const colors = THEME[resolvedAppearance];
+  const { width } = useWindowDimensions();
   const now = useNow();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -43,6 +66,8 @@ export default function GroupScreen() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
   const [qrLink, setQrLink] = useState<string | null>(null);
+  const [isInviting, setIsInviting] = useState(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   // Members who skipped notifications get one more offer when Groups matter.
   const reofferPush = usePushPermissionReoffer();
 
@@ -136,23 +161,30 @@ export default function GroupScreen() {
           setQrLink(`${JOIN_LINK_BASE}/${current}`);
         });
 
-  return (
-    <NativeScreen>
-      <InviteInbox />
-      <InviteByUsername />
+  const menu = (
+    <ScrollView
+      direction="horizontal"
+      showsIndicators={false}
+      style={{ width: width - 48 }}
+    >
       <Row spacing={8}>
-        <Button disabled={busy} label="Share code" onPress={share} />
+        <Button
+          disabled={busy}
+          label="Share code"
+          variant="text"
+          onPress={share}
+        />
         <Button
           disabled={busy}
           label={qrLink ? 'Hide QR' : 'Show QR'}
-          variant="outlined"
+          variant="text"
           onPress={toggleQr}
         />
         {group.isHost ? (
           <Button
             disabled={busy}
             label="Revoke code"
-            variant="outlined"
+            variant="text"
             onPress={() =>
               attempt(async () => {
                 await revokeCode({});
@@ -161,44 +193,164 @@ export default function GroupScreen() {
             }
           />
         ) : null}
+        <Button
+          disabled={busy}
+          label={group.isHost ? 'End Group' : 'Leave Group'}
+          variant="text"
+          onPress={() =>
+            group.isHost
+              ? setIsConfirmingEnd(true)
+              : void attempt(() => leave({}))
+          }
+        />
       </Row>
-      {qrLink ? <GroupQr link={qrLink} /> : null}
-      <GroupGrid members={group.members} now={now} />
-      {status}
-      {isConfirmingEnd ? (
-        <>
-          <ListItem supportingText="Everyone leaves the Group. Workouts carry on.">
-            End this Group?
-          </ListItem>
-          <Button
-            disabled={busy}
-            label="End Group"
-            onPress={() => attempt(() => end({}))}
-          />
-          <Button
-            label="Cancel"
-            variant="text"
-            onPress={() => setIsConfirmingEnd(false)}
-          />
-        </>
-      ) : (
-        <Row spacing={8}>
-          <Button
-            disabled={busy}
-            label="Leave Group"
-            variant="outlined"
-            onPress={() => attempt(() => leave({}))}
-          />
-          {group.isHost ? (
-            <Button
-              disabled={busy}
-              label="End Group"
-              variant="text"
-              onPress={() => setIsConfirmingEnd(true)}
+    </ScrollView>
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <NativeScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        onScroll={({ nativeEvent }) => {
+          const collapsed = nativeEvent.contentOffset.y > 120;
+          setIsHeaderCollapsed((current) =>
+            current === collapsed ? current : collapsed
+          );
+        }}
+      >
+        <Host
+          colorScheme={resolvedAppearance}
+          matchContents={{ vertical: true }}
+          style={{ width }}
+        >
+          <Column spacing={16} style={{ padding: 24 }}>
+            <InviteInbox />
+            <GroupHeader
+              group={group}
+              now={now}
+              variant="full"
+              onBack={() =>
+                router.replace(
+                  group.members.find((member) => member.isYou)?.progress
+                    .startedAt == null
+                    ? '/workout'
+                    : '/workout/active'
+                )
+              }
+              onInvite={() => setIsInviting(true)}
+              menu={menu}
             />
-          ) : null}
-        </Row>
-      )}
-    </NativeScreen>
+            <Switch
+              disabled={busy}
+              label="Show my weights, reps and volume"
+              value={group.showWeights}
+              onValueChange={(shown) =>
+                void attempt(() => setShowWeights({ shown }))
+              }
+            />
+            <GroupGrid members={group.members} now={now} />
+            {status}
+            <BottomSheet
+              isPresented={isInviting}
+              onDismiss={() => setIsInviting(false)}
+              showDragIndicator
+              snapPoints={['half']}
+            >
+              <ScrollView>
+                <Column spacing={16} style={{ padding: 24 }}>
+                  <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
+                    Invite to your Group
+                  </Text>
+                  <InviteByUsername />
+                  <Button
+                    disabled={busy}
+                    label="Share code"
+                    variant="outlined"
+                    onPress={share}
+                  />
+                  {status}
+                </Column>
+              </ScrollView>
+            </BottomSheet>
+            <BottomSheet
+              isPresented={qrLink !== null}
+              onDismiss={() => setQrLink(null)}
+              showDragIndicator
+              snapPoints={['half', 'full']}
+            >
+              <ScrollView>
+                <Column spacing={16} style={{ padding: 24 }}>
+                  <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
+                    Join this Group
+                  </Text>
+                  {qrLink ? <GroupQr link={qrLink} /> : null}
+                  <Button
+                    label="Hide QR"
+                    variant="text"
+                    onPress={() => setQrLink(null)}
+                  />
+                </Column>
+              </ScrollView>
+            </BottomSheet>
+            <BottomSheet
+              isPresented={isConfirmingEnd}
+              onDismiss={() => setIsConfirmingEnd(false)}
+              showDragIndicator
+              snapPoints={['half']}
+            >
+              <ScrollView>
+                <Column spacing={16} style={{ padding: 24 }}>
+                  <ListItem supportingText="Everyone leaves the Group. Workouts carry on.">
+                    End this Group?
+                  </ListItem>
+                  <Button
+                    disabled={busy}
+                    label="End Group"
+                    onPress={() => attempt(() => end({}))}
+                  />
+                  <Button
+                    label="Cancel"
+                    variant="text"
+                    onPress={() => setIsConfirmingEnd(false)}
+                  />
+                  {status}
+                </Column>
+              </ScrollView>
+            </BottomSheet>
+          </Column>
+        </Host>
+      </NativeScrollView>
+      {isHeaderCollapsed ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: colors.background,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+          }}
+        >
+          <Host
+            colorScheme={resolvedAppearance}
+            matchContents={{ vertical: true }}
+            style={{ width }}
+          >
+            <Column style={{ paddingHorizontal: 24, paddingVertical: 8 }}>
+              <GroupHeader
+                group={group}
+                now={now}
+                variant="full"
+                collapsed
+                menu={menu}
+              />
+            </Column>
+          </Host>
+        </View>
+      ) : null}
+    </View>
   );
 }

@@ -3,23 +3,23 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
-/** The Group inbox remains authoritative, including an ended Group's message. */
+/** Group invite and event taps open the Group screen. */
 export function useNotificationTap() {
   useEffect(() => {
     if (Platform.OS === 'web') return;
     let disposed = false;
     let handledIdentifier: string | null = null;
-    const openInvite = (
-      response: Notifications.NotificationResponse | null
-    ) => {
+    const openGroup = (response: Notifications.NotificationResponse | null) => {
       if (disposed || !response) return;
       const { request } = response.notification;
       const { data } = request.content;
       if (!data) return;
+      const isInvite =
+        data.type === 'groupInvite' && typeof data.inviteId === 'string';
+      const isGroupEvent = data.type === 'groupEvent';
       if (
         response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER ||
-        data.type !== 'groupInvite' ||
-        typeof data.inviteId !== 'string' ||
+        (!isInvite && !isGroupEvent) ||
         handledIdentifier === request.identifier
       ) {
         return;
@@ -27,16 +27,13 @@ export function useNotificationTap() {
       handledIdentifier = request.identifier;
       router.push('/workout/group');
       void Notifications.clearLastNotificationResponseAsync().catch((error) => {
-        console.warn(
-          'Could not clear the opened Group invite notification',
-          error
-        );
+        console.warn('Could not clear the opened Group notification', error);
       });
     };
     const listener =
-      Notifications.addNotificationResponseReceivedListener(openInvite);
+      Notifications.addNotificationResponseReceivedListener(openGroup);
     void Notifications.getLastNotificationResponseAsync()
-      .then(openInvite)
+      .then(openGroup)
       .catch((error) => {
         console.warn('Could not read the opened notification', error);
       });
