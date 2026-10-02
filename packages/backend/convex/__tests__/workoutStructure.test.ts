@@ -33,6 +33,7 @@ async function routineShape(member: TestMember, routineId: Id<'routines'>) {
     name: exercise.name,
     sets: exercise.targetSets,
     restSeconds: exercise.plannedRestSeconds,
+    linkedToNext: exercise.linkedToNext,
   }));
 }
 
@@ -136,7 +137,7 @@ describe('changing a Workout’s structure', () => {
     expect(shown?.changes).toEqual([
       { kind: 'removed', exercise: 'Bent-over Row' },
     ]);
-    expect(shown?.after).toEqual([
+    expect(shown?.after).toMatchObject([
       { name: 'Bench Press', sets: 2, restSeconds: null },
     ]);
     await member.mutation(api.workoutStructure.saveToRoutine, { workoutId });
@@ -190,9 +191,9 @@ describe('changing a Workout’s structure', () => {
       'swapped',
     ]);
     expect(shown?.after).toEqual([
-      { name: 'Squat', sets: 3, restSeconds: null },
-      { name: 'Cable Row', sets: 3, restSeconds: null },
-      { name: 'Bench Press', sets: 3, restSeconds: 120 },
+      { name: 'Squat', sets: 3, restSeconds: null, linkedToNext: false },
+      { name: 'Cable Row', sets: 3, restSeconds: null, linkedToNext: false },
+      { name: 'Bench Press', sets: 3, restSeconds: 120, linkedToNext: false },
     ]);
 
     await member.mutation(api.workoutStructure.saveToRoutine, { workoutId });

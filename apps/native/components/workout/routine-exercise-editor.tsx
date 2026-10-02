@@ -41,21 +41,37 @@ type RoutineExerciseEditorProps = {
   routineExercise: RoutineExercise | null;
   position: number;
   exerciseCount: number;
+  /** The Exercise after this one, which "Link" brings into its block. */
+  nextExercise: RoutineExercise | null;
+  /** This Exercise's Alternating sets block, if it is in one. */
+  block: {
+    _id: Id<'routineBlocks'>;
+    plannedRestSeconds: number | null;
+    restSeconds: number;
+  } | null;
   units: WeightUnit;
   onDismiss: () => void;
 };
 
-/** Edits one Exercise of a Routine: Sets, Rep range, targets, step and rest. */
+/**
+ * Edits one Exercise of a Routine: Sets, Rep range, targets, step and rest,
+ * and whether it alternates with the next one.
+ */
 export function RoutineExerciseEditor({
   routineExercise,
   position,
   exerciseCount,
+  nextExercise,
+  block,
   units,
   onDismiss,
 }: Readonly<RoutineExerciseEditorProps>) {
   const updateExercise = useMutation(api.routines.updateExercise);
   const moveExercise = useMutation(api.routines.moveExercise);
   const removeExercise = useMutation(api.routines.removeExercise);
+  const linkExercises = useMutation(api.routines.linkExercises);
+  const unlinkExercise = useMutation(api.routines.unlinkExercise);
+  const setBlockRest = useMutation(api.routines.setBlockRest);
   const [targetSets, setTargetSets] = useState('');
   const [repRangeMin, setRepRangeMin] = useState('');
   const [repRangeMax, setRepRangeMax] = useState('');
@@ -63,6 +79,7 @@ export function RoutineExerciseEditor({
   const [startingWeight, setStartingWeight] = useState('');
   const [step, setStep] = useState('');
   const [plannedRest, setPlannedRest] = useState('');
+  const [blockRest, setBlockRestDraft] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -83,8 +100,11 @@ export function RoutineExerciseEditor({
         ? ''
         : String(routineExercise.plannedRestSeconds)
     );
+    setBlockRestDraft(
+      block?.plannedRestSeconds == null ? '' : String(block.plannedRestSeconds)
+    );
     setErrorMessage(null);
-  }, [routineExercise, units]);
+  }, [routineExercise, block, units]);
 
   if (!routineExercise) {
     return <BottomSheet isPresented={false} onDismiss={onDismiss} />;
@@ -131,10 +151,12 @@ export function RoutineExerciseEditor({
       : null;
     const stepKg = parseWeightKg(step, units);
     const rest = plannedRest.trim() ? parseWholeNumber(plannedRest) : null;
+    const roundRest = blockRest.trim() ? parseWholeNumber(blockRest) : null;
     if (
       (startingWeight.trim() && startingWeightKg === null) ||
       stepKg === null ||
-      (plannedRest.trim() && rest === null)
+      (plannedRest.trim() && rest === null) ||
+      (blockRest.trim() && roundRest === null)
     ) {
       setErrorMessage('Enter numbers for weight, step and rest.');
       return;
@@ -156,8 +178,8 @@ export function RoutineExerciseEditor({
       return;
     }
 
-    run(() =>
-      updateExercise({
+    run(async () => {
+      await updateExercise({
         routineExerciseId: id,
         targetSets: parsedTargetSets,
         repRangeMin: parsedMin,
@@ -166,8 +188,11 @@ export function RoutineExerciseEditor({
         startingWeightKg,
         stepKg,
         plannedRestSeconds: rest,
-      })
-    );
+      });
+      if (block) {
+        await setBlockRest({ routineBlockId: block._id, seconds: roundRest });
+      }
+    });
   };
 
   return (
@@ -234,13 +259,23 @@ export function RoutineExerciseEditor({
               />
             </>
           ) : null}
-          <NativeTextField
-            label="Planned rest (seconds)"
-            keyboardType="number-pad"
-            placeholder={`Default (${routineExercise.restSeconds} s)`}
-            value={plannedRest}
-            onChangeText={setPlannedRest}
-          />
+          {block ? (
+            <NativeTextField
+              label="Rest after each round (seconds)"
+              keyboardType="number-pad"
+              placeholder={`Default (${block.restSeconds} s)`}
+              value={blockRest}
+              onChangeText={setBlockRestDraft}
+            />
+          ) : (
+            <NativeTextField
+              label="Planned rest (seconds)"
+              keyboardType="number-pad"
+              placeholder={`Default (${routineExercise.restSeconds} s)`}
+              value={plannedRest}
+              onChangeText={setPlannedRest}
+            />
+          )}
           {errorMessage ? (
             <ListItem supportingText={errorMessage}>Can’t save yet</ListItem>
           ) : null}
@@ -271,6 +306,31 @@ export function RoutineExerciseEditor({
               }
             />
           </Row>
+          {block ? (
+            <Button
+              disabled={isSaving}
+              label="Unlink from Alternating sets"
+              variant="outlined"
+              onPress={() =>
+                run(() => unlinkExercise({ routineExerciseId: id }))
+              }
+            />
+          ) : null}
+          {nextExercise && !routineExercise.linkedToNext ? (
+            <Button
+              disabled={isSaving}
+              label={`Alternate with ${nextExercise.name}`}
+              variant="outlined"
+              onPress={() =>
+                run(() =>
+                  linkExercises({
+                    routineExerciseId: nextExercise._id,
+                    withRoutineExerciseId: id,
+                  })
+                )
+              }
+            />
+          ) : null}
           <Button
             disabled={isSaving}
             label="Remove from Routine"

@@ -12,8 +12,10 @@ const purgePhase = v.union(
   v.literal('sets'),
   v.literal('workouts'),
   v.literal('workoutExercises'),
+  v.literal('workoutBlocks'),
   v.literal('routines'),
   v.literal('routineExercises'),
+  v.literal('routineBlocks'),
   v.literal('comments'),
   v.literal('customExercises'),
   v.literal('memberSettings'),
@@ -36,9 +38,11 @@ type PurgePhase =
   | 'sets'
   | 'workouts'
   | 'workoutExercises'
+  | 'workoutBlocks'
   | 'routines'
   | 'routineExercises'
   | 'comments'
+  | 'routineBlocks'
   | 'customExercises'
   | 'memberSettings'
   | 'waitlist'
@@ -131,6 +135,25 @@ export const purgeIdentityBatch = internalMutation({
           .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
         for (const exercise of page.page) await ctx.db.delete(exercise._id);
         if (page.isDone) {
+          await scheduleBatch(ctx, {
+            ...args,
+            phase: 'workoutBlocks',
+            cursor: null,
+          });
+        } else {
+          await scheduleBatch(ctx, { ...args, cursor: page.continueCursor });
+        }
+        return null;
+      }
+      case 'workoutBlocks': {
+        const workoutId = args.workoutId;
+        if (!workoutId) throw new Error('Missing Workout ID');
+        const page = await ctx.db
+          .query('workoutBlocks')
+          .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
+          .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+        for (const block of page.page) await ctx.db.delete(block._id);
+        if (page.isDone) {
           await ctx.db.delete(workoutId);
           await scheduleBatch(ctx, {
             userId: args.userId,
@@ -174,6 +197,25 @@ export const purgeIdentityBatch = internalMutation({
           .withIndex('by_routine', (q) => q.eq('routineId', routineId))
           .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
         for (const exercise of page.page) await ctx.db.delete(exercise._id);
+        if (page.isDone) {
+          await scheduleBatch(ctx, {
+            ...args,
+            phase: 'routineBlocks',
+            cursor: null,
+          });
+        } else {
+          await scheduleBatch(ctx, { ...args, cursor: page.continueCursor });
+        }
+        return null;
+      }
+      case 'routineBlocks': {
+        const routineId = args.routineId;
+        if (!routineId) throw new Error('Missing Routine ID');
+        const page = await ctx.db
+          .query('routineBlocks')
+          .withIndex('by_routine', (q) => q.eq('routineId', routineId))
+          .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+        for (const block of page.page) await ctx.db.delete(block._id);
         if (page.isDone) {
           await ctx.db.delete(routineId);
           await scheduleBatch(ctx, {
