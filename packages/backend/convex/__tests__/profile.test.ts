@@ -77,6 +77,6 @@ describe('profile editing', () => {
 
     await expect(
       t.mutation(api.profile.updateProfile, { bio: 'hello' })
-    ).rejects.toThrow('Not authenticated');
+    ).rejects.toThrow('NOT_AUTHENTICATED');
   });
 });

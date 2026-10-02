@@ -12,6 +12,7 @@ beforeEach(() => {
     vi.fn(async () => new Response('{}', { status: 200 }))
   );
 });
+  vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
 
 afterEach(() => {
   vi.unstubAllEnvs();

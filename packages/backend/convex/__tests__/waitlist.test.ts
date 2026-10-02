@@ -57,9 +57,9 @@ describe('native sign-in links', () => {
       'registered-only@example.com',
       '  CONFIRMED@example.com ',
     ]) {
-      expect(
-        await t.mutation(api.waitlist.requestSignInLink, { email })
-      ).toEqual({ status: 'accepted' });
+      expect(await t.action(api.waitlist.requestSignInLink, { email })).toEqual(
+        { status: 'accepted' }
+      );
     }
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 
@@ -74,30 +74,62 @@ describe('native sign-in links', () => {
       emailVerified: true,
     });
 
-    await t.mutation(api.waitlist.requestSignInLink, {
+    await t.action(api.waitlist.requestSignInLink, {
       email: 'confirmed@example.com',
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     vi.advanceTimersByTime(4 * 60 * 1000);
-    await t.mutation(api.waitlist.requestSignInLink, {
+    await t.action(api.waitlist.requestSignInLink, {
       email: 'confirmed@example.com',
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(mailedTo()).toHaveLength(1);
 
     vi.advanceTimersByTime(2 * 60 * 1000);
-    await t.mutation(api.waitlist.requestSignInLink, {
+    await t.action(api.waitlist.requestSignInLink, {
       email: 'confirmed@example.com',
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(mailedTo()).toHaveLength(2);
   });
 
+  test.each(['provider 503', 'network failure', 'missing configuration'])(
+    '%s surfaces a retryable error without consuming the sign-in cooldown',
+    async (failure) => {
+      const t = createTest();
+      await joinWaitlist(t, 'confirmed@example.com');
+      await createAuthIdentity(t, {
+        email: 'confirmed@example.com',
+        emailVerified: true,
+      });
+      if (failure === 'provider 503') {
+        resend.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+      } else if (failure === 'network failure') {
+        resend.mockRejectedValueOnce(new TypeError('Network unavailable'));
+      } else {
+        vi.stubEnv('RESEND_API_KEY', '');
+      }
+
+      await expect(
+        t.action(api.waitlist.requestSignInLink, {
+          email: 'confirmed@example.com',
+        })
+      ).rejects.toThrow('EMAIL_DELIVERY_FAILED');
+      vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
+      await expect(
+        t.action(api.waitlist.requestSignInLink, {
+          email: 'confirmed@example.com',
+        })
+      ).resolves.toEqual({ status: 'accepted' });
+      expect(mailedTo().at(-1)).toBe('confirmed@example.com');
+    }
+  );
+
   test('a malformed email is refused', async () => {
     const t = createTest();
 
     await expect(
-      t.mutation(api.waitlist.requestSignInLink, { email: 'not-an-email' })
+      t.action(api.waitlist.requestSignInLink, { email: 'not-an-email' })
     ).rejects.toThrow('INVALID_EMAIL');
   });
 });

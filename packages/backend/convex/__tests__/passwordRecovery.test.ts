@@ -99,6 +99,20 @@ describe('password recovery', () => {
     expect(resetMails()).toEqual([]);
   });
 
+  test('a reset email network failure surfaces a retryable error and a retry sends the link', async () => {
+    const t = createTest();
+    await register(t, 'pat@example.com');
+    await markEmailVerified(t, 'pat@example.com');
+    resend.mockRejectedValueOnce(new TypeError('Network unavailable'));
+    const failed = await requestReset(t, 'pat@example.com');
+    expect(failed.status).toBe(502);
+    expect(await failed.json()).toMatchObject({
+      code: 'EMAIL_DELIVERY_FAILED',
+    });
+    expect((await requestReset(t, 'pat@example.com')).status).toBe(200);
+    expect((await resetPassword(t, await tokenFromLink(t))).status).toBe(200);
+  });
+
   test('an invalid, reused or expired link changes nothing', async () => {
     const t = createTest();
     await register(t, 'pat@example.com');

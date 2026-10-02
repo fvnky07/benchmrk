@@ -121,6 +121,6 @@ describe('Exercise catalog', () => {
         type: 'strength',
         equipment: 'other',
       })
-    ).rejects.toThrow('Not authenticated');
+    ).rejects.toThrow('NOT_AUTHENTICATED');
   });
 });

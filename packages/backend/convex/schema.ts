@@ -239,6 +239,7 @@ export default defineSchema({
     tokenHash: v.string(),
     linkSentAt: v.number(),
     confirmedAt: v.optional(v.number()),
+    notifiedAt: v.optional(v.number()),
   })
     .index('by_email', ['email'])
     .index('by_tokenHash', ['tokenHash']),

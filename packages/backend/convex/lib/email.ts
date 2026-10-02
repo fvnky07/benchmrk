@@ -1,7 +1,9 @@
+import { ConvexError } from 'convex/values';
+
 /**
  * Sends a transactional email through Resend's HTTP API. The SDK has Node.js
  * dependencies the Convex runtime can't load, so this uses fetch directly.
- * Failures are logged without the recipient or body.
+ * Delivery failures are retryable errors; logs never include the recipient or body.
  */
 export async function sendEmail({
   to,
@@ -15,7 +17,7 @@ export async function sendEmail({
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error('RESEND_API_KEY not configured');
-    return;
+    throw new ConvexError('EMAIL_DELIVERY_FAILED');
   }
 
   try {
@@ -36,9 +38,11 @@ export async function sendEmail({
     await response.text();
     if (!response.ok) {
       console.error('Resend request failed:', response.status);
+      throw new ConvexError('EMAIL_DELIVERY_FAILED');
     }
   } catch {
     console.error('Transactional email could not be sent');
+    throw new ConvexError('EMAIL_DELIVERY_FAILED');
   }
 }
 

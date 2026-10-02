@@ -18,9 +18,9 @@ export default function PrivacyPage() {
           protect your data before our official launch.
         </p>
         <p className="max-w-2xl text-muted-foreground text-sm">
-          To delete your account and data, see{' '}
+          To delete your Benchmrk identity and data, see{' '}
           <Link className="underline" href="/delete-account">
-            Delete your account
+            Delete your Benchmrk identity
           </Link>
           .
         </p>
