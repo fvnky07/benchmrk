@@ -3,9 +3,12 @@
 // leaving or ending a Group.
 import { ConvexError, type Infer } from 'convex/values';
 
+import { internal } from '../_generated/api';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
+import { meetsTarget } from '../domain/overload';
 import type { groupProgressValidator } from '../schema';
+import { isWorkingSet } from './overload';
 import {
   findActiveWorkout,
   progressOf,
@@ -19,6 +22,8 @@ export type GroupProgress = Infer<typeof groupProgressValidator>;
 /** Safety limit; Groups have no product cap. */
 const MAX_MEMBERS = 20;
 
+type ExerciseProgress = NonNullable<GroupProgress['exercises']>[number];
+
 const NOT_STARTED: GroupProgress = {
   status: 'not_started',
   routineName: null,
@@ -29,40 +34,84 @@ const NOT_STARTED: GroupProgress = {
   setsDone: 0,
   setsPlanned: 0,
   restEndsAt: null,
+  exercises: [],
+  currentSet: null,
+  volumeKg: null,
 };
 
 /**
- * A member's progress as their Group sees it: the active Workout's name,
- * the first unfinished Exercise and its Working Set position, Pace inputs
- * (Working Sets done of planned) and rest. Never Sets, weights or efforts.
+ * A member's progress as their Group sees it: the active Workout's name, the
+ * current Exercise and its Set position, Pace inputs (Sets done of planned),
+ * rest, each Exercise's Set pips and whether its Overload targets were met.
+ * Weight, reps and volume only when the member shows them. Never Effort
+ * ratings, notes, target values or body data.
  */
 export async function progressSummary(
   ctx: QueryCtx,
-  userId: string
+  userId: string,
+  showWeights: boolean
 ): Promise<GroupProgress> {
   const workout = await findActiveWorkout(ctx, userId);
-  if (!workout) return NOT_STARTED;
+  if (!workout) return { ...NOT_STARTED, weightsShown: showWeights };
   const { done, total } = await progressOf(ctx, workout._id);
 
-  let current: { name: string; setNumber: number; setCount: number } | null =
-    null;
+  let current: {
+    name: string;
+    setNumber: number;
+    setCount: number;
+    set: Doc<'sets'>;
+    lastLogged: Doc<'sets'> | null;
+  } | null = null;
+  const exercises: ExerciseProgress[] = [];
+  let volumeKg = 0;
   for (const workoutExercise of await workoutExercisesOf(ctx, workout._id)) {
     if (workoutExercise.skipped) continue;
-    const working = (await setsOfExercise(ctx, workoutExercise._id)).filter(
-      (set) => set.type !== 'warmup'
-    );
-    const logged = working.filter((set) => set.completedAt !== undefined);
-    if (logged.length < working.length) {
-      const exercise = await ctx.db.get(workoutExercise.exerciseId);
+    const exercise = await ctx.db.get(workoutExercise.exerciseId);
+    const name = exercise?.name ?? 'Exercise';
+    const sets = await setsOfExercise(ctx, workoutExercise._id);
+    const counted = sets.filter((set) => set.type !== 'warmup');
+    const logged = counted.filter((set) => set.completedAt !== undefined);
+    const open = counted.find((set) => set.completedAt === undefined);
+    const isCurrent = current === null && open !== undefined;
+    if (isCurrent) {
       current = {
-        name: exercise?.name ?? 'Exercise',
+        name,
         setNumber: logged.length + 1,
-        setCount: working.length,
+        setCount: counted.length,
+        set: open,
+        lastLogged: logged[logged.length - 1] ?? null,
       };
-      break;
+    }
+    const targeted = sets.flatMap((set) =>
+      isWorkingSet(set) && set.target ? [{ set, target: set.target }] : []
+    );
+    exercises.push({
+      name,
+      pips: counted.map((set) =>
+        set.completedAt !== undefined
+          ? 'done'
+          : isCurrent && set._id === open?._id
+            ? 'current'
+            : 'upcoming'
+      ),
+      targetMet:
+        targeted.length === 0 ||
+        targeted.some(({ set }) => set.completedAt === undefined)
+          ? null
+          : targeted.every(({ set, target }) => meetsTarget(set, target)),
+    });
+    for (const set of logged) {
+      if (isWorkingSet(set)) volumeKg += (set.weightKg ?? 0) * (set.reps ?? 0);
     }
   }
 
+  // The Set they're on: what they've entered for it, else their last logged
+  // Set of that Exercise. Never its target.
+  const shownSet =
+    current &&
+    (current.set.weightKg !== undefined || current.set.reps !== undefined)
+      ? current.set
+      : (current?.lastLogged ?? null);
   const restEnd = workout.rest ? restEndsAt(workout.rest) : null;
   return {
     status:
@@ -79,6 +128,13 @@ export async function progressSummary(
     setsDone: done,
     setsPlanned: total,
     restEndsAt: restEnd,
+    exercises,
+    currentSet:
+      showWeights && shownSet
+        ? { weightKg: shownSet.weightKg ?? null, reps: shownSet.reps ?? null }
+        : null,
+    volumeKg: showWeights ? volumeKg : null,
+    weightsShown: showWeights,
   };
 }
 
@@ -111,18 +167,58 @@ export async function groupMembers(ctx: QueryCtx, group: Doc<'groups'>) {
     .collect();
 }
 
+/** Joins this close after the first one go out as one push. */
+export const JOIN_MERGE_MS = 60_000;
+
+/**
+ * Records a Group event and schedules its push: a join opens a merge window
+ * unless one is open, and a leave or drop tells the members still there.
+ */
 export async function recordGroupEvent(
   ctx: MutationCtx,
   groupId: Id<'groups'>,
   kind: Doc<'groupEvents'>['kind'],
   userId?: string
 ) {
-  await ctx.db.insert('groupEvents', {
+  const at = Date.now();
+  const eventId = await ctx.db.insert('groupEvents', {
     groupId,
     kind,
     userId,
-    at: Date.now(),
+    at,
   });
+  if (kind === 'joined') {
+    const recent = await ctx.db
+      .query('groupEvents')
+      .withIndex('by_group_at', (q) =>
+        q.eq('groupId', groupId).gt('at', at - JOIN_MERGE_MS)
+      )
+      .collect();
+    const windowOpen = recent.some(
+      (event) => event.batchUntil !== undefined && event.batchUntil > at
+    );
+    if (!windowOpen) {
+      const until = at + JOIN_MERGE_MS;
+      await ctx.db.patch(eventId, { batchUntil: until });
+      await ctx.scheduler.runAfter(JOIN_MERGE_MS, internal.push.sendJoins, {
+        groupId,
+        from: at,
+        until,
+      });
+    }
+  } else if ((kind === 'left' || kind === 'dropped') && userId) {
+    const group = await ctx.db.get(groupId);
+    const recipientIds = group
+      ? (await groupMembers(ctx, group)).map((member) => member.userId)
+      : [];
+    if (recipientIds.length) {
+      await ctx.scheduler.runAfter(0, internal.push.sendGroupEvent, {
+        kind: 'left',
+        actorId: userId,
+        recipientIds,
+      });
+    }
+  }
 }
 
 /** Adds the member to the Group, with their current progress summary. */
@@ -137,7 +233,7 @@ export async function addMember(
     userId,
     joinedAt: now,
     lastSeenAt: now,
-    progress: await progressSummary(ctx, userId),
+    progress: await progressSummary(ctx, userId, false),
   });
   await ctx.db.patch(group._id, { lastActivityAt: now });
   await recordGroupEvent(ctx, group._id, 'joined', userId);
@@ -168,15 +264,27 @@ export async function syncGroupProgress(ctx: MutationCtx, userId: string) {
   if (!membership) return;
   const now = Date.now();
   await ctx.db.patch(membership._id, {
-    progress: await progressSummary(ctx, userId),
+    progress: await progressSummary(
+      ctx,
+      userId,
+      membership.showWeights ?? false
+    ),
   });
   await ctx.db.patch(membership.groupId, { lastActivityAt: now });
 }
 
-/** Ends a Group: everyone leaves and its codes stop working. */
-export async function endGroup(ctx: MutationCtx, group: Doc<'groups'>) {
+/**
+ * Ends a Group: everyone leaves and its codes stop working. Everyone who was
+ * in it hears it ended, except the host who ended it.
+ */
+export async function endGroup(
+  ctx: MutationCtx,
+  group: Doc<'groups'>,
+  endedBy?: string
+) {
   const now = Date.now();
-  for (const member of await groupMembers(ctx, group)) {
+  const members = await groupMembers(ctx, group);
+  for (const member of members) {
     await ctx.db.patch(member._id, { leftAt: now });
   }
   const codes = await ctx.db
@@ -189,7 +297,17 @@ export async function endGroup(ctx: MutationCtx, group: Doc<'groups'>) {
     }
   }
   await ctx.db.patch(group._id, { status: 'ended', endedAt: now });
-  await recordGroupEvent(ctx, group._id, 'ended');
+  await recordGroupEvent(ctx, group._id, 'ended', endedBy);
+  const recipientIds = members
+    .map((member) => member.userId)
+    .filter((userId) => userId !== endedBy);
+  if (recipientIds.length) {
+    await ctx.scheduler.runAfter(0, internal.push.sendGroupEvent, {
+      kind: 'ended',
+      actorId: endedBy,
+      recipientIds,
+    });
+  }
 }
 
 /**
