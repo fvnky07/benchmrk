@@ -19,6 +19,7 @@ import type * as lib_exerciseCatalog from "../lib/exerciseCatalog.js";
 import type * as lib_exercises from "../lib/exercises.js";
 import type * as lib_identity from "../lib/identity.js";
 import type * as lib_magicLinkProof from "../lib/magicLinkProof.js";
+import type * as lib_verifiedEmail from "../lib/verifiedEmail.js";
 import type * as memberSettings from "../memberSettings.js";
 import type * as profile from "../profile.js";
 import type * as routines from "../routines.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   "lib/exercises": typeof lib_exercises;
   "lib/identity": typeof lib_identity;
   "lib/magicLinkProof": typeof lib_magicLinkProof;
+  "lib/verifiedEmail": typeof lib_verifiedEmail;
   memberSettings: typeof memberSettings;
   profile: typeof profile;
   routines: typeof routines;

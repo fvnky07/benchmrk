@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
-import { completeMagicLinkSignIn, useAuth } from '@/lib/auth';
+import { storeLinkedSession, useAuth } from '@/lib/auth';
 
 /**
  * Where a native sign-in link lands (`native://magic-link`). A verified link
@@ -17,7 +17,7 @@ export default function MagicLinkScreen() {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (cookie && !error) completeMagicLinkSignIn(cookie);
+    if (cookie && !error) storeLinkedSession(cookie);
   }, [cookie, error]);
 
   useEffect(() => {
