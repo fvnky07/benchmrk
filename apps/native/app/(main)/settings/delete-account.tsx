@@ -7,13 +7,10 @@ import { Platform } from 'react-native';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import {
-  analytics,
-  authClient,
-  reauthenticateWithApple,
-  runSocialAuth,
-} from '@/lib';
-import { useAuth } from '@/lib/auth';
+import { analytics } from '@/lib/analytics';
+import { authClient } from '@/lib/auth/client';
+import { useAuth } from '@/lib/auth/hooks';
+import { reauthenticateWithApple, runSocialAuth } from '@/lib/auth/social';
 import { useHaptics } from '@/lib/haptics';
 
 /** Must match APPLE_AUTHORIZATION_CODE_HEADER in the backend auth config. */
@@ -156,7 +153,7 @@ export default function DeleteAccountScreen() {
         </ListItem>
       ) : null}
       {appleUnavailable ? (
-        <ListItem supportingText="Your account uses Sign in with Apple, so deleting it needs an iPhone. You can also request deletion at benchmrk.app/delete-account.">
+        <ListItem supportingText="Your Benchmrk identity uses Sign in with Apple, so deleting it needs an iPhone. You can also request deletion at benchmrk.app/delete-account.">
           Delete from an iPhone
         </ListItem>
       ) : null}
@@ -170,12 +167,12 @@ export default function DeleteAccountScreen() {
           appleUnavailable ||
           (methods.password && password === '')
         }
-        label={busy ? 'Deleting…' : 'Delete account permanently'}
+        label={busy ? 'Deleting…' : 'Delete Benchmrk identity permanently'}
         onPress={deleteAccount}
       />
       <Button
         disabled={busy}
-        label="Keep my account"
+        label="Keep my Benchmrk identity"
         variant="text"
         onPress={() => router.back()}
       />

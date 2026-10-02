@@ -199,7 +199,17 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     hooks: {
       // A password change always signs out every other session; this device
       // gets a fresh one. Enforced here rather than trusted from the client.
+      // The password is never removed: only providers unlink (ADR 0001).
       before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === '/unlink-account') {
+          if (ctx.body?.providerId === 'credential') {
+            throw new APIError('BAD_REQUEST', {
+              code: 'PASSWORD_CANNOT_BE_REMOVED',
+              message: 'The password can’t be removed.',
+            });
+          }
+          return;
+        }
         if (ctx.path !== '/change-password') return;
         return {
           context: { body: { ...ctx.body, revokeOtherSessions: true } },
@@ -207,16 +217,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       }),
     },
     plugins: [
-      magicLink({
-        expiresIn: 60 * 60 * 24,
-        sendMagicLink: async ({ email, url, metadata }) => {
-          const flow = await authorizedMagicLinkFlow(email, metadata);
-          if (flow === 'waitlist-confirmation') {
-            await sendAuthEmail({
-              to: email,
-              subject: 'Confirm your spot - benchmrk',
-              html: actionEmail({
-                title: 'Confirm your benchmrk waitlist spot',
       {
         id: 'await-auth-delivery',
         // Better Auth otherwise catches even awaited registration/reset email
@@ -229,6 +229,16 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           },
         }),
       },
+      magicLink({
+        expiresIn: 60 * 60 * 24,
+        sendMagicLink: async ({ email, url, metadata }) => {
+          const flow = await authorizedMagicLinkFlow(email, metadata);
+          if (flow === 'waitlist-confirmation') {
+            await sendAuthEmail({
+              to: email,
+              subject: 'Confirm your spot - benchmrk',
+              html: actionEmail({
+                title: 'Confirm your benchmrk waitlist spot',
                 heading: 'You’re almost in',
                 body: 'Confirm your email to join the benchmrk waitlist. Benchmrk is free and open source.',
                 actionLabel: 'Confirm my spot',

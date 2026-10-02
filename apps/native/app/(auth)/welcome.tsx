@@ -11,7 +11,7 @@ export default function WelcomeScreen() {
       supportingText="Track training, build consistency, and review your progress."
     >
       <SocialProviderGroup dividerPosition="after" />
-      <Button label="Create account" onPress={() => router.push('/register')} />
+      <Button label="Sign up" onPress={() => router.push('/register')} />
       <Button
         label="Log in"
         variant="outlined"
