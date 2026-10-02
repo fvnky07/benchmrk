@@ -16,6 +16,7 @@ export default function WorkoutFinishedScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const workoutId = params.id as Id<'workouts'>;
   const workout = useQuery(api.workouts.get, { workoutId });
+  const groupRecapId = useQuery(api.recaps.forWorkout, { workoutId });
   const setEndTime = useMutation(api.workouts.setEndTime);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -135,6 +136,17 @@ export default function WorkoutFinishedScreen() {
       </RNHostView>
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>Could not change</ListItem>
+      ) : null}
+      {groupRecapId ? (
+        <Button
+          label="Group recap"
+          onPress={() =>
+            router.push({
+              pathname: '/workout/recap/[groupId]',
+              params: { groupId: groupRecapId },
+            })
+          }
+        />
       ) : null}
       <SaveToRoutine workoutId={workoutId} />
       <Button label="Done" onPress={() => router.dismissTo('/workout')} />

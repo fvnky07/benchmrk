@@ -47,6 +47,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="integrations" options={{ title: 'Integrations' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="privacy" options={{ title: 'Privacy' }} />
+      <Stack.Screen name="blocked" options={{ title: 'Blocked members' }} />
       <Stack.Screen
         name="export-import"
         options={{ title: 'Export & Import' }}
