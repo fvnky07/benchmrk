@@ -718,6 +718,8 @@ export const end = mutation({
     if (args.reason === 'finish' && progress.done < progress.total) {
       throw new ConvexError('NOT_ALL_SETS_DONE');
     }
+    // Snapshot the recap summary while the Workout is still active; after its
+    // status changes, progressSummary would return "Not started".
     await leaveGroup(ctx, userId);
     const blocks = await ctx.db
       .query('workoutBlocks')

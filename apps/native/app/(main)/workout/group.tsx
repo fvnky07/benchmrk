@@ -9,18 +9,22 @@ import {
   Switch,
   Text,
 } from '@expo/ui';
+import { semantics } from '@expo/ui/jetpack-compose/modifiers';
+import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ScrollView as NativeScrollView,
+  Platform,
   Share,
   useWindowDimensions,
   View,
 } from 'react-native';
 
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
+import { GroupActivity } from '@/components/groups/group-activity';
 import { GroupGrid } from '@/components/groups/group-grid';
 import { GroupHeader } from '@/components/groups/group-header';
 import { GroupQr } from '@/components/groups/group-qr';
@@ -29,6 +33,7 @@ import { InviteInbox } from '@/components/groups/invite-inbox';
 import { ScanToJoin } from '@/components/groups/scan-to-join';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { useReactionAlerts } from '@/lib/groups/use-reaction-alerts';
 import { usePushPermissionReoffer } from '@/lib/push/use-push-permission-reoffer';
 import { THEME, useAppearance } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
@@ -55,6 +60,9 @@ export default function GroupScreen() {
   const revokeCode = useMutation(api.groups.revokeCode);
   const leave = useMutation(api.groups.leave);
   const end = useMutation(api.groups.end);
+  const reactions = useQuery(api.reactions.mine);
+  const setMuted = useMutation(api.reactions.setMuted);
+  useReactionAlerts();
   const setShowWeights = useMutation(api.groups.setShowWeights);
   const { resolvedAppearance } = useAppearance();
   const colors = THEME[resolvedAppearance];
@@ -194,6 +202,27 @@ export default function GroupScreen() {
           />
         ) : null}
         <Button
+          disabled={busy || reactions === undefined}
+          label={reactions?.muted ? 'Unmute reactions' : 'Mute reactions'}
+          modifiers={[
+            Platform.OS === 'ios'
+              ? accessibilityLabel(
+                  reactions?.muted ? 'Unmute reactions' : 'Mute reactions'
+                )
+              : semantics({
+                  contentDescription: reactions?.muted
+                    ? 'Unmute reactions'
+                    : 'Mute reactions',
+                }),
+          ]}
+          variant="text"
+          onPress={() =>
+            void attempt(() =>
+              setMuted({ muted: !(reactions?.muted ?? false) })
+            )
+          }
+        />
+        <Button
           disabled={busy}
           label={group.isHost ? 'End Group' : 'Leave Group'}
           variant="text"
@@ -250,7 +279,12 @@ export default function GroupScreen() {
                 void attempt(() => setShowWeights({ shown }))
               }
             />
-            <GroupGrid members={group.members} now={now} />
+            <GroupGrid
+              members={group.members}
+              now={now}
+              isHost={group.isHost}
+            />
+            <GroupActivity />
             {status}
             <BottomSheet
               isPresented={isInviting}
