@@ -15,12 +15,19 @@ import {
   skipForNow as skipInRound,
   uncheckRound,
 } from './domain/rounds';
+import {
+  LOGGED_TOGETHER_MS,
+  type TimedSet,
+  targetDuration,
+  timeBreakdown,
+} from './domain/time';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { leaveGroup } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { applyOverloadTargets } from './lib/overload';
 import { roundExercisesOf, saveRound, settleBlock } from './lib/rounds';
+import { recentDurations } from './lib/time';
 import {
   findActiveWorkout,
   progressOf,
@@ -69,12 +76,16 @@ async function planExercise(
 }
 
 async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
+  const routine = workout.routineId
+    ? await ctx.db.get(workout.routineId)
+    : null;
   const notes = await ctx.db
     .query('notes')
     .withIndex('by_user_workout', (q) =>
       q.eq('userId', workout.userId).eq('workoutId', workout._id)
     )
     .collect();
+  const timedSets: TimedSet[] = [];
   const exercises = await Promise.all(
     (await workoutExercisesOf(ctx, workout._id)).map(
       async (workoutExercise) => {
@@ -98,6 +109,22 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
               )
               .unique()
           : null;
+        timedSets.push(
+          ...sets.flatMap((set) =>
+            set.completedAt === undefined
+              ? []
+              : [
+                  {
+                    workoutExerciseId: workoutExercise._id,
+                    blockId: workoutExercise.blockId ?? null,
+                    firstTouchedAt: set.firstTouchedAt ?? null,
+                    completedAt: set.completedAt,
+                    restAfter: set.restAfter ?? null,
+                    loggedTogether: set.loggedTogether ?? false,
+                  },
+                ]
+          )
+        );
         return {
           _id: workoutExercise._id,
           exerciseId: exercise._id,
@@ -130,6 +157,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             fromTarget: set.fromTarget ?? null,
             previous: set.previous ?? null,
             note: notes.find((note) => note.setId === set._id)?.text ?? null,
+            firstTouchedAt: set.firstTouchedAt ?? null,
           })),
         };
       }
@@ -147,12 +175,22 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
     progress: await progressOf(ctx, workout._id),
     rest: workout.rest
       ? {
-          ...workout.rest,
+          startedAt: workout.rest.startedAt,
+          plannedSeconds: workout.rest.plannedSeconds,
+          adjustedSeconds: workout.rest.adjustedSeconds,
           endsAt: restEndsAt(workout.rest),
         }
       : null,
     exercises,
     note: notes.find((note) => note.kind === 'workout')?.text ?? null,
+    /** Working, rest and transition estimates from the recorded moments. */
+    time: timeBreakdown(timedSets),
+    targetDurationSeconds: routine
+      ? targetDuration(
+          await recentDurations(ctx, routine._id, workout.startedAt),
+          routine.targetDurationSeconds ?? null
+        )
+      : null,
     blocks: (
       await ctx.db
         .query('workoutBlocks')
@@ -432,6 +470,13 @@ function provenanceAfter(
   };
 }
 
+/** The first edit of an unlogged Set starts its working time. */
+function firstTouch(set: Doc<'sets'>): Partial<Doc<'sets'>> {
+  return set.firstTouchedAt === undefined && set.completedAt === undefined
+    ? { firstTouchedAt: Date.now() }
+    : {};
+}
+
 export const updateSet = workoutMutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
   handler: async (ctx, { setId, ...changes }) => {
@@ -441,8 +486,21 @@ export const updateSet = workoutMutation({
     const patch = setPatch(changes);
     await ctx.db.patch(setId, {
       ...patch,
+      ...firstTouch(set),
       fromTarget: provenanceAfter(set, patch),
     });
+  },
+});
+
+/** The member started editing a Set (its first keypad press). */
+export const touchSet = mutation({
+  args: { setId: v.id('sets') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
+    requireActive(workout);
+    const touched = firstTouch(set);
+    if (touched.firstTouchedAt) await ctx.db.patch(set._id, touched);
   },
 });
 
@@ -534,7 +592,7 @@ export const fillFromTarget = workoutMutation({
     const userId = await requireIdentityId(ctx);
     const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
     requireActive(workout);
-    await ctx.db.patch(set._id, targetFill(set));
+    await ctx.db.patch(set._id, { ...targetFill(set), ...firstTouch(set) });
   },
 });
 
@@ -591,13 +649,50 @@ async function afterLogging(
       : result.rest === 'exercise'
         ? (workoutExercise?.plannedRestSeconds ?? settings.defaultRestSeconds)
         : 0;
+  const resting = plannedSeconds > 0;
   await ctx.db.patch(workout._id, {
-    rest:
-      plannedSeconds > 0
-        ? { startedAt: now, plannedSeconds, adjustedSeconds: 0 }
-        : undefined,
+    rest: resting
+      ? {
+          startedAt: now,
+          plannedSeconds,
+          adjustedSeconds: 0,
+          afterSetId: set._id,
+        }
+      : undefined,
   });
+  if (resting) {
+    await ctx.db.patch(set._id, {
+      restAfter: { plannedSeconds, endsAt: now + plannedSeconds * 1000 },
+    });
+  }
+
+  // Sets completed within 10 s of each other were logged together.
+  const previous = (await setsOfWorkout(ctx, workout._id))
+    .filter((item) => item._id !== set._id && item.completedAt !== undefined)
+    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))[0];
+  if (
+    previous?.completedAt !== undefined &&
+    now - previous.completedAt <= LOGGED_TOGETHER_MS
+  ) {
+    await ctx.db.patch(previous._id, { loggedTogether: true });
+    await ctx.db.patch(set._id, { loggedTogether: true });
+  }
   return result;
+}
+
+/** Keeps the Set's rest record in step with the running rest. */
+async function recordRest(
+  ctx: MutationCtx,
+  rest: NonNullable<Doc<'workouts'>['rest']>,
+  endsAt: number
+) {
+  if (!rest.afterSetId) return;
+  await ctx.db.patch(rest.afterSetId, {
+    restAfter: {
+      plannedSeconds: rest.plannedSeconds + rest.adjustedSeconds,
+      endsAt,
+    },
+  });
 }
 
 /**
@@ -690,12 +785,12 @@ export const adjustRest = workoutMutation({
       throw new ConvexError('INVALID_REST_ADJUSTMENT');
     }
     const endsAt = Math.max(restEndsAt(rest) + args.seconds * 1000, Date.now());
-    await ctx.db.patch(workout._id, {
-      rest: {
-        ...rest,
-        adjustedSeconds: (endsAt - rest.startedAt) / 1000 - rest.plannedSeconds,
-      },
-    });
+    const adjusted = {
+      ...rest,
+      adjustedSeconds: (endsAt - rest.startedAt) / 1000 - rest.plannedSeconds,
+    };
+    await ctx.db.patch(workout._id, { rest: adjusted });
+    await recordRest(ctx, adjusted, endsAt);
   },
 });
 
@@ -703,8 +798,9 @@ export const skipRest = workoutMutation({
   args: { workoutId: v.id('workouts') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
-    const { workout } = await requireResting(ctx, userId, args.workoutId);
+    const { workout, rest } = await requireResting(ctx, userId, args.workoutId);
     await ctx.db.patch(workout._id, { rest: undefined });
+    await recordRest(ctx, rest, Math.min(restEndsAt(rest), Date.now()));
   },
 });
 
@@ -714,9 +810,9 @@ export const resetRest = workoutMutation({
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
     const { workout, rest } = await requireResting(ctx, userId, args.workoutId);
-    await ctx.db.patch(workout._id, {
-      rest: { ...rest, startedAt: Date.now(), adjustedSeconds: 0 },
-    });
+    const restarted = { ...rest, startedAt: Date.now(), adjustedSeconds: 0 };
+    await ctx.db.patch(workout._id, { rest: restarted });
+    await recordRest(ctx, restarted, restEndsAt(restarted));
   },
 });
 

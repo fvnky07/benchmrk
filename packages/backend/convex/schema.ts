@@ -252,11 +252,14 @@ export default defineSchema({
         startedAt: v.number(),
         plannedSeconds: v.number(),
         adjustedSeconds: v.number(),
+        /** The Set whose completion started it. */
+        afterSetId: v.optional(v.id('sets')),
       })
     ),
   })
     .index('by_user_status', ['userId', 'status'])
-    .index('by_user_started', ['userId', 'startedAt']),
+    .index('by_user_started', ['userId', 'startedAt'])
+    .index('by_routine_status', ['routineId', 'status', 'startedAt']),
 
   // A Workout's Exercises; planning fields are copied from the Routine at start.
   workoutExercises: defineTable({
@@ -316,6 +319,14 @@ export default defineSchema({
         durationSeconds: v.optional(v.number()),
         distanceMeters: v.optional(v.number()),
       })
+    ),
+    /** First edit: where working time starts. */
+    firstTouchedAt: v.optional(v.number()),
+    /** Completed within 10 s of another Set: out of per-Set stats. */
+    loggedTogether: v.optional(v.boolean()),
+    /** The rest that started after this Set, kept current until it ended. */
+    restAfter: v.optional(
+      v.object({ plannedSeconds: v.number(), endsAt: v.number() })
     ),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])
