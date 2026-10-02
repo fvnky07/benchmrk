@@ -4,7 +4,7 @@ import { createClient } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
-import { magicLink } from 'better-auth/plugins';
+import { magicLink, twoFactor } from 'better-auth/plugins';
 import { components } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
@@ -174,6 +174,13 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             });
           }
         },
+      }),
+      // TOTP authenticator apps and backup codes; no email OTP factor.
+      // Enrolling needs the password and a first valid code.
+      twoFactor({
+        issuer: 'benchmrk',
+        skipVerificationOnEnable: false,
+        backupCodeOptions: { amount: 10 },
       }),
       expo(),
       convex({ authConfig }),
