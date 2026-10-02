@@ -99,10 +99,13 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
         : {}),
     },
     account: {
+      // ADR 0001: providers attach only through explicit linking, and the last
+      // remaining sign-in method can never be unlinked.
       accountLinking: {
         disableImplicitLinking: true,
         allowDifferentEmails: true,
         updateUserInfoOnLink: false,
+        allowUnlinkingAll: false,
       },
     },
     plugins: [
