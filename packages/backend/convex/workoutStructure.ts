@@ -13,15 +13,16 @@ import {
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { getIdentityId, requireIdentityId } from './lib/identity';
-import { readMemberSettings } from './memberSettings';
-import { routineExercisesOf } from './routines';
 import {
   requireActive,
   requireOwnedWorkout,
   requireOwnedWorkoutExercise,
   setsOfExercise,
   workoutExercisesOf,
-} from './workouts';
+} from './lib/workoutData';
+import { workoutMutation } from './lib/workoutMutation';
+import { readMemberSettings } from './memberSettings';
+import { routineExercisesOf } from './routines';
 
 async function requireNothingLogged(
   ctx: QueryCtx,
@@ -46,7 +47,7 @@ async function writeOrder(
 }
 
 /** Removes an Exercise with nothing logged from this Workout. */
-export const removeExercise = mutation({
+export const removeExercise = workoutMutation({
   args: { workoutExerciseId: v.id('workoutExercises') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -70,7 +71,7 @@ export const removeExercise = mutation({
 });
 
 /** Moves an Exercise to `toIndex` in this Workout's order. */
-export const moveExercise = mutation({
+export const moveExercise = workoutMutation({
   args: { workoutExerciseId: v.id('workoutExercises'), toIndex: v.number() },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -96,7 +97,7 @@ export const moveExercise = mutation({
 });
 
 /** Skips (or unskips) an Exercise for this Workout; logged Sets stay. */
-export const setSkipped = mutation({
+export const setSkipped = workoutMutation({
   args: { workoutExerciseId: v.id('workoutExercises'), skipped: v.boolean() },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -113,7 +114,7 @@ export const setSkipped = mutation({
 });
 
 /** Swaps an Exercise with nothing logged for another, keeping its Sets. */
-export const swapExercise = mutation({
+export const swapExercise = workoutMutation({
   args: {
     workoutExerciseId: v.id('workoutExercises'),
     exerciseId: v.id('exercises'),
