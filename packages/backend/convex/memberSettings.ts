@@ -7,6 +7,7 @@ import {
   type QueryCtx,
   query,
 } from './_generated/server';
+import { DEFAULT_PLATES } from './domain/plates';
 import { toKg, type WeightUnit } from './domain/units';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import {
@@ -52,6 +53,8 @@ const DEFAULT_SETTINGS: MemberSettings = {
   targetsOffExerciseIds: [],
   smallestIncrementKg: DEFAULT_SMALLEST_INCREMENT_KG.kg,
   autoAdvance: true,
+  plates: DEFAULT_PLATES.kg,
+  aheadBehind: true,
 };
 
 async function findSettings(
@@ -96,6 +99,7 @@ export async function readMemberSettings(
     smallestIncrementKg:
       changes.smallestIncrementKg ??
       DEFAULT_SMALLEST_INCREMENT_KG[settings.units],
+    plates: changes.plates ?? DEFAULT_PLATES[settings.units],
   };
 }
 
@@ -161,6 +165,21 @@ export const update = mutation({
       !(changes.smallestIncrementKg > 0 && changes.smallestIncrementKg <= 10)
     ) {
       throw new ConvexError('INVALID_SMALLEST_INCREMENT');
+    }
+    const { plates } = changes;
+    if (
+      plates !== undefined &&
+      (!(plates.barWeight >= 0) ||
+        plates.plates.length > 20 ||
+        plates.plates.some(
+          (plate) =>
+            !(plate.weight > 0) ||
+            !Number.isInteger(plate.pairs) ||
+            plate.pairs < 0 ||
+            plate.pairs > 20
+        ))
+    ) {
+      throw new ConvexError('INVALID_PLATES');
     }
 
     await saveMemberSettings(ctx, userId, changes);

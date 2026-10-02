@@ -38,6 +38,14 @@ export const memberSettingsFields = {
   smallestIncrementKg: v.number(),
   /** After a Set in Alternating sets, move to the next Exercise of the round. */
   autoAdvance: v.boolean(),
+  /** The bar and plate inventory the plate calculator loads from. */
+  plates: v.object({
+    unit: v.union(v.literal('kg'), v.literal('lb')),
+    barWeight: v.number(),
+    plates: v.array(v.object({ weight: v.number(), pairs: v.number() })),
+  }),
+  /** Quiet ahead/behind text beside the progress row. */
+  aheadBehind: v.boolean(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -55,6 +63,8 @@ export const memberSettingsChangeFields = {
   targetsOffExerciseIds: v.optional(memberSettingsFields.targetsOffExerciseIds),
   smallestIncrementKg: v.optional(memberSettingsFields.smallestIncrementKg),
   autoAdvance: v.optional(memberSettingsFields.autoAdvance),
+  plates: v.optional(memberSettingsFields.plates),
+  aheadBehind: v.optional(memberSettingsFields.aheadBehind),
 };
 
 export const exerciseTypeValidator = v.union(
