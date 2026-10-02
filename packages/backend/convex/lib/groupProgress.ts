@@ -8,6 +8,7 @@ import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { meetsTarget } from '../domain/overload';
 import type { groupProgressValidator } from '../schema';
+import { blockedEitherWayIds } from './blocks';
 import { isWorkingSet } from './overload';
 import {
   findActiveWorkout,
@@ -178,7 +179,8 @@ export async function recordGroupEvent(
   ctx: MutationCtx,
   groupId: Id<'groups'>,
   kind: Doc<'groupEvents'>['kind'],
-  userId?: string
+  userId?: string,
+  detail?: { exerciseName: string; setNumber?: number }
 ) {
   const at = Date.now();
   const eventId = await ctx.db.insert('groupEvents', {
@@ -186,6 +188,7 @@ export async function recordGroupEvent(
     kind,
     userId,
     at,
+    ...detail,
   });
   if (
     kind === 'joined' ||
@@ -282,7 +285,23 @@ export async function joinGroup(
   const current = await activeMembership(ctx, userId);
   if (current?.groupId === group._id) return;
   if (current) throw new ConvexError('IN_ANOTHER_GROUP');
-  if ((await groupMembers(ctx, group)).length >= MAX_MEMBERS) {
+  const memberships = await ctx.db
+    .query('groupMemberships')
+    .withIndex('by_user_left', (q) => q.eq('userId', userId))
+    .collect();
+  if (
+    memberships.some(
+      (membership) => membership.groupId === group._id && membership.removed
+    )
+  ) {
+    throw new ConvexError('REMOVED_FROM_GROUP');
+  }
+  const members = await groupMembers(ctx, group);
+  const blockedIds = await blockedEitherWayIds(ctx, userId);
+  if (members.some((member) => blockedIds.has(member.userId))) {
+    throw new ConvexError('JOIN_REFUSED');
+  }
+  if (members.length >= MAX_MEMBERS) {
     throw new ConvexError('GROUP_FULL');
   }
   await addMember(ctx, group, userId);
@@ -293,13 +312,37 @@ export async function syncGroupProgress(ctx: MutationCtx, userId: string) {
   const membership = await activeMembership(ctx, userId);
   if (!membership) return;
   const now = Date.now();
-  await ctx.db.patch(membership._id, {
-    progress: await progressSummary(
-      ctx,
-      userId,
-      membership.showWeights ?? false
-    ),
-  });
+  const progress = await progressSummary(
+    ctx,
+    userId,
+    membership.showWeights ?? false
+  );
+  const previousExercises =
+    progress.startedAt === membership.progress.startedAt
+      ? (membership.progress.exercises ?? [])
+      : [];
+  for (const exercise of progress.exercises ?? []) {
+    const previous = previousExercises.find(
+      (entry) => entry.name === exercise.name
+    );
+    for (const [index, pip] of exercise.pips.entries()) {
+      if (pip === 'done' && previous?.pips[index] !== 'done') {
+        await recordGroupEvent(
+          ctx,
+          membership.groupId,
+          'setCompleted',
+          userId,
+          { exerciseName: exercise.name, setNumber: index + 1 }
+        );
+      }
+    }
+    if (exercise.targetMet === true && previous?.targetMet !== true) {
+      await recordGroupEvent(ctx, membership.groupId, 'targetMet', userId, {
+        exerciseName: exercise.name,
+      });
+    }
+  }
+  await ctx.db.patch(membership._id, { progress });
   await ctx.db.patch(membership.groupId, { lastActivityAt: now });
 }
 
@@ -317,6 +360,51 @@ export async function endGroup(
   await recordGroupEvent(ctx, group._id, 'ended', endedBy);
   for (const member of members) {
     await ctx.db.patch(member._id, { leftAt: now });
+  }
+  const memberships = await ctx.db
+    .query('groupMemberships')
+    .withIndex('by_group_left', (q) => q.eq('groupId', group._id))
+    .collect();
+  const latestMemberships = new Map<string, Doc<'groupMemberships'>>();
+  for (const membership of memberships) {
+    const previous = latestMemberships.get(membership.userId);
+    if (
+      !previous ||
+      membership.joinedAt > previous.joinedAt ||
+      (membership.joinedAt === previous.joinedAt &&
+        membership._creationTime > previous._creationTime)
+    ) {
+      latestMemberships.set(membership.userId, membership);
+    }
+  }
+  const recapId = await ctx.db.insert('groupRecaps', {
+    groupId: group._id,
+    endedAt: now,
+  });
+  for (const member of latestMemberships.values()) {
+    const profile = await ctx.runQuery(components.betterAuth.users.getUser, {
+      userId: member.userId,
+    });
+    const { progress } = member;
+    await ctx.db.insert('groupRecapRows', {
+      recapId,
+      groupId: group._id,
+      userId: member.userId,
+      username: profile?.username ?? 'member',
+      setsDone: progress.setsDone,
+      durationSeconds:
+        progress.startedAt === null
+          ? 0
+          : Math.max(
+              0,
+              Math.floor(((member.leftAt ?? now) - progress.startedAt) / 1000)
+            ),
+      targetsMet:
+        progress.exercises?.filter((exercise) => exercise.targetMet === true)
+          .length ?? 0,
+      volumeKg: progress.weightsShown ? (progress.volumeKg ?? null) : null,
+      hidden: false,
+    });
   }
   const codes = await ctx.db
     .query('groupCodes')
@@ -347,12 +435,17 @@ export async function endGroup(
 export async function leaveGroup(
   ctx: MutationCtx,
   userId: string,
-  reason: 'left' | 'dropped' = 'left'
+  reason: 'left' | 'dropped' | 'removed' = 'left'
 ) {
   const membership = await activeMembership(ctx, userId);
   if (!membership) return;
   const now = Date.now();
-  await ctx.db.patch(membership._id, { leftAt: now });
+  const progress = await progressSummary(
+    ctx,
+    userId,
+    membership.showWeights ?? false
+  );
+  await ctx.db.patch(membership._id, { progress, leftAt: now });
   const group = await ctx.db.get(membership.groupId);
   if (group?.status !== 'live') return;
   await ctx.db.patch(group._id, { lastActivityAt: now });
