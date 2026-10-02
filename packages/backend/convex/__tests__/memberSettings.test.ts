@@ -21,6 +21,7 @@ const DEFAULTS = {
   haptics: true,
   analyticsOptOut: false,
   quickActions: DEFAULT_QUICK_ACTIONS,
+  swipeHintDismissed: false,
 };
 
 describe('member settings', () => {

@@ -10,6 +10,7 @@ import { DockedScreen } from '@/components/native/docked-screen';
 import { NativeScreen } from '@/components/native/native-screen';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { ExerciseStrip } from '@/components/workout/exercise-strip';
+import { ExerciseTitlePager } from '@/components/workout/exercise-title-pager';
 import { QuickActionRow } from '@/components/workout/quick-action-row';
 import { SetKeypad } from '@/components/workout/set-keypad';
 import { SetTable } from '@/components/workout/set-table';
@@ -52,6 +53,8 @@ export default function ActiveWorkoutScreen() {
   const addExercise = useMutation(api.workouts.addExercise);
   const endWorkout = useMutation(api.workouts.end);
   const updateSettings = useMutation(api.memberSettings.update);
+  const duplicateSet = useMutation(api.workouts.duplicateSet);
+  const deleteSet = useMutation(api.workouts.deleteSet);
   const haptic = useHaptics();
   const now = useNow();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -196,6 +199,12 @@ export default function ActiveWorkoutScreen() {
   const setType = (setId: Id<'sets'>, type: SetType) =>
     attempt(() => updateSet({ setId, type }), 'Could not change the Set type.');
 
+  const selectExercise = (next: number) => {
+    if (focusSet) void saveDrafts(focusSet);
+    setChosenFocus(null);
+    setSelectedIndex(next);
+  };
+
   const end = (reason: 'finish' | 'terminate') =>
     attempt(async () => {
       if (reason === 'terminate') haptic('destructive-confirmation');
@@ -312,28 +321,28 @@ export default function ActiveWorkoutScreen() {
           sets: item.sets.map((set) => ({ done: set.completedAt !== null })),
         }))}
         selectedIndex={index}
-        onSelect={(next) => {
-          if (focusSet) void saveDrafts(focusSet);
-          setChosenFocus(null);
-          setSelectedIndex(next);
-        }}
+        onSelect={selectExercise}
         onAdd={() => setIsPickerOpen(true)}
       />
       {exercise ? (
         <>
-          <Row spacing={8} alignment="center">
-            <Column spacing={2}>
-              <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-                {exercise.name}
-              </Text>
-              <Text textStyle={{ fontSize: 15 }}>
-                {currentSetIndex === -1
-                  ? `All ${exercise.sets.length} Sets logged`
-                  : `Set ${currentSetIndex + 1} of ${exercise.sets.length}`}
-              </Text>
-            </Column>
-            <Spacer />
-          </Row>
+          <ExerciseTitlePager
+            pages={workout.exercises.map((item) => {
+              const next = item.sets.findIndex(
+                (set) => set.completedAt === null
+              );
+              return {
+                key: item._id,
+                name: item.name,
+                status:
+                  next === -1
+                    ? `All ${item.sets.length} Sets logged`
+                    : `Set ${next + 1} of ${item.sets.length}`,
+              };
+            })}
+            selectedIndex={index}
+            onSelect={selectExercise}
+          />
           <QuickActionRow
             actions={settings.quickActions}
             handlers={{
@@ -356,6 +365,7 @@ export default function ActiveWorkoutScreen() {
             headings={fields.map((field) => fieldHeading(field, units))}
             effortScale={effortScale}
             focus={isKeypadOpen ? focus : null}
+            showSwipeHint={!settings.swipeHintDismissed}
             displayValue={(row, field) => {
               const set = exercise.sets.find((item) => item._id === row._id);
               return set ? displayDraft(field, draftOf(set, field)) : '';
@@ -371,7 +381,22 @@ export default function ActiveWorkoutScreen() {
                   'Could not update this Set.'
                 );
             }}
+            onDuplicate={(setId) =>
+              attempt(
+                () => duplicateSet({ setId }),
+                'Could not duplicate this Set.'
+              )
+            }
+            onDelete={(setId) =>
+              attempt(() => deleteSet({ setId }), 'Could not delete this Set.')
+            }
             onOpenType={setTypeSheetSetId}
+            onDismissSwipeHint={() =>
+              attempt(
+                () => updateSettings({ swipeHintDismissed: true }),
+                'Could not dismiss the hint.'
+              )
+            }
           />
           <Button
             label="Warm-up Set"
