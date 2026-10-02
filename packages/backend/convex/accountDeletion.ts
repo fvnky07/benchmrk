@@ -5,10 +5,26 @@ import { v } from 'convex/values';
 import { components, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { internalMutation, type MutationCtx } from './_generated/server';
+import { leaveGroup } from './lib/groupProgress';
 
 const DELETION_BATCH_SIZE = 100;
 
+const groupDataPhase = v.union(
+  v.literal('groupMemberships'),
+  v.literal('groupInvitesByInviter'),
+  v.literal('groupInvitesByInvitee'),
+  v.literal('blocksByBlocker'),
+  v.literal('blocksByBlocked'),
+  v.literal('reports'),
+  v.literal('reactionsByFrom'),
+  v.literal('reactionsByTo'),
+  v.literal('groupRecapRows'),
+  v.literal('groupEvents'),
+  v.literal('deviceTokens')
+);
+
 const purgePhase = v.union(
+  v.literal('groupData'),
   v.literal('sets'),
   v.literal('workouts'),
   v.literal('workoutExercises'),
@@ -33,11 +49,42 @@ const purgeArgs = {
   phase: purgePhase,
   cursor: v.union(v.string(), v.null()),
   resumeCursor: v.optional(v.union(v.string(), v.null())),
+  groupDataPhase: v.optional(groupDataPhase),
   workoutId: v.optional(v.id('workouts')),
   routineId: v.optional(v.id('routines')),
 };
 
+type PurgeGroupDataPhase =
+  | 'groupMemberships'
+  | 'groupInvitesByInviter'
+  | 'groupInvitesByInvitee'
+  | 'blocksByBlocker'
+  | 'blocksByBlocked'
+  | 'reports'
+  | 'reactionsByFrom'
+  | 'reactionsByTo'
+  | 'groupRecapRows'
+  | 'groupEvents'
+  | 'deviceTokens';
+
+const NEXT_GROUP_DATA_PHASE: Record<
+  PurgeGroupDataPhase,
+  PurgeGroupDataPhase | null
+> = {
+  groupMemberships: 'groupInvitesByInviter',
+  groupInvitesByInviter: 'groupInvitesByInvitee',
+  groupInvitesByInvitee: 'blocksByBlocker',
+  blocksByBlocker: 'blocksByBlocked',
+  blocksByBlocked: 'reports',
+  reports: 'reactionsByFrom',
+  reactionsByFrom: 'reactionsByTo',
+  reactionsByTo: 'groupRecapRows',
+  groupRecapRows: 'groupEvents',
+  groupEvents: 'deviceTokens',
+  deviceTokens: null,
+};
 type PurgePhase =
+  | 'groupData'
   | 'sets'
   | 'workouts'
   | 'workoutExercises'
@@ -63,6 +110,7 @@ type PurgeArgs = {
   resumeCursor?: string | null;
   workoutId?: Id<'workouts'>;
   routineId?: Id<'routines'>;
+  groupDataPhase?: PurgeGroupDataPhase;
 };
 
 async function scheduleBatch(ctx: MutationCtx, args: PurgeArgs) {
@@ -73,17 +121,43 @@ async function scheduleBatch(ctx: MutationCtx, args: PurgeArgs) {
   );
 }
 
+async function scheduleGroupDataBatch(
+  ctx: MutationCtx,
+  args: PurgeArgs,
+  groupDataPhase: PurgeGroupDataPhase,
+  isDone: boolean,
+  continueCursor: string
+) {
+  if (!isDone) {
+    await scheduleBatch(ctx, {
+      ...args,
+      groupDataPhase,
+      cursor: continueCursor,
+    });
+    return;
+  }
+  const nextPhase = NEXT_GROUP_DATA_PHASE[groupDataPhase];
+  await scheduleBatch(
+    ctx,
+    nextPhase
+      ? { ...args, groupDataPhase: nextPhase, cursor: null }
+      : { userId: args.userId, email: args.email, phase: 'sets', cursor: null }
+  );
+}
+
 export const deleteIdentity = internalMutation({
   args: { userId: v.string(), email: v.string() },
   returns: v.null(),
   handler: async (ctx, { userId, email }) => {
+    await leaveGroup(ctx, userId);
     await ctx.runMutation(components.betterAuth.identity.deleteIdentity, {
       userId,
     });
     await scheduleBatch(ctx, {
       userId,
       email,
-      phase: 'sets',
+      phase: 'groupData',
+      groupDataPhase: 'groupMemberships',
       cursor: null,
     });
     return null;
@@ -95,6 +169,178 @@ export const purgeIdentityBatch = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     switch (args.phase) {
+      case 'groupData': {
+        const groupDataPhase = args.groupDataPhase;
+        if (!groupDataPhase) throw new Error('Missing Group data phase');
+        switch (groupDataPhase) {
+          case 'groupMemberships': {
+            const page = await ctx.db
+              .query('groupMemberships')
+              .withIndex('by_user_left', (q) => q.eq('userId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'groupInvitesByInviter': {
+            const page = await ctx.db
+              .query('groupInvites')
+              .withIndex('by_inviter', (q) => q.eq('inviterId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'groupInvitesByInvitee': {
+            const page = await ctx.db
+              .query('groupInvites')
+              .withIndex('by_invitee', (q) => q.eq('inviteeId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'blocksByBlocker': {
+            const page = await ctx.db
+              .query('blocks')
+              .withIndex('by_blocker', (q) => q.eq('blockerId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'blocksByBlocked': {
+            const page = await ctx.db
+              .query('blocks')
+              .withIndex('by_blocked', (q) => q.eq('blockedId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'reports': {
+            const page = await ctx.db
+              .query('reports')
+              .withIndex('by_reporter', (q) => q.eq('reporterId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'reactionsByFrom': {
+            const page = await ctx.db
+              .query('groupReactions')
+              .withIndex('by_from', (q) => q.eq('fromUserId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'reactionsByTo': {
+            const page = await ctx.db
+              .query('groupReactions')
+              .withIndex('by_to_at', (q) => q.eq('toUserId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'groupRecapRows': {
+            const page = await ctx.db
+              .query('groupRecapRows')
+              .withIndex('by_user', (q) => q.eq('userId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'groupEvents': {
+            const page = await ctx.db
+              .query('groupEvents')
+              .withIndex('by_user', (q) => q.eq('userId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+          case 'deviceTokens': {
+            const page = await ctx.db
+              .query('deviceTokens')
+              .withIndex('by_user', (q) => q.eq('userId', args.userId))
+              .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+            for (const row of page.page) await ctx.db.delete(row._id);
+            await scheduleGroupDataBatch(
+              ctx,
+              args,
+              groupDataPhase,
+              page.isDone,
+              page.continueCursor
+            );
+            break;
+          }
+        }
+        return null;
+      }
       case 'sets': {
         const page = await ctx.db
           .query('sets')

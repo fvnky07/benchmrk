@@ -481,7 +481,9 @@ export default defineSchema({
     at: v.number(),
     /** On a join that opened a push window: joins until then merge into one push. */
     batchUntil: v.optional(v.number()),
-  }).index('by_group_at', ['groupId', 'at']),
+  })
+    .index('by_group_at', ['groupId', 'at'])
+    .index('by_user', ['userId']),
 
   // Recipient-owned event inbox entries survive the end of Group membership.
   groupNotifications: defineTable({
