@@ -28,6 +28,11 @@ export function parseWholeNumber(text: string): number | null {
   return text.trim() !== '' && Number.isInteger(value) ? value : null;
 }
 
+/** An effort value as shown: whole numbers plain, halves with one decimal. */
+export function formatEffort(value: number): string {
+  return String(Number(value.toFixed(1)));
+}
+
 /** Elapsed time as m:ss, or h:mm:ss from an hour on. */
 export function formatClock(totalSeconds: number): string {
   const seconds = Math.max(0, Math.floor(totalSeconds));

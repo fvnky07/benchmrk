@@ -5,6 +5,8 @@ import { useAppearance } from '@/lib/ui';
 export type StripExercise = {
   key: string;
   name: string;
+  /** Skipped for this Workout; shown dimmed. */
+  skipped?: boolean;
   sets: { done: boolean; current?: boolean }[];
 };
 
@@ -43,6 +45,7 @@ export function ExerciseStrip({
               borderWidth: index === selectedIndex ? 2 : 1,
               borderColor:
                 index === selectedIndex ? colors.primary : colors.border,
+              opacity: exercise.skipped ? 0.5 : 1,
             }}
           >
             <Text
