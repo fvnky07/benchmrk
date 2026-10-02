@@ -27,6 +27,14 @@ export type OverloadReason =
 
 export type SetTarget = { weightKg: number | null; reps: number };
 
+export type PlannedSet = {
+  weightKg: number | null;
+  reps: number | null;
+  rpe: number | null;
+  logged: boolean;
+  target: SetTarget | null;
+};
+
 /**
  * A completed Workout in which the Exercise was trained (not skipped) with at
  * least one logged Working Set.
@@ -34,6 +42,8 @@ export type SetTarget = { weightKg: number | null; reps: number };
 export type Exposure = {
   /** Its logged Working Sets, in order. */
   sets: LoggedSet[];
+  /** Planned Working Sets, including misses; extra Sets never drive progression. */
+  plannedSets: PlannedSet[];
   repRange: RepRange;
   /** What its targets were based on; null when it had none. */
   reason: OverloadReason | null;
@@ -137,12 +147,12 @@ export function smallerJumpKg(
   return toKg(Number((fromKg(beforeKg, unit) + jump).toFixed(4)), unit);
 }
 
-const NO_SET: LoggedSet = {
+const NO_SET: PlannedSet = {
   weightKg: null,
   reps: null,
-  durationSeconds: null,
-  distanceMeters: null,
   rpe: null,
+  logged: false,
+  target: null,
 };
 
 const NO_FLAGS = {
@@ -185,18 +195,27 @@ export function overloadTargets(input: OverloadInput): OverloadPlan | null {
   if (!last) return firstPlan(input);
 
   const { min, max } = input.repRange;
-  const planned = last.sets.slice(0, input.plannedSets);
-  const lastOf = (sets: LoggedSet[], index: number) =>
-    sets[index] ?? sets.at(-1) ?? NO_SET;
+  const planned = last.plannedSets.slice(0, input.plannedSets);
+  const lastOf = (sets: PlannedSet[], index: number) => {
+    const set = sets[index] ?? sets.at(-1);
+    return set && (set.logged || set.target)
+      ? set
+      : (sets.findLast((item) => item.logged) ?? NO_SET);
+  };
   const clampReps = (reps: number) => Math.min(Math.max(reps, min), max);
   const everySetAtTop =
     planned.length === input.plannedSets &&
-    planned.every((set) => (set.reps ?? 0) >= max);
+    planned.every(
+      (set) =>
+        set.logged &&
+        (set.reps ?? 0) >= max &&
+        (set.target === null || meetsTarget(set, set.target))
+    );
   const effortAllows = planned.every(
     (set) => set.rpe === null || set.rpe <= MAX_PASSING_RPE
   );
   const flags = {
-    effortNotChecked: planned.some((set) => set.rpe === null),
+    effortNotChecked: planned.some((set) => set.logged && set.rpe === null),
     effortBlocked: everySetAtTop && !effortAllows,
     plateau:
       input.exposures.length >= PLATEAU_STALLS &&
@@ -217,6 +236,12 @@ export function overloadTargets(input: OverloadInput): OverloadPlan | null {
   const repProgression = () =>
     plan('rep-progression', (index) => {
       const set = lastOf(planned, index);
+      if (set.target && (!set.logged || !meetsTarget(set, set.target))) {
+        return {
+          weightKg: set.target.weightKg,
+          reps: clampReps(set.target.reps),
+        };
+      }
       return {
         weightKg: set.weightKg,
         reps: clampReps((set.reps ?? min - 1) + 1),
@@ -226,7 +251,7 @@ export function overloadTargets(input: OverloadInput): OverloadPlan | null {
   // A Rep range change keeps the weight and clamps the reps.
   if (flags.repRangeChanged) return repProgression();
 
-  const belowRange = planned.some((set) => (set.reps ?? 0) < min);
+  const belowRange = planned.some((set) => set.logged && (set.reps ?? 0) < min);
   // A second miss below the range after an increase: a smaller jump from the
   // weight before the increase.
   if (
@@ -235,7 +260,7 @@ export function overloadTargets(input: OverloadInput): OverloadPlan | null {
     beforeLast?.reason === 'weight-increase' &&
     beforeIncrease
   ) {
-    const before = beforeIncrease.sets.slice(0, input.plannedSets);
+    const before = beforeIncrease.plannedSets.slice(0, input.plannedSets);
     const jumped = Array.from({ length: input.plannedSets }, (_, index) => {
       const weightKg = lastOf(before, index).weightKg;
       return weightKg === null
@@ -260,7 +285,9 @@ export function overloadTargets(input: OverloadInput): OverloadPlan | null {
     (last.reason === 'weight-increase' || last.reason === 'hold-below-range')
   ) {
     return plan('hold-below-range', (index) => ({
-      weightKg: lastOf(planned, index).weightKg,
+      weightKg:
+        lastOf(planned, index).target?.weightKg ??
+        lastOf(planned, index).weightKg,
       reps: min,
     }));
   }
