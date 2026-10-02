@@ -10,116 +10,27 @@ import {
 import { isValidRpe, rpeFromEffort } from './domain/effort';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
+import { leaveGroup } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
+import {
+  findActiveWorkout,
+  progressOf,
+  requireActive,
+  requireOwnedSet,
+  requireOwnedWorkout,
+  requireOwnedWorkoutExercise,
+  restEndsAt,
+  setsOfExercise,
+  setsOfWorkout,
+  workoutExercisesOf,
+} from './lib/workoutData';
+import { workoutMutation } from './lib/workoutMutation';
 import { readMemberSettings } from './memberSettings';
 import { routineExercisesOf } from './routines';
 import { memberSettingsFields, setTypeValidator } from './schema';
 
 const DEFAULT_SETS_FOR_ADDED_EXERCISE = 3;
 const DEFAULT_REP_RANGE = { min: 6, max: 10 };
-
-export async function requireOwnedWorkout(
-  ctx: QueryCtx,
-  userId: string,
-  workoutId: Id<'workouts'>
-): Promise<Doc<'workouts'>> {
-  const workout = await ctx.db.get(workoutId);
-  if (!workout || workout.userId !== userId) {
-    throw new ConvexError('WORKOUT_NOT_FOUND');
-  }
-  return workout;
-}
-
-export function requireActive(workout: Doc<'workouts'>) {
-  if (workout.status !== 'active') {
-    throw new ConvexError('WORKOUT_NOT_ACTIVE');
-  }
-}
-
-async function requireOwnedSet(
-  ctx: QueryCtx,
-  userId: string,
-  setId: Id<'sets'>
-) {
-  const set = await ctx.db.get(setId);
-  if (!set || set.userId !== userId) throw new ConvexError('SET_NOT_FOUND');
-  const workout = await requireOwnedWorkout(ctx, userId, set.workoutId);
-  return { set, workout };
-}
-
-export async function requireOwnedWorkoutExercise(
-  ctx: QueryCtx,
-  userId: string,
-  workoutExerciseId: Id<'workoutExercises'>
-) {
-  const workoutExercise = await ctx.db.get(workoutExerciseId);
-  if (!workoutExercise) throw new ConvexError('WORKOUT_NOT_FOUND');
-  const workout = await requireOwnedWorkout(
-    ctx,
-    userId,
-    workoutExercise.workoutId
-  );
-  return { workout, workoutExercise };
-}
-
-async function findActiveWorkout(ctx: QueryCtx, userId: string) {
-  return ctx.db
-    .query('workouts')
-    .withIndex('by_user_status', (q) =>
-      q.eq('userId', userId).eq('status', 'active')
-    )
-    .first();
-}
-
-export async function workoutExercisesOf(
-  ctx: QueryCtx,
-  workoutId: Id<'workouts'>
-) {
-  return ctx.db
-    .query('workoutExercises')
-    .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
-    .collect();
-}
-
-export async function setsOfExercise(
-  ctx: QueryCtx,
-  workoutExerciseId: Id<'workoutExercises'>
-) {
-  return ctx.db
-    .query('sets')
-    .withIndex('by_workoutExercise', (q) =>
-      q.eq('workoutExerciseId', workoutExerciseId)
-    )
-    .collect();
-}
-
-export async function setsOfWorkout(ctx: QueryCtx, workoutId: Id<'workouts'>) {
-  return ctx.db
-    .query('sets')
-    .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
-    .collect();
-}
-
-/**
- * Planned Sets are every Set except warm-ups and the unlogged Sets of skipped
- * Exercises; progress counts the completed ones.
- */
-async function progressOf(ctx: QueryCtx, workoutId: Id<'workouts'>) {
-  const skipped = new Set(
-    (await workoutExercisesOf(ctx, workoutId))
-      .filter((workoutExercise) => workoutExercise.skipped)
-      .map((workoutExercise) => workoutExercise._id)
-  );
-  const planned = (await setsOfWorkout(ctx, workoutId)).filter(
-    (set) =>
-      set.type !== 'warmup' &&
-      (set.completedAt !== undefined || !skipped.has(set.workoutExerciseId))
-  );
-  return {
-    done: planned.filter((set) => set.completedAt !== undefined).length,
-    total: planned.length,
-  };
-}
 
 /** The planned Sets of an Exercise just added to a Workout. */
 async function insertPlannedSets(
@@ -194,10 +105,6 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
   };
 }
 
-function restEndsAt(rest: NonNullable<Doc<'workouts'>['rest']>): number {
-  return rest.startedAt + (rest.plannedSeconds + rest.adjustedSeconds) * 1000;
-}
-
 export const getActive = query({
   args: {},
   handler: async (ctx) => {
@@ -220,7 +127,7 @@ export const get = query({
 });
 
 /** Starts a Workout from a Routine, copying its plan, or from nothing. */
-export const start = mutation({
+export const start = workoutMutation({
   args: { routineId: v.optional(v.id('routines')) },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -266,7 +173,7 @@ export const start = mutation({
   },
 });
 
-export const addExercise = mutation({
+export const addExercise = workoutMutation({
   args: { workoutId: v.id('workouts'), exerciseId: v.id('exercises') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -309,7 +216,7 @@ async function insertSetAt(
 }
 
 /** Adds a Set: Working Sets go last, Warm-up Sets before the first Working Set. */
-export const addSet = mutation({
+export const addSet = workoutMutation({
   args: {
     workoutExerciseId: v.id('workoutExercises'),
     type: v.optional(setTypeValidator),
@@ -341,7 +248,7 @@ export const addSet = mutation({
 });
 
 /** Adds an unlogged copy of a Set (type and values, not effort) right after it. */
-export const duplicateSet = mutation({
+export const duplicateSet = workoutMutation({
   args: { setId: v.id('sets') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -364,7 +271,7 @@ export const duplicateSet = mutation({
 });
 
 /** Deletes a Set that hasn't been logged; logged Sets are history. */
-export const deleteSet = mutation({
+export const deleteSet = workoutMutation({
   args: { setId: v.id('sets') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -418,7 +325,7 @@ function setPatch({
   };
 }
 
-export const updateSet = mutation({
+export const updateSet = workoutMutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
   handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
@@ -428,7 +335,7 @@ export const updateSet = mutation({
   },
 });
 
-export const completeSet = mutation({
+export const completeSet = workoutMutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
   handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
@@ -463,7 +370,7 @@ async function startRestAfter(
   });
 }
 
-export const uncompleteSet = mutation({
+export const uncompleteSet = workoutMutation({
   args: { setId: v.id('sets') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -485,7 +392,7 @@ async function requireResting(
 }
 
 /** Adds or removes rest time; the end never moves before now. */
-export const adjustRest = mutation({
+export const adjustRest = workoutMutation({
   args: { workoutId: v.id('workouts'), seconds: v.number() },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -503,7 +410,7 @@ export const adjustRest = mutation({
   },
 });
 
-export const skipRest = mutation({
+export const skipRest = workoutMutation({
   args: { workoutId: v.id('workouts') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -513,7 +420,7 @@ export const skipRest = mutation({
 });
 
 /** Restarts the planned rest from now, dropping adjustments. */
-export const resetRest = mutation({
+export const resetRest = workoutMutation({
   args: { workoutId: v.id('workouts') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
@@ -553,6 +460,7 @@ export const setExerciseRest = mutation({
 /**
  * Ends the active Workout. Finish needs every planned Set done; Terminate ends
  * early and keeps logged Sets. A Workout with nothing logged is abandoned.
+ * Either way the member leaves their Group; Groups never outlive the Workout.
  */
 export const end = mutation({
   args: {
@@ -568,6 +476,7 @@ export const end = mutation({
     if (args.reason === 'finish' && progress.done < progress.total) {
       throw new ConvexError('NOT_ALL_SETS_DONE');
     }
+    await leaveGroup(ctx, userId);
 
     const completedTimes = sets.flatMap((set) =>
       set.completedAt === undefined ? [] : [set.completedAt]
