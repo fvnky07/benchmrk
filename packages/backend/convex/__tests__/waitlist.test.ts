@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { api } from '../_generated/api';
+import { api, components } from '../_generated/api';
 import {
   createAuthIdentity,
   createTest,
@@ -131,5 +131,39 @@ describe('native sign-in links', () => {
     await expect(
       t.action(api.waitlist.requestSignInLink, { email: 'not-an-email' })
     ).rejects.toThrow('INVALID_EMAIL');
+  });
+});
+
+describe('waitlist confirmation', () => {
+  test('following the confirmation link verifies the email and grants nothing', async () => {
+    const t = createTest();
+    await t.mutation(api.waitlist.addEmailToWaitlist, {
+      email: 'pat@example.com',
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    const html = String(
+      JSON.parse(String(resend.mock.calls.at(-1)?.[1]?.body)).html
+    );
+    const link = html.match(/href="([^"]*magic-link\/verify[^"]*)"/)?.[1];
+    expect(link).toBeDefined();
+
+    const confirmed = await t.fetch(
+      new URL(link?.replaceAll('&amp;', '&') ?? '').pathname +
+        new URL(link?.replaceAll('&amp;', '&') ?? '').search,
+      { headers: { origin: 'native://' }, redirect: 'manual' }
+    );
+
+    expect(confirmed.status).toBeLessThan(400);
+    const identity = await t.query(components.betterAuth.users.getUserByEmail, {
+      email: 'pat@example.com',
+    });
+    expect(identity).toMatchObject({ emailVerified: true });
+    expect(identity?.premiumUntil ?? null).toBeNull();
+    expect(
+      await t.run(async (ctx) => ({
+        settings: await ctx.db.query('memberSettings').collect(),
+        devices: await ctx.db.query('deviceTokens').collect(),
+      }))
+    ).toEqual({ settings: [], devices: [] });
   });
 });
