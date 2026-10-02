@@ -1,4 +1,5 @@
 import {
+  BottomSheet,
   Button,
   Checkbox,
   Column,
@@ -44,6 +45,7 @@ export default function ActiveWorkoutScreen() {
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isConfirmingTerminate, setIsConfirmingTerminate] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (workout === undefined || settings === undefined) {
@@ -120,6 +122,11 @@ export default function ActiveWorkoutScreen() {
   return (
     <NativeScreen>
       <Row spacing={12} alignment="center">
+        <Button
+          label="Workout menu"
+          variant="text"
+          onPress={() => setIsMenuOpen(true)}
+        />
         <Column spacing={2}>
           <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
             {workout.name}
@@ -267,6 +274,45 @@ export default function ActiveWorkoutScreen() {
       {allDone ? (
         <Button label="Finish Workout" onPress={() => end('finish')} />
       ) : null}
+      <BottomSheet
+        isPresented={isMenuOpen}
+        onDismiss={() => setIsMenuOpen(false)}
+      >
+        <Column spacing={12}>
+          <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
+            Workout menu
+          </Text>
+          <Button
+            label="Add Exercise"
+            onPress={() => {
+              setIsMenuOpen(false);
+              setIsPickerOpen(true);
+            }}
+          />
+          {allDone ? (
+            <Button
+              label="Finish Workout"
+              onPress={() => {
+                setIsMenuOpen(false);
+                end('finish');
+              }}
+            />
+          ) : null}
+          <Button
+            label="Terminate Workout"
+            variant="text"
+            onPress={() => {
+              setIsMenuOpen(false);
+              setIsConfirmingTerminate(true);
+            }}
+          />
+          <Button
+            label="Keep going"
+            variant="outlined"
+            onPress={() => setIsMenuOpen(false)}
+          />
+        </Column>
+      </BottomSheet>
       <ExercisePicker
         isPresented={isPickerOpen}
         onDismiss={() => setIsPickerOpen(false)}

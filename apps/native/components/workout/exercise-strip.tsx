@@ -1,4 +1,4 @@
-import { Column, Row, ScrollView, Text } from '@expo/ui';
+import { Button, Column, Row, ScrollView, Text } from '@expo/ui';
 
 import { useAppearance } from '@/lib/ui';
 
@@ -75,18 +75,7 @@ export function ExerciseStrip({
           </Column>
         ))}
         {onAdd ? (
-          <Column
-            onPress={onAdd}
-            style={{
-              padding: 10,
-              width: 56,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text textStyle={{ fontSize: 22, textAlign: 'center' }}>+</Text>
-          </Column>
+          <Button label="Add Exercise" variant="outlined" onPress={onAdd} />
         ) : null}
       </Row>
     </ScrollView>
