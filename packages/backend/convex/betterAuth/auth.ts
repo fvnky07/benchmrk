@@ -14,13 +14,15 @@ import schema from './schema';
 
 const siteUrl = process.env.SITE_URL;
 
-/** Where verification links land in the app; the Expo plugin appends the session. */
+/** Where verification and reset links land in the app; the Expo plugin appends the session. */
 const EMAIL_VERIFIED_CALLBACK = 'native://email-verified';
+const PASSWORD_RESET_CALLBACK = 'native://reset-password';
+const PASSWORD_RESET_EXPIRES_IN_SECONDS = 60 * 60;
 
-/** A verification link that always returns to the app, whatever the client asked. */
-function nativeVerificationUrl(url: string): string {
+/** An emailed link that always returns to the app, whatever the client asked. */
+function withNativeCallback(url: string, callback: string): string {
   const link = new URL(url);
-  link.searchParams.set('callbackURL', EMAIL_VERIFIED_CALLBACK);
+  link.searchParams.set('callbackURL', callback);
   return link.toString();
 }
 
@@ -58,6 +60,25 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     emailAndPassword: {
       requireEmailVerification: false,
       enabled: true,
+      resetPasswordTokenExpiresIn: PASSWORD_RESET_EXPIRES_IN_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      // Every request gets the same answer; only verified emails get mail.
+      sendResetPassword: async ({ user, url }) => {
+        if (!user.emailVerified) return;
+        await sendEmail({
+          to: user.email,
+          subject: 'Reset your password - benchmrk',
+          html: actionEmail({
+            title: 'Reset your benchmrk password',
+            heading: 'Reset your password',
+            body: 'Open this link on the phone where benchmrk is installed to choose a new password. Every device will be signed out.',
+            actionLabel: 'Choose a new password',
+            url: withNativeCallback(url, PASSWORD_RESET_CALLBACK),
+            footnote:
+              'This link expires in 1 hour and works once. If you didn’t ask for it, ignore this email; your password stays the same.',
+          }),
+        });
+      },
     },
     emailVerification: {
       sendOnSignUp: true,
@@ -71,7 +92,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             heading: 'Verify your email',
             body: 'Confirm this address to create Groups, join them and recover your password. Open the link on the phone where benchmrk is installed.',
             actionLabel: 'Verify email',
-            url: nativeVerificationUrl(url),
+            url: withNativeCallback(url, EMAIL_VERIFIED_CALLBACK),
             footnote:
               'If you didn’t create a benchmrk account, ignore this email.',
           }),
