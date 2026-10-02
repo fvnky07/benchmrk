@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS: MemberSettings = {
   haptics: true,
   analyticsOptOut: false,
   quickActions: DEFAULT_QUICK_ACTIONS,
+  swipeHintDismissed: false,
 };
 
 async function findSettings(
