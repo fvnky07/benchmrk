@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, components } from '../_generated/api';
+import { nativePost, register } from './authTestClient.testing';
 import { createTest, type TestBackend } from './harness.testing';
 
 beforeEach(() => {
@@ -16,30 +17,6 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
-
-const json = (body: unknown, cookie?: string): RequestInit => ({
-  method: 'POST',
-  headers: {
-    'content-type': 'application/json',
-    origin: 'native://',
-    ...(cookie ? { cookie } : {}),
-  },
-  body: JSON.stringify(body),
-});
-
-/** Registers with a password and returns the session cookie and identity id. */
-async function register(t: TestBackend, email: string) {
-  const response = await t.fetch(
-    '/api/auth/sign-up/email',
-    json({ email, password: 'a-long-password-1', name: 'Pat Lifter' })
-  );
-  const body = (await response.json()) as { user: { id: string } };
-  const cookie = (response.headers.get('set-cookie') ?? '')
-    .split(/,(?=[^;]+=)/)
-    .map((part) => part.split(';')[0]?.trim())
-    .join('; ');
-  return { cookie, identityId: body.user.id };
-}
 
 async function linkGoogle(t: TestBackend, identityId: string) {
   const now = Date.now();
@@ -65,13 +42,13 @@ describe('provider unlinking', () => {
 
     const unlinkPassword = await t.fetch(
       '/api/auth/unlink-account',
-      json({ providerId: 'credential' }, cookie)
+      nativePost({ providerId: 'credential' }, cookie)
     );
     expect(unlinkPassword.status).toBe(200);
 
     const unlinkLast = await t.fetch(
       '/api/auth/unlink-account',
-      json({ providerId: 'google' }, cookie)
+      nativePost({ providerId: 'google' }, cookie)
     );
     expect(unlinkLast.status).toBe(400);
     expect(await unlinkLast.text()).toContain('FAILED_TO_UNLINK_LAST_ACCOUNT');
@@ -84,7 +61,7 @@ describe('provider unlinking', () => {
 
     await t.fetch(
       '/api/auth/unlink-account',
-      json({ providerId: 'google' }, cookie)
+      nativePost({ providerId: 'google' }, cookie)
     );
 
     expect(
