@@ -372,6 +372,8 @@ export default defineSchema({
     order: v.number(),
     type: setTypeValidator,
     weightKg: v.optional(v.number()),
+    /** Added or duplicated after the Exercise's initial plan; ignored by Overload. */
+    extra: v.optional(v.boolean()),
     reps: v.optional(v.number()),
     durationSeconds: v.optional(v.number()),
     distanceMeters: v.optional(v.number()),
