@@ -57,6 +57,12 @@ export default function WorkoutScreen() {
           }
         />
       )}
+      <ListItem
+        onPress={() => router.push('/workout/group')}
+        supportingText="Train together: create a Group or join with a code"
+      >
+        Group
+      </ListItem>
       <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Routines</Text>
       {routines === undefined ? (
         <Text textStyle={{ fontSize: 17 }}>Loading Routines…</Text>

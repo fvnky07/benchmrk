@@ -317,6 +317,11 @@ export default function ActiveWorkoutScreen() {
         </Column>
         <Spacer />
         <Button
+          label="Group"
+          variant="text"
+          onPress={() => router.push('/workout/group')}
+        />
+        <Button
           label="Exercises"
           variant="text"
           onPress={() => setIsStructureOpen(true)}
