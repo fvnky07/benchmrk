@@ -5,6 +5,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
+import { EmailVerificationRow } from '@/components/account/email-verification-row';
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
 import {
@@ -126,7 +127,7 @@ export default function ManageAccountScreen() {
           onPress={() => void linkProvider(provider)}
         />
       ))}
-      <ListItem supportingText={user.email ?? 'Not set'}>Email</ListItem>
+      <EmailVerificationRow />
       <ListItem supportingText={user.name ?? 'Not set'}>Name</ListItem>
       <ListItem supportingText={username}>Username</ListItem>
       <ListItem supportingText={bio ?? 'Not set'}>Bio</ListItem>

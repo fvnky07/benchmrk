@@ -64,11 +64,11 @@ export const authClient = createAuthClient({
 });
 
 /**
- * Stores the session a verified sign-in link handed back through the app's
- * deep link (the server's Expo plugin appends it as `cookie`), the same way the
- * Expo client stores sessions from in-app sign-in, then refreshes the session.
+ * Stores the session an emailed link (sign-in or email verification) handed
+ * back through the app's deep link, where the server's Expo plugin appends it
+ * as `cookie`. It mirrors how the Expo client stores in-app sessions.
  */
-export function completeMagicLinkSignIn(setCookie: string): void {
+export function storeLinkedSession(setCookie: string): void {
   const cookieKey = `${scheme}_cookie`;
   chunkedSecureStore.setItem(
     cookieKey,

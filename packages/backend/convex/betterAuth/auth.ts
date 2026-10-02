@@ -13,6 +13,16 @@ import schema from './schema';
 
 const siteUrl = process.env.SITE_URL;
 
+/** Where verification links land in the app; the Expo plugin appends the session. */
+const EMAIL_VERIFIED_CALLBACK = 'native://email-verified';
+
+/** A verification link that always returns to the app, whatever the client asked. */
+function nativeVerificationUrl(url: string): string {
+  const link = new URL(url);
+  link.searchParams.set('callbackURL', EMAIL_VERIFIED_CALLBACK);
+  return link.toString();
+}
+
 // Component client with the local schema (username, bio, two-factor fields).
 export const authComponent = createClient<DataModel, typeof schema>(
   components.betterAuth,
@@ -42,9 +52,30 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           ]
         : []),
     ],
+    // Members can log Workouts before verifying; Groups and password recovery
+    // check verification themselves.
     emailAndPassword: {
       requireEmailVerification: false,
       enabled: true,
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: 'Verify your email - benchmrk',
+          html: actionEmail({
+            title: 'Verify your benchmrk email',
+            heading: 'Verify your email',
+            body: 'Confirm this address to create Groups, join them and recover your password. Open the link on the phone where benchmrk is installed.',
+            actionLabel: 'Verify email',
+            url: nativeVerificationUrl(url),
+            footnote:
+              'If you didn’t create a benchmrk account, ignore this email.',
+          }),
+        });
+      },
     },
     socialProviders: {
       ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
