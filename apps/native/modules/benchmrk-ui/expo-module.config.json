@@ -6,6 +6,9 @@
     "modules": ["BenchmrkUIModule"]
   },
   "android": {
-    "modules": ["expo.modules.benchmrkui.BenchmrkUIModule"]
+    "modules": [
+      "expo.modules.benchmrkui.BenchmrkUIModule",
+      "expo.modules.benchmrkui.BenchmrkLiveStatusModule"
+    ]
   }
 }
