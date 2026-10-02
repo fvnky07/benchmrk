@@ -187,3 +187,39 @@ export function fieldHeading(field: SetField, unit: WeightUnit): string {
   };
   return headings[field];
 }
+
+/** The part of a Set's Overload target the table shows. */
+export type SetTargetValues = { weightKg: number | null; reps: number };
+
+/** A field's Overload target as stored; only weight and reps have targets. */
+export const TARGET_VALUE: Record<
+  SetField,
+  (target: SetTargetValues) => number | null
+> = {
+  weight: (target) => target.weightKg,
+  reps: (target) => target.reps,
+  duration: () => null,
+  distance: () => null,
+};
+
+/** The Target column: "60 × 8", or "8 reps" when there's no weight to aim for. */
+export function targetText(target: SetTargetValues, unit: WeightUnit): string {
+  return target.weightKg === null
+    ? `${target.reps} reps`
+    : `${storedToDraft('weight', target.weightKg, unit)} × ${target.reps}`;
+}
+
+/** A Set's values in one line: "60 × 8", "8 reps", "1:00" or "5 km · 25:00". */
+export function setSummary(set: StoredValues, unit: WeightUnit): string {
+  if (set.reps !== null) {
+    return targetText({ weightKg: set.weightKg, reps: set.reps }, unit);
+  }
+  return [
+    set.distanceMeters === null
+      ? null
+      : `${storedToDraft('distance', set.distanceMeters, unit)} km`,
+    set.durationSeconds === null ? null : formatClock(set.durationSeconds),
+  ]
+    .filter((part) => part !== null)
+    .join(' · ');
+}

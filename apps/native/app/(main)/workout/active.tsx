@@ -18,6 +18,7 @@ import { SetKeypad } from '@/components/workout/set-keypad';
 import { SetTable } from '@/components/workout/set-table';
 import { SetTypeSheet } from '@/components/workout/set-type-sheet';
 import { StructureSheet } from '@/components/workout/structure-sheet';
+import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
 import { formatClock } from '@/lib/workout/format';
@@ -31,9 +32,12 @@ import {
   type SetField,
   type SetType,
   setLabels,
+  setSummary,
   steppedValue,
   storedKey,
   storedToDraft,
+  TARGET_VALUE,
+  targetText,
   typeKey,
 } from '@/lib/workout/set-entry';
 import { useNow } from '@/lib/workout/use-now';
@@ -50,12 +54,24 @@ type WorkoutSet = WorkoutExercise['sets'][number];
 type Focus = { setId: Id<'sets'>; field: SetField };
 type Drafts = Record<string, Partial<Record<SetField, string>>>;
 
+/** A Set's Overload target while it is a Working Set. */
+function workingTarget(set: WorkoutSet) {
+  return set.type === 'normal' || set.type === 'failure' ? set.target : null;
+}
+
+/** The target an empty field of an unlogged Working Set shows and logs. */
+function openTarget(set: WorkoutSet) {
+  return set.completedAt === null ? workingTarget(set) : null;
+}
+
 export default function ActiveWorkoutScreen() {
   const workout = useQuery(api.workouts.getActive);
   const settings = useQuery(api.memberSettings.get);
   const completeSet = useMutation(api.workouts.completeSet);
   const uncompleteSet = useMutation(api.workouts.uncompleteSet);
   const updateSet = useMutation(api.workouts.updateSet);
+  const fillFromTarget = useMutation(api.workouts.fillFromTarget);
+  const fillFromTargets = useMutation(api.workouts.fillFromTargets);
   const addSet = useMutation(api.workouts.addSet);
   const addExercise = useMutation(api.workouts.addExercise);
   const endWorkout = useMutation(api.workouts.end);
@@ -77,6 +93,8 @@ export default function ActiveWorkoutScreen() {
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
   const [isKeypadOpen, setIsKeypadOpen] = useState(true);
   const [typeSheetSetId, setTypeSheetSetId] = useState<Id<'sets'> | null>(null);
+  const [targetSheetId, setTargetSheetId] =
+    useState<Id<'workoutExercises'> | null>(null);
   const [isRestSheetOpen, setIsRestSheetOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<'add' | 'swap' | null>(null);
   const [isStructureOpen, setIsStructureOpen] = useState(false);
@@ -121,6 +139,9 @@ export default function ActiveWorkoutScreen() {
   );
   const exercise: WorkoutExercise | undefined = workout.exercises[index];
   const fields = exercise ? SET_FIELDS[exercise.type] : [];
+  // Timed and cardio Exercises show the previous Set instead of a target.
+  const showsPrevious =
+    exercise?.type === 'timed' || exercise?.type === 'cardio';
   const exercisePlannedRest =
     exercise?.plannedRestSeconds ?? settings.defaultRestSeconds;
   const currentSetIndex = exercise
@@ -165,11 +186,17 @@ export default function ActiveWorkoutScreen() {
       [setId]: { ...current[setId], [field]: draft },
     }));
 
-  /** The Set's typed values, as the mutation stores them. */
+  /**
+   * The fields the member typed, as the mutation stores them. Untouched fields
+   * aren't sent, so values that came from the Overload target keep their
+   * provenance and empty ones log the target.
+   */
   const valuesOf = (set: WorkoutSet) =>
     Object.fromEntries(
       fields.flatMap((field) => {
-        const value = draftToStored(field, draftOf(set, field), units);
+        const draft = drafts[set._id]?.[field];
+        const value =
+          draft === undefined ? null : draftToStored(field, draft, units);
         return value === null ? [] : [[storedKey(field), value]];
       })
     );
@@ -188,8 +215,11 @@ export default function ActiveWorkoutScreen() {
 
   const logSet = (set: WorkoutSet) =>
     attempt(async () => {
-      await completeSet({ setId: set._id, ...valuesOf(set) });
-      haptic('set-completed');
+      const { targetMet } = await completeSet({
+        setId: set._id,
+        ...valuesOf(set),
+      });
+      haptic(targetMet ? 'target-met' : 'set-completed');
       setChosenFocus(null);
       const remaining = exercise?.sets.filter(
         (item) => item.completedAt === null && item._id !== set._id
@@ -210,11 +240,11 @@ export default function ActiveWorkoutScreen() {
 
   const step = (direction: 1 | -1) => {
     if (!focus || !focusSet || !exercise) return;
-    const current = draftToStored(
-      focus.field,
-      draftOf(focusSet, focus.field),
-      units
-    );
+    // An empty field steps from its Overload target.
+    const target = openTarget(focusSet);
+    const current =
+      draftToStored(focus.field, draftOf(focusSet, focus.field), units) ??
+      (target ? TARGET_VALUE[focus.field](target) : null);
     const next = steppedValue(focus.field, current, direction, exercise.stepKg);
     setDraft(focus.setId, focus.field, storedToDraft(focus.field, next, units));
     void attempt(
@@ -406,6 +436,18 @@ export default function ActiveWorkoutScreen() {
           <QuickActionRow
             actions={settings.quickActions}
             handlers={{
+              ...(exercise.sets.some(
+                (set) =>
+                  openTarget(set) !== null &&
+                  set.weightKg === null &&
+                  set.reps === null
+              ) && {
+                wand: () =>
+                  attempt(
+                    () => fillFromTargets({ workoutExerciseId: exercise._id }),
+                    'Could not fill the Sets from the target.'
+                  ),
+              }),
               addSet: () =>
                 attempt(
                   () => addSet({ workoutExerciseId: exercise._id }),
@@ -418,22 +460,56 @@ export default function ActiveWorkoutScreen() {
             }}
           />
           <SetTable
-            sets={exercise.sets.map((set) => ({
-              _id: set._id,
-              type: set.type,
-              rpe: set.rpe,
-              done: set.completedAt !== null,
-            }))}
-            fields={fields}
+            sets={exercise.sets.map((set) => {
+              const target = workingTarget(set);
+              const open = openTarget(set);
+              return {
+                _id: set._id,
+                type: set.type,
+                rpe: set.rpe,
+                done: set.completedAt !== null,
+                target: showsPrevious
+                  ? set.previous &&
+                    setSummary(
+                      {
+                        weightKg: null,
+                        reps: null,
+                        durationSeconds: set.previous.durationSeconds ?? null,
+                        distanceMeters: set.previous.distanceMeters ?? null,
+                      },
+                      units
+                    )
+                  : target && targetText(target, units),
+                cells: fields.map((field) => ({
+                  field,
+                  value: displayDraft(field, draftOf(set, field)),
+                  placeholder: displayDraft(
+                    field,
+                    storedToDraft(
+                      field,
+                      open ? TARGET_VALUE[field](open) : null,
+                      units
+                    )
+                  ),
+                  fromTarget:
+                    drafts[set._id]?.[field] === undefined &&
+                    (field === 'weight' || field === 'reps') &&
+                    set.fromTarget?.[field] === true,
+                })),
+              };
+            })}
             headings={fields.map((field) => fieldHeading(field, units))}
             effortScale={effortScale}
             focus={isKeypadOpen ? focus : null}
             showSwipeHint={!settings.swipeHintDismissed}
-            displayValue={(row, field) => {
-              const set = exercise.sets.find((item) => item._id === row._id);
-              return set ? displayDraft(field, draftOf(set, field)) : '';
-            }}
             onFocus={(setId, field) => moveFocus({ setId, field })}
+            onFillFromTarget={(setId, field) => {
+              moveFocus({ setId, field });
+              void attempt(
+                () => fillFromTarget({ setId }),
+                'Could not fill this Set from the target.'
+              );
+            }}
             onToggleDone={(row, done) => {
               const set = exercise.sets.find((item) => item._id === row._id);
               if (!set) return;
@@ -454,6 +530,8 @@ export default function ActiveWorkoutScreen() {
               attempt(() => deleteSet({ setId }), 'Could not delete this Set.')
             }
             onOpenType={setTypeSheetSetId}
+            onOpenTarget={() => setTargetSheetId(exercise._id)}
+            targetHeading={showsPrevious ? 'Last time' : 'Target'}
             onDismissSwipeHint={() =>
               attempt(
                 () => updateSettings({ swipeHintDismissed: true }),
@@ -513,6 +591,12 @@ export default function ActiveWorkoutScreen() {
           onDismiss={() => setIsRestSheetOpen(false)}
         />
       ) : null}
+      <TargetSheet
+        workoutExerciseId={targetSheetId}
+        units={units}
+        effortScale={effortScale}
+        onDismiss={() => setTargetSheetId(null)}
+      />
       <SetTypeSheet
         current={
           exercise?.sets.find((set) => set._id === typeSheetSetId)?.type ?? null
