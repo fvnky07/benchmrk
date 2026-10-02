@@ -90,3 +90,41 @@ export const LiveStatus = requireOptionalNativeModule<{
   }): void;
   clear(): void;
 }>('BenchmrkLiveStatus');
+
+export type StackedBarChartProps = {
+  bars: {
+    label: string;
+    segments: { label: string; value: number; color: string }[];
+  }[];
+  horizontal: boolean;
+};
+
+/** iOS only: Swift Charts stacking, rendered inside an Expo UI Host. */
+export const StackedBarChart = requireNativeView<StackedBarChartProps>(
+  'BenchmrkUI',
+  'StackedBarChartView'
+);
+
+/** Android-only Compose chart props; render ChartView inside an Expo UI Host. */
+export type ChartViewProps = {
+  kind: 'stackedBar' | 'bar' | 'trend';
+  horizontal: boolean;
+  bars: {
+    label: string;
+    segments: {
+      label: string;
+      value: number;
+      tone: 'accent' | 'secondary' | 'tertiary' | 'neutral';
+    }[];
+  }[];
+  points: { label: string; value: number }[];
+  tone: 'accent' | 'secondary' | 'tertiary' | 'neutral';
+  referenceValue: number | null;
+  summary: string;
+};
+
+/** Android only: Material-coloured Compose Canvas charts with one TalkBack summary. */
+export const ChartView = requireNativeView<ChartViewProps>(
+  'BenchmrkUI',
+  'ChartView'
+);

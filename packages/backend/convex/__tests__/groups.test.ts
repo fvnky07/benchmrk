@@ -199,6 +199,8 @@ describe('Groups', () => {
       isYou: false,
       isHost: false,
       joinedAt: expect.any(Number),
+      lastSeenAt: START,
+      presence: 'active',
       progress: {
         status: 'resting',
         routineName: 'Push',

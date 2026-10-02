@@ -4,6 +4,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
+import { TrendCard } from '@/components/charts/trend-card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
 
@@ -14,6 +15,10 @@ export default function ExerciseDetailScreen() {
   const exercise = useQuery(
     api.exercises.getBySlug,
     params.slug ? { slug: params.slug } : 'skip'
+  );
+  const trends = useQuery(
+    api.trends.forExercise,
+    exercise ? { exerciseId: exercise._id } : 'skip'
   );
   const comments = useQuery(
     api.exerciseComments.listComments,
@@ -75,6 +80,11 @@ export default function ExerciseDetailScreen() {
           Muscles worked
         </ListItem>
       ) : null}
+      {trends === undefined ? (
+        <Text>Loading trends…</Text>
+      ) : (
+        <TrendCard duration={trends.duration} rest={trends.rest} />
+      )}
       <NativeTextField
         label="Comment"
         multiline

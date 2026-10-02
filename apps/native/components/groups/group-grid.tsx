@@ -1,8 +1,14 @@
 import { Column, RNHostView, Row, Spacer, Text } from '@expo/ui';
+import { semantics } from '@expo/ui/jetpack-compose/modifiers';
+import {
+  accessibilityElement,
+  accessibilityLabel,
+} from '@expo/ui/swift-ui/modifiers';
 import type { api } from '@repo/backend/convex/_generated/api';
+import { presenceOf } from '@repo/backend/convex/domain/presence';
 import type { FunctionReturnType } from 'convex/server';
 import { Image } from 'expo-image';
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { THEME, useAppearance } from '@/lib/ui';
@@ -73,6 +79,7 @@ function MemberBoxView({
   const { resolvedAppearance } = useAppearance();
   const colors = THEME[resolvedAppearance];
   const { progress } = box;
+  const reconnecting = presenceOf(box.lastSeenAt, now) === 'reconnecting';
   const pace =
     progress.setsPlanned === 0 ? 0 : progress.setsDone / progress.setsPlanned;
   const tag = box.isYou
@@ -82,10 +89,27 @@ function MemberBoxView({
     : box.isHost
       ? 'Host'
       : (progress.routineName ?? '');
+  const label = [
+    box.username,
+    tag,
+    reconnecting ? 'Reconnecting…' : statusText(progress, now),
+    `Pace ${Math.round(pace * 100)}%`,
+    progress.currentExercise,
+    progress.setCount > 0
+      ? `Set ${progress.setNumber} of ${progress.setCount}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <Column
       spacing={8}
+      modifiers={
+        Platform.OS === 'ios'
+          ? [accessibilityElement('ignore'), accessibilityLabel(label)]
+          : [semantics({ contentDescription: label })]
+      }
       style={{
         width,
         height: minHeight,
@@ -112,23 +136,32 @@ function MemberBoxView({
             : formatClock((now - progress.startedAt) / 1000)}
         </Text>
       </Row>
-      <Column spacing={2}>
-        <WorkoutProgress fraction={pace} />
-        <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
-          {`Pace ${Math.round(pace * 100)}%`}
+      {reconnecting ? (
+        <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+          Reconnecting…
         </Text>
+      ) : null}
+      <Column spacing={8} style={{ opacity: reconnecting ? 0.45 : 1 }}>
+        <Column spacing={2}>
+          <WorkoutProgress fraction={pace} />
+          <Text textStyle={{ fontSize: 12, color: colors.mutedForeground }}>
+            {`Pace ${Math.round(pace * 100)}%`}
+          </Text>
+        </Column>
+        {reconnecting ? null : (
+          <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+            {statusText(progress, now)}
+          </Text>
+        )}
+        {progress.currentExercise ? (
+          <Text textStyle={{ fontSize: 14 }}>{progress.currentExercise}</Text>
+        ) : null}
+        {progress.setCount > 0 ? (
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            {`Set ${progress.setNumber} of ${progress.setCount}`}
+          </Text>
+        ) : null}
       </Column>
-      <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
-        {statusText(progress, now)}
-      </Text>
-      {progress.currentExercise ? (
-        <Text textStyle={{ fontSize: 14 }}>{progress.currentExercise}</Text>
-      ) : null}
-      {progress.setCount > 0 ? (
-        <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-          {`Set ${progress.setNumber} of ${progress.setCount}`}
-        </Text>
-      ) : null}
     </Column>
   );
 }

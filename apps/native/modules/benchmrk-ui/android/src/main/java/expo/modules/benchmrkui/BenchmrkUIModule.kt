@@ -90,6 +90,10 @@ class BenchmrkUIModule : Module() {
         )
       }
     }
+
+    View<ChartProps>("ChartView") {
+      Content { props -> ChartContent(props) }
+    }
   }
 }
 
