@@ -12,7 +12,7 @@
     "build:android": "expo run:android --device Pixel_10 --no-bundler",
     "build:web": "expo export --platform web",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo run:android",
+    "android": "expo run:android --device Pixel_10",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
