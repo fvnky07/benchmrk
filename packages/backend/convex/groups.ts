@@ -4,37 +4,23 @@ import { ConvexError, v } from 'convex/values';
 
 import { components } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
-import {
-  type MutationCtx,
-  mutation,
-  type QueryCtx,
-  query,
-} from './_generated/server';
+import { mutation, query } from './_generated/server';
 import {
   activeMembership,
+  addMember,
   endGroup,
   groupMembers,
+  joinGroup,
   leaveGroup,
-  progressSummary,
+  requireMembership,
 } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
 
-/** Safety limit; Groups have no product cap. */
-const MAX_MEMBERS = 20;
 const CODE_IDLE_MS = 24 * 60 * 60 * 1000;
 /** No 0/O or 1/I, so codes survive being read aloud. */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 6;
-
-async function requireMembership(ctx: QueryCtx, userId: string) {
-  const membership = await activeMembership(ctx, userId);
-  const group = membership ? await ctx.db.get(membership.groupId) : null;
-  if (!membership || !group || group.status !== 'live') {
-    throw new ConvexError('NOT_IN_GROUP');
-  }
-  return { membership, group };
-}
 
 function requireHost(group: Doc<'groups'>, userId: string) {
   if (group.hostId !== userId) throw new ConvexError('NOT_HOST');
@@ -45,21 +31,6 @@ function isUsable(code: Doc<'groupCodes'>, now: number) {
     code.revokedAt === undefined &&
     now - (code.lastUsedAt ?? code.createdAt) <= CODE_IDLE_MS
   );
-}
-
-async function addMember(
-  ctx: MutationCtx,
-  group: Doc<'groups'>,
-  userId: string
-) {
-  const now = Date.now();
-  await ctx.db.insert('groupMemberships', {
-    groupId: group._id,
-    userId,
-    joinedAt: now,
-    progress: await progressSummary(ctx, userId),
-  });
-  await ctx.db.patch(group._id, { lastActivityAt: now });
 }
 
 /** Creates a Group with the caller as host, before or during their Workout. */
@@ -156,13 +127,7 @@ export const joinByCode = mutation({
       throw new ConvexError('CODE_INVALID');
     }
 
-    const current = await activeMembership(ctx, userId);
-    if (current?.groupId === group._id) return group._id;
-    if (current) throw new ConvexError('IN_ANOTHER_GROUP');
-    if ((await groupMembers(ctx, group)).length >= MAX_MEMBERS) {
-      throw new ConvexError('GROUP_FULL');
-    }
-    await addMember(ctx, group, userId);
+    await joinGroup(ctx, group, userId);
     await ctx.db.patch(code._id, { lastUsedAt: now });
     return group._id;
   },
