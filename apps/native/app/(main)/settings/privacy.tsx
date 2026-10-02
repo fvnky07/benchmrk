@@ -1,6 +1,7 @@
-import { ListItem, Switch, Text } from '@expo/ui';
+import { ListItem, Picker, Switch, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
+import type { FunctionArgs } from 'convex/server';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
@@ -19,11 +20,17 @@ export default function PrivacySettingsScreen() {
     }, [])
   );
 
-  const setShareAnalytics = async (share: boolean) => {
+  const saveSettings = async (
+    changes: FunctionArgs<typeof api.memberSettings.update>
+  ) => {
+    if (isSaving) {
+      return;
+    }
+
     try {
       setIsSaving(true);
       setErrorMessage(null);
-      await updateSettings({ analyticsOptOut: !share });
+      await updateSettings(changes);
     } catch {
       setErrorMessage('Could not save this setting. Try again.');
     } finally {
@@ -46,11 +53,36 @@ export default function PrivacySettingsScreen() {
         disabled={isSaving}
         label="Share usage analytics"
         value={!settings.analyticsOptOut}
-        onValueChange={setShareAnalytics}
+        onValueChange={(share) =>
+          void saveSettings({ analyticsOptOut: !share })
+        }
       />
       <ListItem supportingText="When this is off, Benchmrk records no usage analytics for you on any device you sign in to.">
         Usage analytics
       </ListItem>
+      <ListItem supportingText="Who can invite you to a Group by username.">
+        Group invites
+      </ListItem>
+      <Picker
+        enabled={!isSaving}
+        selectedValue={settings.invitesFrom}
+        onValueChange={(value) => {
+          if (
+            value === 'everyone' ||
+            value === 'groupmates' ||
+            value === 'nobody'
+          ) {
+            void saveSettings({ invitesFrom: value });
+          }
+        }}
+      >
+        <Picker.Item label="Everyone" value="everyone" />
+        <Picker.Item
+          label="People you’ve been in a Group with"
+          value="groupmates"
+        />
+        <Picker.Item label="Nobody" value="nobody" />
+      </Picker>
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>Could not save</ListItem>
       ) : null}

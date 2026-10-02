@@ -3,7 +3,7 @@
 // leaving or ending a Group.
 import { ConvexError, type Infer } from 'convex/values';
 
-import type { Doc } from '../_generated/dataModel';
+import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { groupProgressValidator } from '../schema';
 import {
@@ -111,6 +111,20 @@ export async function groupMembers(ctx: QueryCtx, group: Doc<'groups'>) {
     .collect();
 }
 
+export async function recordGroupEvent(
+  ctx: MutationCtx,
+  groupId: Id<'groups'>,
+  kind: Doc<'groupEvents'>['kind'],
+  userId?: string
+) {
+  await ctx.db.insert('groupEvents', {
+    groupId,
+    kind,
+    userId,
+    at: Date.now(),
+  });
+}
+
 /** Adds the member to the Group, with their current progress summary. */
 export async function addMember(
   ctx: MutationCtx,
@@ -122,9 +136,11 @@ export async function addMember(
     groupId: group._id,
     userId,
     joinedAt: now,
+    lastSeenAt: now,
     progress: await progressSummary(ctx, userId),
   });
   await ctx.db.patch(group._id, { lastActivityAt: now });
+  await recordGroupEvent(ctx, group._id, 'joined', userId);
 }
 
 /**
@@ -173,23 +189,32 @@ export async function endGroup(ctx: MutationCtx, group: Doc<'groups'>) {
     }
   }
   await ctx.db.patch(group._id, { status: 'ended', endedAt: now });
+  await recordGroupEvent(ctx, group._id, 'ended');
 }
 
 /**
  * Takes the member out of their Group, if any. The last member out ends it;
  * a leaving host hands hosting to the longest-present member.
  */
-export async function leaveGroup(ctx: MutationCtx, userId: string) {
+export async function leaveGroup(
+  ctx: MutationCtx,
+  userId: string,
+  reason: 'left' | 'dropped' = 'left'
+) {
   const membership = await activeMembership(ctx, userId);
   if (!membership) return;
-  await ctx.db.patch(membership._id, { leftAt: Date.now() });
+  const now = Date.now();
+  await ctx.db.patch(membership._id, { leftAt: now });
   const group = await ctx.db.get(membership.groupId);
   if (group?.status !== 'live') return;
+  await ctx.db.patch(group._id, { lastActivityAt: now });
+  await recordGroupEvent(ctx, group._id, reason, userId);
   const remaining = await groupMembers(ctx, group);
   const [nextHost] = remaining;
   if (!nextHost) {
     await endGroup(ctx, group);
   } else if (group.hostId === userId) {
     await ctx.db.patch(group._id, { hostId: nextHost.userId });
+    await recordGroupEvent(ctx, group._id, 'hostChanged', nextHost.userId);
   }
 }

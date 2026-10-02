@@ -71,5 +71,6 @@ public class BenchmrkUIModule: Module {
     Name("BenchmrkUI")
 
     View(GestureBoxView.self)
+    View(StackedBarChartView.self)
   }
 }

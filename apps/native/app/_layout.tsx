@@ -16,6 +16,7 @@ import Toast from 'react-native-toast-message';
 import { SplashScreen } from '@/components/SplashScreen';
 import { posthog, resetAnalytics, useAnalyticsOptOut } from '@/lib/analytics';
 import { authClient, useAuth } from '@/lib/auth';
+import { usePushProfileSetupStep } from '@/lib/push/profile-setup-push-step';
 import { AppearanceProvider, toastConfig, useAppearance } from '@/lib/ui';
 
 const convex = new ConvexReactClient(
@@ -46,8 +47,10 @@ function AppProviders({
 
 function NavigationContent({
   isAuthenticated,
+  identityId,
 }: Readonly<{
   isAuthenticated: boolean;
+  identityId: string | undefined;
 }>) {
   const { navigationTheme, resolvedAppearance } = useAppearance();
   useAnalyticsOptOut(isAuthenticated);
@@ -55,10 +58,15 @@ function NavigationContent({
     api.profile.getCurrentProfile,
     isAuthenticated ? {} : 'skip'
   );
-  if (isAuthenticated && profile === undefined) {
+  const pushSetup = usePushProfileSetupStep(
+    identityId,
+    isAuthenticated && profile !== undefined && !profile?.username
+  );
+  if (isAuthenticated && (profile === undefined || pushSetup.loading)) {
     return <SplashScreen />;
   }
-  const needsOnboarding = isAuthenticated && !profile?.username;
+  const needsOnboarding =
+    isAuthenticated && (!profile?.username || pushSetup.pending);
   return (
     <SafeAreaProvider>
       <KeyboardProvider>
@@ -83,7 +91,7 @@ function NavigationContent({
 }
 
 function RootNavigator() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -98,7 +106,10 @@ function RootNavigator() {
   return (
     <AppProviders>
       <AppearanceProvider isAuthenticated={isAuthenticated}>
-        <NavigationContent isAuthenticated={isAuthenticated} />
+        <NavigationContent
+          isAuthenticated={isAuthenticated}
+          identityId={user?.id}
+        />
       </AppearanceProvider>
     </AppProviders>
   );

@@ -1,5 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
+import { useGroupHeartbeat } from '@/lib/groups/use-group-heartbeat';
+import { usePushRegistration } from '@/lib/push/use-push-registration';
 import { useAppearance } from '@/lib/ui';
 import { useNavigationChrome } from '@/lib/ui/navigation-chrome';
 import { useResumeActiveWorkout } from '@/lib/workout/use-resume-active-workout';
@@ -11,6 +13,8 @@ export default function MainLayout() {
   const navigationChrome = useNavigationChrome(resolvedAppearance);
   useResumeActiveWorkout();
   useWorkoutLiveStatus();
+  useGroupHeartbeat();
+  usePushRegistration();
 
   return (
     <NativeTabs {...navigationChrome}>

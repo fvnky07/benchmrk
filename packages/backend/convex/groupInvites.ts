@@ -3,7 +3,7 @@
 // username.
 import { ConvexError, v } from 'convex/values';
 
-import { components } from './_generated/api';
+import { components, internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { mutation, type QueryCtx, query } from './_generated/server';
 import { joinGroup, requireMembership } from './lib/groupProgress';
@@ -148,14 +148,20 @@ export const send = mutation({
     );
     if (alreadyPending) return null;
 
-    await ctx.db.insert('groupInvites', {
+    const delivered = await reachesInvitee(ctx, userId, invitee);
+    const inviteId = await ctx.db.insert('groupInvites', {
       groupId: group._id,
       inviterId: userId,
       inviteeId,
       createdAt: now,
-      delivered: await reachesInvitee(ctx, userId, invitee),
+      delivered,
       status: 'pending',
     });
+    if (delivered) {
+      await ctx.scheduler.runAfter(0, internal.push.sendGroupInvite, {
+        inviteId,
+      });
+    }
     return null;
   },
 });
