@@ -27,6 +27,9 @@ export const tables = {
     premiumUntil: v.optional(v.union(v.null(), v.number())),
     // NOTE: Custom field — User bio/description (max 150 chars)
     bio: v.optional(v.union(v.null(), v.string())),
+    // The uploaded profile photo in this component's storage, so it can be
+    // replaced or deleted; `image` holds its URL (or a provider's).
+    imageStorageId: v.optional(v.union(v.null(), v.string())),
   })
     .index('email', ['email'])
     .index('email_name', ['email', 'name'])

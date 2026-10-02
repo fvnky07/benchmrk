@@ -3,11 +3,12 @@ import type { GenericCtx } from '@convex-dev/better-auth';
 import { createClient } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
-import { createAuthMiddleware } from 'better-auth/api';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { magicLink, twoFactor } from 'better-auth/plugins';
-import { components } from '../_generated/api';
+import { components, internal } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
+import { revokeAppleAuthorization } from '../lib/appleRevocation';
 import { actionEmail, sendEmail } from '../lib/email';
 import { authorizedMagicLinkFlow } from '../lib/magicLinkProof';
 import schema from './schema';
@@ -18,6 +19,10 @@ const siteUrl = process.env.SITE_URL;
 const EMAIL_VERIFIED_CALLBACK = 'native://email-verified';
 const PASSWORD_RESET_CALLBACK = 'native://reset-password';
 const PASSWORD_RESET_EXPIRES_IN_SECONDS = 60 * 60;
+/** How recently a member must have signed in to delete without a password. */
+const FRESH_SESSION_SECONDS = 10 * 60;
+/** Header carrying a fresh Sign in with Apple authorization code on deletion. */
+export const APPLE_AUTHORIZATION_CODE_HEADER = 'x-apple-authorization-code';
 
 /** An emailed link that always returns to the app, whatever the client asked. */
 function withNativeCallback(url: string, callback: string): string {
@@ -55,6 +60,46 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           ]
         : []),
     ],
+    session: { freshAge: FRESH_SESSION_SECONDS },
+    user: {
+      // Deletion re-authenticates first: the password, or (for members without
+      // one) a session fresh from signing in again. Apple's authorization is
+      // revoked, then the app data and every auth record go in one transaction,
+      // so Better Auth's own deletes after this hook find nothing left.
+      deleteUser: {
+        enabled: true,
+        beforeDelete: async (user, request) => {
+          if (!('runMutation' in ctx)) {
+            throw new APIError('INTERNAL_SERVER_ERROR');
+          }
+          const usesApple = await ctx.runQuery(
+            components.betterAuth.identity.hasAppleAccount,
+            { userId: user.id }
+          );
+          if (usesApple) {
+            const code = request?.headers.get(APPLE_AUTHORIZATION_CODE_HEADER);
+            if (!code) {
+              throw new APIError('BAD_REQUEST', {
+                code: 'APPLE_REAUTHENTICATION_REQUIRED',
+                message: 'Confirm with Apple to delete this account.',
+              });
+            }
+            try {
+              await revokeAppleAuthorization(code);
+            } catch {
+              throw new APIError('BAD_REQUEST', {
+                code: 'APPLE_REVOCATION_FAILED',
+                message: 'Apple didn’t confirm. Nothing was deleted.',
+              });
+            }
+          }
+          await ctx.runMutation(internal.accountDeletion.deleteIdentity, {
+            userId: user.id,
+            email: user.email,
+          });
+        },
+      },
+    },
     // Members can log Workouts before verifying; Groups and password recovery
     // check verification themselves.
     emailAndPassword: {

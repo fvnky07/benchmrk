@@ -97,6 +97,12 @@ export default function ManageAccountScreen() {
       ) : (
         <Button label="Log out" onPress={() => setIsConfirmingLogout(true)} />
       )}
+      <ListItem
+        supportingText="Permanently delete your account and all its data"
+        onPress={() => router.push('/(main)/settings/delete-account')}
+      >
+        Delete account
+      </ListItem>
     </NativeScreen>
   );
 }
