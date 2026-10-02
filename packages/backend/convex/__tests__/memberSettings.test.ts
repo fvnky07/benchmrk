@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { api } from '../_generated/api';
+import { DEFAULT_PLATES } from '../domain/plates';
 import { toKg } from '../domain/units';
 import { createTest } from './harness.testing';
 
@@ -28,6 +29,8 @@ const DEFAULTS = {
   targetsOffExerciseIds: [],
   smallestIncrementKg: 1.25,
   autoAdvance: true,
+  plates: DEFAULT_PLATES.kg,
+  aheadBehind: true,
 };
 
 describe('member settings', () => {
@@ -46,7 +49,7 @@ describe('member settings', () => {
     expect(await member.query(api.memberSettings.get, {})).toEqual(DEFAULTS);
   });
 
-  test('keep a partial update and the remaining defaults, with the smallest increment following the unit', async () => {
+  test('keep a partial update and the remaining defaults, with unit-based defaults following the unit', async () => {
     const member = createTest().withIdentity({ subject: 'member-a' });
 
     await member.mutation(api.memberSettings.update, {
@@ -69,6 +72,7 @@ describe('member settings', () => {
       haptics: false,
       analyticsOptOut: true,
       smallestIncrementKg: toKg(2.5, 'lb'),
+      plates: DEFAULT_PLATES.lb,
     });
   });
 

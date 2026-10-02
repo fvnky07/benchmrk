@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as deletionRequests from "../deletionRequests.js";
 import type * as domain_effort from "../domain/effort.js";
 import type * as domain_overload from "../domain/overload.js";
+import type * as domain_plates from "../domain/plates.js";
 import type * as domain_rounds from "../domain/rounds.js";
 import type * as domain_units from "../domain/units.js";
 import type * as exerciseComments from "../exerciseComments.js";
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   deletionRequests: typeof deletionRequests;
   "domain/effort": typeof domain_effort;
   "domain/overload": typeof domain_overload;
+  "domain/plates": typeof domain_plates;
   "domain/rounds": typeof domain_rounds;
   "domain/units": typeof domain_units;
   exerciseComments: typeof exerciseComments;

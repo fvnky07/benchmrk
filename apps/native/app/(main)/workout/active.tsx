@@ -23,6 +23,7 @@ import { ExerciseStrip } from '@/components/workout/exercise-strip';
 import { ExerciseTitlePager } from '@/components/workout/exercise-title-pager';
 import { MachineSetupSheet } from '@/components/workout/machine-setup-sheet';
 import { NotesSheet, type NoteTarget } from '@/components/workout/notes-sheet';
+import { PlatesSheet } from '@/components/workout/plates-sheet';
 import { QuickActionRow } from '@/components/workout/quick-action-row';
 import { RestOptionsSheet } from '@/components/workout/rest-options-sheet';
 import { RestTimer } from '@/components/workout/rest-timer';
@@ -34,8 +35,9 @@ import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
 import { THEME, useAppearance } from '@/lib/ui';
-import { formatClock } from '@/lib/workout/format';
+import { formatClock, weightInUnit } from '@/lib/workout/format';
 import { setupSummary } from '@/lib/workout/machine-setup';
+import { plateStrip } from '@/lib/workout/plates';
 import {
   type ActiveWorkout,
   blockPartners,
@@ -151,6 +153,7 @@ export default function ActiveWorkoutScreen() {
   const [stayOn, setStayOn] = useState<number | null>(null);
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const [setupFor, setSetupFor] = useState<Id<'workoutExercises'> | null>(null);
+  const [isPlatesOpen, setIsPlatesOpen] = useState(false);
 
   useRestEndNotification(workout?.rest?.endsAt ?? null, {
     sound: settings?.restEndSound ?? true,
@@ -381,8 +384,46 @@ export default function ActiveWorkoutScreen() {
       </Row>
     ) : null;
 
+  // While a barbell weight is being edited: its per-side plate breakdown.
+  const editedWeightKg =
+    exercise?.equipment === 'barbell' &&
+    isKeypadOpen &&
+    focusSet &&
+    focus?.field === 'weight'
+      ? (draftToStored('weight', draftOf(focusSet, 'weight'), units) ??
+        openTarget(focusSet, targetsEnabled)?.weightKg ??
+        null)
+      : null;
+  const plateStripRow =
+    editedWeightKg === null ? null : (
+      <Row
+        spacing={8}
+        alignment="center"
+        onPress={() => setIsPlatesOpen(true)}
+        style={{ padding: 10, borderRadius: 10, backgroundColor: colors.muted }}
+      >
+        <Text textStyle={{ fontSize: 14 }}>
+          {plateStrip(
+            weightInUnit(editedWeightKg, settings.plates.unit),
+            settings.plates
+          )}
+        </Text>
+      </Row>
+    );
+
   return (
-    <DockedScreen dock={keypad}>
+    <DockedScreen
+      dock={
+        plateStripRow ? (
+          <Column spacing={8}>
+            {plateStripRow}
+            {keypad}
+          </Column>
+        ) : (
+          keypad
+        )
+      }
+    >
       <Row spacing={12} alignment="center">
         <Button
           label="Workout menu"
@@ -619,6 +660,9 @@ export default function ActiveWorkoutScreen() {
                   'Could not add a Set.'
                 ),
               info: () => router.push(`/workout/exercise/${exercise.slug}`),
+              ...(exercise.equipment === 'barbell' && {
+                plates: () => setIsPlatesOpen(true),
+              }),
               ...(exercise.sets.every((set) => set.completedAt === null) && {
                 swap: () => setPickerMode('swap'),
               }),
@@ -825,6 +869,18 @@ export default function ActiveWorkoutScreen() {
           workout.exercises.find((item) => item._id === setupFor) ?? null
         }
         onDismiss={() => setSetupFor(null)}
+      />
+      <PlatesSheet
+        key={isPlatesOpen ? 'open' : 'closed'}
+        isPresented={isPlatesOpen}
+        inventory={settings.plates}
+        weightKg={
+          editedWeightKg ??
+          focusSet?.weightKg ??
+          (focusSet && openTarget(focusSet, targetsEnabled)?.weightKg) ??
+          null
+        }
+        onDismiss={() => setIsPlatesOpen(false)}
       />
       <SetTypeSheet
         current={
