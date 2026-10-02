@@ -1,4 +1,4 @@
-import { ConvexError, v } from 'convex/values';
+import { ConvexError, type ObjectType, v } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';
 import {
@@ -7,11 +7,13 @@ import {
   type QueryCtx,
   query,
 } from './_generated/server';
+import { isValidRpe, rpeFromEffort } from './domain/effort';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { readMemberSettings } from './memberSettings';
 import { routineExercisesOf } from './routines';
+import { memberSettingsFields, setTypeValidator } from './schema';
 
 const DEFAULT_SETS_FOR_ADDED_EXERCISE = 3;
 const DEFAULT_REP_RANGE = { min: 6, max: 10 };
@@ -148,6 +150,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             reps: set.reps ?? null,
             durationSeconds: set.durationSeconds ?? null,
             distanceMeters: set.distanceMeters ?? null,
+            rpe: set.rpe ?? null,
             completedAt: set.completedAt ?? null,
           })),
         };
@@ -263,8 +266,12 @@ export const addExercise = mutation({
   },
 });
 
+/** Adds a Set: Working Sets go last, Warm-up Sets before the first Working Set. */
 export const addSet = mutation({
-  args: { workoutExerciseId: v.id('workoutExercises') },
+  args: {
+    workoutExerciseId: v.id('workoutExercises'),
+    type: v.optional(setTypeValidator),
+  },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
     const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
@@ -274,23 +281,51 @@ export const addSet = mutation({
     );
     requireActive(workout);
     const sets = await setsOfExercise(ctx, workoutExercise._id);
-    await insertPlannedSets(ctx, workout, workoutExercise, 1, sets.length);
+    if (args.type !== 'warmup') {
+      await insertPlannedSets(ctx, workout, workoutExercise, 1, sets.length);
+      return;
+    }
+
+    const firstWorking = sets.findIndex((set) => set.type !== 'warmup');
+    const order = firstWorking === -1 ? sets.length : firstWorking;
+    for (const later of sets.slice(order)) {
+      await ctx.db.patch(later._id, { order: later.order + 1 });
+    }
+    await ctx.db.insert('sets', {
+      userId: workout.userId,
+      workoutId: workout._id,
+      workoutExerciseId: workoutExercise._id,
+      exerciseId: workoutExercise.exerciseId,
+      order,
+      type: 'warmup',
+    });
   },
 });
 
-const setValues = {
+const setChangeArgs = {
   weightKg: v.optional(v.number()),
   reps: v.optional(v.number()),
   durationSeconds: v.optional(v.number()),
   distanceMeters: v.optional(v.number()),
+  type: v.optional(setTypeValidator),
+  /** Effort in the member's scale; null clears it. */
+  effort: v.optional(
+    v.union(
+      v.null(),
+      v.object({
+        scale: memberSettingsFields.effortScale,
+        value: v.number(),
+      })
+    )
+  ),
 };
 
-function requireValidValues(values: {
-  weightKg?: number;
-  reps?: number;
-  durationSeconds?: number;
-  distanceMeters?: number;
-}) {
+/** Validates Set changes and turns entered effort into the stored RPE. */
+function setPatch({
+  effort,
+  type,
+  ...values
+}: ObjectType<typeof setChangeArgs>): Partial<Doc<'sets'>> {
   if (
     Object.values(values).some(
       (value) => value !== undefined && !(Number.isFinite(value) && value >= 0)
@@ -299,27 +334,37 @@ function requireValidValues(values: {
   ) {
     throw new ConvexError('INVALID_SET_VALUE');
   }
+  const rpe = effort ? rpeFromEffort(effort.value, effort.scale) : undefined;
+  if (rpe !== undefined && !isValidRpe(rpe)) {
+    throw new ConvexError('INVALID_EFFORT');
+  }
+  return {
+    ...values,
+    ...(type !== undefined && { type }),
+    ...(effort !== undefined && { rpe }),
+  };
 }
 
 export const updateSet = mutation({
-  args: { setId: v.id('sets'), ...setValues },
-  handler: async (ctx, { setId, ...values }) => {
+  args: { setId: v.id('sets'), ...setChangeArgs },
+  handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
     const { workout } = await requireOwnedSet(ctx, userId, setId);
     requireActive(workout);
-    requireValidValues(values);
-    await ctx.db.patch(setId, values);
+    await ctx.db.patch(setId, setPatch(changes));
   },
 });
 
 export const completeSet = mutation({
-  args: { setId: v.id('sets'), ...setValues },
-  handler: async (ctx, { setId, ...values }) => {
+  args: { setId: v.id('sets'), ...setChangeArgs },
+  handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
     const { workout } = await requireOwnedSet(ctx, userId, setId);
     requireActive(workout);
-    requireValidValues(values);
-    await ctx.db.patch(setId, { ...values, completedAt: Date.now() });
+    await ctx.db.patch(setId, {
+      ...setPatch(changes),
+      completedAt: Date.now(),
+    });
   },
 });
 
