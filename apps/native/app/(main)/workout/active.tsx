@@ -12,6 +12,8 @@ import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { ExerciseStrip } from '@/components/workout/exercise-strip';
 import { ExerciseTitlePager } from '@/components/workout/exercise-title-pager';
 import { QuickActionRow } from '@/components/workout/quick-action-row';
+import { RestOptionsSheet } from '@/components/workout/rest-options-sheet';
+import { RestTimer } from '@/components/workout/rest-timer';
 import { SetKeypad } from '@/components/workout/set-keypad';
 import { SetTable } from '@/components/workout/set-table';
 import { SetTypeSheet } from '@/components/workout/set-type-sheet';
@@ -34,6 +36,10 @@ import {
   typeKey,
 } from '@/lib/workout/set-entry';
 import { useNow } from '@/lib/workout/use-now';
+import {
+  cancelRestEndNotification,
+  useRestEndNotification,
+} from '@/lib/workout/use-rest-end-notification';
 
 type ActiveWorkout = NonNullable<
   FunctionReturnType<typeof api.workouts.getActive>
@@ -55,6 +61,10 @@ export default function ActiveWorkoutScreen() {
   const updateSettings = useMutation(api.memberSettings.update);
   const duplicateSet = useMutation(api.workouts.duplicateSet);
   const deleteSet = useMutation(api.workouts.deleteSet);
+  const adjustRest = useMutation(api.workouts.adjustRest);
+  const skipRest = useMutation(api.workouts.skipRest);
+  const resetRest = useMutation(api.workouts.resetRest);
+  const setExerciseRest = useMutation(api.workouts.setExerciseRest);
   const haptic = useHaptics();
   const now = useNow();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -62,10 +72,19 @@ export default function ActiveWorkoutScreen() {
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
   const [isKeypadOpen, setIsKeypadOpen] = useState(true);
   const [typeSheetSetId, setTypeSheetSetId] = useState<Id<'sets'> | null>(null);
+  const [isRestSheetOpen, setIsRestSheetOpen] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isConfirmingTerminate, setIsConfirmingTerminate] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useRestEndNotification(workout?.rest?.endsAt ?? null, {
+    sound: settings?.restEndSound ?? true,
+    nextExercise:
+      workout?.exercises.find((item) =>
+        item.sets.some((set) => set.completedAt === null)
+      )?.name ?? null,
+  });
 
   if (workout === undefined || settings === undefined) {
     return (
@@ -96,6 +115,8 @@ export default function ActiveWorkoutScreen() {
   );
   const exercise: WorkoutExercise | undefined = workout.exercises[index];
   const fields = exercise ? SET_FIELDS[exercise.type] : [];
+  const exercisePlannedRest =
+    exercise?.plannedRestSeconds ?? settings.defaultRestSeconds;
   const currentSetIndex = exercise
     ? exercise.sets.findIndex((set) => set.completedAt === null)
     : -1;
@@ -209,6 +230,7 @@ export default function ActiveWorkoutScreen() {
     attempt(async () => {
       if (reason === 'terminate') haptic('destructive-confirmation');
       await endWorkout({ workoutId: workout._id, reason });
+      await cancelRestEndNotification();
       router.replace(`/workout/finished/${workout._id}`);
     }, 'Could not end this Workout. Try again.');
 
@@ -326,23 +348,49 @@ export default function ActiveWorkoutScreen() {
       />
       {exercise ? (
         <>
-          <ExerciseTitlePager
-            pages={workout.exercises.map((item) => {
-              const next = item.sets.findIndex(
-                (set) => set.completedAt === null
-              );
-              return {
-                key: item._id,
-                name: item.name,
-                status:
-                  next === -1
-                    ? `All ${item.sets.length} Sets logged`
-                    : `Set ${next + 1} of ${item.sets.length}`,
-              };
-            })}
-            selectedIndex={index}
-            onSelect={selectExercise}
-          />
+          <Row spacing={8} alignment="center">
+            <ExerciseTitlePager
+              pages={workout.exercises.map((item) => {
+                const next = item.sets.findIndex(
+                  (set) => set.completedAt === null
+                );
+                return {
+                  key: item._id,
+                  name: item.name,
+                  status:
+                    next === -1
+                      ? `All ${item.sets.length} Sets logged`
+                      : `Set ${next + 1} of ${item.sets.length}`,
+                };
+              })}
+              selectedIndex={index}
+              onSelect={selectExercise}
+            />
+            <RestTimer
+              rest={workout.rest}
+              plannedSeconds={exercisePlannedRest}
+              now={now}
+              onAdjust={(seconds) =>
+                attempt(
+                  () => adjustRest({ workoutId: workout._id, seconds }),
+                  'Could not adjust rest.'
+                )
+              }
+              onSkip={() =>
+                attempt(
+                  () => skipRest({ workoutId: workout._id }),
+                  'Could not skip rest.'
+                )
+              }
+              onReset={() =>
+                attempt(
+                  () => resetRest({ workoutId: workout._id }),
+                  'Could not restart rest.'
+                )
+              }
+              onOpenOptions={() => setIsRestSheetOpen(true)}
+            />
+          </Row>
           <QuickActionRow
             actions={settings.quickActions}
             handlers={{
@@ -460,6 +508,35 @@ export default function ActiveWorkoutScreen() {
           />
         </Column>
       </BottomSheet>
+      {exercise ? (
+        <RestOptionsSheet
+          isPresented={isRestSheetOpen}
+          isResting={workout.rest !== null && workout.rest.endsAt > now}
+          exerciseName={exercise.name}
+          defaultSeconds={exercisePlannedRest}
+          onAdjust={(seconds) =>
+            attempt(
+              () => adjustRest({ workoutId: workout._id, seconds }),
+              'Could not adjust rest.'
+            )
+          }
+          onSkip={() => {
+            setIsRestSheetOpen(false);
+            void attempt(
+              () => skipRest({ workoutId: workout._id }),
+              'Could not skip rest.'
+            );
+          }}
+          onSetDefault={(seconds) =>
+            attempt(
+              () =>
+                setExerciseRest({ workoutExerciseId: exercise._id, seconds }),
+              'Could not change the default rest.'
+            )
+          }
+          onDismiss={() => setIsRestSheetOpen(false)}
+        />
+      ) : null}
       <SetTypeSheet
         current={
           exercise?.sets.find((set) => set._id === typeSheetSetId)?.type ?? null

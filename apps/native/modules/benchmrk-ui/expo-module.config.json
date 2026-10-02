@@ -1,7 +1,10 @@
 {
   "name": "benchmrk-ui",
-  "platforms": ["android"],
-  "coreFeatures": ["compose"],
+  "platforms": ["apple", "android"],
+  "coreFeatures": ["swiftui", "compose"],
+  "apple": {
+    "modules": ["BenchmrkUIModule"]
+  },
   "android": {
     "modules": ["expo.modules.benchmrkui.BenchmrkUIModule"]
   }

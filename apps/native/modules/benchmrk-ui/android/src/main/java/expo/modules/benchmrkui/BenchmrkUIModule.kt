@@ -71,6 +71,23 @@ class BenchmrkUIModule : Module() {
         )
       }
     }
+
+    View<GestureBoxProps>("GestureBoxView") {
+      val onTap by Event<Unit>()
+      val onLongPress by Event<Unit>()
+      val onSwipe by Event<GestureBoxSwipe>()
+      val onAction by Event<GestureBoxActionEvent>()
+
+      Content { props ->
+        GestureBoxContent(
+          props,
+          onTap = { onTap(Unit) },
+          onLongPress = { onLongPress(Unit) },
+          onSwipe = { direction -> onSwipe(GestureBoxSwipe(direction)) },
+          onAction = { id -> onAction(GestureBoxActionEvent(id)) }
+        )
+      }
+    }
   }
 }
 

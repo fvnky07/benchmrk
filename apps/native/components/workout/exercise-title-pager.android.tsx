@@ -4,7 +4,7 @@ import {
   type HorizontalPagerHandle,
   Text,
 } from '@expo/ui/jetpack-compose';
-import { fillMaxWidth } from '@expo/ui/jetpack-compose/modifiers';
+import { fillMaxWidth, weight } from '@expo/ui/jetpack-compose/modifiers';
 import { useEffect, useRef } from 'react';
 
 import type { ExerciseTitlePagerProps } from './exercise-title-pager';
@@ -28,7 +28,7 @@ export function ExerciseTitlePager({
       onSettledPageChange={(page) => {
         if (page !== selectedIndex) onSelect(page);
       }}
-      modifiers={[fillMaxWidth()]}
+      modifiers={[weight(1)]}
     >
       {pages.map((page) => (
         <Column key={page.key} modifiers={[fillMaxWidth()]}>
