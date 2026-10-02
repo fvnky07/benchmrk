@@ -7,6 +7,7 @@ import { getIdentityId, requireIdentityId } from './lib/identity';
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 const BIO_MAX_LENGTH = 150;
+const NAME_MAX_LENGTH = 50;
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -54,16 +55,25 @@ export const suggestUsername = query({
   },
 });
 
-/** Changes username, bio or photo; usernames are stored lowercase and unique. */
+/** Changes display name, username, bio or photo; usernames are stored lowercase and unique. */
 export const updateProfile = mutation({
   args: {
+    name: v.optional(v.string()),
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     imageStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
     const identityId = await requireIdentityId(ctx);
+    const name = args.name?.trim();
     const username = args.username?.toLowerCase();
+
+    if (
+      name !== undefined &&
+      (name.length === 0 || name.length > NAME_MAX_LENGTH)
+    ) {
+      throw new ConvexError('INVALID_NAME');
+    }
 
     if (username !== undefined) {
       if (!USERNAME_PATTERN.test(username)) {
@@ -81,6 +91,7 @@ export const updateProfile = mutation({
 
     return await ctx.runMutation(components.betterAuth.profile.updateProfile, {
       userId: identityId,
+      name,
       username,
       bio: args.bio,
       imageStorageId: args.imageStorageId,
