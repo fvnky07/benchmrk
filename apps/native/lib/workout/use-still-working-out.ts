@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 /** "Still working out?" comes after this long without activity. */
@@ -57,6 +57,7 @@ export function useStillWorkingOut({
 }) {
   const [localActivity, setLocalActivity] = useState(0);
   const activity = Math.max(lastActivity, localActivity);
+  const markActive = useCallback(() => setLocalActivity(Date.now()), []);
   const finish = useRef(onFinish);
   finish.current = onFinish;
 
@@ -68,6 +69,7 @@ export function useStillWorkingOut({
       const { granted } = await Notifications.getPermissionsAsync();
       if (!granted || cancelled) return;
       await prepare();
+      if (cancelled) return;
       await Notifications.scheduleNotificationAsync({
         identifier: NOTIFICATION_ID,
         content: {
@@ -103,13 +105,7 @@ export function useStillWorkingOut({
   return {
     /** Idle for 20 minutes while the app is open. */
     isIdle: enabled && now - activity >= IDLE_MS,
-    /**
-     * Records in-app activity, like a keypad press or "Keep going". At most
-     * once a minute, so typing doesn't reschedule on every key.
-     */
-    markActive: () =>
-      setLocalActivity((current) =>
-        Date.now() - current > 60_000 ? Date.now() : current
-      ),
+    /** Every interaction moves the idle deadline, including unsaved edits. */
+    markActive,
   };
 }

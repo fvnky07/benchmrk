@@ -27,6 +27,8 @@ type MachineSetupSheetProps = {
     name: string;
     machineSetup: MachineSetup | null;
   } | null;
+  /** Called on every edit, so the Workout counts as active. */
+  onActivity: () => void;
   onDismiss: () => void;
 };
 
@@ -36,6 +38,7 @@ type MachineSetupSheetProps = {
  */
 export function MachineSetupSheet({
   exercise,
+  onActivity,
   onDismiss,
 }: Readonly<MachineSetupSheetProps>) {
   const saveSetup = useMutation(api.machineSetups.save);
@@ -46,7 +49,13 @@ export function MachineSetupSheet({
   const [custom, setCustom] = useState(exercise?.machineSetup?.custom ?? []);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const editCustom: typeof setCustom = (update) => {
+    onActivity();
+    setCustom(update);
+  };
+
   const run = async (action: () => Promise<unknown>, failure: string) => {
+    onActivity();
     try {
       setErrorMessage(null);
       await action();
@@ -56,7 +65,8 @@ export function MachineSetupSheet({
     }
   };
 
-  const stepPosition = (key: keyof MachinePositions, direction: 1 | -1) =>
+  const stepPosition = (key: keyof MachinePositions, direction: 1 | -1) => {
+    onActivity();
     setPositions((current) => {
       const { step, min } = POSITIONS[key];
       const value = current[key];
@@ -71,6 +81,7 @@ export function MachineSetupSheet({
         ? others
         : { ...others, [key]: next };
     });
+  };
 
   const hasValues =
     Object.keys(positions).length > 0 ||
@@ -128,7 +139,7 @@ export function MachineSetupSheet({
                 placeholder="Handle"
                 value={field.label}
                 onChangeText={(text) =>
-                  setCustom((current) =>
+                  editCustom((current) =>
                     current.map((item, at) =>
                       at === index ? { ...item, label: text } : item
                     )
@@ -140,7 +151,7 @@ export function MachineSetupSheet({
                 placeholder="V-bar"
                 value={field.value}
                 onChangeText={(text) =>
-                  setCustom((current) =>
+                  editCustom((current) =>
                     current.map((item, at) =>
                       at === index ? { ...item, value: text } : item
                     )
@@ -151,7 +162,7 @@ export function MachineSetupSheet({
                 label="Remove field"
                 variant="text"
                 onPress={() =>
-                  setCustom((current) =>
+                  editCustom((current) =>
                     current.filter((_, at) => at !== index)
                   )
                 }
@@ -162,7 +173,7 @@ export function MachineSetupSheet({
             label="Add field"
             variant="outlined"
             onPress={() =>
-              setCustom((current) => [...current, { label: '', value: '' }])
+              editCustom((current) => [...current, { label: '', value: '' }])
             }
           />
           {errorMessage ? (

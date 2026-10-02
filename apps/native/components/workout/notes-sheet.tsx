@@ -47,6 +47,8 @@ type NotesSheetProps = {
   workout: ActiveWorkout;
   /** Where the composer opens; null when closed. */
   opened: NoteTarget | null;
+  /** Called on every edit, so the Workout counts as active. */
+  onActivity: () => void;
   onDismiss: () => void;
 };
 
@@ -125,6 +127,7 @@ function allNotes(workout: ActiveWorkout) {
 export function NotesSheet({
   workout,
   opened,
+  onActivity,
   onDismiss,
 }: Readonly<NotesSheetProps>) {
   const saveNote = useMutation(api.notes.save);
@@ -164,6 +167,7 @@ export function NotesSheet({
   };
 
   const save = async (next: string) => {
+    onActivity();
     if (!target) return;
     try {
       setErrorMessage(null);
@@ -199,6 +203,7 @@ export function NotesSheet({
               <Picker
                 selectedValue={target.kind}
                 onValueChange={(scope) => {
+                  onActivity();
                   const next = scopes[scope as NoteScope];
                   if (next) setTarget(next);
                 }}
@@ -225,7 +230,10 @@ export function NotesSheet({
                 numberOfLines={3}
                 placeholder="Write a note…"
                 value={text}
-                onChangeText={setText}
+                onChangeText={(next) => {
+                  onActivity();
+                  setText(next);
+                }}
               />
               <Row spacing={8}>
                 {saved ? (
@@ -263,7 +271,10 @@ export function NotesSheet({
                   'Note on ',
                   ''
                 )}
-                onPress={() => setTarget(note.target)}
+                onPress={() => {
+                  onActivity();
+                  setTarget(note.target);
+                }}
               >
                 {note.text}
               </ListItem>
