@@ -1,4 +1,12 @@
-import { BottomSheet, Button, Column, ListItem, Row, Spacer, Text } from '@expo/ui';
+import {
+  BottomSheet,
+  Button,
+  Column,
+  ListItem,
+  Row,
+  Spacer,
+  Text,
+} from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
@@ -17,6 +25,7 @@ import { RestTimer } from '@/components/workout/rest-timer';
 import { SetKeypad } from '@/components/workout/set-keypad';
 import { SetTable } from '@/components/workout/set-table';
 import { SetTypeSheet } from '@/components/workout/set-type-sheet';
+import { StructureSheet } from '@/components/workout/structure-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
 import { formatClock } from '@/lib/workout/format';
@@ -65,6 +74,10 @@ export default function ActiveWorkoutScreen() {
   const skipRest = useMutation(api.workouts.skipRest);
   const resetRest = useMutation(api.workouts.resetRest);
   const setExerciseRest = useMutation(api.workouts.setExerciseRest);
+  const moveExercise = useMutation(api.workoutStructure.moveExercise);
+  const setSkipped = useMutation(api.workoutStructure.setSkipped);
+  const removeExercise = useMutation(api.workoutStructure.removeExercise);
+  const swapExercise = useMutation(api.workoutStructure.swapExercise);
   const haptic = useHaptics();
   const now = useNow();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -73,7 +86,8 @@ export default function ActiveWorkoutScreen() {
   const [isKeypadOpen, setIsKeypadOpen] = useState(true);
   const [typeSheetSetId, setTypeSheetSetId] = useState<Id<'sets'> | null>(null);
   const [isRestSheetOpen, setIsRestSheetOpen] = useState(false);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'add' | 'swap' | null>(null);
+  const [isStructureOpen, setIsStructureOpen] = useState(false);
   const [isConfirmingTerminate, setIsConfirmingTerminate] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -81,8 +95,9 @@ export default function ActiveWorkoutScreen() {
   useRestEndNotification(workout?.rest?.endsAt ?? null, {
     sound: settings?.restEndSound ?? true,
     nextExercise:
-      workout?.exercises.find((item) =>
-        item.sets.some((set) => set.completedAt === null)
+      workout?.exercises.find(
+        (item) =>
+          !item.skipped && item.sets.some((set) => set.completedAt === null)
       )?.name ?? null,
   });
 
@@ -106,8 +121,8 @@ export default function ActiveWorkoutScreen() {
   }
 
   const { units, effortScale } = settings;
-  const firstUnfinished = workout.exercises.findIndex((exercise) =>
-    exercise.sets.some((set) => set.completedAt === null)
+  const firstUnfinished = workout.exercises.findIndex(
+    (item) => !item.skipped && item.sets.some((set) => set.completedAt === null)
   );
   const index = Math.min(
     selectedIndex ?? Math.max(firstUnfinished, 0),
@@ -302,6 +317,11 @@ export default function ActiveWorkoutScreen() {
         </Column>
         <Spacer />
         <Button
+          label="Exercises"
+          variant="text"
+          onPress={() => setIsStructureOpen(true)}
+        />
+        <Button
           label="Terminate"
           variant="text"
           onPress={() => setIsConfirmingTerminate(true)}
@@ -340,11 +360,12 @@ export default function ActiveWorkoutScreen() {
         exercises={workout.exercises.map((item) => ({
           key: item._id,
           name: item.name,
+          skipped: item.skipped,
           sets: item.sets.map((set) => ({ done: set.completedAt !== null })),
         }))}
         selectedIndex={index}
         onSelect={selectExercise}
-        onAdd={() => setIsPickerOpen(true)}
+        onAdd={() => setPickerMode('add')}
       />
       {exercise ? (
         <>
@@ -400,6 +421,9 @@ export default function ActiveWorkoutScreen() {
                   'Could not add a Set.'
                 ),
               info: () => router.push(`/workout/exercise/${exercise.slug}`),
+              ...(exercise.sets.every((set) => set.completedAt === null) && {
+                swap: () => setPickerMode('swap'),
+              }),
             }}
           />
           <SetTable
@@ -481,7 +505,7 @@ export default function ActiveWorkoutScreen() {
             label="Add Exercise"
             onPress={() => {
               setIsMenuOpen(false);
-              setIsPickerOpen(true);
+              setPickerMode('add');
             }}
           />
           {allDone ? (
@@ -547,12 +571,59 @@ export default function ActiveWorkoutScreen() {
         }}
         onDismiss={() => setTypeSheetSetId(null)}
       />
-      <ExercisePicker
-        isPresented={isPickerOpen}
-        onDismiss={() => setIsPickerOpen(false)}
-        onPick={(exerciseId) => {
-          setIsPickerOpen(false);
+      <StructureSheet
+        isPresented={isStructureOpen}
+        exercises={workout.exercises.map((item) => ({
+          key: item._id,
+          name: item.name,
+          skipped: item.skipped,
+          hasLoggedSets: item.sets.some((set) => set.completedAt !== null),
+        }))}
+        onMove={(key, toIndex) =>
+          attempt(
+            () =>
+              moveExercise({
+                workoutExerciseId: key as Id<'workoutExercises'>,
+                toIndex,
+              }),
+            'Could not move this Exercise.'
+          )
+        }
+        onSetSkipped={(key, skipped) =>
+          attempt(
+            () =>
+              setSkipped({
+                workoutExerciseId: key as Id<'workoutExercises'>,
+                skipped,
+              }),
+            'Could not skip this Exercise.'
+          )
+        }
+        onRemove={(key) =>
           attempt(async () => {
+            await removeExercise({
+              workoutExerciseId: key as Id<'workoutExercises'>,
+            });
+            setSelectedIndex(null);
+          }, 'Could not remove this Exercise.')
+        }
+        onDismiss={() => setIsStructureOpen(false)}
+      />
+      <ExercisePicker
+        isPresented={pickerMode !== null}
+        onDismiss={() => setPickerMode(null)}
+        onPick={(exerciseId) => {
+          const mode = pickerMode;
+          setPickerMode(null);
+          if (mode === 'swap' && exercise) {
+            void attempt(
+              () =>
+                swapExercise({ workoutExerciseId: exercise._id, exerciseId }),
+              'Could not swap this Exercise.'
+            );
+            return;
+          }
+          void attempt(async () => {
             await addExercise({ workoutId: workout._id, exerciseId });
             setSelectedIndex(workout.exercises.length);
           }, 'Could not add this Exercise.');

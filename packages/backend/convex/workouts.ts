@@ -18,7 +18,7 @@ import { memberSettingsFields, setTypeValidator } from './schema';
 const DEFAULT_SETS_FOR_ADDED_EXERCISE = 3;
 const DEFAULT_REP_RANGE = { min: 6, max: 10 };
 
-async function requireOwnedWorkout(
+export async function requireOwnedWorkout(
   ctx: QueryCtx,
   userId: string,
   workoutId: Id<'workouts'>
@@ -30,7 +30,7 @@ async function requireOwnedWorkout(
   return workout;
 }
 
-function requireActive(workout: Doc<'workouts'>) {
+export function requireActive(workout: Doc<'workouts'>) {
   if (workout.status !== 'active') {
     throw new ConvexError('WORKOUT_NOT_ACTIVE');
   }
@@ -47,7 +47,7 @@ async function requireOwnedSet(
   return { set, workout };
 }
 
-async function requireOwnedWorkoutExercise(
+export async function requireOwnedWorkoutExercise(
   ctx: QueryCtx,
   userId: string,
   workoutExerciseId: Id<'workoutExercises'>
@@ -71,14 +71,17 @@ async function findActiveWorkout(ctx: QueryCtx, userId: string) {
     .first();
 }
 
-async function workoutExercisesOf(ctx: QueryCtx, workoutId: Id<'workouts'>) {
+export async function workoutExercisesOf(
+  ctx: QueryCtx,
+  workoutId: Id<'workouts'>
+) {
   return ctx.db
     .query('workoutExercises')
     .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
     .collect();
 }
 
-async function setsOfExercise(
+export async function setsOfExercise(
   ctx: QueryCtx,
   workoutExerciseId: Id<'workoutExercises'>
 ) {
@@ -90,16 +93,28 @@ async function setsOfExercise(
     .collect();
 }
 
-async function setsOfWorkout(ctx: QueryCtx, workoutId: Id<'workouts'>) {
+export async function setsOfWorkout(ctx: QueryCtx, workoutId: Id<'workouts'>) {
   return ctx.db
     .query('sets')
     .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
     .collect();
 }
 
-/** Planned Sets are every Set except warm-ups; progress counts the completed ones. */
-function progressOf(sets: Doc<'sets'>[]) {
-  const planned = sets.filter((set) => set.type !== 'warmup');
+/**
+ * Planned Sets are every Set except warm-ups and the unlogged Sets of skipped
+ * Exercises; progress counts the completed ones.
+ */
+async function progressOf(ctx: QueryCtx, workoutId: Id<'workouts'>) {
+  const skipped = new Set(
+    (await workoutExercisesOf(ctx, workoutId))
+      .filter((workoutExercise) => workoutExercise.skipped)
+      .map((workoutExercise) => workoutExercise._id)
+  );
+  const planned = (await setsOfWorkout(ctx, workoutId)).filter(
+    (set) =>
+      set.type !== 'warmup' &&
+      (set.completedAt !== undefined || !skipped.has(set.workoutExerciseId))
+  );
   return {
     done: planned.filter((set) => set.completedAt !== undefined).length,
     total: planned.length,
@@ -143,6 +158,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
           repRangeMax: workoutExercise.repRangeMax,
           stepKg: workoutExercise.stepKg,
           plannedRestSeconds: workoutExercise.plannedRestSeconds ?? null,
+          skipped: workoutExercise.skipped ?? false,
           sets: sets.map((set) => ({
             _id: set._id,
             order: set.order,
@@ -167,7 +183,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
     startedAt: workout.startedAt,
     finishedAt: workout.finishedAt ?? null,
     finishReason: workout.finishReason ?? null,
-    progress: progressOf(await setsOfWorkout(ctx, workout._id)),
+    progress: await progressOf(ctx, workout._id),
     rest: workout.rest
       ? {
           ...workout.rest,
@@ -434,7 +450,7 @@ async function startRestAfter(
   workoutExerciseId: Id<'workoutExercises'>,
   now: number
 ) {
-  const { done, total } = progressOf(await setsOfWorkout(ctx, workout._id));
+  const { done, total } = await progressOf(ctx, workout._id);
   const workoutExercise = await ctx.db.get(workoutExerciseId);
   const plannedSeconds =
     workoutExercise?.plannedRestSeconds ??
@@ -548,7 +564,7 @@ export const end = mutation({
     const workout = await requireOwnedWorkout(ctx, userId, args.workoutId);
     requireActive(workout);
     const sets = await setsOfWorkout(ctx, workout._id);
-    const progress = progressOf(sets);
+    const progress = await progressOf(ctx, workout._id);
     if (args.reason === 'finish' && progress.done < progress.total) {
       throw new ConvexError('NOT_ALL_SETS_DONE');
     }
