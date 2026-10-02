@@ -8,6 +8,7 @@ import {
   query,
 } from './_generated/server';
 import { isValidRpe, rpeFromEffort } from './domain/effort';
+import { meetsTarget } from './domain/overload';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { leaveGroup } from './lib/groupProgress';
@@ -77,6 +78,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
           stepKg: workoutExercise.stepKg,
           plannedRestSeconds: workoutExercise.plannedRestSeconds ?? null,
           skipped: workoutExercise.skipped ?? false,
+          overload: workoutExercise.overload ?? null,
           sets: sets.map((set) => ({
             _id: set._id,
             order: set.order,
@@ -89,6 +91,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             completedAt: set.completedAt ?? null,
             target: set.target ?? null,
             fromTarget: set.fromTarget ?? null,
+            previous: set.previous ?? null,
           })),
         };
       }
@@ -421,10 +424,7 @@ export const completeSet = workoutMutation({
     await startRestAfter(ctx, workout, set.workoutExerciseId, now);
     const target = workingTarget(logged);
     return {
-      targetMet:
-        target !== undefined &&
-        (logged.reps ?? 0) >= target.reps &&
-        (target.weightKg === null || (logged.weightKg ?? 0) >= target.weightKg),
+      targetMet: target !== undefined && meetsTarget(logged, target),
     };
   },
 });

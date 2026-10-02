@@ -1,5 +1,6 @@
 import { ListItem, Picker, Switch, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
+import { toKg, type WeightUnit } from '@repo/backend/convex/domain/units';
 import { useMutation, useQuery } from 'convex/react';
 import type { FunctionArgs } from 'convex/server';
 import { router, useFocusEffect } from 'expo-router';
@@ -7,12 +8,20 @@ import { useCallback, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
+import { weightInUnit } from '@/lib/workout/format';
 
 const REST_CHOICES_SECONDS = [30, 60, 90, 120, 180, 240];
+
+/** Smallest increments a gym usually has, in each unit. */
+const INCREMENT_CHOICES: Record<WeightUnit, readonly number[]> = {
+  kg: [0.5, 1, 1.25, 2.5],
+  lb: [1, 2.5, 5],
+};
 
 export default function WorkoutSettingsScreen() {
   const settings = useQuery(api.memberSettings.get);
   const updateSettings = useMutation(api.memberSettings.update);
+  const setTargetsEnabled = useMutation(api.overload.setTargetsEnabled);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -22,10 +31,7 @@ export default function WorkoutSettingsScreen() {
     }, [])
   );
 
-  const save = async (
-    changes: FunctionArgs<typeof api.memberSettings.update>,
-    track?: () => void
-  ) => {
+  const save = async (change: () => Promise<unknown>, track?: () => void) => {
     if (isSaving) {
       return;
     }
@@ -33,7 +39,7 @@ export default function WorkoutSettingsScreen() {
     try {
       setIsSaving(true);
       setErrorMessage(null);
-      await updateSettings(changes);
+      await change();
       track?.();
     } catch {
       setErrorMessage('Could not save this setting. Try again.');
@@ -60,6 +66,15 @@ export default function WorkoutSettingsScreen() {
     );
   }
 
+  const update = (
+    changes: FunctionArgs<typeof api.memberSettings.update>,
+    track?: () => void
+  ) => save(() => updateSettings(changes), track);
+  const increment = weightInUnit(settings.smallestIncrementKg, settings.units);
+  const incrementChoices = [
+    ...new Set([...INCREMENT_CHOICES[settings.units], increment]),
+  ].sort((a, b) => a - b);
+
   return (
     <NativeScreen>
       <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
@@ -73,7 +88,7 @@ export default function WorkoutSettingsScreen() {
         selectedValue={settings.defaultRestSeconds}
         onValueChange={(value) => {
           if (typeof value === 'number') {
-            save({ defaultRestSeconds: value }, () =>
+            update({ defaultRestSeconds: value }, () =>
               analytics.restTimerChanged(value)
             );
           }
@@ -95,7 +110,7 @@ export default function WorkoutSettingsScreen() {
         selectedValue={settings.units}
         onValueChange={(value) => {
           if (value === 'kg' || value === 'lb') {
-            save({ units: value }, () => analytics.weightUnitChanged(value));
+            update({ units: value }, () => analytics.weightUnitChanged(value));
           }
         }}
       >
@@ -110,7 +125,7 @@ export default function WorkoutSettingsScreen() {
         selectedValue={settings.effortScale}
         onValueChange={(value) => {
           if (value === 'RPE' || value === 'RIR') {
-            save({ effortScale: value });
+            update({ effortScale: value });
           }
         }}
       >
@@ -121,14 +136,43 @@ export default function WorkoutSettingsScreen() {
         disabled={isSaving}
         label="Haptics"
         value={settings.haptics}
-        onValueChange={(haptics) => save({ haptics })}
+        onValueChange={(haptics) => update({ haptics })}
       />
       <Switch
         disabled={isSaving}
         label="Rest-end sound"
         value={settings.restEndSound}
-        onValueChange={(restEndSound) => save({ restEndSound })}
+        onValueChange={(restEndSound) => update({ restEndSound })}
       />
+      <ListItem supportingText="A target for every Set, from your own last Workout. You can also switch them off for one Exercise from its target.">
+        Overload targets
+      </ListItem>
+      <Switch
+        disabled={isSaving}
+        label="Show Overload targets"
+        value={settings.overloadTargets}
+        onValueChange={(enabled) => save(() => setTargetsEnabled({ enabled }))}
+      />
+      <ListItem supportingText="The smallest weight change your gym can load, used when a target suggests a smaller jump.">
+        Smallest increment
+      </ListItem>
+      <Picker
+        enabled={!isSaving}
+        selectedValue={increment}
+        onValueChange={(value) => {
+          if (typeof value === 'number') {
+            update({ smallestIncrementKg: toKg(value, settings.units) });
+          }
+        }}
+      >
+        {incrementChoices.map((choice) => (
+          <Picker.Item
+            key={choice}
+            label={`${choice} ${settings.units}`}
+            value={choice}
+          />
+        ))}
+      </Picker>
       <ListItem
         supportingText="Choose and reorder the chips under the Exercise title."
         onPress={() => router.push('/(main)/settings/quick-actions')}

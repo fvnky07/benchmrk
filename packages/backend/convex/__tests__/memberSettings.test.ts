@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { api } from '../_generated/api';
+import { toKg } from '../domain/units';
 import { createTest } from './harness.testing';
 
 const DEFAULT_QUICK_ACTIONS = [
@@ -23,6 +24,9 @@ const DEFAULTS = {
   quickActions: DEFAULT_QUICK_ACTIONS,
   swipeHintDismissed: false,
   restEndSound: true,
+  overloadTargets: true,
+  targetsOffExerciseIds: [],
+  smallestIncrementKg: 1.25,
 };
 
 describe('member settings', () => {
@@ -41,7 +45,7 @@ describe('member settings', () => {
     expect(await member.query(api.memberSettings.get, {})).toEqual(DEFAULTS);
   });
 
-  test('keep a partial update and the remaining defaults', async () => {
+  test('keep a partial update and the remaining defaults, with the smallest increment following the unit', async () => {
     const member = createTest().withIdentity({ subject: 'member-a' });
 
     await member.mutation(api.memberSettings.update, {
@@ -63,6 +67,7 @@ describe('member settings', () => {
       defaultRestSeconds: 120,
       haptics: false,
       analyticsOptOut: true,
+      smallestIncrementKg: toKg(2.5, 'lb'),
     });
   });
 

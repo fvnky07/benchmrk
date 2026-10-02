@@ -208,3 +208,18 @@ export function targetText(target: SetTargetValues, unit: WeightUnit): string {
     ? `${target.reps} reps`
     : `${storedToDraft('weight', target.weightKg, unit)} × ${target.reps}`;
 }
+
+/** A Set's values in one line: "60 × 8", "8 reps", "1:00" or "5 km · 25:00". */
+export function setSummary(set: StoredValues, unit: WeightUnit): string {
+  if (set.reps !== null) {
+    return targetText({ weightKg: set.weightKg, reps: set.reps }, unit);
+  }
+  return [
+    set.distanceMeters === null
+      ? null
+      : `${storedToDraft('distance', set.distanceMeters, unit)} km`,
+    set.durationSeconds === null ? null : formatClock(set.durationSeconds),
+  ]
+    .filter((part) => part !== null)
+    .join(' · ');
+}

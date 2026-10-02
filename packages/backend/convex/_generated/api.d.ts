@@ -32,6 +32,7 @@ import type * as lib_webCrypto from "../lib/webCrypto.js";
 import type * as lib_workoutData from "../lib/workoutData.js";
 import type * as lib_workoutMutation from "../lib/workoutMutation.js";
 import type * as memberSettings from "../memberSettings.js";
+import type * as overload from "../overload.js";
 import type * as profile from "../profile.js";
 import type * as routines from "../routines.js";
 import type * as waitlist from "../waitlist.js";
@@ -69,6 +70,7 @@ declare const fullApi: ApiFromModules<{
   "lib/workoutData": typeof lib_workoutData;
   "lib/workoutMutation": typeof lib_workoutMutation;
   memberSettings: typeof memberSettings;
+  overload: typeof overload;
   profile: typeof profile;
   routines: typeof routines;
   waitlist: typeof waitlist;

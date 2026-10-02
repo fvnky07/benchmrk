@@ -30,6 +30,12 @@ export const memberSettingsFields = {
   swipeHintDismissed: v.boolean(),
   /** Rest-end notifications play a sound. */
   restEndSound: v.boolean(),
+  /** Overload targets everywhere; off suppresses computing and showing them. */
+  overloadTargets: v.boolean(),
+  /** Exercises the member switched Overload targets off for. */
+  targetsOffExerciseIds: v.array(v.id('exercises')),
+  /** The smallest weight change a smaller jump can use, in kg. */
+  smallestIncrementKg: v.number(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -43,6 +49,9 @@ export const memberSettingsChangeFields = {
   quickActions: v.optional(memberSettingsFields.quickActions),
   swipeHintDismissed: v.optional(memberSettingsFields.swipeHintDismissed),
   restEndSound: v.optional(memberSettingsFields.restEndSound),
+  overloadTargets: v.optional(memberSettingsFields.overloadTargets),
+  targetsOffExerciseIds: v.optional(memberSettingsFields.targetsOffExerciseIds),
+  smallestIncrementKg: v.optional(memberSettingsFields.smallestIncrementKg),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -87,16 +96,33 @@ export const groupProgressValidator = v.object({
 });
 
 export const overloadReasonValidator = v.union(
+  v.literal('baseline'),
   v.literal('routine-target'),
   v.literal('rep-progression'),
-  v.literal('weight-increase')
+  v.literal('weight-increase'),
+  v.literal('hold-below-range'),
+  v.literal('smaller-jump')
 );
 
 export const setTargetValidator = v.object({
   weightKg: v.union(v.number(), v.null()),
   reps: v.number(),
+});
+
+export const overloadBasisValidator = v.object({
   reason: overloadReasonValidator,
+  /** A Working Set last time was unrated; it counted as passing. */
   effortNotChecked: v.boolean(),
+  /** Every Working Set reached the top, but one was rated above RPE 9. */
+  effortBlocked: v.boolean(),
+  /** Three consecutive Stalled Workouts. */
+  plateau: v.boolean(),
+  /** The Rep range changed since last time; never a stall. */
+  repRangeChanged: v.boolean(),
+  /** The member edited the target; an override is never penalised. */
+  edited: v.boolean(),
+  /** Declined for this Workout: no targets, never a stall. */
+  declined: v.boolean(),
 });
 
 export default defineSchema({
@@ -207,6 +233,10 @@ export default defineSchema({
     plannedRestSeconds: v.optional(v.number()),
     /** Skipped for this Workout: its unlogged Sets stop counting. */
     skipped: v.optional(v.boolean()),
+    /** What this Workout's Overload targets are based on; absent when targets are off or don't apply. */
+    overload: v.optional(overloadBasisValidator),
+    /** The Plateau flag was dismissed while this was the newest exposure; it shows again after a newer one. */
+    plateauDismissed: v.optional(v.boolean()),
   }).index('by_workout', ['workoutId', 'order']),
 
   sets: defineTable({
@@ -228,6 +258,13 @@ export default defineSchema({
     /** Which logged values came from the target (cleared when the member edits them). */
     fromTarget: v.optional(
       v.object({ weight: v.boolean(), reps: v.boolean() })
+    ),
+    /** Timed and cardio Sets show the previous Workout's Set instead of a target. */
+    previous: v.optional(
+      v.object({
+        durationSeconds: v.optional(v.number()),
+        distanceMeters: v.optional(v.number()),
+      })
     ),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])
