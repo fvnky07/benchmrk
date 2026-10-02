@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "native",
+    "name": "benchmrk",
     "slug": "native",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.benchmrk.native",
+      "bundleIdentifier": "com.benchmrk.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library so you can choose a profile picture.",
         "NSCameraUsageDescription": "This app needs access to your camera so you can take a profile picture.",
