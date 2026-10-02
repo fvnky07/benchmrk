@@ -19,6 +19,7 @@ import type * as domain_time from "../domain/time.js";
 import type * as domain_units from "../domain/units.js";
 import type * as exerciseComments from "../exerciseComments.js";
 import type * as exercises from "../exercises.js";
+import type * as groupInvites from "../groupInvites.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   "domain/units": typeof domain_units;
   exerciseComments: typeof exerciseComments;
   exercises: typeof exercises;
+  groupInvites: typeof groupInvites;
   groups: typeof groups;
   http: typeof http;
   init: typeof init;

@@ -46,6 +46,12 @@ export const memberSettingsFields = {
   }),
   /** Quiet ahead/behind text beside the progress row. */
   aheadBehind: v.boolean(),
+  /** Who may invite the member to a Group by username. */
+  invitesFrom: v.union(
+    v.literal('everyone'),
+    v.literal('groupmates'),
+    v.literal('nobody')
+  ),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -65,6 +71,7 @@ export const memberSettingsChangeFields = {
   autoAdvance: v.optional(memberSettingsFields.autoAdvance),
   plates: v.optional(memberSettingsFields.plates),
   aheadBehind: v.optional(memberSettingsFields.aheadBehind),
+  invitesFrom: v.optional(memberSettingsFields.invitesFrom),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -405,4 +412,26 @@ export default defineSchema({
   })
     .index('by_code', ['code'])
     .index('by_group', ['groupId']),
+
+  // Username invites to a Group. One the invitee's invite permission refuses
+  // is kept undelivered: it looks sent and counts toward the hourly limit, but
+  // never reaches the invitee.
+  groupInvites: defineTable({
+    groupId: v.id('groups'),
+    inviterId: v.string(),
+    inviteeId: v.string(),
+    createdAt: v.number(),
+    delivered: v.boolean(),
+    /** Dismissed: the invitee cleared it after it expired or the Group ended. */
+    status: v.union(
+      v.literal('pending'),
+      v.literal('accepted'),
+      v.literal('declined'),
+      v.literal('dismissed')
+    ),
+    respondedAt: v.optional(v.number()),
+  })
+    .index('by_invitee', ['inviteeId', 'delivered', 'status', 'createdAt'])
+    .index('by_inviter', ['inviterId', 'createdAt'])
+    .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt']),
 });
