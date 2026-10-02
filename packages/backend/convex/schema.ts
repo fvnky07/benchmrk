@@ -53,6 +53,17 @@ export default defineSchema({
     lastSentAt: v.number(),
   }).index('by_email', ['email']),
 
+  // Website deletion requests (Google Play). Only the SHA-256 of the emailed
+  // token is stored; a request counts once `confirmedAt` is set.
+  deletionRequests: defineTable({
+    email: v.string(),
+    tokenHash: v.string(),
+    linkSentAt: v.number(),
+    confirmedAt: v.optional(v.number()),
+  })
+    .index('by_email', ['email'])
+    .index('by_tokenHash', ['tokenHash']),
+
   memberSettings: defineTable({
     userId: v.string(),
     ...memberSettingsFields,
