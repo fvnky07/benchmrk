@@ -83,15 +83,14 @@ export const list = query({
       .withIndex('by_userId', (q) => q.eq('userId', userId))
       .collect();
 
-    const summaries = await Promise.all(
-      routines.map(async (routine) => ({
+    return routines
+      .map((routine) => ({
         _id: routine._id,
         name: routine.name,
-        exerciseCount: (await routineExercisesOf(ctx, routine._id)).length,
+        exerciseCount: routine.exerciseCount,
         updatedAt: routine.updatedAt,
       }))
-    );
-    return summaries.sort((a, b) => b.updatedAt - a.updatedAt);
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   },
 });
 
@@ -146,6 +145,7 @@ export const create = mutation({
     return ctx.db.insert('routines', {
       userId,
       name: requireName(args.name, 'EMPTY_ROUTINE_NAME'),
+      exerciseCount: 0,
       updatedAt: Date.now(),
     });
   },
@@ -203,10 +203,10 @@ export const addExercise = mutation({
   args: { routineId: v.id('routines'), exerciseId: v.id('exercises') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
-    await requireOwnedRoutine(ctx, userId, args.routineId);
+    const routine = await requireOwnedRoutine(ctx, userId, args.routineId);
     const exercise = await requireVisibleExercise(ctx, userId, args.exerciseId);
     const { units } = await readMemberSettings(ctx, userId);
-    const order = (await routineExercisesOf(ctx, args.routineId)).length;
+    const order = routine.exerciseCount;
 
     const routineExerciseId = await ctx.db.insert('routineExercises', {
       routineId: args.routineId,
@@ -218,7 +218,10 @@ export const addExercise = mutation({
       setRepTargets: [],
       stepKg: defaultStepKg(exercise.equipment, units),
     });
-    await touch(ctx, args.routineId);
+    await ctx.db.patch(routine._id, {
+      exerciseCount: routine.exerciseCount + 1,
+      updatedAt: Date.now(),
+    });
     return routineExerciseId;
   },
 });
@@ -249,7 +252,7 @@ export const updateExercise = mutation({
       changes.setRepTargets ?? routineExercise.setRepTargets
     ).slice(0, changes.setRepTargets ? undefined : targetSets);
 
-    if (!Number.isInteger(targetSets) || targetSets < 1) {
+    if (!Number.isInteger(targetSets) || targetSets < 1 || targetSets > 20) {
       throw new ConvexError('INVALID_TARGET_SETS');
     }
     if (
@@ -332,6 +335,9 @@ export const removeExercise = mutation({
     );
     await ctx.db.delete(routineExercise._id);
     await renumber(ctx, await routineExercisesOf(ctx, routine._id));
-    await touch(ctx, routine._id);
+    await ctx.db.patch(routine._id, {
+      exerciseCount: routine.exerciseCount - 1,
+      updatedAt: Date.now(),
+    });
   },
 });

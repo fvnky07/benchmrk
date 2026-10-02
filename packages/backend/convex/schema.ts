@@ -73,6 +73,7 @@ export default defineSchema({
   routines: defineTable({
     userId: v.string(),
     name: v.string(),
+    exerciseCount: v.number(),
     targetDurationSeconds: v.optional(v.number()),
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),

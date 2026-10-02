@@ -27,7 +27,7 @@ export type RoutineExercise = NonNullable<
 >['exercises'][number];
 
 const ERROR_COPY: Record<string, string> = {
-  INVALID_TARGET_SETS: 'Target Sets must be a whole number of at least 1.',
+  INVALID_TARGET_SETS: 'Target Sets must be a whole number from 1 to 20.',
   INVALID_REP_RANGE:
     'The Rep range needs whole numbers, with the lower bound at least 1 and no higher than the upper bound.',
   TOO_MANY_SET_TARGETS: 'There are more per-Set targets than target Sets.',
@@ -94,7 +94,8 @@ export function RoutineExerciseEditor({
   const tracksLoad =
     routineExercise.type === 'strength' ||
     routineExercise.type === 'bodyweight';
-  const setCount = parseWholeNumber(targetSets) ?? 0;
+  const parsedSetCount = parseWholeNumber(targetSets) ?? 0;
+  const setCount = Math.min(parsedSetCount, 20);
 
   const run = async (action: () => Promise<unknown>) => {
     try {
@@ -142,7 +143,11 @@ export function RoutineExerciseEditor({
     const parsedTargetSets = parseWholeNumber(targetSets);
     const parsedMin = parseWholeNumber(repRangeMin);
     const parsedMax = parseWholeNumber(repRangeMax);
-    if (parsedTargetSets === null) {
+    if (
+      parsedTargetSets === null ||
+      parsedTargetSets < 1 ||
+      parsedTargetSets > 20
+    ) {
       setErrorMessage(ERROR_COPY.INVALID_TARGET_SETS ?? null);
       return;
     }

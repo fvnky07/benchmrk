@@ -162,6 +162,33 @@ describe('Routines', () => {
     });
   });
 
+  test('target Sets accept the maximum of 20 and reject larger allocations', async () => {
+    const { t, member } = await seededMember();
+    const routineId = await member.mutation(api.routines.create, {
+      name: 'Upper A',
+    });
+    const routineExerciseId = await member.mutation(api.routines.addExercise, {
+      routineId,
+      exerciseId: await exerciseId(t, 'squat'),
+    });
+    await member.mutation(api.routines.updateExercise, {
+      routineExerciseId,
+      targetSets: 20,
+    });
+    for (const targetSets of [21, 10_000_000]) {
+      await expect(
+        member.mutation(api.routines.updateExercise, {
+          routineExerciseId,
+          targetSets,
+        })
+      ).rejects.toThrow('INVALID_TARGET_SETS');
+    }
+    expect(
+      (await member.query(api.routines.get, { routineId }))?.exercises[0]
+        ?.targetSets
+    ).toBe(20);
+  });
+
   test('per-Set targets never outnumber the target Sets', async () => {
     const { t, member } = await seededMember();
     const routineId = await member.mutation(api.routines.create, {
@@ -260,6 +287,9 @@ describe('Routines', () => {
       routineExerciseId: before?.exercises[0]?._id as Id<'routineExercises'>,
     });
     expect(await names()).toEqual(['Overhead Press', 'Bent-over Row']);
+    expect(await member.query(api.routines.list, {})).toMatchObject([
+      { _id: routineId, exerciseCount: 2 },
+    ]);
 
     await member.mutation(api.routines.setTargetDuration, {
       routineId,
