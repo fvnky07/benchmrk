@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { NativeScreen } from '@/components/native/native-screen';
 import { SaveToRoutine } from '@/components/workout/save-to-routine';
 import { formatClock } from '@/lib/workout/format';
+import { formatMinutes } from '@/lib/workout/time';
 
 export default function WorkoutFinishedScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -51,6 +52,8 @@ export default function WorkoutFinishedScreen() {
   }
 
   const finishedAt = workout.finishedAt ?? workout.startedAt;
+  const durationSeconds = (finishedAt - workout.startedAt) / 1000;
+  const { time, targetDurationSeconds } = workout;
 
   return (
     <NativeScreen>
@@ -62,9 +65,25 @@ export default function WorkoutFinishedScreen() {
       <ListItem supportingText={workout.name}>
         {`${workout.progress.done} of ${workout.progress.total} planned Sets`}
       </ListItem>
-      <ListItem supportingText="From start to the end time below">
-        {`Duration ${formatClock((finishedAt - workout.startedAt) / 1000)}`}
+      <ListItem
+        supportingText={
+          targetDurationSeconds === null
+            ? 'From start to the end time below'
+            : `Target ${formatMinutes(targetDurationSeconds)} · ${
+                durationSeconds > targetDurationSeconds ? '+' : '−'
+              }${formatMinutes(Math.abs(durationSeconds - targetDurationSeconds))}`
+        }
+      >
+        {`Duration ${formatClock(durationSeconds)}`}
       </ListItem>
+      <ListItem supportingText="Estimates, from when you edited and logged each Set">
+        {`Working ≈ ${formatMinutes(time.workingSeconds)} · Rest ≈ ${formatMinutes(time.restSeconds)} · Transitions ≈ ${formatMinutes(time.transitionSeconds)}`}
+      </ListItem>
+      {time.adherence ? (
+        <ListItem supportingText="Average actual rest vs planned">
+          {`Rest ${formatClock(time.adherence.actualSeconds)} vs ${formatClock(time.adherence.plannedSeconds)} planned`}
+        </ListItem>
+      ) : null}
       <ListItem supportingText="Defaults to your last completed Set. Change it if you forgot to finish.">
         End time
       </ListItem>

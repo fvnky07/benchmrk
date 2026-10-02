@@ -108,6 +108,9 @@ export default function RoutineBuilderScreen() {
             key={exercise._id}
             onPress={() => setEditingIndex(index)}
             supportingText={[
+              exercise.blockId !== null
+                ? `Alternating sets · rest ${routine.blocks.find((item) => item._id === exercise.blockId)?.restSeconds ?? exercise.restSeconds} s after each round`
+                : null,
               `${exercise.targetSets} Sets`,
               exercise.type === 'strength' || exercise.type === 'bodyweight'
                 ? `${exercise.repRangeMin}–${exercise.repRangeMax} reps`
@@ -115,7 +118,10 @@ export default function RoutineBuilderScreen() {
               exercise.startingWeightKg === null
                 ? null
                 : `from ${formatWeight(exercise.startingWeightKg, settings.units)}`,
-              `rest ${exercise.restSeconds} s`,
+              exercise.blockId === null
+                ? `rest ${exercise.restSeconds} s`
+                : null,
+              exercise.linkedToNext ? 'alternates with the next' : null,
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -132,7 +138,11 @@ export default function RoutineBuilderScreen() {
       <NativeTextField
         label="Target duration (minutes)"
         keyboardType="number-pad"
-        placeholder="From your recent Workouts"
+        placeholder={
+          routine.suggestedDurationSeconds === null
+            ? 'Suggested after 3 Workouts'
+            : `${Math.round(routine.suggestedDurationSeconds / 60)} from your recent Workouts`
+        }
         value={targetMinutes}
         onChangeText={setTargetMinutes}
       />
@@ -201,6 +211,18 @@ export default function RoutineBuilderScreen() {
         }
         position={editingIndex ?? 0}
         exerciseCount={routine.exercises.length}
+        nextExercise={
+          editingIndex === null
+            ? null
+            : (routine.exercises[editingIndex + 1] ?? null)
+        }
+        block={
+          routine.blocks.find(
+            (item) =>
+              editingIndex !== null &&
+              item._id === routine.exercises[editingIndex]?.blockId
+          ) ?? null
+        }
         units={settings.units}
         onDismiss={() => setEditingIndex(null)}
       />

@@ -13,6 +13,7 @@ export type SwipeRowProps = {
   canDelete: boolean;
   onComplete: () => void;
   onDuplicate: () => void;
+  onNote: () => void;
   onDelete: () => void;
   children: ReactNode;
 };

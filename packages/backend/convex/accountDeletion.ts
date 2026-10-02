@@ -25,6 +25,11 @@ async function deleteWorkouts(ctx: MutationCtx, userId: string) {
       .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
       .collect();
     for (const item of workoutExercises) await ctx.db.delete(item._id);
+    const workoutBlocks = await ctx.db
+      .query('workoutBlocks')
+      .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
+      .collect();
+    for (const block of workoutBlocks) await ctx.db.delete(block._id);
     await ctx.db.delete(workout._id);
   }
 }
@@ -40,6 +45,11 @@ async function deleteRoutines(ctx: MutationCtx, userId: string) {
       .withIndex('by_routine', (q) => q.eq('routineId', routine._id))
       .collect();
     for (const item of routineExercises) await ctx.db.delete(item._id);
+    const routineBlocks = await ctx.db
+      .query('routineBlocks')
+      .withIndex('by_routine', (q) => q.eq('routineId', routine._id))
+      .collect();
+    for (const block of routineBlocks) await ctx.db.delete(block._id);
     await ctx.db.delete(routine._id);
   }
 }
@@ -90,6 +100,17 @@ export const deleteIdentity = internalMutation({
   handler: async (ctx, { userId, email }) => {
     await deleteWorkouts(ctx, userId);
     await deleteRoutines(ctx, userId);
+    // Notes and Machine setups first: they can point at custom Exercises.
+    const notes = await ctx.db
+      .query('notes')
+      .withIndex('by_user_workout', (q) => q.eq('userId', userId))
+      .collect();
+    for (const note of notes) await ctx.db.delete(note._id);
+    const setups = await ctx.db
+      .query('machineSetups')
+      .withIndex('by_user_exercise', (q) => q.eq('userId', userId))
+      .collect();
+    for (const setup of setups) await ctx.db.delete(setup._id);
     await deleteCustomExercises(ctx, userId);
     await deleteComments(
       ctx,

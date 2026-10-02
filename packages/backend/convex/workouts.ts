@@ -9,11 +9,25 @@ import {
 } from './_generated/server';
 import { isValidRpe, rpeFromEffort } from './domain/effort';
 import { meetsTarget } from './domain/overload';
+import {
+  afterSet,
+  blockMembers,
+  skipForNow as skipInRound,
+  uncheckRound,
+} from './domain/rounds';
+import {
+  LOGGED_TOGETHER_MS,
+  type TimedSet,
+  targetDuration,
+  timeBreakdown,
+} from './domain/time';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { leaveGroup } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { applyOverloadTargets } from './lib/overload';
+import { roundExercisesOf, saveRound, settleBlock } from './lib/rounds';
+import { recentDurations } from './lib/time';
 import {
   findActiveWorkout,
   progressOf,
@@ -27,7 +41,9 @@ import {
   workoutExercisesOf,
 } from './lib/workoutData';
 import { workoutMutation } from './lib/workoutMutation';
+import { hasMachineSetup } from './machineSetups';
 import { readMemberSettings } from './memberSettings';
+import { deleteSetNote } from './notes';
 import { routineExercisesOf } from './routines';
 import { memberSettingsFields, setTypeValidator } from './schema';
 
@@ -60,12 +76,55 @@ async function planExercise(
 }
 
 async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
+  const routine = workout.routineId
+    ? await ctx.db.get(workout.routineId)
+    : null;
+  const notes = await ctx.db
+    .query('notes')
+    .withIndex('by_user_workout', (q) =>
+      q.eq('userId', workout.userId).eq('workoutId', workout._id)
+    )
+    .collect();
+  const timedSets: TimedSet[] = [];
   const exercises = await Promise.all(
     (await workoutExercisesOf(ctx, workout._id)).map(
       async (workoutExercise) => {
         const exercise = await ctx.db.get(workoutExercise.exerciseId);
         if (!exercise) throw new ConvexError('EXERCISE_NOT_FOUND');
         const sets = await setsOfExercise(ctx, workoutExercise._id);
+        const standingNote = await ctx.db
+          .query('notes')
+          .withIndex('by_user_exercise', (q) =>
+            q
+              .eq('userId', workout.userId)
+              .eq('kind', 'exercise')
+              .eq('exerciseId', exercise._id)
+          )
+          .unique();
+        const machineSetup = hasMachineSetup(exercise.equipment)
+          ? await ctx.db
+              .query('machineSetups')
+              .withIndex('by_user_exercise', (q) =>
+                q.eq('userId', workout.userId).eq('exerciseId', exercise._id)
+              )
+              .unique()
+          : null;
+        timedSets.push(
+          ...sets.flatMap((set) =>
+            set.completedAt === undefined
+              ? []
+              : [
+                  {
+                    workoutExerciseId: workoutExercise._id,
+                    blockId: workoutExercise.blockId ?? null,
+                    firstTouchedAt: set.firstTouchedAt ?? null,
+                    completedAt: set.completedAt,
+                    restAfter: set.restAfter ?? null,
+                    loggedTogether: set.loggedTogether ?? false,
+                  },
+                ]
+          )
+        );
         return {
           _id: workoutExercise._id,
           exerciseId: exercise._id,
@@ -79,6 +138,11 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
           plannedRestSeconds: workoutExercise.plannedRestSeconds ?? null,
           skipped: workoutExercise.skipped ?? false,
           overload: workoutExercise.overload ?? null,
+          blockId: workoutExercise.blockId ?? null,
+          standingNote: standingNote?.text ?? null,
+          machineSetup: machineSetup
+            ? { positions: machineSetup.positions, custom: machineSetup.custom }
+            : null,
           sets: sets.map((set) => ({
             _id: set._id,
             order: set.order,
@@ -92,6 +156,8 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             target: set.target ?? null,
             fromTarget: set.fromTarget ?? null,
             previous: set.previous ?? null,
+            note: notes.find((note) => note.setId === set._id)?.text ?? null,
+            firstTouchedAt: set.firstTouchedAt ?? null,
           })),
         };
       }
@@ -109,11 +175,33 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
     progress: await progressOf(ctx, workout._id),
     rest: workout.rest
       ? {
-          ...workout.rest,
+          startedAt: workout.rest.startedAt,
+          plannedSeconds: workout.rest.plannedSeconds,
+          adjustedSeconds: workout.rest.adjustedSeconds,
           endsAt: restEndsAt(workout.rest),
         }
       : null,
     exercises,
+    note: notes.find((note) => note.kind === 'workout')?.text ?? null,
+    /** Working, rest and transition estimates from the recorded moments. */
+    time: timeBreakdown(timedSets),
+    targetDurationSeconds: routine
+      ? targetDuration(
+          await recentDurations(ctx, routine._id, workout.startedAt),
+          routine.targetDurationSeconds ?? null
+        )
+      : null,
+    blocks: (
+      await ctx.db
+        .query('workoutBlocks')
+        .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
+        .collect()
+    ).map((block) => ({
+      _id: block._id,
+      plannedRestSeconds: block.plannedRestSeconds ?? null,
+      round: block.round ?? null,
+      roundsCompleted: block.completedRounds.length,
+    })),
   };
 }
 
@@ -163,6 +251,20 @@ export const start = workoutMutation({
 
     const workout = await ctx.db.get(workoutId);
     if (!workout) throw new ConvexError('WORKOUT_NOT_FOUND');
+    const blocks = new Map<Id<'routineBlocks'>, Id<'workoutBlocks'>>();
+    const workoutBlockFor = async (routineBlockId: Id<'routineBlocks'>) => {
+      const copied = blocks.get(routineBlockId);
+      if (copied) return copied;
+      const routineBlock = await ctx.db.get(routineBlockId);
+      const blockId = await ctx.db.insert('workoutBlocks', {
+        workoutId,
+        routineBlockId,
+        plannedRestSeconds: routineBlock?.plannedRestSeconds,
+        completedRounds: [],
+      });
+      blocks.set(routineBlockId, blockId);
+      return blockId;
+    };
     for (const routineExercise of await routineExercisesOf(ctx, routine._id)) {
       const workoutExerciseId = await ctx.db.insert('workoutExercises', {
         workoutId,
@@ -173,6 +275,9 @@ export const start = workoutMutation({
         repRangeMax: routineExercise.repRangeMax,
         stepKg: routineExercise.stepKg,
         plannedRestSeconds: routineExercise.plannedRestSeconds,
+        blockId: routineExercise.blockId
+          ? await workoutBlockFor(routineExercise.blockId)
+          : undefined,
       });
       await planExercise(
         ctx,
@@ -291,6 +396,9 @@ export const deleteSet = workoutMutation({
     requireActive(workout);
     if (set.completedAt !== undefined) throw new ConvexError('SET_LOGGED');
     await ctx.db.delete(set._id);
+    await deleteSetNote(ctx, set._id);
+    const workoutExercise = await ctx.db.get(set.workoutExerciseId);
+    await settleBlock(ctx, workout._id, workoutExercise?.blockId);
   },
 });
 
@@ -352,6 +460,13 @@ function provenanceAfter(
   };
 }
 
+/** The first edit of an unlogged Set starts its working time. */
+function firstTouch(set: Doc<'sets'>): Partial<Doc<'sets'>> {
+  return set.firstTouchedAt === undefined && set.completedAt === undefined
+    ? { firstTouchedAt: Date.now() }
+    : {};
+}
+
 export const updateSet = workoutMutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
   handler: async (ctx, { setId, ...changes }) => {
@@ -361,8 +476,21 @@ export const updateSet = workoutMutation({
     const patch = setPatch(changes);
     await ctx.db.patch(setId, {
       ...patch,
+      ...firstTouch(set),
       fromTarget: provenanceAfter(set, patch),
     });
+  },
+});
+
+/** The member started editing a Set (its first keypad press). */
+export const touchSet = mutation({
+  args: { setId: v.id('sets') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
+    requireActive(workout);
+    const touched = firstTouch(set);
+    if (touched.firstTouchedAt) await ctx.db.patch(set._id, touched);
   },
 });
 
@@ -396,12 +524,17 @@ function targetFill(set: Doc<'sets'>): Partial<Doc<'sets'>> {
 }
 
 /**
- * Logs a Set. Fields the member never touched log the Overload target; the
- * result says whether the target was met (for the target-met haptic).
+ * Logs a Set. Fields the member never touched log the Overload target. The
+ * result says whether the target was met (for the target-met haptic), which
+ * Exercise comes next and which Alternating sets round this Set completed.
  */
 export const completeSet = workoutMutation({
   args: { setId: v.id('sets'), ...setChangeArgs },
-  returns: v.object({ targetMet: v.boolean() }),
+  returns: v.object({
+    targetMet: v.boolean(),
+    next: v.union(v.id('workoutExercises'), v.null()),
+    roundCompleted: v.union(v.number(), v.null()),
+  }),
   handler: async (ctx, { setId, ...changes }) => {
     const userId = await requireIdentityId(ctx);
     const { set, workout } = await requireOwnedSet(ctx, userId, setId);
@@ -421,10 +554,17 @@ export const completeSet = workoutMutation({
       fromTarget: logged.fromTarget,
       completedAt: now,
     });
-    await startRestAfter(ctx, workout, set.workoutExerciseId, now);
+    const { next, completedRound } = await afterLogging(
+      ctx,
+      workout,
+      logged,
+      now
+    );
     const target = workingTarget(logged);
     return {
       targetMet: target !== undefined && meetsTarget(logged, target),
+      next,
+      roundCompleted: completedRound?.number ?? null,
     };
   },
 });
@@ -436,7 +576,7 @@ export const fillFromTarget = workoutMutation({
     const userId = await requireIdentityId(ctx);
     const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
     requireActive(workout);
-    await ctx.db.patch(set._id, targetFill(set));
+    await ctx.db.patch(set._id, { ...targetFill(set), ...firstTouch(set) });
   },
 });
 
@@ -460,35 +600,151 @@ export const fillFromTargets = workoutMutation({
 });
 
 /**
- * Rest starts on every completed Set except the final planned one, at the
- * Exercise's planned rest or else the member's default.
+ * Runs the round engine after a Set is logged: credits the round, starts the
+ * planned rest (the block's after a round, the Exercise's after a standalone
+ * Set; none within a round or after the final planned Set) and picks what's
+ * next. Logging a Set always ends the rest before it.
  */
-async function startRestAfter(
+async function afterLogging(
   ctx: MutationCtx,
   workout: Doc<'workouts'>,
-  workoutExerciseId: Id<'workoutExercises'>,
+  set: Doc<'sets'>,
   now: number
 ) {
-  const { done, total } = await progressOf(ctx, workout._id);
-  const workoutExercise = await ctx.db.get(workoutExerciseId);
+  const settings = await readMemberSettings(ctx, workout.userId);
+  const workoutExercise = await ctx.db.get(set.workoutExerciseId);
+  const block = workoutExercise?.blockId
+    ? await ctx.db.get(workoutExercise.blockId)
+    : null;
+  const exercises = await roundExercisesOf(ctx, workout._id);
+  const result = afterSet({
+    exercises,
+    completedId: set.workoutExerciseId,
+    open: block?.round ?? null,
+    warmup: set.type === 'warmup',
+    autoAdvance: settings.autoAdvance,
+  });
+  if (block && blockMembers(exercises, block._id).length > 0) {
+    await saveRound(ctx, block, result, now);
+  }
   const plannedSeconds =
-    workoutExercise?.plannedRestSeconds ??
-    (await readMemberSettings(ctx, workout.userId)).defaultRestSeconds;
+    result.rest === 'block'
+      ? (block?.plannedRestSeconds ?? settings.defaultRestSeconds)
+      : result.rest === 'exercise'
+        ? (workoutExercise?.plannedRestSeconds ?? settings.defaultRestSeconds)
+        : 0;
+  const resting = plannedSeconds > 0;
   await ctx.db.patch(workout._id, {
-    rest:
-      done < total && plannedSeconds > 0
-        ? { startedAt: now, plannedSeconds, adjustedSeconds: 0 }
-        : undefined,
+    rest: resting
+      ? {
+          startedAt: now,
+          plannedSeconds,
+          adjustedSeconds: 0,
+          afterSetId: set._id,
+        }
+      : undefined,
+  });
+  if (resting) {
+    await ctx.db.patch(set._id, {
+      restAfter: { plannedSeconds, endsAt: now + plannedSeconds * 1000 },
+    });
+  }
+
+  // Sets completed within 10 s of each other were logged together.
+  const previous = (await setsOfWorkout(ctx, workout._id))
+    .filter((item) => item._id !== set._id && item.completedAt !== undefined)
+    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))[0];
+  if (
+    previous?.completedAt !== undefined &&
+    now - previous.completedAt <= LOGGED_TOGETHER_MS
+  ) {
+    await ctx.db.patch(previous._id, { loggedTogether: true });
+    await ctx.db.patch(set._id, { loggedTogether: true });
+  }
+  return result;
+}
+
+/** Keeps the Set's rest record in step with the running rest. */
+async function recordRest(
+  ctx: MutationCtx,
+  rest: NonNullable<Doc<'workouts'>['rest']>,
+  endsAt: number
+) {
+  if (!rest.afterSetId) return;
+  await ctx.db.patch(rest.afterSetId, {
+    restAfter: {
+      plannedSeconds: rest.plannedSeconds + rest.adjustedSeconds,
+      endsAt,
+    },
   });
 }
 
+/**
+ * Unchecking a Set reverts its completion and its round credit. Rest that
+ * already started stays.
+ */
 export const uncompleteSet = workoutMutation({
   args: { setId: v.id('sets') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
-    const { workout } = await requireOwnedSet(ctx, userId, args.setId);
+    const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
     requireActive(workout);
-    await ctx.db.patch(args.setId, { completedAt: undefined });
+    await ctx.db.patch(set._id, { completedAt: undefined });
+    if (set.type === 'warmup') return;
+    const workoutExercise = await ctx.db.get(set.workoutExerciseId);
+    const block = workoutExercise?.blockId
+      ? await ctx.db.get(workoutExercise.blockId)
+      : null;
+    if (!block) return;
+    const last = block.completedRounds.at(-1);
+    const { round, reopened } = uncheckRound(
+      block.round ?? null,
+      last
+        ? {
+            number: last.number,
+            required: last.required,
+            done: last.done,
+            skipped: last.skipped,
+          }
+        : null,
+      set.workoutExerciseId
+    );
+    await ctx.db.patch(block._id, {
+      round: round ?? undefined,
+      ...(reopened && { completedRounds: block.completedRounds.slice(0, -1) }),
+    });
+  },
+});
+
+/**
+ * Skip for now: defers an Exercise without logging. In Alternating sets the
+ * round stays open and the next pending Exercise comes up; on its own, the
+ * next Exercise with Sets left does.
+ */
+export const skipForNow = workoutMutation({
+  args: { workoutExerciseId: v.id('workoutExercises') },
+  returns: v.object({ next: v.id('workoutExercises') }),
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.workoutExerciseId
+    );
+    requireActive(workout);
+    const block = workoutExercise.blockId
+      ? await ctx.db.get(workoutExercise.blockId)
+      : null;
+    const result = skipInRound({
+      exercises: await roundExercisesOf(ctx, workout._id),
+      skippedId: workoutExercise._id,
+      open: block?.round ?? null,
+    });
+    if (!result) throw new ConvexError('NOTHING_ELSE_TO_DO');
+    if (block && result.round) {
+      await ctx.db.patch(block._id, { round: result.round });
+    }
+    return { next: result.next };
   },
 });
 
@@ -513,12 +769,12 @@ export const adjustRest = workoutMutation({
       throw new ConvexError('INVALID_REST_ADJUSTMENT');
     }
     const endsAt = Math.max(restEndsAt(rest) + args.seconds * 1000, Date.now());
-    await ctx.db.patch(workout._id, {
-      rest: {
-        ...rest,
-        adjustedSeconds: (endsAt - rest.startedAt) / 1000 - rest.plannedSeconds,
-      },
-    });
+    const adjusted = {
+      ...rest,
+      adjustedSeconds: (endsAt - rest.startedAt) / 1000 - rest.plannedSeconds,
+    };
+    await ctx.db.patch(workout._id, { rest: adjusted });
+    await recordRest(ctx, adjusted, endsAt);
   },
 });
 
@@ -526,8 +782,9 @@ export const skipRest = workoutMutation({
   args: { workoutId: v.id('workouts') },
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
-    const { workout } = await requireResting(ctx, userId, args.workoutId);
+    const { workout, rest } = await requireResting(ctx, userId, args.workoutId);
     await ctx.db.patch(workout._id, { rest: undefined });
+    await recordRest(ctx, rest, Math.min(restEndsAt(rest), Date.now()));
   },
 });
 
@@ -537,15 +794,16 @@ export const resetRest = workoutMutation({
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
     const { workout, rest } = await requireResting(ctx, userId, args.workoutId);
-    await ctx.db.patch(workout._id, {
-      rest: { ...rest, startedAt: Date.now(), adjustedSeconds: 0 },
-    });
+    const restarted = { ...rest, startedAt: Date.now(), adjustedSeconds: 0 };
+    await ctx.db.patch(workout._id, { rest: restarted });
+    await recordRest(ctx, restarted, restEndsAt(restarted));
   },
 });
 
 /**
- * Sets this Workout's default rest for an Exercise. It's a structure change:
- * the Routine keeps its value unless the member saves changes at finish.
+ * Sets this Workout's default rest for an Exercise, or for its block when it
+ * is in Alternating sets (rest comes after each round). It's a structure
+ * change: the Routine keeps its value unless the member saves at finish.
  */
 export const setExerciseRest = mutation({
   args: {
@@ -563,6 +821,12 @@ export const setExerciseRest = mutation({
     if (!Number.isInteger(args.seconds) || args.seconds < 0) {
       throw new ConvexError('INVALID_REST');
     }
+    if (workoutExercise.blockId) {
+      await ctx.db.patch(workoutExercise.blockId, {
+        plannedRestSeconds: args.seconds,
+      });
+      return;
+    }
     await ctx.db.patch(workoutExercise._id, {
       plannedRestSeconds: args.seconds,
     });
@@ -572,7 +836,9 @@ export const setExerciseRest = mutation({
 /**
  * Ends the active Workout. Finish needs every planned Set done; Terminate ends
  * early and keeps logged Sets. A Workout with nothing logged is abandoned.
- * Either way the member leaves their Group; Groups never outlive the Workout.
+ * Unresolved Alternating sets rounds stay incomplete: no Set or rest is
+ * invented. Either way the member leaves their Group; Groups never outlive
+ * the Workout.
  */
 export const end = mutation({
   args: {
@@ -589,6 +855,13 @@ export const end = mutation({
       throw new ConvexError('NOT_ALL_SETS_DONE');
     }
     await leaveGroup(ctx, userId);
+    const blocks = await ctx.db
+      .query('workoutBlocks')
+      .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
+      .collect();
+    for (const block of blocks) {
+      if (block.round) await ctx.db.patch(block._id, { round: undefined });
+    }
 
     const completedTimes = sets.flatMap((set) =>
       set.completedAt === undefined ? [] : [set.completedAt]
