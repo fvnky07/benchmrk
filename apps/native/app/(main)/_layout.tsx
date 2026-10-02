@@ -3,12 +3,14 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useAppearance } from '@/lib/ui';
 import { useNavigationChrome } from '@/lib/ui/navigation-chrome';
 import { useResumeActiveWorkout } from '@/lib/workout/use-resume-active-workout';
+import { useWorkoutLiveStatus } from '@/lib/workout/use-workout-live-status';
 
 /** Main tabs, reachable only by a signed-in member who finished Profile setup. */
 export default function MainLayout() {
   const { resolvedAppearance } = useAppearance();
   const navigationChrome = useNavigationChrome(resolvedAppearance);
   useResumeActiveWorkout();
+  useWorkoutLiveStatus();
 
   return (
     <NativeTabs {...navigationChrome}>
