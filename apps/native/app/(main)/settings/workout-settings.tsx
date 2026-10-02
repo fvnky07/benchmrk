@@ -2,7 +2,7 @@ import { ListItem, Picker, Switch, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import type { FunctionArgs } from 'convex/server';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
@@ -123,6 +123,12 @@ export default function WorkoutSettingsScreen() {
         value={settings.haptics}
         onValueChange={(haptics) => save({ haptics })}
       />
+      <ListItem
+        supportingText="Choose and reorder the chips under the Exercise title."
+        onPress={() => router.push('/(main)/settings/quick-actions')}
+      >
+        Quick actions
+      </ListItem>
       {isSaving ? (
         <ListItem supportingText="Saving your setting…">Saving</ListItem>
       ) : null}

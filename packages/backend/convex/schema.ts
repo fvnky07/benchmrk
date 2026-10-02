@@ -1,6 +1,17 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
+/** Configurable chips in the Workout's quick action row (the Group chip isn't). */
+export const quickActionIdValidator = v.union(
+  v.literal('wand'),
+  v.literal('addSet'),
+  v.literal('info'),
+  v.literal('swap'),
+  v.literal('note'),
+  v.literal('setup'),
+  v.literal('plates')
+);
+
 export const memberSettingsFields = {
   appearance: v.union(
     v.literal('system'),
@@ -12,6 +23,20 @@ export const memberSettingsFields = {
   defaultRestSeconds: v.number(),
   haptics: v.boolean(),
   analyticsOptOut: v.boolean(),
+  quickActions: v.array(
+    v.object({ id: quickActionIdValidator, visible: v.boolean() })
+  ),
+};
+
+/** Saved settings hold only what a member changed; reads fill in defaults. */
+export const memberSettingsChangeFields = {
+  appearance: v.optional(memberSettingsFields.appearance),
+  units: v.optional(memberSettingsFields.units),
+  effortScale: v.optional(memberSettingsFields.effortScale),
+  defaultRestSeconds: v.optional(memberSettingsFields.defaultRestSeconds),
+  haptics: v.optional(memberSettingsFields.haptics),
+  analyticsOptOut: v.optional(memberSettingsFields.analyticsOptOut),
+  quickActions: v.optional(memberSettingsFields.quickActions),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -66,7 +91,7 @@ export default defineSchema({
 
   memberSettings: defineTable({
     userId: v.string(),
-    ...memberSettingsFields,
+    ...memberSettingsChangeFields,
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
