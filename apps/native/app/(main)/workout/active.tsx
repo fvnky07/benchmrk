@@ -14,7 +14,7 @@ import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { GroupChip } from '@/components/groups/group-chip';
 import { GroupDrawer } from '@/components/groups/group-drawer';
@@ -35,7 +35,6 @@ import { SetTypeSheet } from '@/components/workout/set-type-sheet';
 import { StructureSheet } from '@/components/workout/structure-sheet';
 import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
-import { useReactionAlerts } from '@/lib/groups/use-reaction-alerts';
 import { useHaptics } from '@/lib/haptics';
 import { THEME, useAppearance } from '@/lib/ui';
 import { formatClock, weightInUnit } from '@/lib/workout/format';
@@ -99,7 +98,6 @@ function openTarget(set: WorkoutSet, targetsEnabled: boolean) {
 }
 
 export default function ActiveWorkoutScreen() {
-  useReactionAlerts();
   const workout = useQuery(api.workouts.getActive);
   const settings = useQuery(api.memberSettings.get);
   const group = useQuery(api.groups.getMine);
@@ -190,12 +188,32 @@ export default function ActiveWorkoutScreen() {
 
   useRestEndNotification(workout?.rest?.endsAt ?? null, {
     sound: settings?.restEndSound ?? true,
+    haptics: settings?.haptics ?? false,
     nextExercise:
       workout?.exercises.find(
         (item) =>
           !item.skipped && item.sets.some((set) => set.completedAt === null)
       )?.name ?? null,
   });
+
+  // Opening or closing a sheet, moving focus or changing Exercise is activity too.
+  const { markActive } = stillWorkingOut;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Each dependency is an interaction that should count as activity.
+  useEffect(markActive, [
+    markActive,
+    noteTarget,
+    setupFor,
+    isPlatesOpen,
+    targetSheetId,
+    pickerMode,
+    isStructureOpen,
+    isRestSheetOpen,
+    typeSheetSetId,
+    groupOpen,
+    isKeypadOpen,
+    selectedIndex,
+    chosenFocus,
+  ]);
 
   if (workout === undefined || settings === undefined) {
     return (
@@ -266,7 +284,9 @@ export default function ActiveWorkoutScreen() {
         : null;
   const focusSet = exercise?.sets.find((set) => set._id === focus?.setId);
 
+  // Every Workout edit goes through here, so each one moves the idle alert.
   const attempt = async (action: () => Promise<unknown>, failure: string) => {
+    stillWorkingOut.markActive();
     try {
       setErrorMessage(null);
       await action();
@@ -279,11 +299,13 @@ export default function ActiveWorkoutScreen() {
     drafts[set._id]?.[field] ??
     storedToDraft(field, set[storedKey(field)], units);
 
-  const setDraft = (setId: Id<'sets'>, field: SetField, draft: string) =>
+  const setDraft = (setId: Id<'sets'>, field: SetField, draft: string) => {
+    stillWorkingOut.markActive();
     setDrafts((current) => ({
       ...current,
       [setId]: { ...current[setId], [field]: draft },
     }));
+  };
 
   const saveDrafts = (set: WorkoutSet) =>
     attempt(
@@ -296,6 +318,7 @@ export default function ActiveWorkoutScreen() {
     );
 
   const moveFocus = (next: Focus) => {
+    stillWorkingOut.markActive();
     if (focusSet && focusSet._id !== next.setId) void saveDrafts(focusSet);
     setChosenFocus(next);
     setIsKeypadOpen(true);
@@ -327,7 +350,6 @@ export default function ActiveWorkoutScreen() {
 
   const pressKey = (key: KeypadKey) => {
     if (!focus || !focusSet) return;
-    stillWorkingOut.markActive();
     // The first keypad press on a Set starts its working time.
     if (
       focusSet.firstTouchedAt === null &&
@@ -363,6 +385,7 @@ export default function ActiveWorkoutScreen() {
     attempt(() => updateSet({ setId, type }), 'Could not change the Set type.');
 
   const selectExercise = (next: number) => {
+    stillWorkingOut.markActive();
     if (focusSet) void saveDrafts(focusSet);
     setChosenFocus(null);
     setStayOn(null);
@@ -941,18 +964,21 @@ export default function ActiveWorkoutScreen() {
         />
       ) : null}
       <TargetSheet
+        onActivity={stillWorkingOut.markActive}
         workoutExerciseId={targetSheetId}
         units={units}
         effortScale={effortScale}
         onDismiss={() => setTargetSheetId(null)}
       />
       <NotesSheet
+        onActivity={stillWorkingOut.markActive}
         workout={workout}
         opened={noteTarget}
         onDismiss={() => setNoteTarget(null)}
       />
       <MachineSetupSheet
         key={setupFor ?? 'closed'}
+        onActivity={stillWorkingOut.markActive}
         exercise={
           workout.exercises.find((item) => item._id === setupFor) ?? null
         }
@@ -961,6 +987,7 @@ export default function ActiveWorkoutScreen() {
       <PlatesSheet
         key={isPlatesOpen ? 'open' : 'closed'}
         isPresented={isPlatesOpen}
+        onActivity={stillWorkingOut.markActive}
         inventory={settings.plates}
         weightKg={
           editedWeightKg ??

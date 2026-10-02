@@ -33,6 +33,8 @@ type TargetSheetProps = {
   workoutExerciseId: Id<'workoutExercises'> | null;
   units: WeightUnit;
   effortScale: EffortScale;
+  /** Called on every edit, so the Workout counts as active. */
+  onActivity: () => void;
   onDismiss: () => void;
 };
 
@@ -44,6 +46,7 @@ export function TargetSheet({
   workoutExerciseId,
   units,
   effortScale,
+  onActivity,
   onDismiss,
 }: Readonly<TargetSheetProps>) {
   const sheet = useQuery(
@@ -60,6 +63,7 @@ export function TargetSheet({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const run = async (action: () => Promise<unknown>, failure: string) => {
+    onActivity();
     try {
       setErrorMessage(null);
       await action();
