@@ -5,7 +5,7 @@
  */
 const AUTH_ERROR_COPY: Record<string, string> = {
   EMAIL_DELIVERY_FAILED: 'We couldn’t send the email. Try again.',
-  NOT_AUTHENTICATED: 'Your session ended. Log in and try again.',
+  NOT_AUTHENTICATED: 'You’ve been signed out. Log in and try again.',
 };
 
 export function authErrorCopy(

@@ -51,7 +51,7 @@ export default function ForgotPasswordScreen() {
       }
       setStatus({
         message:
-          'If this email belongs to a verified benchmrk account, a reset link is on its way. Open it on this phone.',
+          'If this email belongs to a verified Benchmrk identity, a reset link is on its way. Open it on this phone.',
         tone: 'neutral',
       });
     } catch {
