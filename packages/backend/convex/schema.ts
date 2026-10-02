@@ -52,6 +52,12 @@ export const memberSettingsFields = {
     v.literal('groupmates'),
     v.literal('nobody')
   ),
+  /** Push notifications at all; the per-type switches apply under it. */
+  pushNotifications: v.boolean(),
+  pushInvites: v.boolean(),
+  pushJoins: v.boolean(),
+  pushLeaves: v.boolean(),
+  pushGroupEnded: v.boolean(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -72,6 +78,11 @@ export const memberSettingsChangeFields = {
   plates: v.optional(memberSettingsFields.plates),
   aheadBehind: v.optional(memberSettingsFields.aheadBehind),
   invitesFrom: v.optional(memberSettingsFields.invitesFrom),
+  pushNotifications: v.optional(memberSettingsFields.pushNotifications),
+  pushInvites: v.optional(memberSettingsFields.pushInvites),
+  pushJoins: v.optional(memberSettingsFields.pushJoins),
+  pushLeaves: v.optional(memberSettingsFields.pushLeaves),
+  pushGroupEnded: v.optional(memberSettingsFields.pushGroupEnded),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -113,6 +124,38 @@ export const groupProgressValidator = v.object({
   setsDone: v.number(),
   setsPlanned: v.number(),
   restEndsAt: v.union(v.number(), v.null()),
+  // Optional so summaries saved before they existed stay valid; getMine
+  // fills them in.
+  /** Per Exercise in Workout order: Working Set pips and target met/missed. */
+  exercises: v.optional(
+    v.array(
+      v.object({
+        name: v.string(),
+        pips: v.array(
+          v.union(
+            v.literal('done'),
+            v.literal('current'),
+            v.literal('upcoming')
+          )
+        ),
+        /** Null until its targeted Working Sets are logged, or without targets. */
+        targetMet: v.union(v.boolean(), v.null()),
+      })
+    )
+  ),
+  /** The current Set's own weight and reps; only when weights are shown. */
+  currentSet: v.optional(
+    v.union(
+      v.object({
+        weightKg: v.union(v.number(), v.null()),
+        reps: v.union(v.number(), v.null()),
+      }),
+      v.null()
+    )
+  ),
+  /** Logged Working Set volume in kg; only when weights are shown. */
+  volumeKg: v.optional(v.union(v.number(), v.null())),
+  weightsShown: v.optional(v.boolean()),
 });
 
 export const overloadReasonValidator = v.union(
@@ -404,6 +447,8 @@ export default defineSchema({
     userId: v.string(),
     joinedAt: v.number(),
     lastSeenAt: v.optional(v.number()),
+    /** The member shows their weights, reps and volume; hidden by default. */
+    showWeights: v.optional(v.boolean()),
     leftAt: v.optional(v.number()),
     progress: groupProgressValidator,
   })
@@ -421,6 +466,8 @@ export default defineSchema({
     ),
     userId: v.optional(v.string()),
     at: v.number(),
+    /** On a join that opened a push window: joins until then merge into one push. */
+    batchUntil: v.optional(v.number()),
   }).index('by_group_at', ['groupId', 'at']),
 
   // Short join codes; valid until revoked, the Group ends or 24 hours unused.

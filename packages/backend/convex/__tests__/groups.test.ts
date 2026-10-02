@@ -211,6 +211,16 @@ describe('Groups', () => {
         setsDone: 1,
         setsPlanned: 3,
         restEndsAt: expect.any(Number),
+        exercises: [
+          {
+            name: 'Bench Press',
+            pips: ['done', 'current', 'upcoming'],
+            targetMet: null,
+          },
+        ],
+        currentSet: null,
+        volumeKg: null,
+        weightsShown: false,
       },
     });
     expect(JSON.stringify(view)).not.toMatch(/weightKg|reps|workoutId|"sets"/);
