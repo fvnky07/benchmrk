@@ -121,6 +121,7 @@ export const getCurrentProfile = query({
 export const updateProfile = mutation({
   args: {
     userId: v.string(),
+    name: v.optional(v.string()),
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     imageStorageId: v.optional(v.id('_storage')),
@@ -139,6 +140,7 @@ export const updateProfile = mutation({
       await ctx.storage.delete(user.imageStorageId as Id<'_storage'>);
     }
     await ctx.db.patch(user._id, {
+      ...(args.name !== undefined && { name: args.name }),
       ...(args.username !== undefined && { username: args.username }),
       ...(args.bio !== undefined && { bio: args.bio }),
       ...(image && { image, imageStorageId: args.imageStorageId }),
