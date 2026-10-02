@@ -6,6 +6,7 @@ import { ConvexError, v } from 'convex/values';
 import { components, internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { mutation, type QueryCtx, query } from './_generated/server';
+import { blockedEitherWay } from './lib/blocks';
 import { joinGroup, requireMembership } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
@@ -148,7 +149,9 @@ export const send = mutation({
     );
     if (alreadyPending) return null;
 
-    const delivered = await reachesInvitee(ctx, userId, invitee);
+    const delivered =
+      !(await blockedEitherWay(ctx, userId, inviteeId)) &&
+      (await reachesInvitee(ctx, userId, invitee));
     const inviteId = await ctx.db.insert('groupInvites', {
       groupId: group._id,
       inviterId: userId,

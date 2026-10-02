@@ -87,6 +87,11 @@ describe('Group presence and lifecycle', () => {
     ).toEqual(['host']);
     expect(await guest.query(api.groups.getMine, {})).toBeNull();
     expect(await host.query(api.groups.events, {})).toContainEqual({
+      eventId: expect.any(String),
+      isYou: false,
+      exerciseName: null,
+      setNumber: null,
+      reacted: false,
       kind: 'dropped',
       username: 'guest',
       at: START + 600_000,
@@ -106,7 +111,16 @@ describe('Group presence and lifecycle', () => {
       presence: 'active',
     });
     expect(await guest.query(api.groups.events, {})).toEqual([
-      { kind: 'joined', username: 'guest', at: START + 601_000 },
+      {
+        eventId: expect.any(String),
+        kind: 'joined',
+        username: 'guest',
+        isYou: true,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START + 601_000,
+      },
     ]);
   });
 
@@ -134,11 +148,21 @@ describe('Group presence and lifecycle', () => {
     ]);
     const events = await pat.query(api.groups.events, {});
     expect(events).toContainEqual({
+      eventId: expect.any(String),
+      isYou: false,
+      exerciseName: null,
+      setNumber: null,
+      reacted: false,
       kind: 'dropped',
       username: 'host',
       at: START + 600_000,
     });
     expect(events).toContainEqual({
+      eventId: expect.any(String),
+      isYou: true,
+      exerciseName: null,
+      setNumber: null,
+      reacted: false,
       kind: 'hostChanged',
       username: 'pat',
       at: START + 600_000,
@@ -165,11 +189,21 @@ describe('Group presence and lifecycle', () => {
     expect((await sam.query(api.groups.getMine, {}))?.isHost).toBe(false);
     const events = await pat.query(api.groups.events, {});
     expect(events).toContainEqual({
+      eventId: expect.any(String),
+      isYou: false,
+      exerciseName: null,
+      setNumber: null,
+      reacted: false,
       kind: 'left',
       username: 'host',
       at: START + 3_000,
     });
     expect(events).toContainEqual({
+      eventId: expect.any(String),
+      isYou: true,
+      exerciseName: null,
+      setNumber: null,
+      reacted: false,
       kind: 'hostChanged',
       username: 'pat',
       at: START + 3_000,
@@ -212,14 +246,68 @@ describe('Group presence and lifecycle', () => {
     await early.mutation(api.groups.leave, {});
 
     expect(await late.query(api.groups.events, {})).toEqual([
-      { kind: 'left', username: 'early', at: START + 3_000 },
-      { kind: 'joined', username: 'late', at: START + 2_000 },
+      {
+        eventId: expect.any(String),
+        kind: 'left',
+        username: 'early',
+        isYou: false,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START + 3_000,
+      },
+      {
+        eventId: expect.any(String),
+        kind: 'joined',
+        username: 'late',
+        isYou: true,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START + 2_000,
+      },
     ]);
     expect(await host.query(api.groups.events, {})).toEqual([
-      { kind: 'left', username: 'early', at: START + 3_000 },
-      { kind: 'joined', username: 'late', at: START + 2_000 },
-      { kind: 'joined', username: 'early', at: START + 1_000 },
-      { kind: 'joined', username: 'host', at: START },
+      {
+        eventId: expect.any(String),
+        kind: 'left',
+        username: 'early',
+        isYou: false,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START + 3_000,
+      },
+      {
+        eventId: expect.any(String),
+        kind: 'joined',
+        username: 'late',
+        isYou: false,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START + 2_000,
+      },
+      {
+        eventId: expect.any(String),
+        kind: 'joined',
+        username: 'early',
+        isYou: false,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START + 1_000,
+      },
+      {
+        eventId: expect.any(String),
+        kind: 'joined',
+        username: 'host',
+        isYou: true,
+        exerciseName: null,
+        setNumber: null,
+        reacted: false,
+        at: START,
+      },
     ]);
     expect(await early.query(api.groups.events, {})).toEqual([]);
     expect(await t.query(api.groups.events, {})).toEqual([]);
