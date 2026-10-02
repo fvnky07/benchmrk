@@ -53,23 +53,8 @@ export const analytics = {
   restTimerChanged: (seconds: number) => {
     capture('rest_timer_changed', { seconds, ...ctx() });
   },
-  weightUnitChanged: (unit: 'kg' | 'lbs') => {
+  weightUnitChanged: (unit: 'kg' | 'lb') => {
     capture('weight_unit_changed', { unit, ...ctx() });
-  },
-  autoSaveToggled: (enabled: boolean) => {
-    capture('auto_save_toggled', { enabled, ...ctx() });
-  },
-  syncToggled: (enabled: boolean) => {
-    capture('sync_toggled', { enabled, ...ctx() });
-  },
-
-  // --- Integrations ---
-  integrationToggled: (integration: string, enabled: boolean) => {
-    capture('integration_toggled', {
-      integration,
-      enabled,
-      ...ctx(),
-    });
   },
 
   // --- Navigation ---

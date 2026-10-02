@@ -39,16 +39,16 @@ export function AppearanceProvider({
   isAuthenticated: boolean;
 }>) {
   const systemAppearance = useColorScheme();
-  const preferences = useQuery(
-    api.userPreferences.getPreferences,
+  const settings = useQuery(
+    api.memberSettings.get,
     isAuthenticated ? {} : 'skip'
   );
-  const updatePreferences = useMutation(api.userPreferences.updatePreferences);
+  const updateSettings = useMutation(api.memberSettings.update);
   const [optimisticPreference, setOptimisticPreference] =
     useState<AppearancePreference | null>(null);
   const [isSavingPreference, setIsSavingPreference] = useState(false);
 
-  const persistedPreference = preferences?.theme ?? 'system';
+  const persistedPreference = settings?.appearance ?? 'system';
   const preference = isAuthenticated
     ? (optimisticPreference ?? persistedPreference)
     : 'system';
@@ -61,10 +61,10 @@ export function AppearanceProvider({
       return;
     }
 
-    if (optimisticPreference === preferences?.theme) {
+    if (optimisticPreference === settings?.appearance) {
       setOptimisticPreference(null);
     }
-  }, [isAuthenticated, optimisticPreference, preferences?.theme]);
+  }, [isAuthenticated, optimisticPreference, settings?.appearance]);
 
   const setPreference = useCallback(
     async (next: AppearancePreference) => {
@@ -80,7 +80,7 @@ export function AppearanceProvider({
           next,
           previous,
           apply: setOptimisticPreference,
-          persist: (theme) => updatePreferences({ theme }),
+          persist: (appearance) => updateSettings({ appearance }),
         });
       } finally {
         setIsSavingPreference(false);
@@ -91,7 +91,7 @@ export function AppearanceProvider({
       isSavingPreference,
       optimisticPreference,
       persistedPreference,
-      updatePreferences,
+      updateSettings,
     ]
   );
 
@@ -100,7 +100,7 @@ export function AppearanceProvider({
       preference,
       resolvedAppearance,
       navigationTheme: createNavigationTheme(resolvedAppearance),
-      isLoadingPreference: isAuthenticated && preferences === undefined,
+      isLoadingPreference: isAuthenticated && settings === undefined,
       isSavingPreference,
       setPreference,
     }),
@@ -108,7 +108,7 @@ export function AppearanceProvider({
       isAuthenticated,
       isSavingPreference,
       preference,
-      preferences,
+      settings,
       resolvedAppearance,
       setPreference,
     ]

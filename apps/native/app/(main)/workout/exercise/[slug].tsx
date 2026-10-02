@@ -1,25 +1,25 @@
 import { Button, ListItem, Text } from '@expo/ui';
+import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { commentsApi, exercisesApi } from '@/lib';
 
 export default function ExerciseDetailScreen() {
   const params = useLocalSearchParams<{ slug: string }>();
   const [commentBody, setCommentBody] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const exercise = useQuery(
-    exercisesApi.getExerciseBySlug,
+    api.exercises.getBySlug,
     params.slug ? { slug: params.slug } : 'skip'
   );
   const comments = useQuery(
-    commentsApi.listComments,
+    api.exerciseComments.listComments,
     exercise ? { exerciseId: exercise._id } : 'skip'
   );
-  const addComment = useMutation(commentsApi.addComment);
+  const addComment = useMutation(api.exerciseComments.addComment);
 
   const handleAddComment = async () => {
     if (!exercise || commentBody.trim().length === 0) {
