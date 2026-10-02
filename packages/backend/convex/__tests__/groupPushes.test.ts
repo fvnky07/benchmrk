@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import {
   finishDue,
@@ -28,12 +28,7 @@ const tokenOf = (username: string) => `ExpoPushToken[${username}]`;
 
 /** A verified member with a username and one registered device. */
 async function member(t: TestBackend, username: string): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
+  const signedIn = await verifiedMember(t, username);
   await signedIn.mutation(api.deviceTokens.register, {
     token: tokenOf(username),
     platform: 'ios',

@@ -4,7 +4,7 @@ import {
   type TestConvexForDataModel,
 } from 'convex-test';
 
-import { components } from '../_generated/api';
+import { api, components } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import betterAuthSchema from '../betterAuth/schema';
 import schema from '../schema';
@@ -58,4 +58,22 @@ export async function createAuthIdentity(
     },
   })) as { _id: string };
   return created._id;
+}
+
+/**
+ * A signed-in member with a username, who has a verified email unless told
+ * otherwise.
+ */
+export async function verifiedMember(
+  t: TestBackend,
+  username: string,
+  { verified = true }: { verified?: boolean } = {}
+): Promise<TestMember> {
+  const identityId = await createAuthIdentity(t, {
+    email: `${username}@example.com`,
+    emailVerified: verified,
+  });
+  const signedIn = t.withIdentity({ subject: identityId });
+  await signedIn.mutation(api.profile.updateProfile, { username });
+  return signedIn;
 }

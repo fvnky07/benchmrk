@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import { finishDue, pushService } from './pushService.testing';
 import {
@@ -24,16 +24,14 @@ afterEach(() => {
 type Member = { client: TestMember; id: string; username: string };
 
 async function member(t: TestBackend, username: string): Promise<Member> {
-  const id = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const client = t.withIdentity({ subject: id });
-  await client.mutation(api.profile.updateProfile, { username });
+  const client = await verifiedMember(t, username);
   await client.mutation(api.deviceTokens.register, {
     token: `ExpoPushToken[${username}]`,
     platform: 'ios',
   });
+  const id = await client.run(
+    async (ctx) => (await ctx.auth.getUserIdentity())?.subject ?? ''
+  );
   return { client, id, username };
 }
 
