@@ -108,6 +108,18 @@ export const setTypeValidator = v.union(
   v.literal('failure')
 );
 
+/** Group events: the timeline, pushes, reactions and recaps all read them. */
+export const groupEventKindValidator = v.union(
+  v.literal('joined'),
+  v.literal('left'),
+  v.literal('dropped'),
+  v.literal('removed'),
+  v.literal('hostChanged'),
+  v.literal('ended'),
+  v.literal('setCompleted'),
+  v.literal('targetMet')
+);
+
 /** What other Group members see of a member's Workout, and nothing more. */
 export const groupProgressValidator = v.object({
   status: v.union(
@@ -449,7 +461,9 @@ export default defineSchema({
     lastSeenAt: v.optional(v.number()),
     /** The member shows their weights, reps and volume; hidden by default. */
     showWeights: v.optional(v.boolean()),
+    reactionsMuted: v.optional(v.boolean()),
     leftAt: v.optional(v.number()),
+    removed: v.optional(v.boolean()),
     progress: groupProgressValidator,
   })
     .index('by_user_left', ['userId', 'leftAt'])
@@ -457,18 +471,46 @@ export default defineSchema({
 
   groupEvents: defineTable({
     groupId: v.id('groups'),
-    kind: v.union(
-      v.literal('joined'),
-      v.literal('left'),
-      v.literal('dropped'),
-      v.literal('hostChanged'),
-      v.literal('ended')
-    ),
+    kind: groupEventKindValidator,
     userId: v.optional(v.string()),
+    exerciseName: v.optional(v.string()),
+    setNumber: v.optional(v.number()),
     at: v.number(),
     /** On a join that opened a push window: joins until then merge into one push. */
     batchUntil: v.optional(v.number()),
   }).index('by_group_at', ['groupId', 'at']),
+
+  groupRecaps: defineTable({
+    groupId: v.id('groups'),
+    endedAt: v.number(),
+  }).index('by_group', ['groupId']),
+
+  groupRecapRows: defineTable({
+    recapId: v.id('groupRecaps'),
+    groupId: v.id('groups'),
+    userId: v.string(),
+    username: v.string(),
+    setsDone: v.number(),
+    durationSeconds: v.number(),
+    targetsMet: v.number(),
+    volumeKg: v.union(v.number(), v.null()),
+    hidden: v.boolean(),
+  })
+    .index('by_recap', ['recapId'])
+    .index('by_user', ['userId'])
+    .index('by_group_user', ['groupId', 'userId']),
+
+  groupReactions: defineTable({
+    groupId: v.id('groups'),
+    eventId: v.id('groupEvents'),
+    fromUserId: v.string(),
+    toUserId: v.string(),
+    at: v.number(),
+    delivered: v.boolean(),
+  })
+    .index('by_event_from', ['eventId', 'fromUserId'])
+    .index('by_to_at', ['toUserId', 'at'])
+    .index('by_from', ['fromUserId']),
 
   // Short join codes; valid until revoked, the Group ends or 24 hours unused.
   groupCodes: defineTable({
@@ -502,4 +544,28 @@ export default defineSchema({
     .index('by_invitee', ['inviteeId', 'delivered', 'status', 'createdAt'])
     .index('by_inviter', ['inviterId', 'createdAt'])
     .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt']),
+
+  blocks: defineTable({
+    blockerId: v.string(),
+    blockedId: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_blocker', ['blockerId', 'blockedId'])
+    .index('by_blocked', ['blockedId']),
+
+  reports: defineTable({
+    reporterId: v.string(),
+    reportedId: v.string(),
+    groupId: v.optional(v.id('groups')),
+    reason: v.union(
+      v.literal('harassment'),
+      v.literal('spam'),
+      v.literal('inappropriate_profile'),
+      v.literal('cheating'),
+      v.literal('other')
+    ),
+    createdAt: v.number(),
+  })
+    .index('by_reporter', ['reporterId'])
+    .index('by_reported', ['reportedId']),
 });
