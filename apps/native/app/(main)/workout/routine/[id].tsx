@@ -138,7 +138,11 @@ export default function RoutineBuilderScreen() {
       <NativeTextField
         label="Target duration (minutes)"
         keyboardType="number-pad"
-        placeholder="From your recent Workouts"
+        placeholder={
+          routine.suggestedDurationSeconds === null
+            ? 'Suggested after 3 Workouts'
+            : `${Math.round(routine.suggestedDurationSeconds / 60)} from your recent Workouts`
+        }
         value={targetMinutes}
         onChangeText={setTargetMinutes}
       />

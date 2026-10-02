@@ -153,6 +153,15 @@ export default function WorkoutSettingsScreen() {
         value={settings.autoAdvance}
         onValueChange={(autoAdvance) => update({ autoAdvance })}
       />
+      <ListItem supportingText="Quiet text beside the progress row, against the Routine's target duration.">
+        Ahead or behind
+      </ListItem>
+      <Switch
+        disabled={isSaving}
+        label="Show ahead or behind"
+        value={settings.aheadBehind}
+        onValueChange={(aheadBehind) => update({ aheadBehind })}
+      />
       <ListItem supportingText="A target for every Set, from your own last Workout. You can also switch them off for one Exercise from its target.">
         Overload targets
       </ListItem>
