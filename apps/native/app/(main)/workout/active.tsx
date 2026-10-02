@@ -5,7 +5,7 @@ import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { DockedScreen } from '@/components/native/docked-screen';
 import { NativeScreen } from '@/components/native/native-screen';
@@ -54,11 +54,16 @@ import {
   targetText,
   typeKey,
 } from '@/lib/workout/set-entry';
+import { aheadBehind } from '@/lib/workout/time';
 import { useNow } from '@/lib/workout/use-now';
 import {
   cancelRestEndNotification,
   useRestEndNotification,
 } from '@/lib/workout/use-rest-end-notification';
+import {
+  cancelStillWorkingOut,
+  useStillWorkingOut,
+} from '@/lib/workout/use-still-working-out';
 
 type WorkoutExercise = ActiveWorkout['exercises'][number];
 type WorkoutSet = WorkoutExercise['sets'][number];
@@ -141,6 +146,28 @@ export default function ActiveWorkoutScreen() {
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const [setupFor, setSetupFor] = useState<Id<'workoutExercises'> | null>(null);
   const [isPlatesOpen, setIsPlatesOpen] = useState(false);
+  const touchSet = useMutation(api.workouts.touchSet);
+  const touched = useRef(new Set<Id<'sets'>>());
+  // Set once ending is possible; the idle notification's Finish calls it.
+  const finishFromIdle = useRef(() => {});
+
+  const stillWorkingOut = useStillWorkingOut({
+    enabled: Boolean(workout),
+    lastActivity: workout
+      ? Math.max(
+          workout.startedAt,
+          workout.rest?.startedAt ?? 0,
+          ...workout.exercises.flatMap((item) =>
+            item.sets.flatMap((set) => [
+              set.completedAt ?? 0,
+              set.firstTouchedAt ?? 0,
+            ])
+          )
+        )
+      : 0,
+    now,
+    onFinish: () => finishFromIdle.current(),
+  });
 
   useRestEndNotification(workout?.rest?.endsAt ?? null, {
     sound: settings?.restEndSound ?? true,
@@ -288,6 +315,16 @@ export default function ActiveWorkoutScreen() {
 
   const pressKey = (key: KeypadKey) => {
     if (!focus || !focusSet) return;
+    stillWorkingOut.markActive();
+    // The first keypad press on a Set starts its working time.
+    if (
+      focusSet.firstTouchedAt === null &&
+      focusSet.completedAt === null &&
+      !touched.current.has(focusSet._id)
+    ) {
+      touched.current.add(focusSet._id);
+      void touchSet({ setId: focusSet._id });
+    }
     setDraft(
       focus.setId,
       focus.field,
@@ -325,8 +362,15 @@ export default function ActiveWorkoutScreen() {
       if (reason === 'terminate') haptic('destructive-confirmation');
       await endWorkout({ workoutId: workout._id, reason });
       await cancelRestEndNotification();
+      await cancelStillWorkingOut();
       router.replace(`/workout/finished/${workout._id}`);
     }, 'Could not end this Workout. Try again.');
+  // Ends at the last completed Set; the backend records that as the end.
+  const finishNow = () =>
+    end(
+      workout.progress.done === workout.progress.total ? 'finish' : 'terminate'
+    );
+  finishFromIdle.current = finishNow;
 
   const keypad =
     focus && focusSet && isKeypadOpen ? (
@@ -454,6 +498,21 @@ export default function ActiveWorkoutScreen() {
           <Text textStyle={{ fontSize: 14 }}>{workout.note}</Text>
         </Row>
       ) : null}
+      {stillWorkingOut.isIdle ? (
+        <Column spacing={8}>
+          <ListItem supportingText="Nothing has happened for 20 minutes.">
+            Still working out?
+          </ListItem>
+          <Row spacing={8}>
+            <Button label="Finish Workout" onPress={finishNow} />
+            <Button
+              label="Keep going"
+              variant="outlined"
+              onPress={stillWorkingOut.markActive}
+            />
+          </Row>
+        </Column>
+      ) : null}
       <Row spacing={12} alignment="center">
         <Column style={{ width: 260 }}>
           <WorkoutProgress
@@ -467,6 +526,17 @@ export default function ActiveWorkoutScreen() {
         <Text textStyle={{ fontSize: 14 }}>
           {`${workout.progress.done}/${workout.progress.total} Sets`}
         </Text>
+        {settings.aheadBehind && workout.targetDurationSeconds ? (
+          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            {aheadBehind(
+              (now - workout.startedAt) / 1000,
+              workout.targetDurationSeconds,
+              workout.progress.total === 0
+                ? 0
+                : workout.progress.done / workout.progress.total
+            )}
+          </Text>
+        ) : null}
       </Row>
       {isConfirmingTerminate ? (
         <Column spacing={8}>

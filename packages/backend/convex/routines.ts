@@ -8,9 +8,11 @@ import {
   query,
 } from './_generated/server';
 import { afterBlock, gatherBlocks } from './domain/rounds';
+import { targetDuration } from './domain/time';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { getIdentityId, requireIdentityId } from './lib/identity';
+import { recentDurations } from './lib/time';
 import { readMemberSettings } from './memberSettings';
 
 const DEFAULT_TARGET_SETS = 3;
@@ -161,6 +163,11 @@ export const get = query({
       _id: routine._id,
       name: routine.name,
       targetDurationSeconds: routine.targetDurationSeconds ?? null,
+      /** The median of recent Workouts once 3 exist, before any override. */
+      suggestedDurationSeconds: targetDuration(
+        await recentDurations(ctx, routine._id, Number.MAX_SAFE_INTEGER),
+        null
+      ),
       exercises,
       blocks: blocks.map((block) => ({
         _id: block._id,
