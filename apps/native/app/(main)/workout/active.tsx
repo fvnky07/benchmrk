@@ -26,6 +26,7 @@ import { SetKeypad } from '@/components/workout/set-keypad';
 import { SetTable } from '@/components/workout/set-table';
 import { SetTypeSheet } from '@/components/workout/set-type-sheet';
 import { StructureSheet } from '@/components/workout/structure-sheet';
+import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
 import { formatClock } from '@/lib/workout/format';
@@ -39,6 +40,7 @@ import {
   type SetField,
   type SetType,
   setLabels,
+  setSummary,
   steppedValue,
   storedKey,
   storedToDraft,
@@ -99,6 +101,8 @@ export default function ActiveWorkoutScreen() {
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
   const [isKeypadOpen, setIsKeypadOpen] = useState(true);
   const [typeSheetSetId, setTypeSheetSetId] = useState<Id<'sets'> | null>(null);
+  const [targetSheetId, setTargetSheetId] =
+    useState<Id<'workoutExercises'> | null>(null);
   const [isRestSheetOpen, setIsRestSheetOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<'add' | 'swap' | null>(null);
   const [isStructureOpen, setIsStructureOpen] = useState(false);
@@ -144,6 +148,9 @@ export default function ActiveWorkoutScreen() {
   );
   const exercise: WorkoutExercise | undefined = workout.exercises[index];
   const fields = exercise ? SET_FIELDS[exercise.type] : [];
+  // Timed and cardio Exercises show the previous Set instead of a target.
+  const showsPrevious =
+    exercise?.type === 'timed' || exercise?.type === 'cardio';
   const exercisePlannedRest =
     exercise?.plannedRestSeconds ?? settings.defaultRestSeconds;
   const currentSetIndex = exercise
@@ -475,7 +482,18 @@ export default function ActiveWorkoutScreen() {
                 type: set.type,
                 rpe: set.rpe,
                 done: set.completedAt !== null,
-                target: target && targetText(target, units),
+                target: showsPrevious
+                  ? set.previous &&
+                    setSummary(
+                      {
+                        weightKg: null,
+                        reps: null,
+                        durationSeconds: set.previous.durationSeconds ?? null,
+                        distanceMeters: set.previous.distanceMeters ?? null,
+                      },
+                      units
+                    )
+                  : target && targetText(target, units),
                 cells: fields.map((field) => ({
                   field,
                   value: displayDraft(field, draftOf(set, field)),
@@ -526,6 +544,8 @@ export default function ActiveWorkoutScreen() {
               attempt(() => deleteSet({ setId }), 'Could not delete this Set.')
             }
             onOpenType={setTypeSheetSetId}
+            onOpenTarget={() => setTargetSheetId(exercise._id)}
+            targetHeading={showsPrevious ? 'Last time' : 'Target'}
             onDismissSwipeHint={() =>
               attempt(
                 () => updateSettings({ swipeHintDismissed: true }),
@@ -624,6 +644,12 @@ export default function ActiveWorkoutScreen() {
           onDismiss={() => setIsRestSheetOpen(false)}
         />
       ) : null}
+      <TargetSheet
+        workoutExerciseId={targetSheetId}
+        units={units}
+        effortScale={effortScale}
+        onDismiss={() => setTargetSheetId(null)}
+      />
       <SetTypeSheet
         current={
           exercise?.sets.find((set) => set._id === typeSheetSetId)?.type ?? null
