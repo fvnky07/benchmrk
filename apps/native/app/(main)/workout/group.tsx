@@ -9,20 +9,16 @@ import {
   Switch,
   Text,
 } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ScrollView as NativeScrollView,
-  Platform,
   Share,
   useWindowDimensions,
   View,
 } from 'react-native';
-
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
 import { GroupActivity } from '@/components/groups/group-activity';
 import { GroupGrid } from '@/components/groups/group-grid';
@@ -33,14 +29,17 @@ import { InviteInbox } from '@/components/groups/invite-inbox';
 import { ScanToJoin } from '@/components/groups/scan-to-join';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { useReactionAlerts } from '@/lib/groups/use-reaction-alerts';
 import { usePushPermissionReoffer } from '@/lib/push/use-push-permission-reoffer';
 import { THEME, useAppearance } from '@/lib/ui';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
 
 /** Group links open the website, which hands over to the app. */
 const JOIN_LINK_BASE = 'https://benchmrk.app/join';
+
+/** Navigation bar, Group header, weights switch and spacing above the member boxes. */
+const GROUP_CHROME_HEIGHT = 420;
 
 const ERROR_COPY: Record<string, string> = {
   EMAIL_NOT_VERIFIED: 'Verify your email to create or join Groups.',
@@ -62,7 +61,6 @@ export default function GroupScreen() {
   const end = useMutation(api.groups.end);
   const reactions = useQuery(api.reactions.mine);
   const setMuted = useMutation(api.reactions.setMuted);
-  useReactionAlerts();
   const setShowWeights = useMutation(api.groups.setShowWeights);
   const { resolvedAppearance } = useAppearance();
   const colors = THEME[resolvedAppearance];
@@ -205,15 +203,9 @@ export default function GroupScreen() {
           disabled={busy || reactions === undefined}
           label={reactions?.muted ? 'Unmute reactions' : 'Mute reactions'}
           modifiers={[
-            Platform.OS === 'ios'
-              ? accessibilityLabel(
-                  reactions?.muted ? 'Unmute reactions' : 'Mute reactions'
-                )
-              : semantics({
-                  contentDescription: reactions?.muted
-                    ? 'Unmute reactions'
-                    : 'Mute reactions',
-                }),
+            accessibilityModifier(
+              reactions?.muted ? 'Unmute reactions' : 'Mute reactions'
+            ),
           ]}
           variant="text"
           onPress={() =>
@@ -283,6 +275,7 @@ export default function GroupScreen() {
               members={group.members}
               now={now}
               isHost={group.isHost}
+              reservedHeight={GROUP_CHROME_HEIGHT}
             />
             <GroupActivity />
             {status}
