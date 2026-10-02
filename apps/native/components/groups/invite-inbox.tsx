@@ -1,13 +1,10 @@
 import { Button, Column, ListItem, Row, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
-import { Platform } from 'react-native';
-
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -95,13 +92,7 @@ export function InviteInbox() {
           <Button
             disabled={busy}
             label="Dismiss"
-            modifiers={[
-              Platform.OS === 'ios'
-                ? accessibilityLabel(`Dismiss ${entry.copy}`)
-                : semantics({
-                    contentDescription: `Dismiss ${entry.copy}`,
-                  }),
-            ]}
+            modifiers={[accessibilityModifier(`Dismiss ${entry.copy}`)]}
             variant="outlined"
             onPress={() => void dismiss(entry.entryId)}
           />
@@ -124,13 +115,9 @@ export function InviteInbox() {
                   disabled={busy}
                   label="Accept"
                   modifiers={[
-                    Platform.OS === 'ios'
-                      ? accessibilityLabel(
-                          `Accept invite from ${invite.inviterUsername}`
-                        )
-                      : semantics({
-                          contentDescription: `Accept invite from ${invite.inviterUsername}`,
-                        }),
+                    accessibilityModifier(
+                      `Accept invite from ${invite.inviterUsername}`
+                    ),
                   ]}
                   onPress={() => void respond(invite.inviteId, 'accept')}
                 />
@@ -138,13 +125,9 @@ export function InviteInbox() {
                   disabled={busy}
                   label="Decline"
                   modifiers={[
-                    Platform.OS === 'ios'
-                      ? accessibilityLabel(
-                          `Decline invite from ${invite.inviterUsername}`
-                        )
-                      : semantics({
-                          contentDescription: `Decline invite from ${invite.inviterUsername}`,
-                        }),
+                    accessibilityModifier(
+                      `Decline invite from ${invite.inviterUsername}`
+                    ),
                   ]}
                   variant="outlined"
                   onPress={() => void respond(invite.inviteId, 'decline')}
@@ -162,13 +145,9 @@ export function InviteInbox() {
                 disabled={busy}
                 label="Dismiss"
                 modifiers={[
-                  Platform.OS === 'ios'
-                    ? accessibilityLabel(
-                        `Dismiss invite from ${invite.inviterUsername}`
-                      )
-                    : semantics({
-                        contentDescription: `Dismiss invite from ${invite.inviterUsername}`,
-                      }),
+                  accessibilityModifier(
+                    `Dismiss invite from ${invite.inviterUsername}`
+                  ),
                 ]}
                 variant="outlined"
                 onPress={() => void respond(invite.inviteId, 'decline')}

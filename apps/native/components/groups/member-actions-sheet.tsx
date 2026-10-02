@@ -1,10 +1,8 @@
 import { BottomSheet, Button, Column, ListItem, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
-import { Platform } from 'react-native';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 
 import { errorCode } from '@/lib/workout/format';
 
@@ -17,6 +15,7 @@ const REASONS = [
 ] as const;
 
 const ERROR_COPY: Record<string, string> = {
+  NOT_IN_GROUP: 'You’re no longer in this Group.',
   NOT_HOST: 'Only the Group host can do that.',
   MEMBER_NOT_FOUND: 'They’re no longer in this Group.',
   NO_SUCH_USERNAME: 'No member with that username.',
@@ -25,11 +24,6 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 type Action = 'menu' | 'report' | 'block' | 'remove' | 'sent';
-
-const accessibilityModifiers = (label: string) =>
-  Platform.OS === 'ios'
-    ? accessibilityLabel(label)
-    : semantics({ contentDescription: label });
 
 export function MemberActionsSheet({
   username,
@@ -95,12 +89,12 @@ export function MemberActionsSheet({
           <>
             <Button
               label="Report"
-              modifiers={[accessibilityModifiers(`Report ${username}`)]}
+              modifiers={[accessibilityModifier(`Report ${username}`)]}
               onPress={() => setAction('report')}
             />
             <Button
               label={`Block ${username}`}
-              modifiers={[accessibilityModifiers(`Block ${username}`)]}
+              modifiers={[accessibilityModifier(`Block ${username}`)]}
               onPress={() => setAction('block')}
               variant="outlined"
             />
@@ -108,7 +102,7 @@ export function MemberActionsSheet({
               <Button
                 label="Remove from Group"
                 modifiers={[
-                  accessibilityModifiers(`Remove ${username} from Group`),
+                  accessibilityModifier(`Remove ${username} from Group`),
                 ]}
                 onPress={() => setAction('remove')}
                 variant="outlined"
@@ -124,7 +118,7 @@ export function MemberActionsSheet({
                 key={reason.value}
                 disabled={busy}
                 label={reason.label}
-                modifiers={[accessibilityModifiers(reason.label)]}
+                modifiers={[accessibilityModifier(reason.label)]}
                 onPress={() =>
                   void perform(
                     () => report({ username, reason: reason.value }),
@@ -145,7 +139,7 @@ export function MemberActionsSheet({
             <Button
               disabled={busy}
               label={`Block ${username}`}
-              modifiers={[accessibilityModifiers(`Block ${username}`)]}
+              modifiers={[accessibilityModifier(`Block ${username}`)]}
               onPress={() => void perform(() => block({ username }))}
             />
           </>
@@ -159,7 +153,7 @@ export function MemberActionsSheet({
               disabled={busy}
               label="Remove from Group"
               modifiers={[
-                accessibilityModifiers(`Remove ${username} from Group`),
+                accessibilityModifier(`Remove ${username} from Group`),
               ]}
               onPress={() => void perform(() => remove({ username }))}
             />
@@ -171,14 +165,14 @@ export function MemberActionsSheet({
         {action !== 'sent' ? (
           <Button
             label="Cancel"
-            modifiers={[accessibilityModifiers('Cancel')]}
+            modifiers={[accessibilityModifier('Cancel')]}
             onPress={() => (action === 'menu' ? dismiss() : setAction('menu'))}
             variant="text"
           />
         ) : (
           <Button
             label="Done"
-            modifiers={[accessibilityModifiers('Done')]}
+            modifiers={[accessibilityModifier('Done')]}
             onPress={dismiss}
           />
         )}

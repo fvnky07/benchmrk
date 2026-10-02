@@ -1,6 +1,4 @@
 import { Button, Column, ListItem, RNHostView, Text } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { effortInScale } from '@repo/backend/convex/domain/effort';
@@ -10,10 +8,9 @@ import {
   router,
   useLocalSearchParams,
 } from 'expo-router';
-import { Platform } from 'react-native';
-
 import { Chart } from '@/components/charts/chart';
 import { NativeScreen } from '@/components/native/native-screen';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode, formatClock, formatEffort } from '@/lib/workout/format';
 import {
   effortNotCheckedText,
@@ -45,23 +42,13 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       {code !== 'NOT_FOUND' ? (
         <Button
           label="Try again"
-          modifiers={[
-            Platform.OS === 'ios'
-              ? accessibilityLabel('Try loading this Workout again')
-              : semantics({
-                  contentDescription: 'Try loading this Workout again',
-                }),
-          ]}
+          modifiers={[accessibilityModifier('Try loading this Workout again')]}
           onPress={() => void retry()}
         />
       ) : null}
       <Button
         label="Back to history"
-        modifiers={[
-          Platform.OS === 'ios'
-            ? accessibilityLabel('Back to Workout history')
-            : semantics({ contentDescription: 'Back to Workout history' }),
-        ]}
+        modifiers={[accessibilityModifier('Back to Workout history')]}
         onPress={() => router.dismissTo('/workout/history')}
         variant="outlined"
       />
@@ -98,11 +85,7 @@ export default function WorkoutHistoryDetailScreen() {
         </Text>
         <Button
           label="Back to history"
-          modifiers={[
-            Platform.OS === 'ios'
-              ? accessibilityLabel('Back to Workout history')
-              : semantics({ contentDescription: 'Back to Workout history' }),
-          ]}
+          modifiers={[accessibilityModifier('Back to Workout history')]}
           onPress={() => router.dismissTo('/workout/history')}
           variant="outlined"
         />
