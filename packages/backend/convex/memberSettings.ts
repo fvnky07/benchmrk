@@ -55,6 +55,7 @@ const DEFAULT_SETTINGS: MemberSettings = {
   autoAdvance: true,
   plates: DEFAULT_PLATES.kg,
   aheadBehind: true,
+  invitesFrom: 'everyone',
 };
 
 async function findSettings(
