@@ -1,6 +1,7 @@
 import { ConvexError, v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
+import { blockedEitherWayIds } from './lib/blocks';
 import { getIdentityId } from './lib/identity';
 import { groupEventKindValidator } from './schema';
 
@@ -43,16 +44,34 @@ export const get = query({
     const recap = await ctx.db.get(ownRow.recapId);
     const group = await ctx.db.get(groupId);
     if (!recap || !group) throw new ConvexError('NOT_FOUND');
-    const rows = await ctx.db
-      .query('groupRecapRows')
-      .withIndex('by_recap', (q) => q.eq('recapId', recap._id))
+    const memberships = await ctx.db
+      .query('groupMemberships')
+      .withIndex('by_user_left', (q) => q.eq('userId', userId))
       .collect();
+    const firstJoin = memberships
+      .filter((membership) => membership.groupId === groupId)
+      .reduce(
+        (earliest, membership) => Math.min(earliest, membership.joinedAt),
+        Number.POSITIVE_INFINITY
+      );
+    if (!Number.isFinite(firstJoin)) throw new ConvexError('NOT_FOUND');
+    const blockedIds = await blockedEitherWayIds(ctx, userId);
+    const rows = (
+      await ctx.db
+        .query('groupRecapRows')
+        .withIndex('by_recap', (q) => q.eq('recapId', recap._id))
+        .collect()
+    ).filter((row) => !blockedIds.has(row.userId));
     const usernames = new Map(rows.map((row) => [row.userId, row.username]));
-    const events = await ctx.db
-      .query('groupEvents')
-      .withIndex('by_group_at', (q) => q.eq('groupId', groupId))
-      .order('asc')
-      .collect();
+    const events = (
+      await ctx.db
+        .query('groupEvents')
+        .withIndex('by_group_at', (q) =>
+          q.eq('groupId', groupId).gte('at', firstJoin)
+        )
+        .order('asc')
+        .collect()
+    ).filter((event) => !event.userId || !blockedIds.has(event.userId));
     return {
       groupId,
       createdAt: group.createdAt,

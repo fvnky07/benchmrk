@@ -2,7 +2,7 @@ import { ConvexError, v } from 'convex/values';
 
 import { components } from './_generated/api';
 import { mutation, query } from './_generated/server';
-import { activeMembership } from './lib/groupProgress';
+import { activeMembership, requireMembership } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 
 export const block = mutation({
@@ -96,27 +96,21 @@ export const report = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const userId = await requireIdentityId(ctx);
+    const { group } = await requireMembership(ctx, userId);
     const profile = await ctx.runQuery(
       components.betterAuth.users.getUserByUsername,
       { username: args.username.trim().toLowerCase() }
     );
-    if (!profile) throw new ConvexError('NO_SUCH_USERNAME');
+    if (!profile) throw new ConvexError('MEMBER_NOT_FOUND');
     if (profile._id === userId) throw new ConvexError('CANNOT_REPORT_SELF');
-    const [reporterMembership, reportedMembership] = await Promise.all([
-      activeMembership(ctx, userId),
-      activeMembership(ctx, profile._id),
-    ]);
-    const group = reporterMembership
-      ? await ctx.db.get(reporterMembership.groupId)
-      : null;
-    const groupId =
-      group?.status === 'live' && reportedMembership?.groupId === group._id
-        ? group._id
-        : undefined;
+    const reportedMembership = await activeMembership(ctx, profile._id);
+    if (reportedMembership?.groupId !== group._id) {
+      throw new ConvexError('MEMBER_NOT_FOUND');
+    }
     await ctx.db.insert('reports', {
       reporterId: userId,
       reportedId: profile._id,
-      groupId,
+      groupId: group._id,
       reason: args.reason,
       createdAt: Date.now(),
     });
