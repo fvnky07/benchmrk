@@ -640,6 +640,36 @@ describe('target sheet', () => {
     ]);
   });
 
+  test('declining after logging clears every target, preserves the logs and avoids a Plateau', async () => {
+    const { member, routineId } = await routineFor();
+    await logWorkout(member, routineId, MISS);
+    await logWorkout(member, routineId, MISS);
+    const { workoutId, exercise } = await startNext(member, routineId);
+    await member.mutation(api.workouts.completeSet, {
+      setId: exercise.sets[0]?._id as Id<'sets'>,
+      weightKg: 50,
+      reps: 4,
+    });
+    const logged = (await firstExercise(member)).sets[0];
+    await member.mutation(api.overload.declineTargets, {
+      workoutExerciseId: exercise._id,
+    });
+    const declined = await firstExercise(member);
+    expect(targetsOf(declined)).toEqual([null, null]);
+    expect(declined.sets[0]).toMatchObject({
+      weightKg: 50,
+      reps: 4,
+      completedAt: logged?.completedAt,
+    });
+    await member.mutation(api.workouts.end, { workoutId, reason: 'terminate' });
+    const next = (await startNext(member, routineId)).exercise;
+    expect(next.overload?.plateau).toBe(false);
+    expect(targetsOf(next)).toEqual([
+      { weightKg: 50, reps: 5 },
+      { weightKg: 50, reps: 5 },
+    ]);
+  });
+
   test('editing sets the member’s own target, and values filled from the old one follow it', async () => {
     const { member, exercise } = await workoutWithTargets();
     await member.mutation(api.workouts.fillFromTarget, {
