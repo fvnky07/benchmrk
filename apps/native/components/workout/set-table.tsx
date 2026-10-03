@@ -103,7 +103,9 @@ export function SetTable({
   const { resolvedAppearance } = useAppearance();
   const colors = THEME[resolvedAppearance];
   const labels = setLabels(sets.map((set) => set.type));
-  const showTargets = sets.some((set) => set.target !== null);
+  // Target settings remain reachable even when targets are switched off.
+  const showTargets =
+    targetHeading === 'Target' || sets.some((set) => set.target !== null);
 
   return (
     <>
@@ -114,9 +116,11 @@ export function SetTable({
         <Spacer />
         {showTargets ? (
           <Column alignment="center" style={{ width: TARGET_WIDTH }}>
-            <Text textStyle={{ fontSize: 13, fontWeight: '600' }}>
-              {targetHeading}
-            </Text>
+            <Button
+              label={targetHeading}
+              variant="text"
+              onPress={onOpenTarget}
+            />
           </Column>
         ) : null}
         {headings.map((heading) => (
