@@ -5,12 +5,12 @@ import {
   action,
   internalAction,
   internalMutation,
-  internalQuery,
   mutation,
   type QueryCtx,
   query,
 } from './_generated/server';
 import { createAuth } from './auth';
+import { actionEmail, sendEmail } from './lib/email';
 import { magicLinkProof } from './lib/magicLinkProof';
 
 const emailSchema = z
@@ -121,10 +121,10 @@ export const deliverSignInLink = internalAction({
   returns: v.null(),
   handler: async (ctx, { email, retry }) => {
     try {
-      if (await ctx.runQuery(internal.waitlist.canSendSignInLink, { email })) {
-        await ctx.runAction(internal.waitlist.sendSignInLink, { email });
-        await ctx.runMutation(internal.waitlist.markSignInLinkSent, { email });
-      }
+      await ctx.runMutation(internal.waitlist.reserveSignInLink, {
+        email,
+        retry: retry ?? false,
+      });
     } catch {
       console.error('Waitlist sign-in link delivery failed');
       if (!retry) {
@@ -139,54 +139,121 @@ export const deliverSignInLink = internalAction({
   },
 });
 
-export const canSendSignInLink = internalQuery({
-  args: { email: v.string() },
-  returns: v.boolean(),
-  handler: async (ctx, { email }) => {
-    if (!(await isConfirmedWaitlistIdentity(ctx, email))) return false;
+/** Cooldown, auth token and delivery job commit together before any email. */
+export const reserveSignInLink = internalMutation({
+  args: { email: v.string(), retry: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, { email, retry }) => {
+    if (!(await isConfirmedWaitlistIdentity(ctx, email))) return null;
     const previous = await ctx.db
       .query('magicLinkRequests')
       .withIndex('by_email', (q) => q.eq('email', email))
       .unique();
-    return (
-      !previous || previous.lastSentAt <= Date.now() - SIGN_IN_LINK_COOLDOWN_MS
-    );
-  },
-});
-
-export const markSignInLinkSent = internalMutation({
-  args: { email: v.string() },
-  handler: async (ctx, { email }) => {
-    const previous = await ctx.db
-      .query('magicLinkRequests')
-      .withIndex('by_email', (q) => q.eq('email', email))
-      .unique();
-    if (previous) {
-      await ctx.db.patch(previous._id, { lastSentAt: Date.now() });
-    } else {
-      await ctx.db.insert('magicLinkRequests', {
-        email,
-        lastSentAt: Date.now(),
-      });
+    const now = Date.now();
+    if (previous && now - previous.lastSentAt < SIGN_IN_LINK_COOLDOWN_MS) {
+      return null;
     }
-  },
-});
-
-export const sendSignInLink = internalAction({
-  args: { email: v.string() },
-  handler: async (ctx, args) => {
+    if (previous) {
+      await ctx.db.patch(previous._id, { lastSentAt: now, token: undefined });
+    } else {
+      await ctx.db.insert('magicLinkRequests', { email, lastSentAt: now });
+    }
     await createAuth(ctx).api.signInMagicLink({
       body: {
-        email: args.email,
+        email,
         callbackURL: NATIVE_SIGN_IN_CALLBACK,
         newUserCallbackURL: NATIVE_SIGN_IN_CALLBACK,
         errorCallbackURL: NATIVE_SIGN_IN_CALLBACK,
         metadata: {
           flow: 'native-sign-in',
-          proof: await magicLinkProof(args.email, 'native-sign-in'),
+          proof: await magicLinkProof(email, 'native-sign-in'),
+          retry,
         },
       },
       headers: new Headers(),
     });
+    return null;
+  },
+});
+
+const deliveryArgs = {
+  email: v.string(),
+  token: v.string(),
+  url: v.string(),
+  retry: v.boolean(),
+};
+
+/** Called by Better Auth inside reserveSignInLink's transaction. */
+export const queueReservedSignInLink = internalMutation({
+  args: deliveryArgs,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db
+      .query('magicLinkRequests')
+      .withIndex('by_email', (q) => q.eq('email', args.email))
+      .unique();
+    if (!reservation || reservation.token !== undefined) {
+      throw new ConvexError('SIGN_IN_LINK_NOT_RESERVED');
+    }
+    await ctx.db.patch(reservation._id, { token: args.token });
+    await ctx.scheduler.runAfter(0, internal.waitlist.sendSignInLink, args);
+    return null;
+  },
+});
+
+export const releaseSignInLink = internalMutation({
+  args: { email: v.string(), token: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { email, token }) => {
+    const reservation = await ctx.db
+      .query('magicLinkRequests')
+      .withIndex('by_email', (q) => q.eq('email', email))
+      .unique();
+    if (reservation?.token === token) {
+      await ctx.db.delete(reservation._id);
+      await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
+        input: {
+          model: 'verification',
+          where: [{ field: 'identifier', value: token }],
+        },
+      });
+    }
+    return null;
+  },
+});
+
+export const sendSignInLink = internalAction({
+  args: deliveryArgs,
+  returns: v.null(),
+  handler: async (ctx, { email, token, url, retry }) => {
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Your benchmrk sign-in link',
+        html: actionEmail({
+          title: 'Sign in to benchmrk',
+          heading: 'Sign in to benchmrk',
+          body: 'Open this link on the phone where benchmrk is installed to sign in.',
+          actionLabel: 'Sign in',
+          url,
+          footnote:
+            'This link expires in 24 hours. If you didn’t ask for it, ignore this email.',
+        }),
+      });
+    } catch {
+      console.error('Waitlist sign-in link delivery failed');
+      await ctx.runMutation(internal.waitlist.releaseSignInLink, {
+        email,
+        token,
+      });
+      if (!retry) {
+        await ctx.scheduler.runAfter(
+          60_000,
+          internal.waitlist.deliverSignInLink,
+          { email, retry: true }
+        );
+      }
+    }
+    return null;
   },
 });

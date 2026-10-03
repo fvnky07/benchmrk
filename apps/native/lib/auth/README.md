@@ -89,6 +89,8 @@ const { username, avatarUrl, initials } = useUserProfile();
 - Native waitlist sign-in requests use the same scheduled delivery policy;
   only confirmed Waitlist identities receive a link. Delivery failures never
   alter the public acknowledgement.
+  The cooldown, Better Auth token and delivery job commit in one mutation.
+  Failed delivery releases the matching token reservation before retrying.
 - Delivery logs omit the email address. Signed-in verification resends can
   still return `EMAIL_DELIVERY_FAILED` so members can retry.
 - Website deletion confirmations atomically reserve their token and cooldown

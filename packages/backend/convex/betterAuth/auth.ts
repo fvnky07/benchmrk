@@ -246,7 +246,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       },
       magicLink({
         expiresIn: 60 * 60 * 24,
-        sendMagicLink: async ({ email, url, metadata }) => {
+        sendMagicLink: async ({ email, url, token, metadata }) => {
           const flow = await authorizedMagicLinkFlow(email, metadata);
           if (flow === 'waitlist-confirmation') {
             await sendAuthEmail({
@@ -262,18 +262,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
               }),
             });
           } else if (flow === 'native-sign-in') {
-            await sendAuthEmail({
-              to: email,
-              subject: 'Your benchmrk sign-in link',
-              html: actionEmail({
-                title: 'Sign in to benchmrk',
-                heading: 'Sign in to benchmrk',
-                body: 'Open this link on the phone where benchmrk is installed to sign in.',
-                actionLabel: 'Sign in',
-                url,
-                footnote:
-                  'This link expires in 24 hours. If you didn’t ask for it, ignore this email.',
-              }),
+            if (!('runMutation' in ctx)) {
+              throw new APIError('INTERNAL_SERVER_ERROR');
+            }
+            await ctx.runMutation(internal.waitlist.queueReservedSignInLink, {
+              email,
+              url,
+              token,
+              retry: metadata?.retry === true,
             });
           }
         },

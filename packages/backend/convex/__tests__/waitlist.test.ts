@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, components } from '../_generated/api';
+import { hasSession, sessionCookie } from './authTestClient.testing';
 import {
   createAuthIdentity,
   createTest,
@@ -91,6 +92,38 @@ describe('native sign-in links', () => {
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(mailedTo()).toHaveLength(2);
+  });
+
+  test('concurrent waitlist requests send exactly one usable sign-in link', async () => {
+    const t = createTest();
+    await joinWaitlist(t, 'confirmed@example.com');
+    await createAuthIdentity(t, {
+      email: 'confirmed@example.com',
+      emailVerified: true,
+    });
+
+    await Promise.all([
+      t.action(api.waitlist.requestSignInLink, {
+        email: 'confirmed@example.com',
+      }),
+      t.action(api.waitlist.requestSignInLink, {
+        email: 'confirmed@example.com',
+      }),
+    ]);
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(mailedTo()).toEqual(['confirmed@example.com']);
+
+    const mail = JSON.parse(String(resend.mock.calls[0]?.[1]?.body)) as {
+      html: string;
+    };
+    const href = mail.html.match(/href="([^"]+)"/)?.[1];
+    if (!href) throw new Error('No sign-in link');
+    const link = new URL(href.replaceAll('&amp;', '&'));
+    const signedIn = await t.fetch(link.pathname + link.search, {
+      headers: { origin: 'native://' },
+      redirect: 'manual',
+    });
+    expect(await hasSession(t, sessionCookie(signedIn))).toBe(true);
   });
 
   test.each(['provider 503', 'network failure', 'missing configuration'])(
