@@ -9,6 +9,7 @@ const NOTIFICATION_ID = 'still-working-out';
 const CATEGORY = 'still-working-out';
 const CHANNEL = 'still-working-out';
 const FINISH_ACTION = 'finish';
+const KEEP_GOING_ACTION = 'keep-going';
 
 async function prepare() {
   await Notifications.setNotificationCategoryAsync(CATEGORY, [
@@ -18,7 +19,7 @@ async function prepare() {
       options: { opensAppToForeground: true },
     },
     {
-      identifier: 'keep-going',
+      identifier: KEEP_GOING_ACTION,
       buttonTitle: 'Keep going',
       options: { opensAppToForeground: false },
     },
@@ -91,12 +92,18 @@ export function useStillWorkingOut({
   const response = Notifications.useLastNotificationResponse();
   useEffect(() => {
     if (
-      enabled &&
-      response?.notification.request.identifier === NOTIFICATION_ID &&
-      response.actionIdentifier === FINISH_ACTION
+      !enabled ||
+      response?.notification.request.identifier !== NOTIFICATION_ID
     ) {
+      return;
+    }
+    if (response.actionIdentifier === FINISH_ACTION) {
       void Notifications.clearLastNotificationResponseAsync();
       finish.current();
+    } else if (response.actionIdentifier === KEEP_GOING_ACTION) {
+      void Notifications.clearLastNotificationResponseAsync();
+      // Explicitly continuing starts a fresh idle window, even in background.
+      setLocalActivity(Date.now());
     }
   }, [enabled, response]);
 
