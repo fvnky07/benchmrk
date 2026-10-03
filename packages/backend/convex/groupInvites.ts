@@ -6,7 +6,7 @@ import { ConvexError, v } from 'convex/values';
 import { components, internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { mutation, type QueryCtx, query } from './_generated/server';
-import { blockedEitherWay } from './lib/blocks';
+import { blockedEitherWay, blockedEitherWayIds } from './lib/blocks';
 import { joinGroup, requireMembership } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
@@ -269,7 +269,7 @@ export const decline = mutation({
   },
 });
 
-/** Event notices belong to the recipient, not their current Group membership. */
+/** Recipient-owned notices survive membership, but respect current blocks. */
 export const eventInbox = query({
   args: {},
   returns: v.array(
@@ -287,11 +287,14 @@ export const eventInbox = query({
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .order('desc')
       .collect();
-    return entries.map((entry) => ({
-      entryId: entry._id,
-      copy: entry.copy,
-      sentAt: entry.createdAt,
-    }));
+    const blockedIds = await blockedEitherWayIds(ctx, userId);
+    return entries
+      .filter((entry) => !entry.actorId || !blockedIds.has(entry.actorId))
+      .map((entry) => ({
+        entryId: entry._id,
+        copy: entry.copy,
+        sentAt: entry.createdAt,
+      }));
   },
 });
 

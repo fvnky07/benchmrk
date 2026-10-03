@@ -212,8 +212,9 @@ export async function recordGroupEvent(
       inboxKind === 'ended'
         ? 'Your Group ended'
         : `${actor?.username ?? 'member'} ${inboxKind === 'joined' ? 'joined your Group' : 'left'}`;
+    const blockedIds = userId ? await blockedEitherWayIds(ctx, userId) : null;
     for (const member of members) {
-      if (member.userId === userId) continue;
+      if (member.userId === userId || blockedIds?.has(member.userId)) continue;
       await ctx.db.insert('groupNotifications', {
         eventId,
         userId: member.userId,

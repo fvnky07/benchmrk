@@ -58,6 +58,88 @@ async function groupOf(t: TestBackend, hostName: string) {
 }
 
 describe('Group event pushes', () => {
+  test.each(['actor', 'recipient'] as const)(
+    'a block by the %s hides join notices and excludes leave notices without silencing other members',
+    async (direction) => {
+      const t = createTest();
+      pushService();
+      const { host, code } = await groupOf(t, 'host');
+      const actor = await member(t, 'actor');
+      const other = await member(t, 'other');
+      await other.mutation(api.groups.joinByCode, { code });
+      for (const entry of await host.query(api.groupInvites.eventInbox, {})) {
+        await host.mutation(api.groupInvites.dismissEvent, {
+          entryId: entry.entryId,
+        });
+      }
+      await actor.mutation(api.groups.joinByCode, { code });
+      const blocker = direction === 'actor' ? actor : host;
+      await blocker.mutation(api.safety.block, {
+        username: direction === 'actor' ? 'host' : 'actor',
+      });
+
+      expect(await host.query(api.groupInvites.eventInbox, {})).toEqual([]);
+      expect(
+        (await other.query(api.groupInvites.eventInbox, {})).map(
+          (entry) => entry.copy
+        )
+      ).toEqual(['actor joined your Group']);
+      await actor.mutation(api.groups.leave, {});
+      expect(await host.query(api.groupInvites.eventInbox, {})).toEqual([]);
+      expect(
+        (await other.query(api.groupInvites.eventInbox, {})).map(
+          (entry) => entry.copy
+        )
+      ).toEqual(['actor left', 'actor joined your Group']);
+
+      await blocker.mutation(api.safety.unblock, {
+        username: direction === 'actor' ? 'host' : 'actor',
+      });
+      expect(
+        (await host.query(api.groupInvites.eventInbox, {})).map(
+          (entry) => entry.copy
+        )
+      ).toEqual(['actor joined your Group']);
+    }
+  );
+
+  test.each(['actor', 'recipient'] as const)(
+    'a Group ended by a blocked %s reaches only non-blocked recipients',
+    async (direction) => {
+      const t = createTest();
+      pushService();
+      const { host, code } = await groupOf(t, 'host');
+      const blocked = await member(t, 'blocked');
+      const other = await member(t, 'other');
+      await blocked.mutation(api.groups.joinByCode, { code });
+      await other.mutation(api.groups.joinByCode, { code });
+      for (const entry of await blocked.query(
+        api.groupInvites.eventInbox,
+        {}
+      )) {
+        await blocked.mutation(api.groupInvites.dismissEvent, {
+          entryId: entry.entryId,
+        });
+      }
+      const blocker = direction === 'actor' ? host : blocked;
+      await blocker.mutation(api.safety.block, {
+        username: direction === 'actor' ? 'blocked' : 'host',
+      });
+
+      await host.mutation(api.groups.end, {});
+      expect(await blocked.query(api.groupInvites.eventInbox, {})).toEqual([]);
+      expect(
+        (await other.query(api.groupInvites.eventInbox, {})).map(
+          (entry) => entry.copy
+        )
+      ).toEqual(['Your Group ended']);
+      await blocker.mutation(api.safety.unblock, {
+        username: direction === 'actor' ? 'blocked' : 'host',
+      });
+      expect(await blocked.query(api.groupInvites.eventInbox, {})).toEqual([]);
+    }
+  );
+
   test('Group events stay in a recipient’s inbox after ending leaves them outside the Group', async () => {
     const t = createTest();
     pushService();
