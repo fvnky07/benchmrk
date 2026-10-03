@@ -121,6 +121,15 @@ async function deleteAccount(
   });
 }
 
+async function finishDeletion(t: TestBackend) {
+  vi.useFakeTimers();
+  try {
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
 describe('account deletion', () => {
   test('with the password, the identity and all its data are gone and other members keep theirs', async () => {
     const t = createTest();
@@ -134,6 +143,7 @@ describe('account deletion', () => {
     });
 
     expect(response.status).toBe(200);
+    await finishDeletion(t);
     expect(await rowsOwnedBy(t, pat.identityId)).toBe(0);
     expect(await identityExists(t, 'pat@example.com')).toBe(false);
     expect(await hasSession(t, pat.cookie)).toBe(false);
@@ -142,6 +152,36 @@ describe('account deletion', () => {
     );
     expect(await rowsOwnedBy(t, sam.identityId)).toBe(samRows);
     expect(await identityExists(t, 'sam@example.com')).toBe(true);
+  });
+
+  test('revokes authentication before removing owned rows in scheduled batches', async () => {
+    const t = createTest();
+    await t.mutation(internal.init.seed, {});
+    const member = await register(t, 'many@example.com');
+    const pressId = await exerciseId(t, 'bench-press');
+    await t.run(async (ctx) => {
+      for (let index = 0; index < 150; index++) {
+        await ctx.db.insert('exerciseComments', {
+          exerciseId: pressId,
+          userId: member.identityId,
+          body: `Private note ${index}`,
+          createdAt: index,
+        });
+      }
+    });
+
+    const response = await deleteAccount(t, member.cookie, {
+      password: TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(200);
+    expect(await identityExists(t, 'many@example.com')).toBe(false);
+    expect(await hasSession(t, member.cookie)).toBe(false);
+    expect(await rowsOwnedBy(t, member.identityId)).toBeGreaterThan(0);
+
+    await finishDeletion(t);
+
+    expect(await rowsOwnedBy(t, member.identityId)).toBe(0);
   });
 
   test('a wrong password or a stale session deletes nothing', async () => {
@@ -217,6 +257,7 @@ describe('account deletion', () => {
       { password: TEST_PASSWORD },
       { [APPLE_CODE_HEADER]: 'fresh-code' }
     );
+    await finishDeletion(t);
     expect(deleted.status).toBe(200);
     const revoke = outbound.mock.calls.find(([url]) =>
       String(url).endsWith('/auth/revoke')
