@@ -668,18 +668,40 @@ async function afterLogging(
     });
   }
 
-  // Sets completed within 10 s of each other were logged together.
-  const previous = (await setsOfWorkout(ctx, workout._id))
-    .filter((item) => item._id !== set._id && item.completedAt !== undefined)
-    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))[0];
-  if (
-    previous?.completedAt !== undefined &&
-    now - previous.completedAt <= LOGGED_TOGETHER_MS
-  ) {
-    await ctx.db.patch(previous._id, { loggedTogether: true });
-    await ctx.db.patch(set._id, { loggedTogether: true });
-  }
+  await reconcileLoggedTogether(ctx, workout._id);
   return result;
+}
+
+/** Together flags follow current completion times, including after an uncheck. */
+async function reconcileLoggedTogether(
+  ctx: MutationCtx,
+  workoutId: Id<'workouts'>
+) {
+  const sets = await setsOfWorkout(ctx, workoutId);
+  const logged = sets
+    .filter((set) => set.completedAt !== undefined)
+    .sort((a, b) => (a.completedAt ?? 0) - (b.completedAt ?? 0));
+  const together = new Set<Id<'sets'>>();
+  for (let index = 1; index < logged.length; index += 1) {
+    const previous = logged[index - 1];
+    const current = logged[index];
+    if (
+      previous?.completedAt !== undefined &&
+      current?.completedAt !== undefined &&
+      current.completedAt - previous.completedAt <= LOGGED_TOGETHER_MS
+    ) {
+      together.add(previous._id);
+      together.add(current._id);
+    }
+  }
+  for (const set of sets) {
+    const loggedTogether = together.has(set._id);
+    if ((set.loggedTogether ?? false) !== loggedTogether) {
+      await ctx.db.patch(set._id, {
+        loggedTogether: loggedTogether || undefined,
+      });
+    }
+  }
 }
 
 /** Keeps the Set's rest record in step with the running rest. */
@@ -708,6 +730,7 @@ export const uncompleteSet = workoutMutation({
     const { set, workout } = await requireOwnedSet(ctx, userId, args.setId);
     requireActive(workout);
     await ctx.db.patch(set._id, { completedAt: undefined });
+    await reconcileLoggedTogether(ctx, workout._id);
     if (set.type === 'warmup') return;
     const workoutExercise = await ctx.db.get(set.workoutExerciseId);
     const block = workoutExercise?.blockId

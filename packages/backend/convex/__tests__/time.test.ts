@@ -137,6 +137,24 @@ describe('time tracking', () => {
     });
   });
 
+  test('unchecking then relogging after 10 seconds restores rest adherence', async () => {
+    const { member, routineId } = await legsRoutine();
+    const workoutId = await member.mutation(api.workouts.start, { routineId });
+    const [squat1, squat2] = await setIds(member);
+    at(100);
+    await log(member, squat1 as Id<'sets'>);
+    at(105);
+    await log(member, squat2 as Id<'sets'>);
+    await member.mutation(api.workouts.uncompleteSet, {
+      setId: squat2 as Id<'sets'>,
+    });
+    at(130);
+    await log(member, squat2 as Id<'sets'>);
+    expect(
+      (await member.query(api.workouts.get, { workoutId }))?.time.adherence
+    ).toEqual({ actualSeconds: 30, plannedSeconds: 60 });
+  });
+
   test('target duration is the median of the last 5 completed Workouts once 3 exist, unless overridden', async () => {
     const { member, routineId } = await legsRoutine();
     let clock = 0;
