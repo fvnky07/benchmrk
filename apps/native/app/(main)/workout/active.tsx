@@ -196,10 +196,30 @@ export default function ActiveWorkoutScreen() {
       )?.name ?? null,
   });
 
-  // Opening or closing a sheet, moving focus or changing Exercise is activity too.
+  // Only changed interaction state counts: mounting and hydration are not activity.
   const { markActive } = stillWorkingOut;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Each dependency is an interaction that should count as activity.
-  useEffect(markActive, [
+  const previousInteraction = useRef<readonly unknown[] | null>(null);
+  useEffect(() => {
+    const current = [
+      noteTarget,
+      setupFor,
+      isPlatesOpen,
+      targetSheetId,
+      pickerMode,
+      isStructureOpen,
+      isRestSheetOpen,
+      typeSheetSetId,
+      groupOpen,
+      isKeypadOpen,
+      selectedIndex,
+      chosenFocus,
+    ];
+    const previous = previousInteraction.current;
+    previousInteraction.current = current;
+    if (previous && current.some((value, index) => value !== previous[index])) {
+      markActive();
+    }
+  }, [
     markActive,
     noteTarget,
     setupFor,
