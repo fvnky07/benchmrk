@@ -1,6 +1,6 @@
 import { Button, ListItem, Text } from '@expo/ui';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
@@ -10,6 +10,7 @@ import { changePasswordSchema } from '@/lib/schemas/auth';
 
 export default function ChangePasswordScreen() {
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
+  const [isCheckingPassword, setIsCheckingPassword] = useState(true);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,21 +22,44 @@ export default function ChangePasswordScreen() {
     mode: 'onChange',
   });
 
-  useEffect(() => {
-    authClient
-      .listAccounts()
-      .then(({ data }) =>
-        setHasPassword(
-          (data ?? []).some((account) => account.providerId === 'credential')
-        )
-      )
-      .catch(() => setHasPassword(false));
+  const checkPasswordStatus = useCallback(async () => {
+    setIsCheckingPassword(true);
+    setErrorMessage(null);
+    try {
+      const { data, error } = await authClient.listAccounts();
+      if (error) throw new Error('Could not check password status');
+      setHasPassword(
+        (data ?? []).some((account) => account.providerId === 'credential')
+      );
+    } catch {
+      setHasPassword(null);
+      setErrorMessage(
+        'Couldn’t check whether a password is set. Check your connection and try again.'
+      );
+    } finally {
+      setIsCheckingPassword(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void checkPasswordStatus();
+  }, [checkPasswordStatus]);
 
   if (hasPassword === null) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>Loading…</Text>
+        {errorMessage ? (
+          <>
+            <Text textStyle={{ fontSize: 17 }}>{errorMessage}</Text>
+            <Button
+              disabled={isCheckingPassword}
+              label={isCheckingPassword ? 'Checking…' : 'Try again'}
+              onPress={() => void checkPasswordStatus()}
+            />
+          </>
+        ) : (
+          <Text textStyle={{ fontSize: 17 }}>Loading…</Text>
+        )}
       </NativeScreen>
     );
   }
@@ -46,7 +70,7 @@ export default function ChangePasswordScreen() {
         <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
           No password to change
         </Text>
-        <ListItem supportingText="You sign in with Apple or Google, so your provider secures sign-in. There is no Benchmrk password on this account.">
+        <ListItem supportingText="You sign in with Apple or Google, so your provider secures sign-in. There is no Benchmrk password for this sign-in.">
           Password
         </ListItem>
       </NativeScreen>
