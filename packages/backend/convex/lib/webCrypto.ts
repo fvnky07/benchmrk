@@ -94,6 +94,22 @@ export function randomToken(): string {
   return toHex(crypto.getRandomValues(new Uint8Array(32)));
 }
 
+/** Samples an alphabet uniformly, rejecting bytes outside complete cycles. */
+export function randomCode(alphabet: string, length: number): string {
+  const bytes = new Uint8Array(length);
+  const limit = 256 - (256 % alphabet.length);
+  let code = '';
+  while (code.length < length) {
+    crypto.getRandomValues(bytes);
+    for (const byte of bytes) {
+      if (byte >= limit) continue;
+      code += alphabet[byte % alphabet.length];
+      if (code.length === length) break;
+    }
+  }
+  return code;
+}
+
 /** Compares two strings without leaking where they differ through timing. */
 export function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
