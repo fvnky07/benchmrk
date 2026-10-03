@@ -81,6 +81,14 @@ useEffect(() => {
 const { username, avatarUrl, initials } = useUserProfile();
 ```
 
+## Password recovery delivery
+
+- Public password-reset requests acknowledge identically for eligible,
+  ineligible and undeliverable addresses. Eligibility and email delivery run in
+  a scheduled Convex action, with at most one delayed retry.
+- Delivery logs omit the email address. Signed-in verification resends can
+  still return `EMAIL_DELIVERY_FAILED` so members can retry.
+
 ## Notification lifecycle
 
 - Profile setup ends with the skippable **Get Group invites and rest timers**

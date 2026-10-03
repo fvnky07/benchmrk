@@ -14,6 +14,7 @@ const resend = vi.fn<typeof fetch>();
 const NEW_PASSWORD = 'a-brand-new-password-3';
 
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.stubEnv('BETTER_AUTH_SECRET', 'test-secret-for-password-recovery-01');
   vi.stubEnv('SITE_URL', 'http://localhost:3000');
   vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
@@ -47,6 +48,7 @@ async function requestReset(t: TestBackend, email: string) {
 
 /** Opens the emailed link and returns the token the app receives. */
 async function tokenFromLink(t: TestBackend): Promise<string> {
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
   const link = resetMails()
     .at(-1)
     ?.html.match(/href="([^"]+)"/)?.[1];
@@ -89,28 +91,77 @@ describe('password recovery', () => {
   test('every email gets the same answer, but only verified members get mail', async () => {
     const t = createTest();
     await register(t, 'unverified@example.com');
+    await register(t, 'verified@example.com');
+    await markEmailVerified(t, 'verified@example.com');
 
     const unknown = await requestReset(t, 'nobody@example.com');
     const unverified = await requestReset(t, 'unverified@example.com');
+    const verified = await requestReset(t, 'verified@example.com');
 
     expect(unknown.status).toBe(200);
     expect(unverified.status).toBe(200);
-    expect(await unknown.json()).toEqual(await unverified.json());
-    expect(resetMails()).toEqual([]);
+    expect(verified.status).toBe(200);
+    const acknowledgement = await unknown.json();
+    expect(await unverified.json()).toEqual(acknowledgement);
+    expect(await verified.json()).toEqual(acknowledgement);
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(resetMails().map((mail) => mail.to[0])).toEqual([
+      'verified@example.com',
+    ]);
   });
 
-  test('a reset email network failure surfaces a retryable error and a retry sends the link', async () => {
+  test.each(['provider 503', 'network failure', 'missing configuration'])(
+    '%s cannot distinguish eligible reset requests from ineligible requests',
+    async (failure) => {
+      const t = createTest();
+      await register(t, 'pat@example.com');
+      await markEmailVerified(t, 'pat@example.com');
+      await register(t, 'unverified@example.com');
+      resend.mockClear();
+      if (failure === 'provider 503') {
+        resend.mockResolvedValue(new Response('{}', { status: 503 }));
+      } else if (failure === 'network failure') {
+        resend.mockRejectedValue(new TypeError('Network unavailable'));
+      } else {
+        vi.stubEnv('RESEND_API_KEY', '');
+      }
+
+      const responses = await Promise.all(
+        ['pat@example.com', 'unverified@example.com', 'nobody@example.com'].map(
+          (email) => requestReset(t, email)
+        )
+      );
+      expect(responses.map((response) => response.status)).toEqual([
+        200, 200, 200,
+      ]);
+      const bodies = await Promise.all(
+        responses.map((response) => response.json())
+      );
+      expect(bodies[0]).toEqual(bodies[1]);
+      expect(bodies[0]).toEqual(bodies[2]);
+      expect(resend).not.toHaveBeenCalled();
+
+      await t.finishAllScheduledFunctions(vi.runAllTimers);
+      expect(resetMails().map((mail) => mail.to[0])).toEqual(
+        failure === 'missing configuration'
+          ? []
+          : ['pat@example.com', 'pat@example.com']
+      );
+    }
+  );
+
+  test('a failed queued reset delivery retries once and sends a usable link', async () => {
     const t = createTest();
     await register(t, 'pat@example.com');
     await markEmailVerified(t, 'pat@example.com');
     resend.mockRejectedValueOnce(new TypeError('Network unavailable'));
-    const failed = await requestReset(t, 'pat@example.com');
-    expect(failed.status).toBe(502);
-    expect(await failed.json()).toMatchObject({
-      code: 'EMAIL_DELIVERY_FAILED',
-    });
+
     expect((await requestReset(t, 'pat@example.com')).status).toBe(200);
     expect((await resetPassword(t, await tokenFromLink(t))).status).toBe(200);
+    expect(resetMails().map((mail) => mail.to[0])).toEqual([
+      'pat@example.com',
+      'pat@example.com',
+    ]);
   });
 
   test('an invalid, reused or expired link changes nothing', async () => {

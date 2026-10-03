@@ -200,9 +200,22 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       // A password change always signs out every other session; this device
       // gets a fresh one. Enforced here rather than trusted from the client.
       // The password is never removed: only providers unlink (ADR 0001).
-      before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path === '/unlink-account') {
-          if (ctx.body?.providerId === 'credential') {
+      before: createAuthMiddleware(async (requestCtx) => {
+        if (requestCtx.path === '/request-password-reset') {
+          if (!('scheduler' in ctx)) {
+            throw new APIError('INTERNAL_SERVER_ERROR');
+          }
+          await ctx.scheduler.runAfter(0, internal.auth.sendPasswordReset, {
+            email: requestCtx.body.email.trim().toLowerCase(),
+          });
+          return requestCtx.json({
+            status: true,
+            message:
+              'If this email exists in our system, check your email for the reset link',
+          });
+        }
+        if (requestCtx.path === '/unlink-account') {
+          if (requestCtx.body?.providerId === 'credential') {
             throw new APIError('BAD_REQUEST', {
               code: 'PASSWORD_CANNOT_BE_REMOVED',
               message: 'The password can’t be removed.',
@@ -210,17 +223,19 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           }
           return;
         }
-        if (ctx.path !== '/change-password') return;
+        if (requestCtx.path !== '/change-password') return;
         return {
-          context: { body: { ...ctx.body, revokeOtherSessions: true } },
+          context: {
+            body: { ...requestCtx.body, revokeOtherSessions: true },
+          },
         };
       }),
     },
     plugins: [
       {
         id: 'await-auth-delivery',
-        // Better Auth otherwise catches even awaited registration/reset email
-        // failures. Delivery is part of these requests, not background work.
+        // Signed-in delivery (such as verification resend) can surface errors.
+        // Public reset requests schedule delivery before reaching this callback.
         init: () => ({
           context: {
             runInBackgroundOrAwait: async (promise: unknown) => {
