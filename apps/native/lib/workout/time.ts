@@ -7,6 +7,17 @@ export function formatMinutes(seconds: number): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
+/** Finished duration relative to the target, rounded before choosing its sign. */
+export function durationDifference(
+  durationSeconds: number,
+  targetSeconds: number
+): string {
+  const minutes = Math.round((durationSeconds - targetSeconds) / 60);
+  if (minutes === 0) return 'On target';
+  const sign = minutes > 0 ? '+' : '−';
+  return `${sign}${formatMinutes(Math.abs(minutes) * 60)}`;
+}
+
 /**
  * Quiet pacing against the target duration at this point of the Workout:
  * "+3 min" when behind, "−2 min" when ahead, "On pace" within a minute.
