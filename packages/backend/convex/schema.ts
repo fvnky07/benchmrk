@@ -473,6 +473,16 @@ export default defineSchema({
     batchUntil: v.optional(v.number()),
   }).index('by_group_at', ['groupId', 'at']),
 
+  // Recipient-owned event inbox entries survive the end of Group membership.
+  groupNotifications: defineTable({
+    eventId: v.id('groupEvents'),
+    userId: v.string(),
+    actorId: v.optional(v.string()),
+    kind: v.union(v.literal('joined'), v.literal('left'), v.literal('ended')),
+    copy: v.string(),
+    createdAt: v.number(),
+  }).index('by_user', ['userId', 'createdAt']),
+
   // Short join codes; valid until revoked, the Group ends or 24 hours unused.
   groupCodes: defineTable({
     groupId: v.id('groups'),

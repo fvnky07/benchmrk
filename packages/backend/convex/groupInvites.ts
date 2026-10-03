@@ -265,3 +265,43 @@ export const decline = mutation({
     return null;
   },
 });
+
+/** Event notices belong to the recipient, not their current Group membership. */
+export const eventInbox = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      entryId: v.id('groupNotifications'),
+      copy: v.string(),
+      sentAt: v.number(),
+    })
+  ),
+  handler: async (ctx) => {
+    const userId = await getIdentityId(ctx);
+    if (!userId) return [];
+    const entries = await ctx.db
+      .query('groupNotifications')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .order('desc')
+      .collect();
+    return entries.map((entry) => ({
+      entryId: entry._id,
+      copy: entry.copy,
+      sentAt: entry.createdAt,
+    }));
+  },
+});
+
+export const dismissEvent = mutation({
+  args: { entryId: v.id('groupNotifications') },
+  returns: v.null(),
+  handler: async (ctx, { entryId }) => {
+    const userId = await requireIdentityId(ctx);
+    const entry = await ctx.db.get(entryId);
+    if (!entry || entry.userId !== userId) {
+      throw new ConvexError('INBOX_ENTRY_NOT_FOUND');
+    }
+    await ctx.db.delete(entry._id);
+    return null;
+  },
+});

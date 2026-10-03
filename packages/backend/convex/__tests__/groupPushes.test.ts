@@ -58,6 +58,53 @@ async function groupOf(t: TestBackend, hostName: string) {
 }
 
 describe('Group event pushes', () => {
+  test('Group events stay in a recipient’s inbox after ending leaves them outside the Group', async () => {
+    const t = createTest();
+    pushService();
+    const { host, code } = await groupOf(t, 'host');
+    const sam = await member(t, 'sam');
+    const alex = await member(t, 'alex');
+    const outsider = await member(t, 'outsider');
+    await sam.mutation(api.groups.joinByCode, { code });
+    await alex.mutation(api.groups.joinByCode, { code });
+    await sam.mutation(api.groups.leave, {});
+    await host.mutation(api.groups.end, {});
+
+    expect(await alex.query(api.groups.getMine, {})).toBeNull();
+    const entries = await alex.query(api.groupInvites.eventInbox, {});
+    expect(entries.map((entry) => entry.copy)).toEqual([
+      'Your Group ended',
+      'sam left',
+    ]);
+    expect(
+      (await host.query(api.groupInvites.eventInbox, {})).map(
+        (entry) => entry.copy
+      )
+    ).toEqual(['sam left', 'alex joined your Group', 'sam joined your Group']);
+    expect(
+      (await sam.query(api.groupInvites.eventInbox, {})).map(
+        (entry) => entry.copy
+      )
+    ).toEqual(['alex joined your Group']);
+    expect(await outsider.query(api.groupInvites.eventInbox, {})).toEqual([]);
+
+    const ended = entries.find((entry) => entry.copy === 'Your Group ended');
+    if (!ended) throw new Error('Missing ended Group inbox entry');
+    await expect(
+      outsider.mutation(api.groupInvites.dismissEvent, {
+        entryId: ended.entryId,
+      })
+    ).rejects.toThrow('INBOX_ENTRY_NOT_FOUND');
+    await alex.mutation(api.groupInvites.dismissEvent, {
+      entryId: ended.entryId,
+    });
+    expect(
+      (await alex.query(api.groupInvites.eventInbox, {})).map(
+        (entry) => entry.copy
+      )
+    ).toEqual(['sam left']);
+  });
+
   test('joins within 60 s merge into one push; the joiners hear only of later joins', async () => {
     const t = createTest();
     const service = pushService();

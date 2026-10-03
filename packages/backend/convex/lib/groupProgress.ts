@@ -3,7 +3,7 @@
 // leaving or ending a Group.
 import { ConvexError, type Infer } from 'convex/values';
 
-import { internal } from '../_generated/api';
+import { components, internal } from '../_generated/api';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { meetsTarget } from '../domain/overload';
@@ -171,8 +171,8 @@ export async function groupMembers(ctx: QueryCtx, group: Doc<'groups'>) {
 export const JOIN_MERGE_MS = 60_000;
 
 /**
- * Records a Group event and schedules its push: a join opens a merge window
- * unless one is open, and a leave or drop tells the members still there.
+ * Records a Group event, its recipient-owned inbox entries and its push.
+ * Joins open a push merge window; leaves and drops tell members still there.
  */
 export async function recordGroupEvent(
   ctx: MutationCtx,
@@ -187,6 +187,36 @@ export async function recordGroupEvent(
     userId,
     at,
   });
+  if (
+    kind === 'joined' ||
+    kind === 'left' ||
+    kind === 'dropped' ||
+    kind === 'ended'
+  ) {
+    const group = await ctx.db.get(groupId);
+    const members = group ? await groupMembers(ctx, group) : [];
+    const actor = userId
+      ? await ctx.runQuery(components.betterAuth.users.getUser, {
+          userId,
+        })
+      : null;
+    const inboxKind = kind === 'dropped' ? 'left' : kind;
+    const copy =
+      inboxKind === 'ended'
+        ? 'Your Group ended'
+        : `${actor?.username ?? 'member'} ${inboxKind === 'joined' ? 'joined your Group' : 'left'}`;
+    for (const member of members) {
+      if (member.userId === userId) continue;
+      await ctx.db.insert('groupNotifications', {
+        eventId,
+        userId: member.userId,
+        actorId: userId,
+        kind: inboxKind,
+        copy,
+        createdAt: at,
+      });
+    }
+  }
   if (kind === 'joined') {
     const recent = await ctx.db
       .query('groupEvents')
@@ -284,6 +314,7 @@ export async function endGroup(
 ) {
   const now = Date.now();
   const members = await groupMembers(ctx, group);
+  await recordGroupEvent(ctx, group._id, 'ended', endedBy);
   for (const member of members) {
     await ctx.db.patch(member._id, { leftAt: now });
   }
@@ -297,7 +328,6 @@ export async function endGroup(
     }
   }
   await ctx.db.patch(group._id, { status: 'ended', endedAt: now });
-  await recordGroupEvent(ctx, group._id, 'ended', endedBy);
   const recipientIds = members
     .map((member) => member.userId)
     .filter((userId) => userId !== endedBy);
