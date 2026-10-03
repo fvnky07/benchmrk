@@ -8,10 +8,11 @@ import {
   ScrollView,
   Text,
 } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
+import { defaultMinSize, semantics } from '@expo/ui/jetpack-compose/modifiers';
 import {
   accessibilityElement,
   accessibilityLabel,
+  frame,
 } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { presenceOf } from '@repo/backend/convex/domain/presence';
@@ -166,19 +167,35 @@ function MemberBoxView({
         spacing={8}
         modifiers={
           Platform.OS === 'ios'
-            ? [accessibilityElement('contain'), accessibilityLabel(label)]
-            : [semantics({ contentDescription: label })]
+            ? [
+                accessibilityElement('contain'),
+                accessibilityLabel(label),
+                frame({
+                  width,
+                  minHeight: fillHeight ?? undefined,
+                  alignment: 'topLeading',
+                }),
+              ]
+            : [
+                semantics({ contentDescription: label }),
+                defaultMinSize({ minHeight: fillHeight ?? undefined }),
+              ]
         }
         style={{
           width,
-          height: fillHeight ?? undefined,
           padding: 12,
           borderRadius: 16,
           borderWidth: 1,
           borderColor: colors.border,
         }}
       >
-        <Column style={{ height: headerHeight }}>
+        <Column
+          modifiers={[
+            Platform.OS === 'ios'
+              ? frame({ minHeight: headerHeight, alignment: 'topLeading' })
+              : defaultMinSize({ minHeight: headerHeight }),
+          ]}
+        >
           <Row spacing={8} alignment="start">
             <Avatar box={box} />
             <Column spacing={4} style={{ width: textWidth }}>
@@ -333,8 +350,8 @@ function MemberBoxView({
 }
 
 /**
- * Member boxes share a fixed, font-scaled header height so row dividers align.
- * A lone member's box fills the screen below `reservedHeight` of surrounding chrome.
+ * Member boxes share a font-scaled minimum header height so dividers align
+ * while large text can grow. A lone box fills at least the remaining screen.
  */
 export function GroupGrid({
   members,
