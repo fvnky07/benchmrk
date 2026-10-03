@@ -76,11 +76,19 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
         headers: { 'Content-Type': blob.type },
         body: blob,
       });
-      const { storageId } = (await result.json()) as {
-        storageId: Id<'_storage'>;
-      };
+      if (!result.ok) throw new Error('Photo upload failed');
+      const response: unknown = await result.json();
+      if (
+        typeof response !== 'object' ||
+        response === null ||
+        !('storageId' in response) ||
+        typeof response.storageId !== 'string' ||
+        response.storageId.length === 0
+      ) {
+        throw new Error('Photo upload returned an invalid storage ID');
+      }
       setPhotoUri(uri);
-      setPhotoId(storageId);
+      setPhotoId(response.storageId as Id<'_storage'>);
       analytics.profilePhotoUploaded();
     } catch {
       setErrorMessage('Couldn’t upload that photo. Try again.');
