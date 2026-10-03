@@ -51,15 +51,25 @@ export function blockMembers<Id extends string>(
 /** The open round, or the one the next Set of the block opens. */
 export function currentRound<Id extends string>(
   members: readonly RoundExercise<Id>[],
-  open: Round<Id> | null
+  open: Round<Id> | null,
+  completedRounds: readonly Round<Id>[]
 ): Round<Id> | null {
   if (open) return open;
-  const required = members.filter((member) => member.setsLeft > 0);
+  const credited = new Map<Id, number>();
+  for (const round of completedRounds) {
+    for (const id of round.done) credited.set(id, (credited.get(id) ?? 0) + 1);
+  }
+  const required = members.filter(
+    (member) =>
+      member.setsLeft > 0 || member.setsDone > (credited.get(member.id) ?? 0)
+  );
   if (required.length === 0) return null;
   return {
-    number: 1 + Math.min(...required.map((member) => member.setsDone)),
+    number: (completedRounds.at(-1)?.number ?? 0) + 1,
     required: required.map((member) => member.id),
-    done: [],
+    done: required
+      .filter((member) => member.setsDone > (credited.get(member.id) ?? 0))
+      .map((member) => member.id),
     skipped: [],
   };
 }
@@ -118,6 +128,7 @@ export function afterSet<Id extends string>({
   exercises,
   completedId,
   open,
+  completedRounds,
   warmup,
   autoAdvance,
 }: {
@@ -125,6 +136,8 @@ export function afterSet<Id extends string>({
   completedId: Id;
   /** The block's open round before this Set. */
   open: Round<Id> | null;
+  /** Credited rounds let surviving logged Sets seed a reopened/later round. */
+  completedRounds: readonly Round<Id>[];
   /** Warm-up Sets come before the rounds and never count toward them. */
   warmup: boolean;
   autoAdvance: boolean;
@@ -152,7 +165,7 @@ export function afterSet<Id extends string>({
           }
         : member
     );
-    const started = currentRound(beforeThisSet, open) ?? {
+    const started = currentRound(beforeThisSet, open, completedRounds) ?? {
       number: 1,
       required: [],
       done: [],
@@ -207,10 +220,12 @@ export function skipForNow<Id extends string>({
   exercises,
   skippedId,
   open,
+  completedRounds,
 }: {
   exercises: readonly RoundExercise<Id>[];
   skippedId: Id;
   open: Round<Id> | null;
+  completedRounds: readonly Round<Id>[];
 }): { round: Round<Id> | null; next: Id } | null {
   const skipped = exercises.find((item) => item.id === skippedId);
   const members = blockMembers(exercises, skipped?.blockId ?? null);
@@ -218,7 +233,7 @@ export function skipForNow<Id extends string>({
     const next = nextWithSets(exercises, skippedId);
     return next === null || next === skippedId ? null : { round: null, next };
   }
-  const round = currentRound(members, open);
+  const round = currentRound(members, open, completedRounds);
   if (!round?.required.includes(skippedId) || round.done.includes(skippedId)) {
     return null;
   }
@@ -278,31 +293,45 @@ export function settleRound<Id extends string>(
 }
 
 /**
- * Unchecking a Set takes back its round credit: out of the open round, or the
- * last completed round reopens when no newer round has started. Rest already
- * started stays.
+ * Reconciles credited and open rounds with the Sets still logged after an
+ * uncheck. Surplus logged Sets remain available for later rounds; rest stays.
  */
-export function uncheckRound<Id extends string>(
+export function uncheckRound<Id extends string, Completed extends Round<Id>>(
   open: Round<Id> | null,
-  lastCompleted: Round<Id> | null,
-  uncheckedId: Id
-): { round: Round<Id> | null; reopened: boolean } {
-  if (open) {
-    return {
-      round: { ...open, done: without(open.done, uncheckedId) },
-      reopened: false,
-    };
+  completedRounds: readonly Completed[],
+  members: readonly RoundExercise<Id>[]
+): { round: Round<Id> | null; completedRounds: Completed[] } {
+  const credited = new Map<Id, number>();
+  const kept: Completed[] = [];
+  let reopened: Round<Id> | null = open;
+  for (const round of completedRounds) {
+    const missing = round.done.some((id) => {
+      const member = members.find((item) => item.id === id);
+      return member !== undefined && member.setsDone <= (credited.get(id) ?? 0);
+    });
+    if (missing) {
+      reopened = round;
+      break;
+    }
+    kept.push(round);
+    for (const id of round.done) credited.set(id, (credited.get(id) ?? 0) + 1);
   }
-  if (lastCompleted?.done.includes(uncheckedId)) {
-    return {
-      round: {
-        ...lastCompleted,
-        done: without(lastCompleted.done, uncheckedId),
-      },
-      reopened: true,
-    };
-  }
-  return { round: null, reopened: false };
+  return {
+    completedRounds: kept,
+    round: reopened
+      ? {
+          number: reopened.number,
+          required: reopened.required,
+          skipped: reopened.skipped,
+          done: reopened.required.filter((id) => {
+            const member = members.find((item) => item.id === id);
+            return (
+              member !== undefined && member.setsDone > (credited.get(id) ?? 0)
+            );
+          }),
+        }
+      : null,
+  };
 }
 
 /**

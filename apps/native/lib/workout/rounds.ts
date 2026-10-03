@@ -62,7 +62,9 @@ export function roundNumber(
   const block = blockOf(workout, workoutExerciseId);
   if (!block) return null;
   const members = blockMembers(roundExercises(workout), block._id);
-  return currentRound(members, block.round)?.number ?? null;
+  return (
+    currentRound(members, block.round, block.completedRounds)?.number ?? null
+  );
 }
 
 /** Whether Skip for now has somewhere to go. */
@@ -75,6 +77,8 @@ export function canSkipForNow(
       exercises: roundExercises(workout),
       skippedId: workoutExerciseId,
       open: blockOf(workout, workoutExerciseId)?.round ?? null,
+      completedRounds:
+        blockOf(workout, workoutExerciseId)?.completedRounds ?? [],
     }) !== null
   );
 }
@@ -123,6 +127,7 @@ export function withSetLogged(
     exercises,
     completedId: exercise._id,
     open: block?.round ?? null,
+    completedRounds: block?.completedRounds ?? [],
     warmup: set.type === 'warmup',
     autoAdvance: settings.autoAdvance,
   });
@@ -156,6 +161,12 @@ export function withSetLogged(
               round: result.round,
               roundsCompleted:
                 item.roundsCompleted + (result.completedRound ? 1 : 0),
+              completedRounds: result.completedRound
+                ? [
+                    ...item.completedRounds,
+                    { ...result.completedRound, completedAt: now },
+                  ]
+                : item.completedRounds,
             }
           : item
       ),
