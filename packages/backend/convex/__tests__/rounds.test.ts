@@ -161,6 +161,26 @@ describe('Alternating sets rounds', () => {
       BLOCK_REST_SECONDS
     );
   });
+  test('unchecking an earlier Set reconciles credited rounds with the newer open round', async () => {
+    const { member } = await startAlternating();
+    const { bench, row } = await exercises(member);
+    await logNext(member, bench._id);
+    await logNext(member, row._id);
+    await logNext(member, bench._id);
+    await member.mutation(api.workouts.uncompleteSet, {
+      setId: row.sets[0]?._id as Id<'sets'>,
+    });
+    const block = (await activeWorkout(member)).blocks[0];
+    expect(block?.roundsCompleted).toBe(0);
+    expect(block?.round).toMatchObject({
+      number: 1,
+      required: [bench._id, row._id],
+      done: [bench._id],
+    });
+    expect((await logNext(member, row._id)).roundCompleted).toBe(1);
+    expect((await logNext(member, row._id)).roundCompleted).toBe(2);
+    expect((await activeWorkout(member)).blocks[0]?.roundsCompleted).toBe(2);
+  });
 });
 
 describe('regrouping mid-Workout', () => {

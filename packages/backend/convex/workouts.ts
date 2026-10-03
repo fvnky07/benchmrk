@@ -201,6 +201,7 @@ async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
       plannedRestSeconds: block.plannedRestSeconds ?? null,
       round: block.round ?? null,
       roundsCompleted: block.completedRounds.length,
+      completedRounds: block.completedRounds,
     })),
   };
 }
@@ -637,6 +638,7 @@ async function afterLogging(
     exercises,
     completedId: set.workoutExerciseId,
     open: block?.round ?? null,
+    completedRounds: block?.completedRounds ?? [],
     warmup: set.type === 'warmup',
     autoAdvance: settings.autoAdvance,
   });
@@ -712,22 +714,14 @@ export const uncompleteSet = workoutMutation({
       ? await ctx.db.get(workoutExercise.blockId)
       : null;
     if (!block) return;
-    const last = block.completedRounds.at(-1);
-    const { round, reopened } = uncheckRound(
+    const { round, completedRounds } = uncheckRound(
       block.round ?? null,
-      last
-        ? {
-            number: last.number,
-            required: last.required,
-            done: last.done,
-            skipped: last.skipped,
-          }
-        : null,
-      set.workoutExerciseId
+      block.completedRounds,
+      blockMembers(await roundExercisesOf(ctx, workout._id), block._id)
     );
     await ctx.db.patch(block._id, {
       round: round ?? undefined,
-      ...(reopened && { completedRounds: block.completedRounds.slice(0, -1) }),
+      completedRounds,
     });
   },
 });
@@ -755,6 +749,7 @@ export const skipForNow = workoutMutation({
       exercises: await roundExercisesOf(ctx, workout._id),
       skippedId: workoutExercise._id,
       open: block?.round ?? null,
+      completedRounds: block?.completedRounds ?? [],
     });
     if (!result) throw new ConvexError('NOTHING_ELSE_TO_DO');
     if (block && result.round) {
