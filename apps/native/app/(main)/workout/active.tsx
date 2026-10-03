@@ -63,14 +63,16 @@ type WorkoutSet = WorkoutExercise['sets'][number];
 type Focus = { setId: Id<'sets'>; field: SetField };
 type Drafts = Record<string, Partial<Record<SetField, string>>>;
 
-/** A Set's Overload target while it is a Working Set. */
-function workingTarget(set: WorkoutSet) {
-  return set.type === 'normal' || set.type === 'failure' ? set.target : null;
+/** A Working Set's target is visible only while targets are enabled. */
+function workingTarget(set: WorkoutSet, targetsEnabled: boolean) {
+  return targetsEnabled && (set.type === 'normal' || set.type === 'failure')
+    ? set.target
+    : null;
 }
 
 /** The target an empty field of an unlogged Working Set shows and logs. */
-function openTarget(set: WorkoutSet) {
-  return set.completedAt === null ? workingTarget(set) : null;
+function openTarget(set: WorkoutSet, targetsEnabled: boolean) {
+  return set.completedAt === null ? workingTarget(set, targetsEnabled) : null;
 }
 
 export default function ActiveWorkoutScreen() {
@@ -148,6 +150,10 @@ export default function ActiveWorkoutScreen() {
     Math.max(workout.exercises.length - 1, 0)
   );
   const exercise: WorkoutExercise | undefined = workout.exercises[index];
+  const targetsEnabled =
+    settings.overloadTargets &&
+    exercise !== undefined &&
+    !settings.targetsOffExerciseIds.includes(exercise.exerciseId);
   const fields = exercise ? SET_FIELDS[exercise.type] : [];
   // Timed and cardio Exercises show the previous Set instead of a target.
   const showsPrevious =
@@ -240,7 +246,7 @@ export default function ActiveWorkoutScreen() {
   const step = (direction: 1 | -1) => {
     if (!focus || !focusSet || !exercise) return;
     // An empty field steps from its Overload target.
-    const target = openTarget(focusSet);
+    const target = openTarget(focusSet, targetsEnabled);
     const current =
       draftToStored(focus.field, draftOf(focusSet, focus.field), units) ??
       (target ? TARGET_VALUE[focus.field](target) : null);
@@ -442,7 +448,7 @@ export default function ActiveWorkoutScreen() {
             handlers={{
               ...(exercise.sets.some(
                 (set) =>
-                  openTarget(set) !== null &&
+                  openTarget(set, targetsEnabled) !== null &&
                   set.weightKg === null &&
                   set.reps === null
               ) && {
@@ -465,8 +471,8 @@ export default function ActiveWorkoutScreen() {
           />
           <SetTable
             sets={exercise.sets.map((set) => {
-              const target = workingTarget(set);
-              const open = openTarget(set);
+              const target = workingTarget(set, targetsEnabled);
+              const open = openTarget(set, targetsEnabled);
               return {
                 _id: set._id,
                 type: set.type,
@@ -496,6 +502,7 @@ export default function ActiveWorkoutScreen() {
                     )
                   ),
                   fromTarget:
+                    targetsEnabled &&
                     drafts[set._id]?.[field] === undefined &&
                     (field === 'weight' || field === 'reps') &&
                     set.fromTarget?.[field] === true,
