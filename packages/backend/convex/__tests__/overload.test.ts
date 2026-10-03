@@ -590,6 +590,25 @@ describe('target sheet', () => {
     });
   });
 
+  test('a field set then explicitly cleared stays empty when completing the Set', async () => {
+    const { member, exercise } = await workoutWithTargets();
+    const setId = exercise.sets[0]?._id as Id<'sets'>;
+    await member.mutation(api.workouts.fillFromTarget, { setId });
+    await member.mutation(api.workouts.updateSet, { setId, weightKg: 70 });
+    await member.mutation(api.workouts.updateSet, { setId, weightKg: null });
+    expect((await firstExercise(member)).sets[0]).toMatchObject({
+      weightKg: null,
+      reps: 8,
+      fromTarget: { weight: false, reps: true },
+    });
+    await member.mutation(api.workouts.completeSet, { setId, weightKg: null });
+    expect((await firstExercise(member)).sets[0]).toMatchObject({
+      weightKg: null,
+      reps: 8,
+      fromTarget: { weight: false, reps: true },
+    });
+  });
+
   test('declining clears the targets and the values they filled, for this Workout only', async () => {
     const { member, routineId, workoutId, exercise } =
       await workoutWithTargets();

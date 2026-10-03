@@ -1,5 +1,6 @@
 import {
   displayDraft,
+  draftsToPatch,
   draftToStored,
   steppedValue,
   storedToDraft,
@@ -54,5 +55,32 @@ describe('duration entry', () => {
     expect(displayDraft('duration', '130')).toBe('1:30');
     expect(storedToDraft('duration', 3_725, 'kg')).toBe('10205');
     expect(displayDraft('duration', '10205')).toBe('1:02:05');
+  });
+});
+
+describe('draft patches', () => {
+  test('setting then clearing a draft sends an explicit clear on completion', () => {
+    const fields = ['weight', 'reps'] as const;
+    expect(draftsToPatch(fields, { weight: '60' }, 'kg')).toEqual({
+      weightKg: 60,
+    });
+    expect(draftsToPatch(fields, { weight: '' }, 'kg')).toEqual({
+      weightKg: null,
+    });
+    expect(draftsToPatch(fields, {}, 'kg')).toEqual({});
+  });
+
+  test('clears apply in stored units without clearing invalid or untouched fields', () => {
+    expect(
+      draftsToPatch(
+        ['weight', 'reps', 'duration', 'distance'],
+        { weight: '135', reps: 'invalid', duration: '', distance: '2.5' },
+        'lb'
+      )
+    ).toEqual({
+      weightKg: 135 * 0.45359237,
+      durationSeconds: null,
+      distanceMeters: 2500,
+    });
   });
 });

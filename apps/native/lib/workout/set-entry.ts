@@ -129,6 +129,24 @@ export function draftToStored(
   }
 }
 
+/** Only edited drafts are sent; an edited-empty field explicitly clears it. */
+export function draftsToPatch(
+  fields: readonly SetField[],
+  drafts: Partial<Record<SetField, string>> | undefined,
+  unit: WeightUnit
+): Partial<StoredValues> {
+  const patch: Partial<StoredValues> = {};
+  for (const field of fields) {
+    const draft = drafts?.[field];
+    if (draft === undefined) continue;
+    const value = draftToStored(field, draft, unit);
+    if (value !== null || draft.trim() === '') {
+      patch[storedKey(field)] = value;
+    }
+  }
+  return patch;
+}
+
 /** A stored value as the draft a member would have typed. */
 export function storedToDraft(
   field: SetField,

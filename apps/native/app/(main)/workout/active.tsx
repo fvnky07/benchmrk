@@ -32,6 +32,7 @@ import { useHaptics } from '@/lib/haptics';
 import { formatClock } from '@/lib/workout/format';
 import {
   displayDraft,
+  draftsToPatch,
   draftToStored,
   FIELD_LABELS,
   fieldHeading,
@@ -195,24 +196,13 @@ export default function ActiveWorkoutScreen() {
       [setId]: { ...current[setId], [field]: draft },
     }));
 
-  /**
-   * The fields the member typed, as the mutation stores them. Untouched fields
-   * aren't sent, so values that came from the Overload target keep their
-   * provenance and empty ones log the target.
-   */
-  const valuesOf = (set: WorkoutSet) =>
-    Object.fromEntries(
-      fields.flatMap((field) => {
-        const draft = drafts[set._id]?.[field];
-        const value =
-          draft === undefined ? null : draftToStored(field, draft, units);
-        return value === null ? [] : [[storedKey(field), value]];
-      })
-    );
-
   const saveDrafts = (set: WorkoutSet) =>
     attempt(
-      () => updateSet({ setId: set._id, ...valuesOf(set) }),
+      () =>
+        updateSet({
+          setId: set._id,
+          ...draftsToPatch(fields, drafts[set._id], units),
+        }),
       'Could not save this Set.'
     );
 
@@ -226,7 +216,7 @@ export default function ActiveWorkoutScreen() {
     attempt(async () => {
       const { targetMet } = await completeSet({
         setId: set._id,
-        ...valuesOf(set),
+        ...draftsToPatch(fields, drafts[set._id], units),
       });
       haptic(targetMet ? 'target-met' : 'set-completed');
       setChosenFocus(null);
