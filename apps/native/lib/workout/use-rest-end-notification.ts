@@ -57,6 +57,7 @@ export function useRestEndNotification(
       const { granted } = await Notifications.getPermissionsAsync();
       if (!granted || cancelled) return;
       await ensureAndroidChannel(channelId, sound, haptics);
+      if (cancelled) return;
       await Notifications.scheduleNotificationAsync({
         identifier: NOTIFICATION_ID,
         content: {
