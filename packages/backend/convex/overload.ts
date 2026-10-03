@@ -130,18 +130,23 @@ export const editTarget = workoutMutation({
   },
 });
 
-/** Declines the target for this Workout: the fields it filled empty again. */
+/** Clears this Exercise's targets, preserving every already-logged value. */
 export const declineTargets = workoutMutation({
   args: { workoutExerciseId: v.id('workoutExercises') },
   handler: async (ctx, args) => {
-    const { workoutExercise, unlogged } = await requireOpenExercise(
+    const { workoutExercise } = await requireOpenExercise(
       ctx,
       args.workoutExerciseId
     );
     const { overload } = workoutExercise;
     if (!overload) throw new ConvexError('NO_TARGET');
-    for (const set of unlogged) {
-      await ctx.db.patch(set._id, retargetPatch(set, undefined));
+    for (const set of await setsOfExercise(ctx, workoutExercise._id)) {
+      await ctx.db.patch(
+        set._id,
+        set.completedAt === undefined
+          ? retargetPatch(set, undefined)
+          : { target: undefined, fromTarget: undefined }
+      );
     }
     await ctx.db.patch(workoutExercise._id, {
       overload: { ...overload, edited: false, declined: true },
