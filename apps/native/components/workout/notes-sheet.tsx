@@ -136,10 +136,11 @@ export function NotesSheet({
 
   useEffect(() => setTarget(opened), [opened]);
   const saved = target ? noteOf(workout, target) : null;
+  // Two different targets can have the same saved text (including no note).
   useEffect(() => {
-    setText(saved ?? '');
+    setText(target ? (saved ?? '') : '');
     setErrorMessage(null);
-  }, [saved]);
+  }, [saved, target]);
 
   // The scopes around the current target: its Exercise and, when known, the
   // Set of that Exercise the composer opened on.
