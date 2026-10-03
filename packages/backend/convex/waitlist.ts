@@ -108,16 +108,34 @@ export const requestSignInLink = action({
   handler: async (ctx, args) => {
     const parsed = emailSchema.safeParse(args.email);
     if (!parsed.success) throw new ConvexError('INVALID_EMAIL');
-    const email = parsed.data;
-    if (await ctx.runQuery(internal.waitlist.canSendSignInLink, { email })) {
-      try {
-        await ctx.runAction(internal.waitlist.sendSignInLink, { email });
-      } catch {
-        throw new ConvexError('EMAIL_DELIVERY_FAILED');
-      }
-      await ctx.runMutation(internal.waitlist.markSignInLinkSent, { email });
-    }
+    await ctx.scheduler.runAfter(0, internal.waitlist.deliverSignInLink, {
+      email: parsed.data,
+    });
     return { status: 'accepted' as const };
+  },
+});
+
+/** Eligibility and delivery never change the public acknowledgement. */
+export const deliverSignInLink = internalAction({
+  args: { email: v.string(), retry: v.optional(v.boolean()) },
+  returns: v.null(),
+  handler: async (ctx, { email, retry }) => {
+    try {
+      if (await ctx.runQuery(internal.waitlist.canSendSignInLink, { email })) {
+        await ctx.runAction(internal.waitlist.sendSignInLink, { email });
+        await ctx.runMutation(internal.waitlist.markSignInLinkSent, { email });
+      }
+    } catch {
+      console.error('Waitlist sign-in link delivery failed');
+      if (!retry) {
+        await ctx.scheduler.runAfter(
+          60_000,
+          internal.waitlist.deliverSignInLink,
+          { email, retry: true }
+        );
+      }
+    }
+    return null;
   },
 });
 

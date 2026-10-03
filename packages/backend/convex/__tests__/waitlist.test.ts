@@ -94,7 +94,7 @@ describe('native sign-in links', () => {
   });
 
   test.each(['provider 503', 'network failure', 'missing configuration'])(
-    '%s surfaces a retryable error without consuming the sign-in cooldown',
+    '%s preserves the same acknowledgement and allows a later delivery retry',
     async (failure) => {
       const t = createTest();
       await joinWaitlist(t, 'confirmed@example.com');
@@ -103,24 +103,37 @@ describe('native sign-in links', () => {
         emailVerified: true,
       });
       if (failure === 'provider 503') {
-        resend.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+        resend.mockResolvedValue(new Response('{}', { status: 503 }));
       } else if (failure === 'network failure') {
-        resend.mockRejectedValueOnce(new TypeError('Network unavailable'));
+        resend.mockRejectedValue(new TypeError('Network unavailable'));
       } else {
         vi.stubEnv('RESEND_API_KEY', '');
       }
 
-      await expect(
-        t.action(api.waitlist.requestSignInLink, {
-          email: 'confirmed@example.com',
-        })
-      ).rejects.toThrow('EMAIL_DELIVERY_FAILED');
+      const acknowledgements = await Promise.all(
+        ['confirmed@example.com', 'unknown@example.com'].map((email) =>
+          t.action(api.waitlist.requestSignInLink, { email })
+        )
+      );
+      expect(acknowledgements).toEqual([
+        { status: 'accepted' },
+        { status: 'accepted' },
+      ]);
+      expect(resend).not.toHaveBeenCalled();
+      await t.finishAllScheduledFunctions(vi.runAllTimers);
+      expect(mailedTo()).toEqual(
+        failure === 'missing configuration'
+          ? []
+          : ['confirmed@example.com', 'confirmed@example.com']
+      );
       vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
+      resend.mockResolvedValue(new Response('{}', { status: 200 }));
       await expect(
         t.action(api.waitlist.requestSignInLink, {
           email: 'confirmed@example.com',
         })
       ).resolves.toEqual({ status: 'accepted' });
+      await t.finishAllScheduledFunctions(vi.runAllTimers);
       expect(mailedTo().at(-1)).toBe('confirmed@example.com');
     }
   );

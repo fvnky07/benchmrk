@@ -81,11 +81,14 @@ useEffect(() => {
 const { username, avatarUrl, initials } = useUserProfile();
 ```
 
-## Password recovery delivery
+## Enumeration-safe email requests
 
 - Public password-reset requests acknowledge identically for eligible,
   ineligible and undeliverable addresses. Eligibility and email delivery run in
   a scheduled Convex action, with at most one delayed retry.
+- Native waitlist sign-in requests use the same scheduled delivery policy;
+  only confirmed Waitlist identities receive a link. Delivery failures never
+  alter the public acknowledgement.
 - Delivery logs omit the email address. Signed-in verification resends can
   still return `EMAIL_DELIVERY_FAILED` so members can retry.
 
