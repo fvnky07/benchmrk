@@ -4,12 +4,7 @@
 import { ConvexError, v } from 'convex/values';
 import { z } from 'zod';
 import { internal } from './_generated/api';
-import {
-  action,
-  internalMutation,
-  internalQuery,
-  type QueryCtx,
-} from './_generated/server';
+import { action, internalMutation, type QueryCtx } from './_generated/server';
 import { actionEmail, escapeHtml, sendEmail } from './lib/email';
 import { randomToken, sha256Hex } from './lib/webCrypto';
 
@@ -40,47 +35,40 @@ export const request = action({
     const email = parsed.data;
     const token = randomToken();
 
-    const shouldMail = await ctx.runQuery(
-      internal.deletionRequests.canIssueLink,
-      { email }
+    const tokenHash = await sha256Hex(token);
+    const shouldMail = await ctx.runMutation(
+      internal.deletionRequests.issueLink,
+      { email, tokenHash }
     );
     if (shouldMail) {
       const siteUrl = process.env.SITE_URL ?? 'https://benchmrk.app';
-      await sendEmail({
-        to: email,
-        subject: 'Confirm your Benchmrk deletion request',
-        html: actionEmail({
-          title: 'Confirm your deletion request',
-          heading: 'Confirm your deletion request',
-          body: `Someone asked to delete the Benchmrk identity for this email. Confirm to send the request; we process it within ${DELETION_PROCESSING_DAYS} days.`,
-          actionLabel: 'Confirm deletion request',
-          url: `${siteUrl}/delete-account/confirm?token=${token}`,
-          footnote:
-            'This link expires in 24 hours. If you didn’t ask for this, ignore this email and nothing happens.',
-        }),
-      });
-      await ctx.runMutation(internal.deletionRequests.issueLink, {
-        email,
-        tokenHash: await sha256Hex(token),
-      });
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Confirm your Benchmrk deletion request',
+          html: actionEmail({
+            title: 'Confirm your deletion request',
+            heading: 'Confirm your deletion request',
+            body: `Someone asked to delete the Benchmrk identity for this email. Confirm to send the request; we process it within ${DELETION_PROCESSING_DAYS} days.`,
+            actionLabel: 'Confirm deletion request',
+            url: `${siteUrl}/delete-account/confirm?token=${token}`,
+            footnote:
+              'This link expires in 24 hours. If you didn’t ask for this, ignore this email and nothing happens.',
+          }),
+        });
+      } catch (error) {
+        await ctx.runMutation(internal.deletionRequests.releaseLink, {
+          email,
+          tokenHash,
+        });
+        throw error;
+      }
     }
     return { status: 'accepted' as const };
   },
 });
 
-export const canIssueLink = internalQuery({
-  args: { email: v.string() },
-  returns: v.boolean(),
-  handler: async (ctx, { email }) => {
-    const existing = await findByEmail(ctx, email);
-    return (
-      existing?.confirmedAt === undefined &&
-      (!existing || Date.now() - existing.linkSentAt >= RESEND_COOLDOWN_MS)
-    );
-  },
-});
-
-/** Stores a fresh link unless the request is confirmed or a link just went out. */
+/** Atomically reserves a fresh token and cooldown before delivery starts. */
 export const issueLink = internalMutation({
   args: { email: v.string(), tokenHash: v.string() },
   returns: v.boolean(),
@@ -105,6 +93,22 @@ export const issueLink = internalMutation({
       });
     }
     return true;
+  },
+});
+
+/** Release only this failed delivery's reservation, never a newer link. */
+export const releaseLink = internalMutation({
+  args: { email: v.string(), tokenHash: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { email, tokenHash }) => {
+    const existing = await findByEmail(ctx, email);
+    if (
+      existing?.tokenHash === tokenHash &&
+      existing.confirmedAt === undefined
+    ) {
+      await ctx.db.delete(existing._id);
+    }
+    return null;
   },
 });
 

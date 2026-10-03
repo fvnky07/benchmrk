@@ -82,6 +82,29 @@ describe('deletion requests from the website', () => {
     ).toHaveLength(1);
   });
 
+  test('concurrent deletion requests send exactly one usable confirmation link', async () => {
+    const t = createTest();
+
+    const acknowledgements = await Promise.all([
+      t.action(api.deletionRequests.request, { email: 'former@example.com' }),
+      t.action(api.deletionRequests.request, { email: 'former@example.com' }),
+    ]);
+
+    expect(acknowledgements).toEqual([
+      { status: 'accepted' },
+      { status: 'accepted' },
+    ]);
+    expect(
+      mails().filter((mail) => mail.to[0] === 'former@example.com')
+    ).toHaveLength(1);
+    await expect(
+      t.action(api.deletionRequests.confirm, {
+        token: confirmationToken('former@example.com'),
+      })
+    ).resolves.toEqual({ status: 'confirmed' });
+    expect(mails().filter((mail) => mail.to[0] === MAINTAINER)).toHaveLength(1);
+  });
+
   test.each(['provider 503', 'network failure', 'missing configuration'])(
     '%s leaves maintainer notification retryable until a successful confirmation',
     async (failure) => {

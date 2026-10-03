@@ -91,6 +91,9 @@ const { username, avatarUrl, initials } = useUserProfile();
   alter the public acknowledgement.
 - Delivery logs omit the email address. Signed-in verification resends can
   still return `EMAIL_DELIVERY_FAILED` so members can retry.
+- Website deletion confirmations atomically reserve their token and cooldown
+  before sending. Failed delivery releases only the matching reservation, so
+  an immediate retry can issue a valid link.
 
 ## Notification lifecycle
 
