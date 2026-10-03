@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { NativeScreen } from '@/components/native/native-screen';
 import { SaveToRoutine } from '@/components/workout/save-to-routine';
 import { formatClock } from '@/lib/workout/format';
-import { formatMinutes } from '@/lib/workout/time';
+import { durationDifference, formatMinutes } from '@/lib/workout/time';
 
 export default function WorkoutFinishedScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -69,9 +69,7 @@ export default function WorkoutFinishedScreen() {
         supportingText={
           targetDurationSeconds === null
             ? 'From start to the end time below'
-            : `Target ${formatMinutes(targetDurationSeconds)} · ${
-                durationSeconds > targetDurationSeconds ? '+' : '−'
-              }${formatMinutes(Math.abs(durationSeconds - targetDurationSeconds))}`
+            : `Target ${formatMinutes(targetDurationSeconds)} · ${durationDifference(durationSeconds, targetDurationSeconds)}`
         }
       >
         {`Duration ${formatClock(durationSeconds)}`}
