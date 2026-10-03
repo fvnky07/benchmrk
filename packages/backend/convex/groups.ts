@@ -19,6 +19,7 @@ import {
 } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
+import { randomCode } from './lib/webCrypto';
 
 /** Safety limit; Groups have no product cap. */
 const MAX_MEMBERS = 20;
@@ -101,10 +102,7 @@ export const shareCode = mutation({
 
     let code = '';
     do {
-      code = Array.from(
-        { length: CODE_LENGTH },
-        () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
-      ).join('');
+      code = randomCode(CODE_ALPHABET, CODE_LENGTH);
     } while (
       await ctx.db
         .query('groupCodes')
