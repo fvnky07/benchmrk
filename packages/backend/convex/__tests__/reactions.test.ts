@@ -90,6 +90,53 @@ async function completedEvent(viewer: TestMember) {
 }
 
 describe('Group fist bumps', () => {
+  test.each(['setCompleted', 'targetMet'] as const)(
+    'unchecking and relogging keeps one fist bump per stable %s target',
+    async (kind) => {
+      const { host, lifter, first, second } = await groupWithLifter();
+      vi.setSystemTime(TODAY + 1000);
+      await logSet(lifter, first._id);
+      vi.setSystemTime(TODAY + 2000);
+      await logSet(lifter, second._id);
+      const original = (await host.query(api.groups.events, {})).find(
+        (event) => event.kind === kind
+      );
+      if (!original) throw new Error('Missing original event');
+      await host.mutation(api.reactions.fistBump, {
+        eventId: original.eventId,
+      });
+
+      vi.setSystemTime(TODAY + 3000);
+      await lifter.mutation(api.workouts.uncompleteSet, { setId: second._id });
+      vi.setSystemTime(TODAY + 4000);
+      await logSet(lifter, second._id);
+      const relogged = (await host.query(api.groups.events, {})).find(
+        (event) => event.kind === kind
+      );
+      if (!relogged) throw new Error('Missing relogged event');
+      expect(relogged.eventId).not.toBe(original.eventId);
+      await host.mutation(api.reactions.fistBump, {
+        eventId: relogged.eventId,
+      });
+
+      expect((await lifter.query(api.reactions.mine, {})).received).toEqual([
+        {
+          reactionId: expect.any(String),
+          fromUsername: 'host',
+          eventKind: kind,
+          exerciseName: 'Bench Press',
+          setNumber: kind === 'setCompleted' ? 2 : null,
+          at: TODAY + 2000,
+        },
+      ]);
+      expect(
+        (await host.query(api.groups.events, {})).find(
+          (event) => event.eventId === relogged.eventId
+        )?.reacted
+      ).toBe(true);
+    }
+  );
+
   test('logging a Set emits its Exercise and 1-based Set number for other members', async () => {
     const { host, lifter, first } = await groupWithLifter();
     vi.setSystemTime(TODAY + 1000);

@@ -5,7 +5,7 @@ import { mutation, query } from './_generated/server';
 import { activeMembership, requireMembership } from './lib/groupProgress';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 
-/** One fist bump per sender on a completed Set or met Overload target. */
+/** One fist bump per sender and stable target, even after unchecking/relogging. */
 export const fistBump = mutation({
   args: { eventId: v.id('groupEvents') },
   returns: v.null(),
@@ -22,16 +22,18 @@ export const fistBump = mutation({
     }
     if (
       (event.kind !== 'setCompleted' && event.kind !== 'targetMet') ||
-      !event.userId
+      !event.userId ||
+      !event.targetId
     ) {
       throw new ConvexError('NOT_REACTABLE');
     }
     if (event.userId === userId) throw new ConvexError('OWN_EVENT');
+    const targetId = event.targetId;
 
     const existing = await ctx.db
       .query('groupReactions')
-      .withIndex('by_event_from', (q) =>
-        q.eq('eventId', event._id).eq('fromUserId', userId)
+      .withIndex('by_target_from', (q) =>
+        q.eq('targetId', targetId).eq('fromUserId', userId)
       )
       .first();
     if (existing) return null;
@@ -40,6 +42,7 @@ export const fistBump = mutation({
     await ctx.db.insert('groupReactions', {
       groupId: group._id,
       eventId: event._id,
+      targetId,
       fromUserId: userId,
       toUserId: event.userId,
       at: Date.now(),

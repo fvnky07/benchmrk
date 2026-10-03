@@ -478,6 +478,8 @@ export default defineSchema({
     userId: v.optional(v.string()),
     exerciseName: v.optional(v.string()),
     setNumber: v.optional(v.number()),
+    /** Stable Set or Workout Exercise identity, independent of log/unlog events. */
+    targetId: v.optional(v.union(v.id('sets'), v.id('workoutExercises'))),
     at: v.number(),
     /** On a join that opened a push window: joins until then merge into one push. */
     batchUntil: v.optional(v.number()),
@@ -518,12 +520,13 @@ export default defineSchema({
   groupReactions: defineTable({
     groupId: v.id('groups'),
     eventId: v.id('groupEvents'),
+    targetId: v.union(v.id('sets'), v.id('workoutExercises')),
     fromUserId: v.string(),
     toUserId: v.string(),
     at: v.number(),
     delivered: v.boolean(),
   })
-    .index('by_event_from', ['eventId', 'fromUserId'])
+    .index('by_target_from', ['targetId', 'fromUserId'])
     .index('by_to_at', ['toUserId', 'at'])
     .index('by_from', ['fromUserId']),
 

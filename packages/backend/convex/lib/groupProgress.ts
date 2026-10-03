@@ -180,7 +180,11 @@ export async function recordGroupEvent(
   groupId: Id<'groups'>,
   kind: Doc<'groupEvents'>['kind'],
   userId?: string,
-  detail?: { exerciseName: string; setNumber?: number }
+  detail?: {
+    exerciseName: string;
+    setNumber?: number;
+    targetId: Id<'sets'> | Id<'workoutExercises'>;
+  }
 ) {
   const at = Date.now();
   const eventId = await ctx.db.insert('groupEvents', {
@@ -321,24 +325,45 @@ export async function syncGroupProgress(ctx: MutationCtx, userId: string) {
     progress.startedAt === membership.progress.startedAt
       ? (membership.progress.exercises ?? [])
       : [];
-  for (const exercise of progress.exercises ?? []) {
+  const workout = await findActiveWorkout(ctx, userId);
+  const workoutExercises = workout
+    ? (await workoutExercisesOf(ctx, workout._id)).filter(
+        (exercise) => !exercise.skipped
+      )
+    : [];
+  for (const [exerciseIndex, exercise] of (
+    progress.exercises ?? []
+  ).entries()) {
     const previous = previousExercises.find(
       (entry) => entry.name === exercise.name
     );
+    const workoutExercise = workoutExercises[exerciseIndex];
+    if (!workoutExercise) continue;
+    let countedSets: Doc<'sets'>[] | undefined;
     for (const [index, pip] of exercise.pips.entries()) {
       if (pip === 'done' && previous?.pips[index] !== 'done') {
+        countedSets ??= (await setsOfExercise(ctx, workoutExercise._id)).filter(
+          (set) => set.type !== 'warmup'
+        );
+        const set = countedSets[index];
+        if (!set) throw new ConvexError('SET_NOT_FOUND');
         await recordGroupEvent(
           ctx,
           membership.groupId,
           'setCompleted',
           userId,
-          { exerciseName: exercise.name, setNumber: index + 1 }
+          {
+            exerciseName: exercise.name,
+            setNumber: index + 1,
+            targetId: set._id,
+          }
         );
       }
     }
     if (exercise.targetMet === true && previous?.targetMet !== true) {
       await recordGroupEvent(ctx, membership.groupId, 'targetMet', userId, {
         exerciseName: exercise.name,
+        targetId: workoutExercise._id,
       });
     }
   }
