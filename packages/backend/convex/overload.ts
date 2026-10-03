@@ -53,6 +53,9 @@ export const targetSheet = query({
       stepKg: workoutExercise.stepKg,
       lastTime: last ? last.sets : null,
       suggested: working.flatMap((set) => (set.target ? [set.target] : [])),
+      // Logged targets remain in Suggested next, but cannot seed later edits.
+      editingTarget:
+        working.find((set) => set.completedAt === undefined)?.target ?? null,
       basis: workoutExercise.overload ?? null,
       targetsOn: settings.overloadTargets,
       exerciseTargetsOn: !settings.targetsOffExerciseIds.includes(exercise._id),

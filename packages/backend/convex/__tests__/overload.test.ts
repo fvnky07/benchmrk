@@ -665,6 +665,34 @@ describe('target sheet', () => {
     expect(edited.overload?.edited).toBe(true);
   });
 
+  test('the target editor follows the first unlogged Set across repeated edits', async () => {
+    const { member, exercise } = await workoutWithTargets();
+    await member.mutation(api.workouts.completeSet, {
+      setId: exercise.sets[0]?._id as Id<'sets'>,
+    });
+    const sheet = () =>
+      member.query(api.overload.targetSheet, {
+        workoutExerciseId: exercise._id,
+      });
+    expect((await sheet()).editingTarget).toEqual({ weightKg: 60, reps: 7 });
+    await member.mutation(api.overload.editTarget, {
+      workoutExerciseId: exercise._id,
+      weightKg: 62.5,
+      reps: 7,
+    });
+    expect((await sheet()).editingTarget).toEqual({ weightKg: 62.5, reps: 7 });
+    await member.mutation(api.overload.editTarget, {
+      workoutExerciseId: exercise._id,
+      weightKg: 65,
+      reps: 7,
+    });
+    expect((await sheet()).editingTarget).toEqual({ weightKg: 65, reps: 7 });
+    expect(targetsOf(await firstExercise(member))).toEqual([
+      { weightKg: 60, reps: 8 },
+      { weightKg: 65, reps: 7 },
+    ]);
+  });
+
   test('switching targets off for the Exercise stops computing and showing them; back on resumes from history', async () => {
     const { member, routineId, workoutId, exercise } =
       await workoutWithTargets();
