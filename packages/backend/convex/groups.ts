@@ -260,12 +260,15 @@ export const events = query({
     const usernames = new Map(profiles);
     return Promise.all(
       groupEvents.map(async (event) => {
-        const reaction = await ctx.db
-          .query('groupReactions')
-          .withIndex('by_event_from', (q) =>
-            q.eq('eventId', event._id).eq('fromUserId', userId)
-          )
-          .first();
+        const targetId = event.targetId;
+        const reaction = targetId
+          ? await ctx.db
+              .query('groupReactions')
+              .withIndex('by_target_from', (q) =>
+                q.eq('targetId', targetId).eq('fromUserId', userId)
+              )
+              .first()
+          : null;
         return {
           eventId: event._id,
           kind: event.kind,
