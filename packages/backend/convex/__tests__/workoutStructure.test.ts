@@ -110,6 +110,43 @@ describe('changing a Workout’s structure', () => {
     expect(await routineShape(member, routineId)).toEqual(before);
   });
 
+  test('deleting every Set removes the Exercise from the shown and saved Routine', async () => {
+    const { t, member, routineId, workoutId, bench, row } = await started();
+    const addedId = await member.mutation(api.workouts.addExercise, {
+      workoutId,
+      exerciseId: await exerciseId(t, 'squat'),
+    });
+    const added = (await activeWorkout(member)).exercises.find(
+      (exercise) => exercise._id === addedId
+    );
+    if (!added) throw new Error('missing added Exercise');
+    for (const set of [...row.sets, ...added.sets]) {
+      await member.mutation(api.workouts.deleteSet, { setId: set._id });
+    }
+    await member.mutation(api.workouts.completeSet, {
+      setId: bench.sets[0]?._id as Id<'sets'>,
+      weightKg: 60,
+      reps: 8,
+    });
+    await member.mutation(api.workouts.end, { workoutId, reason: 'terminate' });
+
+    const shown = await member.query(api.workoutStructure.getChanges, {
+      workoutId,
+    });
+    expect(shown?.changes).toEqual([
+      { kind: 'removed', exercise: 'Bent-over Row' },
+    ]);
+    expect(shown?.after).toEqual([
+      { name: 'Bench Press', sets: 2, restSeconds: null },
+    ]);
+    await member.mutation(api.workoutStructure.saveToRoutine, { workoutId });
+    expect(await routineShape(member, routineId)).toEqual(shown?.after);
+    expect(
+      (await member.query(api.workoutStructure.getChanges, { workoutId }))
+        ?.changes
+    ).toEqual([]);
+  });
+
   test('saving applies exactly the changes shown before and after', async () => {
     const { t, member, routineId, workoutId, bench, row } = await started();
     const squatId = await member.mutation(api.workouts.addExercise, {

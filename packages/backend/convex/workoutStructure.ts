@@ -164,7 +164,7 @@ type PlannedEntry = {
 
 /**
  * Compares the Workout with its Routine. Skipped Exercises keep their Routine
- * values (skipping is for this Workout only); skipped added ones drop out.
+ * values; zero-Set Exercises are omitted from both the diff and saved plan.
  */
 async function structurePlan(ctx: QueryCtx, workout: Doc<'workouts'>) {
   const routine = workout.routineId
@@ -205,6 +205,7 @@ async function structurePlan(ctx: QueryCtx, workout: Doc<'workouts'>) {
       ).length,
       restSeconds: workoutExercise.plannedRestSeconds ?? null,
     };
+    if (shape.sets === 0) continue;
     planned.push({ workoutExercise, routineExercise, shape });
 
     if (!routineExercise) {
