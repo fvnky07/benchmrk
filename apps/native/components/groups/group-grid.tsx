@@ -144,7 +144,7 @@ function MemberBoxView({
         spacing={8}
         modifiers={
           Platform.OS === 'ios'
-            ? [accessibilityElement('ignore'), accessibilityLabel(label)]
+            ? [accessibilityElement('contain'), accessibilityLabel(label)]
             : [semantics({ contentDescription: label })]
         }
         style={{
