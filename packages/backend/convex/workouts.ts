@@ -295,10 +295,11 @@ export const deleteSet = workoutMutation({
 });
 
 const setChangeArgs = {
-  weightKg: v.optional(v.number()),
-  reps: v.optional(v.number()),
-  durationSeconds: v.optional(v.number()),
-  distanceMeters: v.optional(v.number()),
+  /** Null explicitly clears an edited field; omitted fields stay untouched. */
+  weightKg: v.optional(v.union(v.number(), v.null())),
+  reps: v.optional(v.union(v.number(), v.null())),
+  durationSeconds: v.optional(v.union(v.number(), v.null())),
+  distanceMeters: v.optional(v.union(v.number(), v.null())),
   type: v.optional(setTypeValidator),
   /** Effort in the member's scale; null clears it. */
   effort: v.optional(
@@ -320,9 +321,9 @@ function setPatch({
 }: ObjectType<typeof setChangeArgs>): Partial<Doc<'sets'>> {
   if (
     Object.values(values).some(
-      (value) => value !== undefined && !(Number.isFinite(value) && value >= 0)
+      (value) => value != null && !(Number.isFinite(value) && value >= 0)
     ) ||
-    (values.reps !== undefined && !Number.isInteger(values.reps))
+    (values.reps != null && !Number.isInteger(values.reps))
   ) {
     throw new ConvexError('INVALID_SET_VALUE');
   }
@@ -330,8 +331,17 @@ function setPatch({
   if (rpe !== undefined && !isValidRpe(rpe)) {
     throw new ConvexError('INVALID_EFFORT');
   }
+  const patch: Partial<Doc<'sets'>> = {};
+  if ('weightKg' in values) patch.weightKg = values.weightKg ?? undefined;
+  if ('reps' in values) patch.reps = values.reps ?? undefined;
+  if ('durationSeconds' in values) {
+    patch.durationSeconds = values.durationSeconds ?? undefined;
+  }
+  if ('distanceMeters' in values) {
+    patch.distanceMeters = values.distanceMeters ?? undefined;
+  }
   return {
-    ...values,
+    ...patch,
     ...(type !== undefined && { type }),
     ...(effort !== undefined && { rpe }),
   };
@@ -347,8 +357,8 @@ function provenanceAfter(
 ): Doc<'sets'>['fromTarget'] {
   if (!set.target) return undefined;
   return {
-    weight: patch.weightKg === undefined && set.fromTarget?.weight === true,
-    reps: patch.reps === undefined && set.fromTarget?.reps === true,
+    weight: !('weightKg' in patch) && set.fromTarget?.weight === true,
+    reps: !('reps' in patch) && set.fromTarget?.reps === true,
   };
 }
 
@@ -377,14 +387,20 @@ function workingTarget(set: Doc<'sets'>) {
 }
 
 /** The target's values for a Set's empty fields, marked as from the target. */
-function targetFill(set: Doc<'sets'>): Partial<Doc<'sets'>> {
+function targetFill(
+  set: Doc<'sets'>,
+  changes: ObjectType<typeof setChangeArgs> = {}
+): Partial<Doc<'sets'>> {
   const target = workingTarget(set);
   if (!target || set.completedAt !== undefined) return {};
   const weightKg =
-    set.weightKg === undefined && target.weightKg !== null
+    changes.weightKg !== null &&
+    set.weightKg === undefined &&
+    target.weightKg !== null
       ? target.weightKg
       : undefined;
-  const reps = set.reps === undefined ? target.reps : undefined;
+  const reps =
+    changes.reps !== null && set.reps === undefined ? target.reps : undefined;
   return {
     ...(weightKg !== undefined && { weightKg }),
     ...(reps !== undefined && { reps }),
@@ -413,7 +429,7 @@ export const completeSet = workoutMutation({
       ...patch,
       fromTarget: provenanceAfter(set, patch),
     };
-    const fill = targetFill(edited);
+    const fill = targetFill(edited, changes);
     const logged = { ...edited, ...fill };
     await ctx.db.patch(setId, {
       ...patch,
