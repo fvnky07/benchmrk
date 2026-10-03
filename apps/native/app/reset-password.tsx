@@ -75,8 +75,8 @@ export default function ResetPasswordScreen() {
         });
         return;
       }
-      // Sessions were revoked on the server; drop any local one too.
-      await authClient.signOut();
+      // The server has accepted the new password; local sign-out is best effort.
+      await authClient.signOut().catch(() => undefined);
       setIsDone(true);
     } catch {
       setStatus({
