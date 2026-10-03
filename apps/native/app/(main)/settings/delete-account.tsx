@@ -18,12 +18,15 @@ import { useHaptics } from '@/lib/haptics';
 
 /** Must match APPLE_AUTHORIZATION_CODE_HEADER in the backend auth config. */
 const APPLE_CODE_HEADER = 'x-apple-authorization-code';
+const DELETION_IDENTITY_HEADER = 'x-deletion-identity-id';
 
 type Methods = { password: boolean; apple: boolean; google: boolean };
 
 const ERROR_COPY: Record<string, string> = {
   INVALID_PASSWORD: 'That password isn’t right. Nothing was deleted.',
   SESSION_EXPIRED: 'Confirm it’s you again. Nothing was deleted.',
+  DELETION_IDENTITY_CHANGED:
+    'The signed-in identity changed. Nothing was deleted.',
   APPLE_REAUTHENTICATION_REQUIRED:
     'Confirm with Apple first. Nothing was deleted.',
   APPLE_REVOCATION_FAILED: 'Apple didn’t confirm. Nothing was deleted.',
@@ -96,7 +99,12 @@ export default function DeleteAccountScreen() {
 
       const { error } = await authClient.deleteUser(
         methods.password ? { password } : {},
-        appleCode ? { headers: { [APPLE_CODE_HEADER]: appleCode } } : undefined
+        {
+          headers: {
+            [DELETION_IDENTITY_HEADER]: originalIdentityId,
+            ...(appleCode ? { [APPLE_CODE_HEADER]: appleCode } : {}),
+          },
+        }
       );
       if (error) {
         setErrorMessage(
