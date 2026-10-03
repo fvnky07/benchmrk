@@ -13,6 +13,7 @@ import {
   reauthenticateWithApple,
   runSocialAuth,
 } from '@/lib';
+import { useAuth } from '@/lib/auth';
 import { useHaptics } from '@/lib/haptics';
 
 /** Must match APPLE_AUTHORIZATION_CODE_HEADER in the backend auth config. */
@@ -29,11 +30,11 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 /**
- * Permanent deletion: re-authenticate (the password, or signing in again with
- * Apple or Google), confirm, and everything is removed at once on the server.
- * On any failure nothing is deleted and the account keeps working.
+ * Permanent deletion re-authenticates the original identity. Authentication is
+ * revoked immediately; its owned data is then removed in scheduled batches.
  */
 export default function DeleteAccountScreen() {
+  const { user } = useAuth();
   const config = useQuery(api.auth.getSocialAuthConfig);
   const haptic = useHaptics();
   const [methods, setMethods] = useState<Methods | null>(null);
@@ -55,7 +56,8 @@ export default function DeleteAccountScreen() {
   }, []);
 
   const deleteAccount = async () => {
-    if (!methods || busy) return;
+    const originalIdentityId = user?.id;
+    if (!methods || busy || !originalIdentityId) return;
     haptic('destructive-confirmation');
     setErrorMessage(null);
     setBusy(true);
@@ -83,6 +85,14 @@ export default function DeleteAccountScreen() {
           return;
         }
       }
+      const { data: session, error: sessionError } =
+        await authClient.getSession();
+      if (sessionError || session?.user.id !== originalIdentityId) {
+        setErrorMessage(
+          'The signed-in identity changed. Nothing was deleted. Sign in as the identity you meant to remove and try again.'
+        );
+        return;
+      }
 
       const { error } = await authClient.deleteUser(
         methods.password ? { password } : {},
@@ -91,7 +101,7 @@ export default function DeleteAccountScreen() {
       if (error) {
         setErrorMessage(
           ERROR_COPY[error.code ?? ''] ??
-            'Couldn’t delete your account. Nothing was deleted; try again.'
+            'Couldn’t finish deletion. Nothing was deleted; try again.'
         );
         return;
       }
@@ -112,9 +122,9 @@ export default function DeleteAccountScreen() {
   return (
     <NativeScreen>
       <Text textStyle={{ fontSize: 17 }}>
-        This permanently deletes your account and everything in it: Routines,
-        Workouts, Sets, custom Exercises, settings and your profile. It happens
-        right away and can’t be undone.
+        This permanently deletes this Benchmrk identity and its data: Routines,
+        Workouts, Sets, custom Exercises, settings and profile. Sign-in stops
+        right away; the remaining data is removed in the background.
       </Text>
       {methods?.password ? (
         <NativeTextField
