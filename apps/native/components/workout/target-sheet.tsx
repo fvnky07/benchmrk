@@ -82,7 +82,7 @@ export function TargetSheet({
     const targeted =
       sheet.exerciseType === 'strength' || sheet.exerciseType === 'bodyweight';
     const unrated = lastTime?.filter((set) => set.rpe === null).length ?? 0;
-    const current = suggested[0] ?? {
+    const current = sheet.editingTarget ?? {
       weightKg: lastTime?.[0]?.weightKg ?? null,
       reps: repRange.min,
     };
