@@ -23,6 +23,7 @@ const PASSWORD_RESET_EXPIRES_IN_SECONDS = 60 * 60;
 const FRESH_SESSION_SECONDS = 10 * 60;
 /** Header carrying a fresh Sign in with Apple authorization code on deletion. */
 export const APPLE_AUTHORIZATION_CODE_HEADER = 'x-apple-authorization-code';
+export const DELETION_IDENTITY_HEADER = 'x-deletion-identity-id';
 
 /** An emailed link that always returns to the app, whatever the client asked. */
 function withNativeCallback(url: string, callback: string): string {
@@ -62,15 +63,19 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     ],
     session: { freshAge: FRESH_SESSION_SECONDS },
     user: {
-      // Deletion re-authenticates first: the password, or (for members without
-      // one) a session fresh from signing in again. Apple's authorization is
-      // revoked, then the app data and every auth record go in one transaction,
-      // so Better Auth's own deletes after this hook find nothing left.
+      // Re-authentication must still refer to the originally selected identity.
+      // Revoke authentication immediately, then purge app data in scheduled batches.
       deleteUser: {
         enabled: true,
         beforeDelete: async (user, request) => {
           if (!('runMutation' in ctx)) {
             throw new APIError('INTERNAL_SERVER_ERROR');
+          }
+          if (request?.headers.get(DELETION_IDENTITY_HEADER) !== user.id) {
+            throw new APIError('BAD_REQUEST', {
+              code: 'DELETION_IDENTITY_CHANGED',
+              message: 'The identity changed. Nothing was deleted.',
+            });
           }
           const usesApple = await ctx.runQuery(
             components.betterAuth.identity.hasAppleAccount,
@@ -81,7 +86,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             if (!code) {
               throw new APIError('BAD_REQUEST', {
                 code: 'APPLE_REAUTHENTICATION_REQUIRED',
-                message: 'Confirm with Apple to delete this account.',
+                message: 'Confirm with Apple to delete this identity.',
               });
             }
             try {

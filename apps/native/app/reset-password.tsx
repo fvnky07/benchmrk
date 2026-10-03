@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { authClient, passwordSchema } from '@/lib';
+import { completePasswordReset } from '@/lib/auth/password-reset';
 
 type Status = { message: string; tone: 'neutral' | 'error' } | null;
 
@@ -63,11 +64,11 @@ export default function ResetPasswordScreen() {
     }
     setBusy(true);
     try {
-      const { error: resetError } = await authClient.resetPassword({
-        newPassword: password,
-        token,
-      });
-      if (resetError) {
+      const completed = await completePasswordReset(
+        () => authClient.resetPassword({ newPassword: password, token }),
+        () => authClient.signOut()
+      );
+      if (!completed) {
         setStatus({
           message:
             'This reset link has expired or was already used. Ask for a new one.',
@@ -75,8 +76,6 @@ export default function ResetPasswordScreen() {
         });
         return;
       }
-      // The server has accepted the new password; local sign-out is best effort.
-      await authClient.signOut().catch(() => undefined);
       setIsDone(true);
     } catch {
       setStatus({

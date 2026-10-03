@@ -115,9 +115,19 @@ async function deleteAccount(
   headers: Record<string, string> = {}
 ) {
   const request = nativePost(body, cookie);
+  const sessionResponse = await t.fetch('/api/auth/get-session', {
+    headers: { origin: 'native://', cookie },
+  });
+  const session = (await sessionResponse.json()) as {
+    user?: { id: string };
+  } | null;
   return t.fetch('/api/auth/delete-user', {
     ...request,
-    headers: { ...(request.headers as Record<string, string>), ...headers },
+    headers: {
+      ...(request.headers as Record<string, string>),
+      'x-deletion-identity-id': session?.user?.id ?? '',
+      ...headers,
+    },
   });
 }
 
@@ -131,6 +141,25 @@ async function finishDeletion(t: TestBackend) {
 }
 
 describe('account deletion', () => {
+  test('reauthenticating another identity deletes neither identity', async () => {
+    const t = createTest();
+    const pat = await register(t, 'pat@example.com');
+    const sam = await register(t, 'sam@example.com');
+    outbound.mockClear();
+    const response = await deleteAccount(
+      t,
+      sam.cookie,
+      { password: TEST_PASSWORD },
+      { 'x-deletion-identity-id': pat.identityId }
+    );
+    expect(response.status).toBe(400);
+    expect(await identityExists(t, 'pat@example.com')).toBe(true);
+    expect(await identityExists(t, 'sam@example.com')).toBe(true);
+    expect(await hasSession(t, pat.cookie)).toBe(true);
+    expect(await hasSession(t, sam.cookie)).toBe(true);
+    expect(outbound).not.toHaveBeenCalled();
+  });
+
   test('with the password, the identity and all its data are gone and other members keep theirs', async () => {
     const t = createTest();
     await t.mutation(internal.init.seed, {});
