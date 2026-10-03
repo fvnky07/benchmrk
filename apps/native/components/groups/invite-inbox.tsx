@@ -27,10 +27,16 @@ type InviteError = {
 
 export function InviteInbox() {
   const invites = useQuery(api.groupInvites.inbox, {});
+  const events = useQuery(api.groupInvites.eventInbox, {});
+  const dismissEvent = useMutation(api.groupInvites.dismissEvent);
   const accept = useMutation(api.groupInvites.accept);
   const decline = useMutation(api.groupInvites.decline);
   const [busy, setBusy] = useState(false);
   const [inviteError, setInviteError] = useState<InviteError | null>(null);
+  const [eventError, setEventError] = useState<{
+    entryId: Id<'groupNotifications'>;
+    message: string;
+  } | null>(null);
 
   const respond = async (
     inviteId: Id<'groupInvites'>,
@@ -60,14 +66,53 @@ export function InviteInbox() {
     }
   };
 
-  if (invites === undefined || invites.length === 0) {
+  const dismiss = async (entryId: Id<'groupNotifications'>) => {
+    if (busy) return;
+    setBusy(true);
+    setEventError(null);
+    try {
+      await dismissEvent({ entryId });
+    } catch {
+      setEventError({
+        entryId,
+        message: 'Couldn’t dismiss notification. Try again.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!invites?.length && !events?.length) {
     return null;
   }
 
   return (
     <Column spacing={12}>
-      <Text textStyle={{ fontSize: 22, fontWeight: '600' }}>Invites</Text>
-      {invites.map((invite) => (
+      <Text textStyle={{ fontSize: 22, fontWeight: '600' }}>Group inbox</Text>
+      {events?.map((entry) => (
+        <Column key={entry.entryId} spacing={8}>
+          <ListItem>{entry.copy}</ListItem>
+          <Button
+            disabled={busy}
+            label="Dismiss"
+            modifiers={[
+              Platform.OS === 'ios'
+                ? accessibilityLabel(`Dismiss ${entry.copy}`)
+                : semantics({
+                    contentDescription: `Dismiss ${entry.copy}`,
+                  }),
+            ]}
+            variant="outlined"
+            onPress={() => void dismiss(entry.entryId)}
+          />
+          {eventError?.entryId === entry.entryId ? (
+            <ListItem supportingText={eventError.message}>
+              Couldn’t update notification
+            </ListItem>
+          ) : null}
+        </Column>
+      ))}
+      {invites?.map((invite) => (
         <Column key={invite.inviteId} spacing={8}>
           {invite.state === 'pending' ? (
             <>

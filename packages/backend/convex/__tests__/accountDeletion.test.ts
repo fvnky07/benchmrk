@@ -72,6 +72,27 @@ async function memberWithData(t: TestBackend, email: string) {
     exerciseId: await exerciseId(t, 'bench-press'),
     body: 'Feet planted',
   });
+  await t.run(async (ctx) => {
+    const groupId = await ctx.db.insert('groups', {
+      hostId: identityId,
+      status: 'ended',
+      createdAt: 1,
+      endedAt: 2,
+      lastActivityAt: 2,
+    });
+    const eventId = await ctx.db.insert('groupEvents', {
+      groupId,
+      kind: 'ended',
+      at: 2,
+    });
+    await ctx.db.insert('groupNotifications', {
+      eventId,
+      userId: identityId,
+      kind: 'ended',
+      copy: 'Your Group ended',
+      createdAt: 2,
+    });
+  });
   return { cookie, identityId };
 }
 
@@ -82,6 +103,7 @@ async function rowsOwnedBy(t: TestBackend, userId: string) {
       (
         [
           'memberSettings',
+          'groupNotifications',
           'routines',
           'workouts',
           'sets',
