@@ -81,6 +81,13 @@ useEffect(() => {
 const { username, avatarUrl, initials } = useUserProfile();
 ```
 
+## Shared sign-in lock
+
+- The email form and native provider buttons share one pending lock.
+- Successful social sign-in keeps the lock held while navigation leaves the
+  auth route. The route's cleanup releases it; cancellation, provider failure
+  and unexpected errors release it immediately so another method can retry.
+
 ## Enumeration-safe email requests
 
 - Public password-reset requests acknowledge identically for eligible,

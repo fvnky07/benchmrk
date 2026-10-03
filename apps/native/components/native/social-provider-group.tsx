@@ -12,7 +12,7 @@ import {
   runSocialAuth,
   type SocialProvider,
 } from '@/lib/auth/social';
-import { useAuthStore } from '@/lib/auth/store';
+import { runPendingSocialAuth, useAuthStore } from '@/lib/auth/store';
 import { useAppearance } from '@/lib/ui';
 
 import { AuthDivider, AuthStatus, useAuthColumnWidth } from './auth-shell';
@@ -40,9 +40,6 @@ export function SocialProviderGroup({
     Platform.OS === 'ios' ? null : false
   );
   const pendingPath = useAuthStore((state) => state.pendingPath);
-  const beginPending = useAuthStore((state) => state.beginPending);
-  const endPending = useAuthStore((state) => state.endPending);
-  const [isPendingNavigation, setIsPendingNavigation] = useState(false);
   const [status, setStatus] = useState<Status>(null);
 
   useEffect(() => {
@@ -55,18 +52,20 @@ export function SocialProviderGroup({
   const isResolved = config !== undefined && appleNative !== null;
   const showApple = isAppleAvailable(config, appleNative ?? false);
   const showGoogle = isGoogleAvailable(config);
-  const isLocked = pendingPath !== null || isPendingNavigation || isOffline;
+  const isLocked = pendingPath !== null || isOffline;
 
   const signIn = async (provider: SocialProvider) => {
-    if (!config || isLocked || !beginPending(provider)) return;
-    setStatus({
-      message: `Signing in with ${PROVIDER_NAME[provider]}…`,
-      tone: 'neutral',
-    });
+    if (!config || isLocked) return;
     try {
-      const result = await runSocialAuth(provider, config);
+      const result = await runPendingSocialAuth(provider, async () => {
+        setStatus({
+          message: `Signing in with ${PROVIDER_NAME[provider]}…`,
+          tone: 'neutral',
+        });
+        return runSocialAuth(provider, config);
+      });
+      if (!result) return;
       if (result.status === 'success') {
-        setIsPendingNavigation(true);
         setStatus({
           message: 'Signed in. Loading your Benchmrk identity…',
           tone: 'neutral',
@@ -79,8 +78,11 @@ export function SocialProviderGroup({
       } else {
         setStatus({ message: `${result.message} Try again.`, tone: 'error' });
       }
-    } finally {
-      endPending();
+    } catch {
+      setStatus({
+        message: 'Couldn’t complete sign-in. Try again.',
+        tone: 'error',
+      });
     }
   };
 

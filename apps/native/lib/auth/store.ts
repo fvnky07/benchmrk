@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { SocialProvider } from './social';
+import type { SocialProvider, SocialResult } from './social';
 
 /** Every way to sign in or register from the auth screens. */
 export type AuthPath = 'password' | 'link' | 'register' | SocialProvider;
@@ -28,3 +28,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
   endPending: () => set({ pendingPath: null }),
 }));
+
+/** Success keeps the shared lock until the auth route's navigation cleanup. */
+export async function runPendingSocialAuth(
+  provider: SocialProvider,
+  authenticate: () => Promise<SocialResult>
+): Promise<SocialResult | null> {
+  const { beginPending, endPending } = useAuthStore.getState();
+  if (!beginPending(provider)) return null;
+  let pendingNavigation = false;
+  try {
+    const result = await authenticate();
+    pendingNavigation = result.status === 'success';
+    return result;
+  } finally {
+    if (!pendingNavigation) endPending();
+  }
+}
