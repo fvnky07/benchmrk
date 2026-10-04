@@ -98,13 +98,26 @@ Before anything starts, `pnpm run dev` checks two things, and stops with instruc
 - an Android phone is connected over adb;
 - nothing else holds Metro's port, 8081.
 
-To connect a phone the first time:
+There are three ways to connect the phone.
+
+**Same Wi-Fi.** To connect the first time:
 
 1. On the phone, open Settings → System → Developer options → Wireless debugging.
 2. Tap "Pair device with pairing code".
 3. Run `adb pair <IP:port> <code>`.
 
-Paired phones reconnect automatically while Wireless debugging is on and the phone shares this computer's Wi-Fi. If several phones are connected, choose one with `ANDROID_SERIAL=<serial> pnpm run dev`.
+Paired phones reconnect automatically while Wireless debugging is on and the phone shares this computer's Wi-Fi.
+
+**The phone's own hotspot.** Android greys out Wireless debugging unless the phone itself is on a Wi-Fi network, so use adb's TCP mode instead:
+
+1. Once after each phone restart, connect a USB cable with USB debugging on.
+2. Run `adb tcpip 5555`, then unplug the cable.
+
+While this computer is on the phone's hotspot, the phone is its default gateway, so `pnpm run dev` connects to `<gateway>:5555` by itself. Anything else on that hotspot can reach port 5555 too, so run `adb usb` to turn TCP mode off when you're done.
+
+**USB.** A connected USB cable with USB debugging on works without any setup.
+
+If several phones are connected, choose one with `ANDROID_SERIAL=<serial> pnpm run dev`.
 
 `apps/native/android` is generated. The first run, and any run after the native config changes (app config, config plugins or native dependencies), regenerates it with a clean `expo prebuild`. Other runs rebuild incrementally with Gradle.
 

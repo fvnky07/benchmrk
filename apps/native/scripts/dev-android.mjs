@@ -103,6 +103,14 @@ function createAdb(sdk) {
   return { adb, adbPath, listPhones };
 }
 
+// This computer's default gateway. On the phone's hotspot, that is the phone.
+function defaultGateway() {
+  return spawnSync('route', ['-n', 'get', 'default'], {
+    encoding: 'utf8',
+    timeout: 5_000,
+  }).stdout?.match(/gateway:\s*(\S+)/)?.[1];
+}
+
 async function waitForPhones(listPhones, milliseconds) {
   const deadline = Date.now() + milliseconds;
   for (;;) {
@@ -122,13 +130,21 @@ async function resolvePhone(sdk) {
   adb('start-server');
 
   // adb auto-connects paired phones it discovers over mDNS; give it a moment,
-  // then connect any advertised wireless-debugging endpoint ourselves.
+  // then connect advertised endpoints ourselves. Wireless debugging is greyed
+  // out while the phone is a hotspot, so also try the gateway on 5555, where a
+  // phone switched to TCP mode with `adb tcpip 5555` listens.
   let phones = await waitForPhones(listPhones, 5_000);
   if (!phones.some((phone) => phone.state === 'device')) {
-    for (const line of adb('mdns', 'services').split('\n')) {
-      if (line.includes('_adb-tls-connect._tcp')) {
-        adb('connect', line.trim().split(/\s+/).at(-1));
-      }
+    const advertised = adb('mdns', 'services')
+      .split('\n')
+      .filter((line) => /\s_adb(-tls-connect)?\._tcp\s/.test(line))
+      .map((line) => line.trim().split(/\s+/).at(-1));
+    const gateway = defaultGateway();
+    for (const endpoint of [
+      ...advertised,
+      ...(gateway ? [`${gateway}:5555`] : []),
+    ]) {
+      adb('connect', endpoint);
     }
     phones = await waitForPhones(listPhones, 5_000);
   }
@@ -158,12 +174,20 @@ async function resolvePhone(sdk) {
         ]
       : []),
     ...(phones.length > 0 || process.env.ANDROID_SERIAL ? [''] : []),
-    'On the phone: Settings → System → Developer options → Wireless debugging → On.',
-    `Keep it on the same Wi-Fi as this computer${address ? ` (${address})` : ''}.`,
-    'First time on this computer: tap "Pair device with pairing code", then run',
-    `  ${adbPath} pair <IP:port> <code>`,
-    'Connect with the "IP address & port" shown on the Wireless debugging screen:',
-    `  ${adbPath} connect <IP:port>`,
+    `On the same Wi-Fi as this computer${address ? ` (${address})` : ''}:`,
+    '  On the phone: Settings → System → Developer options → Wireless debugging → On.',
+    '  First time on this computer: tap "Pair device with pairing code", then run',
+    `    ${adbPath} pair <IP:port> <code>`,
+    '  Then connect with the "IP address & port" shown on that screen:',
+    `    ${adbPath} connect <IP:port>`,
+    '',
+    "On the phone's hotspot, where Wireless debugging is greyed out:",
+    '  Once after each phone restart, connect a USB cable (USB debugging on) and run',
+    `    ${adbPath} tcpip 5555`,
+    '  then unplug it; pnpm run dev reconnects over the hotspot by itself.',
+    '',
+    'Or keep a USB cable connected.',
+    '',
     'Then run pnpm run dev again.',
   ]);
 }
