@@ -81,6 +81,29 @@ useEffect(() => {
 const { username, avatarUrl, initials } = useUserProfile();
 ```
 
+## Notification lifecycle
+
+- Profile setup ends with the skippable **Get Group invites and rest timers**
+  screen. The native permission prompt appears only after **Allow**. A
+  device-local checkpoint keeps that step reachable after saving the username,
+  including if the app closes before the choice.
+- `(main)/_layout.tsx` mounts `usePushRegistration`: granted permission registers
+  the current Expo token on sign-in and every app start, and refreshes it when
+  the app returns from Settings or the native token changes. It never prompts.
+- The ordinary sign-out path awaits `unregisterThisDevice` with
+  `api.deviceTokens.unregister` before calling `authClient.signOut`. It removes
+  only that device's token while the Benchmrk identity is still authenticated.
+- `usePushPermissionReoffer` supplies the Group screen's first-open/create
+  offer. It uses the same explanation, persists one re-offer per device, and
+  leaves a previously granted or refused OS choice alone.
+- Tapping a Group invite opens `/workout/group`; its inbox is the source of
+  truth, including **This Group has ended**. Invite delivery uses Expo's HTTP
+  API from Convex, without retries, and checks delivery receipts after 15
+  minutes to remove invalid device tokens.
+- Real push delivery requires an EAS development build with APNs and FCM
+  credentials. Permission flow, notification taps, VoiceOver/TalkBack and
+  delivery on physical iOS and Android devices remain hardware checks.
+
 ## Rules
 
 ### ✅ DO

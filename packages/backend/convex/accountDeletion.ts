@@ -21,6 +21,7 @@ const purgePhase = v.union(
   v.literal('comments'),
   v.literal('customExercises'),
   v.literal('memberSettings'),
+  v.literal('groupNotifications'),
   v.literal('waitlist'),
   v.literal('magicLinkRequests'),
   v.literal('done')
@@ -49,6 +50,7 @@ type PurgePhase =
   | 'routineBlocks'
   | 'customExercises'
   | 'memberSettings'
+  | 'groupNotifications'
   | 'waitlist'
   | 'magicLinkRequests'
   | 'done';
@@ -295,6 +297,20 @@ export const purgeIdentityBatch = internalMutation({
           .withIndex('by_userId', (q) => q.eq('userId', args.userId))
           .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
         for (const settings of page.page) await ctx.db.delete(settings._id);
+        await scheduleBatch(
+          ctx,
+          page.isDone
+            ? { ...args, phase: 'groupNotifications', cursor: null }
+            : { ...args, cursor: page.continueCursor }
+        );
+        return null;
+      }
+      case 'groupNotifications': {
+        const page = await ctx.db
+          .query('groupNotifications')
+          .withIndex('by_user', (q) => q.eq('userId', args.userId))
+          .paginate({ numItems: DELETION_BATCH_SIZE, cursor: args.cursor });
+        for (const entry of page.page) await ctx.db.delete(entry._id);
         await scheduleBatch(
           ctx,
           page.isDone

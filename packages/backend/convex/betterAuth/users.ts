@@ -24,3 +24,14 @@ export const getUserByEmail = query({
       .first();
   },
 });
+
+// NOTE: Find a user by exact (lowercased) username; Group invites never search
+export const getUserByUsername = query({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query('user')
+      .withIndex('username', (q) => q.eq('username', args.username))
+      .first();
+  },
+});

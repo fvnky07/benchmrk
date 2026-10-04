@@ -1,14 +1,22 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
+import { useGroupHeartbeat } from '@/lib/groups/use-group-heartbeat';
+import { useGroupNotifications } from '@/lib/push/use-group-notifications';
+import { usePushRegistration } from '@/lib/push/use-push-registration';
 import { useAppearance } from '@/lib/ui';
 import { useNavigationChrome } from '@/lib/ui/navigation-chrome';
 import { useResumeActiveWorkout } from '@/lib/workout/use-resume-active-workout';
+import { useWorkoutLiveStatus } from '@/lib/workout/use-workout-live-status';
 
 /** Main tabs, reachable only by a signed-in member who finished Profile setup. */
 export default function MainLayout() {
   const { resolvedAppearance } = useAppearance();
   const navigationChrome = useNavigationChrome(resolvedAppearance);
   useResumeActiveWorkout();
+  useWorkoutLiveStatus();
+  useGroupHeartbeat();
+  usePushRegistration();
+  useGroupNotifications();
 
   return (
     <NativeTabs {...navigationChrome}>

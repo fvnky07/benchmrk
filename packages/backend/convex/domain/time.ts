@@ -31,8 +31,98 @@ export type TimeBreakdown = {
   adherence: { actualSeconds: number; plannedSeconds: number } | null;
 };
 
-const average = (values: number[]) =>
-  values.reduce((sum, value) => sum + value, 0) / values.length;
+type TimeTotals = {
+  workingMs: number;
+  restMs: number;
+  transitionMs: number;
+  actualRestSeconds: number;
+  plannedRestSeconds: number;
+  restSamples: number;
+};
+
+const emptyTotals = (): TimeTotals => ({
+  workingMs: 0,
+  restMs: 0,
+  transitionMs: 0,
+  actualRestSeconds: 0,
+  plannedRestSeconds: 0,
+  restSamples: 0,
+});
+
+/**
+ * Each interval and rest sample belongs to the Set it ends at, including
+ * transitions between Exercises and rest within an Alternating sets block.
+ */
+function walkTime(
+  sets: readonly TimedSet[],
+  visit: (set: TimedSet, interval: TimeTotals) => void
+) {
+  const ordered = [...sets].sort((a, b) => a.completedAt - b.completedAt);
+  for (const [index, set] of ordered.entries()) {
+    const interval = emptyTotals();
+    const previous = ordered[index - 1];
+    if (!previous) {
+      interval.workingMs =
+        set.completedAt - (set.firstTouchedAt ?? set.completedAt);
+      visit(set, interval);
+      continue;
+    }
+    const start =
+      set.firstTouchedAt !== null && set.firstTouchedAt >= previous.completedAt
+        ? set.firstTouchedAt
+        : Math.min(
+            previous.restAfter?.endsAt ?? previous.completedAt,
+            set.completedAt
+          );
+    interval.workingMs = set.completedAt - start;
+    const gap = Math.max(0, start - previous.completedAt);
+    const sameExercise = set.workoutExerciseId === previous.workoutExerciseId;
+    const sameBlock = set.blockId !== null && set.blockId === previous.blockId;
+    if (!sameExercise && !sameBlock) {
+      interval.transitionMs = gap;
+    } else {
+      interval.restMs = gap;
+      if (
+        previous.restAfter &&
+        !set.loggedTogether &&
+        !previous.loggedTogether
+      ) {
+        interval.actualRestSeconds = gap / 1000;
+        interval.plannedRestSeconds = previous.restAfter.plannedSeconds;
+        interval.restSamples = 1;
+      }
+    }
+    visit(set, interval);
+  }
+}
+
+function addTotals(total: TimeTotals, interval: TimeTotals) {
+  total.workingMs += interval.workingMs;
+  total.restMs += interval.restMs;
+  total.transitionMs += interval.transitionMs;
+  total.actualRestSeconds += interval.actualRestSeconds;
+  total.plannedRestSeconds += interval.plannedRestSeconds;
+  total.restSamples += interval.restSamples;
+}
+
+function breakdown(total: TimeTotals): TimeBreakdown {
+  return {
+    workingSeconds: Math.round(total.workingMs / 1000),
+    restSeconds: Math.round(total.restMs / 1000),
+    transitionSeconds: Math.round(total.transitionMs / 1000),
+    adherence:
+      total.restSamples === 0
+        ? null
+        : {
+            actualSeconds: Math.round(
+              total.actualRestSeconds / total.restSamples
+            ),
+            plannedSeconds: Math.round(
+              total.plannedRestSeconds / total.restSamples
+            ),
+          },
+  };
+}
 
 /**
  * Splits a Workout's time between its logged Sets. Measurement starts at the
@@ -43,58 +133,40 @@ const average = (values: number[]) =>
  * otherwise. Sets logged together still count in totals but not in adherence.
  */
 export function timeBreakdown(sets: readonly TimedSet[]): TimeBreakdown {
-  const ordered = [...sets].sort((a, b) => a.completedAt - b.completedAt);
-  let workingMs = 0;
-  let restMs = 0;
-  let transitionMs = 0;
-  const rests: { actual: number; planned: number }[] = [];
+  const total = emptyTotals();
+  walkTime(sets, (_set, interval) => addTotals(total, interval));
+  return breakdown(total);
+}
 
-  for (const [index, set] of ordered.entries()) {
-    const previous = ordered[index - 1];
-    if (!previous) {
-      workingMs += set.completedAt - (set.firstTouchedAt ?? set.completedAt);
-      continue;
+/** Per-Exercise measures whose rounded durations add up to the whole Workout. */
+export function timeByExercise(
+  sets: readonly TimedSet[]
+): Record<string, TimeBreakdown> {
+  const totals: Record<string, TimeTotals> = {};
+  walkTime(sets, (set, interval) => {
+    let total = totals[set.workoutExerciseId];
+    if (total === undefined) {
+      total = emptyTotals();
+      totals[set.workoutExerciseId] = total;
     }
-    const start =
-      set.firstTouchedAt !== null && set.firstTouchedAt >= previous.completedAt
-        ? set.firstTouchedAt
-        : Math.min(
-            previous.restAfter?.endsAt ?? previous.completedAt,
-            set.completedAt
-          );
-    workingMs += set.completedAt - start;
-    const gap = Math.max(0, start - previous.completedAt);
-    const sameExercise = set.workoutExerciseId === previous.workoutExerciseId;
-    const sameBlock = set.blockId !== null && set.blockId === previous.blockId;
-    if (!sameExercise && !sameBlock) {
-      transitionMs += gap;
-      continue;
-    }
-    restMs += gap;
-    if (previous.restAfter && !set.loggedTogether && !previous.loggedTogether) {
-      rests.push({
-        actual: gap / 1000,
-        planned: previous.restAfter.plannedSeconds,
-      });
-    }
+    addTotals(total, interval);
+  });
+  const result: Record<string, TimeBreakdown> = {};
+  const cumulative = emptyTotals();
+  for (const [exerciseId, total] of Object.entries(totals)) {
+    const previous = breakdown(cumulative);
+    addTotals(cumulative, total);
+    const next = breakdown(cumulative);
+    // Carry fractional seconds forward instead of rounding every Exercise
+    // independently, which could otherwise disagree with the Workout total.
+    result[exerciseId] = {
+      ...breakdown(total),
+      workingSeconds: next.workingSeconds - previous.workingSeconds,
+      restSeconds: next.restSeconds - previous.restSeconds,
+      transitionSeconds: next.transitionSeconds - previous.transitionSeconds,
+    };
   }
-
-  return {
-    workingSeconds: Math.round(workingMs / 1000),
-    restSeconds: Math.round(restMs / 1000),
-    transitionSeconds: Math.round(transitionMs / 1000),
-    adherence:
-      rests.length === 0
-        ? null
-        : {
-            actualSeconds: Math.round(
-              average(rests.map((rest) => rest.actual))
-            ),
-            plannedSeconds: Math.round(
-              average(rests.map((rest) => rest.planned))
-            ),
-          },
-  };
+  return result;
 }
 
 /**

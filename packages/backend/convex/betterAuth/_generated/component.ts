@@ -2180,5 +2180,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         any,
         Name
       >;
+      getUserByUsername: FunctionReference<
+        "query",
+        "internal",
+        { username: string },
+        any,
+        Name
+      >;
     };
   };

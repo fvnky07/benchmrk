@@ -6,7 +6,20 @@ type AppConfig = typeof app.expo & {
 
 export default ({ config }: { config: AppConfig }) => {
   const iosScheme = process.env.GOOGLE_IOS_URL_SCHEME;
-  const plugins = [...(config.plugins ?? []), 'expo-apple-authentication'];
+  const bundleIdentifier = config.ios?.bundleIdentifier ?? 'com.benchmrk.app';
+  const plugins = [
+    ...(config.plugins ?? []),
+    'expo-apple-authentication',
+    'expo-notifications',
+    // The Workout's Live Activity (expo-widgets registers it at runtime).
+    [
+      'expo-widgets',
+      {
+        bundleIdentifier: `${bundleIdentifier}.widgets`,
+        groupIdentifier: `group.${bundleIdentifier}`,
+      },
+    ] as never,
+  ];
   if (iosScheme)
     plugins.push([
       '@react-native-google-signin/google-signin',

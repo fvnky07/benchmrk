@@ -1,8 +1,11 @@
 import { Button, ListItem, Text } from '@expo/ui';
+import { semantics } from '@expo/ui/jetpack-compose/modifiers';
+import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { Platform } from 'react-native';
 
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
@@ -62,6 +65,19 @@ export default function WorkoutScreen() {
         supportingText="Train together: create a Group or join with a code"
       >
         Group
+      </ListItem>
+      <ListItem
+        modifiers={[
+          Platform.OS === 'ios'
+            ? accessibilityLabel('View completed Workout history')
+            : semantics({
+                contentDescription: 'View completed Workout history',
+              }),
+        ]}
+        onPress={() => router.push('/workout/history')}
+        supportingText="Completed Workouts, Sets, targets, notes and time"
+      >
+        History
       </ListItem>
       <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Routines</Text>
       {routines === undefined ? (

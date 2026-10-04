@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Android 16 promotes the Workout status to a Live Update. -->
+  <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+
+  <application>
+    <receiver
+      android:name="expo.modules.benchmrkui.RestEndReceiver"
+      android:exported="false" />
+  </application>
+</manifest>
