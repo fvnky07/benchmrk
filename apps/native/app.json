@@ -58,7 +58,10 @@
           "cameraPermission": "This app needs access to your camera so you can take a profile picture."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-image",
+      "expo-localization",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
