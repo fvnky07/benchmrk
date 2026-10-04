@@ -53,6 +53,31 @@ New cloud development deployments receive only project environment-variable
 defaults. Configure required backend secrets such as `BETTER_AUTH_SECRET` in
 the Convex project's development defaults before creating agent worktrees.
 
+## Backend environment variables
+
+Set these on each Convex deployment with
+`pnpm -F @repo/backend exec convex env set NAME value` (add `--prod` for
+production). Never commit their values.
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `BETTER_AUTH_SECRET` | yes | Signs sessions and magic-link proofs |
+| `SITE_URL` | yes | Website origin for auth callbacks and emailed links |
+| `RESEND_API_KEY` | yes | Sends transactional email; without it nothing is mailed |
+| `DELETION_REQUEST_NOTIFY_EMAIL` | production | Maintainer inbox for confirmed website deletion requests |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_IOS_CLIENT_ID` | for Google sign-in | Google OAuth clients |
+| `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`, `APPLE_APP_BUNDLE_IDENTIFIER` | for Apple sign-in | Sign in with Apple |
+
+## Deletion requests
+
+Google Play requires a web page for deleting an account without the app:
+`/delete-account` on the website (linked from the privacy policy). A request
+is recorded in the `deletionRequests` table only after the requester opens the
+emailed confirmation link, and the same email never creates a second request.
+Each confirmed request emails `DELETION_REQUEST_NOTIFY_EMAIL`. Delete that
+identity and its data within 30 days, then reply to the requester to say it's
+done; the page promises both.
+
 ## Running the apps
 
 ```bash
@@ -70,6 +95,51 @@ cd apps/native && pnpm run dev                    # Expo dev server
 Open `http://localhost:3000` for the web app. For native, the `pnpm run dev` script in `apps/native` runs `expo start` under the hood — scan the Expo QR code it prints, or press `i` / `a` to launch the iOS or Android simulator.
 
 The shared Exercise catalog lives in `packages/backend/convex/lib/exerciseCatalog.ts`. Seed it into a new deployment once with `pnpm -F @repo/backend exec convex run init:seed`. Seeding only adds missing Exercises and never rewrites one, and after seeding the database is the source of truth, so catalog changes must only ever add Exercises.
+
+## Releasing the app
+
+Both stores use the identifier `com.benchmrk.app`. Builds run on EAS from
+`apps/native`; `eas.json` decides which Convex deployment a build talks to:
+
+| Build profile | Backend | Notes |
+|---------------|---------|-------|
+| `development` | Development (`EXPO_PUBLIC_CONVEX_*` in your `.env.local`) | Dev client; JavaScript comes from your local Metro server |
+| `production` | Production (`friendly-finch-491`) | Store build; version auto-increments on EAS |
+
+Release steps, run from the repo root:
+
+```bash
+# 1. Deploy the backend the build will use
+pnpm -F @repo/backend exec convex deploy
+
+# 2. Build both platforms on EAS
+cd apps/native
+npx eas-cli build --profile production --platform all
+
+# 3. Submit: iOS goes to App Store Connect (TestFlight), Android to the
+#    Play internal testing track
+npx eas-cli submit --profile production --platform ios --latest
+npx eas-cli submit --profile production --platform android --latest
+```
+
+Before the first production release:
+
+- Set the backend variables above on the production deployment
+  (`convex env set --prod`); `APPLE_APP_BUNDLE_IDENTIFIER` is `com.benchmrk.app`.
+- Register `com.benchmrk.app` with Sign in with Apple, and create a Google iOS
+  OAuth client for it; set its URL scheme as the `GOOGLE_IOS_URL_SCHEME` EAS
+  variable in the `production` environment
+  (`npx eas-cli env:create --environment production`).
+- Store PostHog keys the same way if analytics should ship.
+
+To check a production bundle locally, export it with the production URLs and
+`--clear`; Metro otherwise reuses cached values from `.env.local`:
+
+```bash
+EXPO_PUBLIC_CONVEX_URL=https://friendly-finch-491.convex.cloud \
+EXPO_PUBLIC_CONVEX_SITE_URL=https://friendly-finch-491.convex.site \
+npx expo export --clear --platform android
+```
 
 ## Repo layout
 
@@ -94,8 +164,8 @@ benchmrk/
 | `pnpm run dev:web` | Website only |
 | `pnpm run build` | Build all packages |
 | `pnpm run build:web` | Build website |
-| `pnpm run build:ios` | Build iOS app |
-| `pnpm run build:android` | Build Android app |
+| `pnpm run build:ios` | Local debug build on the iOS simulator (store builds: see Releasing the app) |
+| `pnpm run build:android` | Local debug build on the Android emulator (store builds: see Releasing the app) |
 | `pnpm run lint` | Lint with Biome |
 | `pnpm run format` | Auto-fix formatting |
 | `pnpm run check-types` | Type-check all packages |

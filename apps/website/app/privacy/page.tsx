@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -15,6 +16,13 @@ export default function PrivacyPage() {
           We are currently preparing our Privacy Policy. This page will be
           updated with detailed information about how we collect, use, and
           protect your data before our official launch.
+        </p>
+        <p className="max-w-2xl text-muted-foreground text-sm">
+          To delete your account and data, see{' '}
+          <Link className="underline" href="/delete-account">
+            Delete your account
+          </Link>
+          .
         </p>
       </div>
     </main>

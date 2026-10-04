@@ -8,14 +8,23 @@ import { magicLink } from 'better-auth/plugins';
 import { components } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
+import { actionEmail, sendEmail } from '../lib/email';
+import { authorizedMagicLinkFlow } from '../lib/magicLinkProof';
 import schema from './schema';
 
 const siteUrl = process.env.SITE_URL;
-const PREMIUM_USER_LIMIT = 100;
-const LIFETIME_PREMIUM_MS = 10 * 365.25 * 24 * 60 * 60 * 1000;
 
-// Component client with local schema for custom user
-// fields (premiumUntil)
+/** Where verification links land in the app; the Expo plugin appends the session. */
+const EMAIL_VERIFIED_CALLBACK = 'native://email-verified';
+
+/** A verification link that always returns to the app, whatever the client asked. */
+function nativeVerificationUrl(url: string): string {
+  const link = new URL(url);
+  link.searchParams.set('callbackURL', EMAIL_VERIFIED_CALLBACK);
+  return link.toString();
+}
+
+// Component client with the local schema (username, bio, two-factor fields).
 export const authComponent = createClient<DataModel, typeof schema>(
   components.betterAuth,
   {
@@ -23,50 +32,6 @@ export const authComponent = createClient<DataModel, typeof schema>(
     verbose: false,
   }
 );
-
-// NOTE: Send email via Resend HTTP API (not SDK - SDK has
-// Node.js deps incompatible with Convex runtime)
-// PERF: Using fetch directly avoids mailparser/stream deps
-async function sendEmailViaResend(
-  to: string,
-  subject: string,
-  html: string
-): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error('RESEND_API_KEY not configured');
-    return;
-  }
-
-  console.log(`Sending magic link email to: ${to}`);
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'benchmrk <noreply@benchmrk.app>',
-        to: [to],
-        subject,
-        html,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Resend API error:', response.status, error);
-    } else {
-      // Drain the body to release the underlying connection;
-      // we don't need the JSON payload on success.
-      await response.text();
-    }
-  } catch (error) {
-    console.error('Failed to send email:', error);
-  }
-}
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   return {
@@ -88,9 +53,30 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           ]
         : []),
     ],
+    // Members can log Workouts before verifying; Groups and password recovery
+    // check verification themselves.
     emailAndPassword: {
       requireEmailVerification: false,
       enabled: true,
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: 'Verify your email - benchmrk',
+          html: actionEmail({
+            title: 'Verify your benchmrk email',
+            heading: 'Verify your email',
+            body: 'Confirm this address to create Groups, join them and recover your password. Open the link on the phone where benchmrk is installed.',
+            actionLabel: 'Verify email',
+            url: nativeVerificationUrl(url),
+            footnote:
+              'If you didn’t create a benchmrk account, ignore this email.',
+          }),
+        });
+      },
     },
     socialProviders: {
       ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -114,104 +100,58 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
         : {}),
     },
     account: {
+      // ADR 0001: providers attach only through explicit linking, and the last
+      // remaining sign-in method can never be unlinked.
       accountLinking: {
         disableImplicitLinking: true,
         allowDifferentEmails: true,
         updateUserInfoOnLink: false,
-      },
-    },
-    // Custom user fields for premium tracking
-    // premiumUntil: Unix timestamp (ms) when premium expires
-    // null = not premium, far-future = lifetime premium
-    user: {
-      additionalFields: {
-        premiumUntil: {
-          type: 'number',
-          required: false,
-        },
+        allowUnlinkingAll: false,
       },
     },
     hooks: {
-      // NOTE: Hook to grant lifetime premium after magic link
-      // verification creates a session
-      after: createAuthMiddleware(async (hookCtx) => {
-        if (hookCtx.path !== '/magic-link/verify') {
-          return;
-        }
-
-        // newSession is set by Better Auth when
-        // magic link creates/authenticates a user
-        const newSession = hookCtx.context.newSession;
-        if (!newSession) {
-          console.log('magic-link/verify hook: no newSession');
-          return;
-        }
-
-        const userId = newSession.user.id;
-        const adapter = hookCtx.context.adapter;
-
-        console.log(`magic-link/verify: user ${userId}`);
-
-        //Idempotency - check if already premium
-        const existingUser = await adapter.findOne<{
-          premiumUntil?: number | null;
-        }>({
-          model: 'user',
-          where: [{ field: 'id', value: userId }],
-        });
-
-        if (
-          existingUser?.premiumUntil != null &&
-          existingUser.premiumUntil > Date.now()
-        ) {
-          console.log(`User ${userId} already premium`);
-          return;
-        }
-
-        // Count current premium users by checking
-        // premiumUntil > now
-        const now = Date.now();
-        const allUsers = await adapter.findMany<{
-          premiumUntil?: number | null;
-        }>({
-          model: 'user',
-        });
-
-        const premiumCount = (allUsers ?? []).filter(
-          (u) => u.premiumUntil != null && u.premiumUntil > now
-        ).length;
-
-        if (premiumCount < PREMIUM_USER_LIMIT) {
-          const premiumUntil = Date.now() + LIFETIME_PREMIUM_MS;
-          await adapter.update({
-            model: 'user',
-            where: [{ field: 'id', value: userId }],
-            update: {
-              premiumUntil,
-            },
-          });
-
-          console.log(
-            `Premium granted: ${userId} ` +
-              `(${premiumCount + 1}/${PREMIUM_USER_LIMIT})`
-          );
-        } else {
-          console.log(
-            `Premium limit reached (${premiumCount}/${PREMIUM_USER_LIMIT})`
-          );
-        }
+      // A password change always signs out every other session; this device
+      // gets a fresh one. Enforced here rather than trusted from the client.
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== '/change-password') return;
+        return {
+          context: { body: { ...ctx.body, revokeOtherSessions: true } },
+        };
       }),
     },
     plugins: [
       magicLink({
         expiresIn: 60 * 60 * 24,
-        sendMagicLink: async ({ email, url }) => {
-          console.log(`Magic link for ${email}: ${url}`);
-          await sendEmailViaResend(
-            email,
-            'Confirm your spot - benchmrk',
-            generateMagicLinkEmail(url)
-          );
+        sendMagicLink: async ({ email, url, metadata }) => {
+          const flow = await authorizedMagicLinkFlow(email, metadata);
+          if (flow === 'waitlist-confirmation') {
+            await sendEmail({
+              to: email,
+              subject: 'Confirm your spot - benchmrk',
+              html: actionEmail({
+                title: 'Confirm your benchmrk waitlist spot',
+                heading: 'You’re almost in',
+                body: 'Confirm your email to join the benchmrk waitlist. Benchmrk is free and open source.',
+                actionLabel: 'Confirm my spot',
+                url,
+                footnote: 'This link expires in 24 hours.',
+              }),
+            });
+          } else if (flow === 'native-sign-in') {
+            await sendEmail({
+              to: email,
+              subject: 'Your benchmrk sign-in link',
+              html: actionEmail({
+                title: 'Sign in to benchmrk',
+                heading: 'Sign in to benchmrk',
+                body: 'Open this link on the phone where benchmrk is installed to sign in.',
+                actionLabel: 'Sign in',
+                url,
+                footnote:
+                  'This link expires in 24 hours. If you didn’t ask for it, ignore this email.',
+              }),
+            });
+          }
         },
       }),
       expo(),
@@ -227,113 +167,3 @@ export const options = createAuthOptions({} as GenericCtx<DataModel>);
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
   return betterAuth(createAuthOptions(ctx));
 };
-
-function generateMagicLinkEmail(magicLinkUrl: string): string {
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confirm your benchmrk waitlist spot</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #171717; color: #ffffff;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td align="center" style="padding: 48px 20px;">
-        <table role="presentation" style="max-width: 520px; width: 100%; border-collapse: collapse;">
-
-          <!-- Logo -->
-          <tr>
-            <td align="center" style="padding-bottom: 40px;">
-              <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">benchmrk</h1>
-            </td>
-          </tr>
-
-          <!-- Card -->
-          <tr>
-            <td style="background-color: #1f1f1f; border-radius: 16px; padding: 40px 32px;">
-
-              <h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 600; color: #ffffff; text-align: center;">
-                You're almost in
-              </h2>
-
-              <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 1.6; color: #a1a1a1; text-align: center;">
-                Tap below to confirm your email and lock in your <strong style="color: #3dcde6;">lifetime premium</strong> spot.
-              </p>
-
-              <!-- CTA Button -->
-              <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td align="center" style="padding: 4px 0 28px 0;">
-                    <a href="${magicLinkUrl}" style="display: inline-block; padding: 14px 36px; background-color: #3dcde6; color: #171717; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 8px;">
-                      Confirm my spot
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Divider -->
-              <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 0 0 24px 0;">
-                    <div style="height: 1px; background-color: #2a2a2a;"></div>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Benefits -->
-              <p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 600; color: #3dcde6; text-transform: uppercase; letter-spacing: 1.5px;">
-                What you'll unlock
-              </p>
-
-              <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 6px 0; font-size: 14px; color: #d4d4d4;">
-                    <span style="color: #2dd4a0; margin-right: 8px;">&#10003;</span> AI workout recommendations
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-size: 14px; color: #d4d4d4;">
-                    <span style="color: #2dd4a0; margin-right: 8px;">&#10003;</span> Advanced analytics &amp; insights
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-size: 14px; color: #d4d4d4;">
-                    <span style="color: #2dd4a0; margin-right: 8px;">&#10003;</span> Unlimited workout history
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-size: 14px; color: #d4d4d4;">
-                    <span style="color: #2dd4a0; margin-right: 8px;">&#10003;</span> Every future premium feature
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Expiry -->
-              <p style="margin: 24px 0 0 0; font-size: 12px; color: #525252; text-align: center;">
-                This link expires in 24 hours.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding-top: 32px;">
-              <p style="margin: 0 0 4px 0; font-size: 12px; color: #525252;">
-                &copy; ${new Date().getFullYear()} benchmrk
-              </p>
-              <p style="margin: 0; font-size: 11px; color: #404040;">
-                AI-Powered Fitness Tracking
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `.trim();
-}

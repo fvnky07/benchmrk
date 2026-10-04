@@ -3,18 +3,6 @@
 import { v } from 'convex/values';
 import { query } from './_generated/server';
 
-// NOTE: Count users with active premium (premiumUntil > now)
-export const countPremiumUsers = query({
-  args: {},
-  returns: v.number(),
-  handler: async (ctx) => {
-    const now = Date.now();
-    const users = await ctx.db.query('user').collect();
-    return users.filter((u) => u.premiumUntil != null && u.premiumUntil > now)
-      .length;
-  },
-});
-
 // NOTE: Get a user by their Better Auth user id
 export const getUser = query({
   args: { userId: v.string() },

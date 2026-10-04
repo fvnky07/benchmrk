@@ -19,12 +19,10 @@ lib/
 │   ├── toast.ts       # Toast notification helpers
 │   └── toast-config.tsx # Toast UI configuration
 │
-├── utils/             # General utilities
-│   └── cn.ts          # Tailwind class name merger
+├── workout/           # Workout formatting, labels and hooks
 │
 ├── hooks/             # Custom React hooks
 │   └── use-form-validation.ts
-│
 └── schemas/           # Validation schemas
     └── auth.ts        # Auth-related schemas
 ```
@@ -37,13 +35,12 @@ lib/
 import { authClient, useAuth } from '@/lib/auth';
 import { analytics, identifyUser } from '@/lib/analytics';
 import { showToast, NAV_THEME } from '@/lib/ui';
-import { cn } from '@/lib/utils';
 ```
 
 ### Import from main index
 
 ```ts
-import { authClient, analytics, showToast, cn } from '@/lib';
+import { authClient, analytics, showToast } from '@/lib';
 ```
 
 ## Guidelines
@@ -51,7 +48,7 @@ import { authClient, analytics, showToast, cn } from '@/lib';
 - **auth/**: Authentication, sessions, and user management
 - **analytics/**: Event tracking and user analytics
 - **ui/**: UI configuration, themes, toasts
-- **utils/**: Generic utility functions
+- **workout/**: Workout formatting, labels and hooks
 - **hooks/**: Reusable React hooks
 - **schemas/**: Zod or validation schemas
 

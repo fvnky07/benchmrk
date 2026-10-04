@@ -3,6 +3,8 @@
 // per the official Convex integration docs.
 import { v } from 'convex/values';
 import { query } from './_generated/server';
+import { getIdentityId } from './lib/identity';
+import { findAuthIdentity } from './lib/verifiedEmail';
 
 export {
   authComponent,
@@ -16,6 +18,23 @@ export const getCurrentUser = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     return identity;
+  },
+});
+
+/** The signed-in member's email and whether it is verified. */
+export const getEmailVerification = query({
+  args: {},
+  returns: v.union(
+    v.null(),
+    v.object({ email: v.string(), emailVerified: v.boolean() })
+  ),
+  handler: async (ctx) => {
+    const identityId = await getIdentityId(ctx);
+    if (!identityId) return null;
+    const identity = await findAuthIdentity(ctx, identityId);
+    return identity
+      ? { email: identity.email, emailVerified: identity.emailVerified }
+      : null;
   },
 });
 

@@ -1,12 +1,9 @@
-import '../global.css';
-
 import {
   type AuthClient as ConvexAuthClient,
   ConvexBetterAuthProvider,
 } from '@convex-dev/better-auth/react';
 import { ThemeProvider } from '@react-navigation/native';
 import { api } from '@repo/backend/convex/_generated/api';
-import { PortalHost } from '@rn-primitives/portal';
 import { ConvexProvider, ConvexReactClient, useQuery } from 'convex/react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -78,7 +75,6 @@ function NavigationContent({
               <Stack.Screen name="(auth)" />
             </Stack.Protected>
           </Stack>
-          <PortalHost />
           <Toast config={toastConfig} />
         </ThemeProvider>
       </KeyboardProvider>
