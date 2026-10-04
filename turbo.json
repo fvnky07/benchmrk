@@ -28,7 +28,13 @@
       "cache": false,
       "persistent": true,
       "outputs": [],
-      "env": ["EXPO_PUBLIC_CONVEX_URL", "EXPO_PUBLIC_CONVEX_SITE_URL"]
+      "env": ["EXPO_PUBLIC_CONVEX_URL", "EXPO_PUBLIC_CONVEX_SITE_URL"],
+      "passThroughEnv": [
+        "ANDROID_HOME",
+        "ANDROID_SDK_ROOT",
+        "ANDROID_SERIAL",
+        "JAVA_HOME"
+      ]
     },
     "start": {
       "cache": false,

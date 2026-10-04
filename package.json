@@ -9,7 +9,7 @@
     "build:web": "turbo run build --filter=website",
     "build:ios": "turbo run build:ios --filter=@native/app",
     "build:android": "turbo run build:android --filter=@native/app",
-    "dev": "turbo run dev --parallel",
+    "dev": "node apps/native/scripts/dev-android.mjs --check && turbo run dev --parallel",
     "dev:web": "turbo run dev --filter=website",
     "worktree:setup": "node scripts/setup-worktree.mjs",
     "lint": "biome check .",
