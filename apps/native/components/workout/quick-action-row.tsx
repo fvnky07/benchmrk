@@ -8,12 +8,15 @@ type QuickActionRowProps = {
   actions: readonly { id: QuickActionId; visible: boolean }[];
   /** Handlers for chips that apply here; chips without one aren't shown. */
   handlers: Partial<Record<QuickActionId, () => void>>;
+  /** Counts shown on chips, like the notes on the Note chip. */
+  badges?: Partial<Record<QuickActionId, number>>;
 };
 
 /** The horizontally scrollable chip row under the Exercise title. */
 export function QuickActionRow({
   actions,
   handlers,
+  badges = {},
 }: Readonly<QuickActionRowProps>) {
   return (
     <ScrollView direction="horizontal" showsIndicators={false}>
@@ -22,10 +25,11 @@ export function QuickActionRow({
           const onPress = handlers[id];
           if (!visible || !onPress) return null;
           const { label, icon, iconOnly } = QUICK_ACTIONS[id];
+          const count = badges[id] ?? 0;
           return (
             <QuickActionChip
               key={id}
-              label={label}
+              label={count > 0 ? `${label} · ${count}` : label}
               icon={icon}
               iconOnly={iconOnly}
               onPress={onPress}

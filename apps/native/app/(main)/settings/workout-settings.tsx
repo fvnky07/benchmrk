@@ -144,6 +144,24 @@ export default function WorkoutSettingsScreen() {
         value={settings.restEndSound}
         onValueChange={(restEndSound) => update({ restEndSound })}
       />
+      <ListItem supportingText="In Alternating sets, move to the next Exercise of the round after each Set. You can always stay with one tap.">
+        Auto-advance
+      </ListItem>
+      <Switch
+        disabled={isSaving}
+        label="Move to the next Exercise"
+        value={settings.autoAdvance}
+        onValueChange={(autoAdvance) => update({ autoAdvance })}
+      />
+      <ListItem supportingText="Quiet text beside the progress row, against the Routine's target duration.">
+        Ahead or behind
+      </ListItem>
+      <Switch
+        disabled={isSaving}
+        label="Show ahead or behind"
+        value={settings.aheadBehind}
+        onValueChange={(aheadBehind) => update({ aheadBehind })}
+      />
       <ListItem supportingText="A target for every Set, from your own last Workout. You can also switch them off for one Exercise from its target.">
         Overload targets
       </ListItem>

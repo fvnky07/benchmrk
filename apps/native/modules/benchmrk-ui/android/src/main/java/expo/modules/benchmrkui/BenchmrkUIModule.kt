@@ -50,8 +50,8 @@ private val COMPLETE_DISTANCE = 96.dp
 /**
  * A Set row for Expo UI on Android, where Compose's SwipeToDismissBox can't
  * leave actions revealed: swipe right completes (unlogged Sets), swipe left
- * reveals Duplicate and Delete, and a full left swipe duplicates. TalkBack
- * gets the same actions as custom actions.
+ * reveals Duplicate, Note and Delete, and a full left swipe duplicates.
+ * TalkBack gets the same actions as custom actions.
  */
 class BenchmrkUIModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -60,6 +60,7 @@ class BenchmrkUIModule : Module() {
     View<SwipeRowProps>("SwipeRowView") {
       val onComplete by Event<Unit>()
       val onDuplicate by Event<Unit>()
+      val onNote by Event<Unit>()
       val onDelete by Event<Unit>()
 
       Content { props ->
@@ -67,6 +68,7 @@ class BenchmrkUIModule : Module() {
           props,
           onComplete = { onComplete(Unit) },
           onDuplicate = { onDuplicate(Unit) },
+          onNote = { onNote(Unit) },
           onDelete = { onDelete(Unit) }
         )
       }
@@ -96,13 +98,14 @@ fun FunctionalComposableScope.SwipeRowContent(
   props: SwipeRowProps,
   onComplete: () -> Unit,
   onDuplicate: () -> Unit,
+  onNote: () -> Unit,
   onDelete: () -> Unit
 ) {
   val density = LocalDensity.current
   val scope = rememberCoroutineScope()
   val offset = remember { Animatable(0f) }
   var width by remember { mutableIntStateOf(0) }
-  val actionCount = if (props.canDelete) 2 else 1
+  val actionCount = if (props.canDelete) 3 else 2
   val revealPx = with(density) { (ACTION_WIDTH * actionCount).toPx() }
   val completePx = with(density) { COMPLETE_DISTANCE.toPx() }
   val fullSwipePx = maxOf(revealPx * 1.5f, width * 0.6f)
@@ -121,6 +124,7 @@ fun FunctionalComposableScope.SwipeRowContent(
             add(CustomAccessibilityAction("Complete") { onComplete(); true })
           }
           add(CustomAccessibilityAction("Duplicate") { onDuplicate(); true })
+          add(CustomAccessibilityAction("Note") { onNote(); true })
           if (props.canDelete) {
             add(CustomAccessibilityAction("Delete") { onDelete(); true })
           }
@@ -151,6 +155,10 @@ fun FunctionalComposableScope.SwipeRowContent(
           onClick = { onDuplicate(); settle(0f) },
           modifier = Modifier.width(ACTION_WIDTH).fillMaxHeight()
         ) { Text("Duplicate") }
+        TextButton(
+          onClick = { onNote(); settle(0f) },
+          modifier = Modifier.width(ACTION_WIDTH).fillMaxHeight()
+        ) { Text("Note") }
         if (props.canDelete) {
           TextButton(
             onClick = { onDelete(); settle(0f) },

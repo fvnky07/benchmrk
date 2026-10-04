@@ -7,9 +7,12 @@ import {
   type QueryCtx,
   query,
 } from './_generated/server';
+import { afterBlock, gatherBlocks } from './domain/rounds';
+import { targetDuration } from './domain/time';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { getIdentityId, requireIdentityId } from './lib/identity';
+import { recentDurations } from './lib/time';
 import { readMemberSettings } from './memberSettings';
 
 const DEFAULT_TARGET_SETS = 3;
@@ -67,6 +70,25 @@ async function touch(ctx: MutationCtx, routineId: Id<'routines'>) {
   await ctx.db.patch(routineId, { updatedAt: Date.now() });
 }
 
+const blockOf = (item: Doc<'routineExercises'>) => item.blockId;
+
+/** A block down to one Exercise dissolves. */
+async function dissolveIfAlone(
+  ctx: MutationCtx,
+  routineId: Id<'routines'>,
+  blockId: Id<'routineBlocks'> | undefined
+) {
+  if (!blockId) return;
+  const members = (await routineExercisesOf(ctx, routineId)).filter(
+    (item) => item.blockId === blockId
+  );
+  if (members.length > 1) return;
+  for (const member of members) {
+    await ctx.db.patch(member._id, { blockId: undefined });
+  }
+  await ctx.db.delete(blockId);
+}
+
 function requireName(name: string, code: string): string {
   const trimmed = name.trim();
   if (!trimmed) throw new ConvexError(code);
@@ -103,37 +125,54 @@ export const get = query({
     if (!routine || routine.userId !== userId) return null;
 
     const { defaultRestSeconds } = await readMemberSettings(ctx, userId);
+    const ordered = await routineExercisesOf(ctx, routine._id);
     const exercises = await Promise.all(
-      (await routineExercisesOf(ctx, routine._id)).map(
-        async (routineExercise) => {
-          const exercise = await ctx.db.get(routineExercise.exerciseId);
-          if (!exercise) throw new ConvexError('EXERCISE_NOT_FOUND');
-          return {
-            _id: routineExercise._id,
-            exerciseId: exercise._id,
-            name: exercise.name,
-            slug: exercise.slug,
-            type: exercise.type,
-            equipment: exercise.equipment,
-            targetSets: routineExercise.targetSets,
-            repRangeMin: routineExercise.repRangeMin,
-            repRangeMax: routineExercise.repRangeMax,
-            setRepTargets: routineExercise.setRepTargets,
-            startingWeightKg: routineExercise.startingWeightKg ?? null,
-            stepKg: routineExercise.stepKg,
-            plannedRestSeconds: routineExercise.plannedRestSeconds ?? null,
-            restSeconds:
-              routineExercise.plannedRestSeconds ?? defaultRestSeconds,
-          };
-        }
-      )
+      ordered.map(async (routineExercise, index) => {
+        const exercise = await ctx.db.get(routineExercise.exerciseId);
+        if (!exercise) throw new ConvexError('EXERCISE_NOT_FOUND');
+        const next = ordered[index + 1];
+        return {
+          _id: routineExercise._id,
+          exerciseId: exercise._id,
+          name: exercise.name,
+          slug: exercise.slug,
+          type: exercise.type,
+          equipment: exercise.equipment,
+          targetSets: routineExercise.targetSets,
+          repRangeMin: routineExercise.repRangeMin,
+          repRangeMax: routineExercise.repRangeMax,
+          setRepTargets: routineExercise.setRepTargets,
+          startingWeightKg: routineExercise.startingWeightKg ?? null,
+          stepKg: routineExercise.stepKg,
+          plannedRestSeconds: routineExercise.plannedRestSeconds ?? null,
+          restSeconds: routineExercise.plannedRestSeconds ?? defaultRestSeconds,
+          blockId: routineExercise.blockId ?? null,
+          linkedToNext:
+            routineExercise.blockId !== undefined &&
+            next?.blockId === routineExercise.blockId,
+        };
+      })
     );
+    const blocks = await ctx.db
+      .query('routineBlocks')
+      .withIndex('by_routine', (q) => q.eq('routineId', routine._id))
+      .collect();
 
     return {
       _id: routine._id,
       name: routine.name,
       targetDurationSeconds: routine.targetDurationSeconds ?? null,
+      /** The median of recent Workouts once 3 exist, before any override. */
+      suggestedDurationSeconds: targetDuration(
+        await recentDurations(ctx, routine._id, Number.MAX_SAFE_INTEGER),
+        null
+      ),
       exercises,
+      blocks: blocks.map((block) => ({
+        _id: block._id,
+        plannedRestSeconds: block.plannedRestSeconds ?? null,
+        restSeconds: block.plannedRestSeconds ?? defaultRestSeconds,
+      })),
     };
   },
 });
@@ -195,6 +234,11 @@ export const remove = mutation({
     )) {
       await ctx.db.delete(routineExercise._id);
     }
+    const blocks = await ctx.db
+      .query('routineBlocks')
+      .withIndex('by_routine', (q) => q.eq('routineId', args.routineId))
+      .collect();
+    for (const block of blocks) await ctx.db.delete(block._id);
     await ctx.db.delete(args.routineId);
   },
 });
@@ -319,7 +363,8 @@ export const moveExercise = mutation({
     );
     const toIndex = Math.max(0, Math.min(args.toIndex, ordered.length));
     ordered.splice(toIndex, 0, routineExercise);
-    await renumber(ctx, ordered);
+    // Blocks stay together: a member reorders within its block.
+    await renumber(ctx, gatherBlocks(ordered, blockOf));
     await touch(ctx, routine._id);
   },
 });
@@ -335,9 +380,104 @@ export const removeExercise = mutation({
     );
     await ctx.db.delete(routineExercise._id);
     await renumber(ctx, await routineExercisesOf(ctx, routine._id));
+    await dissolveIfAlone(ctx, routine._id, routineExercise.blockId);
     await ctx.db.patch(routine._id, {
       exerciseCount: routine.exerciseCount - 1,
       updatedAt: Date.now(),
     });
+  },
+});
+
+/**
+ * Links an Exercise into another's Alternating sets block (making one if
+ * needed), right after the block's last member.
+ */
+export const linkExercises = mutation({
+  args: {
+    routineExerciseId: v.id('routineExercises'),
+    withRoutineExerciseId: v.id('routineExercises'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { routine, routineExercise } = await requireOwnedRoutineExercise(
+      ctx,
+      userId,
+      args.routineExerciseId
+    );
+    const { routineExercise: partner } = await requireOwnedRoutineExercise(
+      ctx,
+      userId,
+      args.withRoutineExerciseId
+    );
+    if (
+      partner.routineId !== routine._id ||
+      partner._id === routineExercise._id
+    ) {
+      throw new ConvexError('INVALID_LINK');
+    }
+    if (partner.blockId && partner.blockId === routineExercise.blockId) return;
+
+    const blockId =
+      partner.blockId ??
+      (await ctx.db.insert('routineBlocks', {
+        routineId: routine._id,
+        plannedRestSeconds: partner.plannedRestSeconds,
+      }));
+    if (!partner.blockId) await ctx.db.patch(partner._id, { blockId });
+    await ctx.db.patch(routineExercise._id, { blockId });
+    const ordered = await routineExercisesOf(ctx, routine._id);
+    const moving = ordered.find((item) => item._id === routineExercise._id);
+    if (moving) {
+      await renumber(ctx, afterBlock(ordered, blockOf, blockId, moving));
+    }
+    await dissolveIfAlone(ctx, routine._id, routineExercise.blockId);
+    await touch(ctx, routine._id);
+  },
+});
+
+/** Unlinks an Exercise from its block; it stays right after the block. */
+export const unlinkExercise = mutation({
+  args: { routineExerciseId: v.id('routineExercises') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { routine, routineExercise } = await requireOwnedRoutineExercise(
+      ctx,
+      userId,
+      args.routineExerciseId
+    );
+    const { blockId } = routineExercise;
+    if (!blockId) return;
+    await ctx.db.patch(routineExercise._id, { blockId: undefined });
+    const ordered = await routineExercisesOf(ctx, routine._id);
+    const moving = ordered.find((item) => item._id === routineExercise._id);
+    if (moving) {
+      await renumber(ctx, afterBlock(ordered, blockOf, blockId, moving));
+    }
+    await dissolveIfAlone(ctx, routine._id, blockId);
+    await touch(ctx, routine._id);
+  },
+});
+
+/** A block's planned rest after each round; null uses the default rest. */
+export const setBlockRest = mutation({
+  args: {
+    routineBlockId: v.id('routineBlocks'),
+    seconds: v.union(v.number(), v.null()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const block = await ctx.db.get(args.routineBlockId);
+    if (!block) throw new ConvexError('ROUTINE_NOT_FOUND');
+    await requireOwnedRoutine(ctx, userId, block.routineId);
+    if (
+      args.seconds !== null &&
+      (!Number.isInteger(args.seconds) || args.seconds < 0)
+    ) {
+      throw new ConvexError('INVALID_REST');
+    }
+    await ctx.db.patch(block._id, {
+      plannedRestSeconds: args.seconds ?? undefined,
+    });
+    await touch(ctx, block.routineId);
   },
 });

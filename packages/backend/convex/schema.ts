@@ -36,6 +36,16 @@ export const memberSettingsFields = {
   targetsOffExerciseIds: v.array(v.id('exercises')),
   /** The smallest weight change a smaller jump can use, in kg. */
   smallestIncrementKg: v.number(),
+  /** After a Set in Alternating sets, move to the next Exercise of the round. */
+  autoAdvance: v.boolean(),
+  /** The bar and plate inventory the plate calculator loads from. */
+  plates: v.object({
+    unit: v.union(v.literal('kg'), v.literal('lb')),
+    barWeight: v.number(),
+    plates: v.array(v.object({ weight: v.number(), pairs: v.number() })),
+  }),
+  /** Quiet ahead/behind text beside the progress row. */
+  aheadBehind: v.boolean(),
 };
 
 /** Saved settings hold only what a member changed; reads fill in defaults. */
@@ -52,6 +62,9 @@ export const memberSettingsChangeFields = {
   overloadTargets: v.optional(memberSettingsFields.overloadTargets),
   targetsOffExerciseIds: v.optional(memberSettingsFields.targetsOffExerciseIds),
   smallestIncrementKg: v.optional(memberSettingsFields.smallestIncrementKg),
+  autoAdvance: v.optional(memberSettingsFields.autoAdvance),
+  plates: v.optional(memberSettingsFields.plates),
+  aheadBehind: v.optional(memberSettingsFields.aheadBehind),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -125,6 +138,22 @@ export const overloadBasisValidator = v.object({
   declined: v.boolean(),
 });
 
+/** An Alternating sets round: one Set of every block Exercise with Sets left. */
+export const roundValidator = v.object({
+  number: v.number(),
+  required: v.array(v.id('workoutExercises')),
+  done: v.array(v.id('workoutExercises')),
+  skipped: v.array(v.id('workoutExercises')),
+});
+
+/** A Machine setup's labelled positions. */
+export const machinePositionsValidator = v.object({
+  seat: v.optional(v.number()),
+  back: v.optional(v.number()),
+  pin: v.optional(v.number()),
+  angle: v.optional(v.number()),
+});
+
 export default defineSchema({
   // Waitlist entries; confirming the emailed link creates a Waitlist identity.
   waitlist: defineTable({
@@ -193,7 +222,15 @@ export default defineSchema({
     startingWeightKg: v.optional(v.number()),
     stepKg: v.number(),
     plannedRestSeconds: v.optional(v.number()),
+    /** Its Alternating sets block in this Routine. */
+    blockId: v.optional(v.id('routineBlocks')),
   }).index('by_routine', ['routineId', 'order']),
+
+  // A Routine's Alternating sets blocks, each with its own planned rest.
+  routineBlocks: defineTable({
+    routineId: v.id('routines'),
+    plannedRestSeconds: v.optional(v.number()),
+  }).index('by_routine', ['routineId']),
 
   workouts: defineTable({
     userId: v.string(),
@@ -215,11 +252,14 @@ export default defineSchema({
         startedAt: v.number(),
         plannedSeconds: v.number(),
         adjustedSeconds: v.number(),
+        /** The Set whose completion started it. */
+        afterSetId: v.optional(v.id('sets')),
       })
     ),
   })
     .index('by_user_status', ['userId', 'status'])
-    .index('by_user_started', ['userId', 'startedAt']),
+    .index('by_user_started', ['userId', 'startedAt'])
+    .index('by_routine_status', ['routineId', 'status', 'startedAt']),
 
   // A Workout's Exercises; planning fields are copied from the Routine at start.
   workoutExercises: defineTable({
@@ -237,7 +277,21 @@ export default defineSchema({
     overload: v.optional(overloadBasisValidator),
     /** The Plateau flag was dismissed while this was the newest exposure; it shows again after a newer one. */
     plateauDismissed: v.optional(v.boolean()),
+    /** Its Alternating sets block in this Workout. */
+    blockId: v.optional(v.id('workoutBlocks')),
   }).index('by_workout', ['workoutId', 'order']),
+
+  // A Workout's Alternating sets blocks: planned rest, the open round and the
+  // rounds credited so far. Membership is on the Workout Exercises.
+  workoutBlocks: defineTable({
+    workoutId: v.id('workouts'),
+    routineBlockId: v.optional(v.id('routineBlocks')),
+    plannedRestSeconds: v.optional(v.number()),
+    round: v.optional(roundValidator),
+    completedRounds: v.array(
+      v.object({ ...roundValidator.fields, completedAt: v.number() })
+    ),
+  }).index('by_workout', ['workoutId']),
 
   sets: defineTable({
     userId: v.string(),
@@ -266,11 +320,49 @@ export default defineSchema({
         distanceMeters: v.optional(v.number()),
       })
     ),
+    /** First edit: where working time starts. */
+    firstTouchedAt: v.optional(v.number()),
+    /** Completed within 10 s of another Set: out of per-Set stats. */
+    loggedTogether: v.optional(v.boolean()),
+    /** The rest that started after this Set, kept current until it ended. */
+    restAfter: v.optional(
+      v.object({ plannedSeconds: v.number(), endsAt: v.number() })
+    ),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])
     .index('by_workout', ['workoutId'])
     .index('by_user_exercise', ['userId', 'exerciseId'])
     .index('by_userId', ['userId']),
+
+  // A member's note, attached to exactly one target: a Set, an Exercise (a
+  // standing note shown every time it comes up) or a Workout.
+  notes: defineTable({
+    userId: v.string(),
+    kind: v.union(
+      v.literal('set'),
+      v.literal('exercise'),
+      v.literal('workout')
+    ),
+    setId: v.optional(v.id('sets')),
+    exerciseId: v.optional(v.id('exercises')),
+    /** The Workout of a Workout note, and of a Set note for listing. */
+    workoutId: v.optional(v.id('workouts')),
+    text: v.string(),
+    updatedAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_user_workout', ['userId', 'workoutId'])
+    .index('by_user_exercise', ['userId', 'kind', 'exerciseId'])
+    .index('by_set', ['setId']),
+
+  // One Machine setup per member per machine or cable Exercise.
+  machineSetups: defineTable({
+    userId: v.string(),
+    exerciseId: v.id('exercises'),
+    positions: machinePositionsValidator,
+    custom: v.array(v.object({ label: v.string(), value: v.string() })),
+    updatedAt: v.number(),
+  }).index('by_user_exercise', ['userId', 'exerciseId']),
 
   // Comments on exercises
   exerciseComments: defineTable({

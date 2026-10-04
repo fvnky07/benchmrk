@@ -1,6 +1,7 @@
-// Mid-Workout structure changes (remove, reorder, skip, swap) and saving them
-// back to the Routine at finish. Changes apply to this Workout only until the
-// member saves; saving applies exactly the plan the finish screen showed.
+// Mid-Workout structure changes (remove, reorder, skip, swap, link and unlink
+// Alternating sets) and saving them back to the Routine at finish. Changes
+// apply to this Workout only until the member saves; saving applies exactly
+// the plan the finish screen showed.
 import { ConvexError, v } from 'convex/values';
 
 import type { Doc, Id } from './_generated/dataModel';
@@ -10,10 +11,12 @@ import {
   type QueryCtx,
   query,
 } from './_generated/server';
+import { afterBlock, gatherBlocks, joinRound } from './domain/rounds';
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { applyOverloadTargets } from './lib/overload';
+import { roundExercisesOf, settleBlock } from './lib/rounds';
 import {
   requireActive,
   requireOwnedWorkout,
@@ -23,7 +26,10 @@ import {
 } from './lib/workoutData';
 import { workoutMutation } from './lib/workoutMutation';
 import { readMemberSettings } from './memberSettings';
+import { deleteSetNote } from './notes';
 import { routineExercisesOf } from './routines';
+
+const blockOf = (item: { blockId?: string }) => item.blockId;
 
 async function requireNothingLogged(
   ctx: QueryCtx,
@@ -47,6 +53,26 @@ async function writeOrder(
   }
 }
 
+/**
+ * After a member left a block: its open round settles, and a block down to
+ * one Exercise dissolves (its credited rounds stay on the block).
+ */
+async function afterLeaving(
+  ctx: MutationCtx,
+  workoutId: Id<'workouts'>,
+  blockId: Id<'workoutBlocks'> | undefined
+) {
+  if (!blockId) return;
+  await settleBlock(ctx, workoutId, blockId);
+  const members = (await workoutExercisesOf(ctx, workoutId)).filter(
+    (item) => item.blockId === blockId
+  );
+  const [alone] = members;
+  if (members.length === 1 && alone) {
+    await ctx.db.patch(alone._id, { blockId: undefined });
+  }
+}
+
 /** Removes an Exercise with nothing logged from this Workout. */
 export const removeExercise = workoutMutation({
   args: { workoutExerciseId: v.id('workoutExercises') },
@@ -60,6 +86,7 @@ export const removeExercise = workoutMutation({
     requireActive(workout);
     for (const set of await requireNothingLogged(ctx, workoutExercise._id)) {
       await ctx.db.delete(set._id);
+      await deleteSetNote(ctx, set._id);
     }
     await ctx.db.delete(workoutExercise._id);
     await writeOrder(
@@ -68,10 +95,14 @@ export const removeExercise = workoutMutation({
         (item) => item._id !== workoutExercise._id
       )
     );
+    await afterLeaving(ctx, workout._id, workoutExercise.blockId);
   },
 });
 
-/** Moves an Exercise to `toIndex` in this Workout's order. */
+/**
+ * Moves an Exercise to `toIndex` in this Workout's order. Blocks stay
+ * together: a member reorders within its block, and others can't split one.
+ */
 export const moveExercise = workoutMutation({
   args: { workoutExerciseId: v.id('workoutExercises'), toIndex: v.number() },
   handler: async (ctx, args) => {
@@ -89,11 +120,17 @@ export const moveExercise = workoutMutation({
       0,
       Math.min(Math.trunc(args.toIndex), others.length)
     );
-    await writeOrder(ctx, [
-      ...others.slice(0, toIndex),
-      workoutExercise,
-      ...others.slice(toIndex),
-    ]);
+    await writeOrder(
+      ctx,
+      gatherBlocks(
+        [
+          ...others.slice(0, toIndex),
+          workoutExercise,
+          ...others.slice(toIndex),
+        ],
+        blockOf
+      )
+    );
   },
 });
 
@@ -111,6 +148,107 @@ export const setSkipped = workoutMutation({
     await ctx.db.patch(workoutExercise._id, {
       skipped: args.skipped || undefined,
     });
+    if (args.skipped) {
+      await settleBlock(ctx, workout._id, workoutExercise.blockId);
+    } else {
+      await joinOpenRound(ctx, workout._id, workoutExercise._id);
+    }
+  },
+});
+
+/** An Exercise that (re)joins a block joins its open round as pending. */
+async function joinOpenRound(
+  ctx: MutationCtx,
+  workoutId: Id<'workouts'>,
+  workoutExerciseId: Id<'workoutExercises'>
+) {
+  const workoutExercise = await ctx.db.get(workoutExerciseId);
+  const block = workoutExercise?.blockId
+    ? await ctx.db.get(workoutExercise.blockId)
+    : null;
+  if (!block?.round) return;
+  const joining = (await roundExercisesOf(ctx, workoutId)).find(
+    (item) => item.id === workoutExerciseId
+  );
+  if (!joining) return;
+  await ctx.db.patch(block._id, {
+    round: joinRound(block.round, joining) ?? undefined,
+  });
+}
+
+/**
+ * Links an Exercise into another's Alternating sets block for this Workout,
+ * right after its last member. Logged Sets and credited rounds stay; it joins
+ * the open round as pending, and the edit never starts rest.
+ */
+export const linkExercise = workoutMutation({
+  args: {
+    workoutExerciseId: v.id('workoutExercises'),
+    withWorkoutExerciseId: v.id('workoutExercises'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.workoutExerciseId
+    );
+    const { workoutExercise: partner } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.withWorkoutExerciseId
+    );
+    requireActive(workout);
+    if (
+      partner.workoutId !== workout._id ||
+      partner._id === workoutExercise._id
+    ) {
+      throw new ConvexError('INVALID_LINK');
+    }
+    if (partner.blockId && partner.blockId === workoutExercise.blockId) return;
+
+    const blockId =
+      partner.blockId ??
+      (await ctx.db.insert('workoutBlocks', {
+        workoutId: workout._id,
+        plannedRestSeconds: partner.plannedRestSeconds,
+        completedRounds: [],
+      }));
+    if (!partner.blockId) await ctx.db.patch(partner._id, { blockId });
+    await ctx.db.patch(workoutExercise._id, { blockId });
+    const ordered = await workoutExercisesOf(ctx, workout._id);
+    const moving = ordered.find((item) => item._id === workoutExercise._id);
+    if (moving) {
+      await writeOrder(ctx, afterBlock(ordered, blockOf, blockId, moving));
+    }
+    await afterLeaving(ctx, workout._id, workoutExercise.blockId);
+    await joinOpenRound(ctx, workout._id, workoutExercise._id);
+  },
+});
+
+/**
+ * Unlinks an Exercise from its block for this Workout; it carries on alone
+ * right after the block. Logged Sets and credited rounds stay.
+ */
+export const unlinkExercise = workoutMutation({
+  args: { workoutExerciseId: v.id('workoutExercises') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.workoutExerciseId
+    );
+    requireActive(workout);
+    const { blockId } = workoutExercise;
+    if (!blockId) return;
+    await ctx.db.patch(workoutExercise._id, { blockId: undefined });
+    const ordered = await workoutExercisesOf(ctx, workout._id);
+    const moving = ordered.find((item) => item._id === workoutExercise._id);
+    if (moving) {
+      await writeOrder(ctx, afterBlock(ordered, blockOf, blockId, moving));
+    }
+    await afterLeaving(ctx, workout._id, blockId);
   },
 });
 
@@ -155,7 +293,13 @@ export const swapExercise = workoutMutation({
   },
 });
 
-type Shape = { name: string; sets: number; restSeconds: number | null };
+type Shape = {
+  name: string;
+  sets: number;
+  restSeconds: number | null;
+  /** In an Alternating sets block with the next Exercise. */
+  linkedToNext: boolean;
+};
 
 type StructureChange =
   | { kind: 'added'; exercise: string }
@@ -168,6 +312,14 @@ type StructureChange =
       from: number | null;
       to: number | null;
     }
+  | { kind: 'linked'; exercises: string[] }
+  | { kind: 'unlinked'; exercises: string[] }
+  | {
+      kind: 'blockRest';
+      exercises: string[];
+      from: number | null;
+      to: number | null;
+    }
   | { kind: 'order' };
 
 /** One entry of the Routine as it would be after saving. */
@@ -176,6 +328,38 @@ type PlannedEntry = {
   workoutExercise: Doc<'workoutExercises'>;
   routineExercise: Doc<'routineExercises'> | null;
 };
+
+/** Blocks of two or more, in order. */
+function blocksOf<Item>(
+  items: readonly Item[],
+  blockIdOf: (item: Item) => string | undefined
+): Item[][] {
+  const groups = new Map<string, Item[]>();
+  for (const item of items) {
+    const blockId = blockIdOf(item);
+    if (blockId) groups.set(blockId, [...(groups.get(blockId) ?? []), item]);
+  }
+  return [...groups.values()].filter((group) => group.length > 1);
+}
+
+/** Which items are linked with the next one in a block of two or more. */
+function linkedToNext<Item>(
+  items: readonly Item[],
+  blockIdOf: (item: Item) => string | undefined
+): boolean[] {
+  const linked = new Set(blocksOf(items, blockIdOf).flat());
+  return items.map((item, index) => {
+    const next = items[index + 1];
+    return (
+      linked.has(item) &&
+      next !== undefined &&
+      blockIdOf(next) === blockIdOf(item)
+    );
+  });
+}
+
+const sameMembers = (a: ReadonlySet<string>, b: ReadonlySet<string>) =>
+  a.size === b.size && [...a].every((key) => b.has(key));
 
 /**
  * Compares the Workout with its Routine. Skipped Exercises keep their Routine
@@ -206,6 +390,7 @@ async function structurePlan(ctx: QueryCtx, workout: Doc<'workouts'>) {
             name: await nameOf(routineExercise.exerciseId),
             sets: routineExercise.targetSets,
             restSeconds: routineExercise.plannedRestSeconds ?? null,
+            linkedToNext: false,
           },
         });
       }
@@ -219,6 +404,7 @@ async function structurePlan(ctx: QueryCtx, workout: Doc<'workouts'>) {
         (set) => set.type !== 'warmup'
       ).length,
       restSeconds: workoutExercise.plannedRestSeconds ?? null,
+      linkedToNext: false,
     };
     if (shape.sets === 0) continue;
     planned.push({ workoutExercise, routineExercise, shape });
@@ -251,6 +437,14 @@ async function structurePlan(ctx: QueryCtx, workout: Doc<'workouts'>) {
       });
     }
   }
+  const plannedBlockOf = (entry: PlannedEntry) => entry.workoutExercise.blockId;
+  for (const [index, linked] of linkedToNext(
+    planned,
+    plannedBlockOf
+  ).entries()) {
+    const entry = planned[index];
+    if (entry) entry.shape.linkedToNext = linked;
+  }
 
   const kept = new Set(
     planned.flatMap((entry) =>
@@ -274,16 +468,68 @@ async function structurePlan(ctx: QueryCtx, workout: Doc<'workouts'>) {
     changes.push({ kind: 'order' });
   }
 
+  // Alternating sets blocks, compared by who is in them.
+  const routineBlockOf = (item: Doc<'routineExercises'>) => item.blockId;
+  const beforeBlocks = await Promise.all(
+    blocksOf(routineExercises, routineBlockOf).map(async (members) => ({
+      keys: new Set<string>(members.map((member) => member._id)),
+      names: await Promise.all(
+        members.map((member) => nameOf(member.exerciseId))
+      ),
+      restSeconds: members[0]?.blockId
+        ? ((await ctx.db.get(members[0].blockId))?.plannedRestSeconds ?? null)
+        : null,
+    }))
+  );
+  const afterBlocks = await Promise.all(
+    blocksOf(planned, plannedBlockOf).map(async (members) => {
+      const blockId = members[0]?.workoutExercise.blockId;
+      return {
+        members,
+        workoutBlock: blockId ? await ctx.db.get(blockId) : null,
+        keys: new Set<string>(
+          members.map(
+            (entry) => entry.routineExercise?._id ?? entry.workoutExercise._id
+          )
+        ),
+        names: members.map((entry) => entry.shape.name),
+      };
+    })
+  );
+  for (const after of afterBlocks) {
+    const before = beforeBlocks.find((item) =>
+      sameMembers(item.keys, after.keys)
+    );
+    const restSeconds = after.workoutBlock?.plannedRestSeconds ?? null;
+    if (!before) {
+      changes.push({ kind: 'linked', exercises: after.names });
+    } else if (before.restSeconds !== restSeconds) {
+      changes.push({
+        kind: 'blockRest',
+        exercises: after.names,
+        from: before.restSeconds,
+        to: restSeconds,
+      });
+    }
+  }
+  for (const before of beforeBlocks) {
+    if (!afterBlocks.some((after) => sameMembers(after.keys, before.keys))) {
+      changes.push({ kind: 'unlinked', exercises: before.names });
+    }
+  }
+
+  const beforeLinks = linkedToNext(routineExercises, routineBlockOf);
   const before: Shape[] = [];
-  for (const routineExercise of routineExercises) {
+  for (const [index, routineExercise] of routineExercises.entries()) {
     before.push({
       name: await nameOf(routineExercise.exerciseId),
       sets: routineExercise.targetSets,
       restSeconds: routineExercise.plannedRestSeconds ?? null,
+      linkedToNext: beforeLinks[index] ?? false,
     });
   }
 
-  return { routine, planned, removed, before, changes };
+  return { routine, planned, removed, before, afterBlocks, changes };
 }
 
 /** The before/after view for "Save changes to Routine"; null without a Routine. */
@@ -316,15 +562,44 @@ export const saveToRoutine = mutation({
     }
     const plan = await structurePlan(ctx, workout);
     if (!plan) throw new ConvexError('ROUTINE_NOT_FOUND');
+    const routineId = plan.routine._id;
+
+    // Blocks first, so every Routine Exercise can point at its block.
+    const existingBlocks = await ctx.db
+      .query('routineBlocks')
+      .withIndex('by_routine', (q) => q.eq('routineId', routineId))
+      .collect();
+    const keptBlocks = new Set<Id<'routineBlocks'>>();
+    const blockFor = new Map<Id<'workoutExercises'>, Id<'routineBlocks'>>();
+    for (const after of plan.afterBlocks) {
+      const plannedRestSeconds = after.workoutBlock?.plannedRestSeconds;
+      const reused = existingBlocks.find(
+        (block) =>
+          block._id === after.workoutBlock?.routineBlockId &&
+          !keptBlocks.has(block._id)
+      );
+      const blockId =
+        reused?._id ??
+        (await ctx.db.insert('routineBlocks', {
+          routineId,
+          plannedRestSeconds,
+        }));
+      if (reused) await ctx.db.patch(reused._id, { plannedRestSeconds });
+      keptBlocks.add(blockId);
+      for (const entry of after.members) {
+        blockFor.set(entry.workoutExercise._id, blockId);
+      }
+    }
 
     for (const routineExercise of plan.removed) {
       await ctx.db.delete(routineExercise._id);
     }
     for (const [order, entry] of plan.planned.entries()) {
       const { workoutExercise, routineExercise, shape } = entry;
+      const blockId = blockFor.get(workoutExercise._id);
       if (!routineExercise) {
         const routineExerciseId = await ctx.db.insert('routineExercises', {
-          routineId: plan.routine._id,
+          routineId,
           exerciseId: workoutExercise.exerciseId,
           order,
           targetSets: shape.sets,
@@ -333,6 +608,7 @@ export const saveToRoutine = mutation({
           setRepTargets: [],
           stepKg: workoutExercise.stepKg,
           plannedRestSeconds: shape.restSeconds ?? undefined,
+          blockId,
         });
         await ctx.db.patch(workoutExercise._id, { routineExerciseId });
         continue;
@@ -343,11 +619,15 @@ export const saveToRoutine = mutation({
         targetSets: shape.sets,
         setRepTargets: routineExercise.setRepTargets.slice(0, shape.sets),
         plannedRestSeconds: shape.restSeconds ?? undefined,
+        blockId,
         ...(swapped && {
           exerciseId: workoutExercise.exerciseId,
           stepKg: workoutExercise.stepKg,
         }),
       });
+    }
+    for (const block of existingBlocks) {
+      if (!keptBlocks.has(block._id)) await ctx.db.delete(block._id);
     }
     await ctx.db.patch(plan.routine._id, {
       exerciseCount: plan.planned.length,
