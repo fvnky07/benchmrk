@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "private": true,
   "scripts": {
-    "dev": "expo start",
+    "dev": "node scripts/dev-android.mjs",
     "start": "expo start",
     "build": "expo prebuild --clean && expo run:ios && expo run:android && expo export:web",
     "build:ios": "expo run:ios --device 'iPhone 16e' --configuration Debug --no-bundler",
