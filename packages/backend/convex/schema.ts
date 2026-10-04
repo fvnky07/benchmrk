@@ -1,6 +1,17 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
+/** Configurable chips in the Workout's quick action row (the Group chip isn't). */
+export const quickActionIdValidator = v.union(
+  v.literal('wand'),
+  v.literal('addSet'),
+  v.literal('info'),
+  v.literal('swap'),
+  v.literal('note'),
+  v.literal('setup'),
+  v.literal('plates')
+);
+
 export const memberSettingsFields = {
   appearance: v.union(
     v.literal('system'),
@@ -12,6 +23,26 @@ export const memberSettingsFields = {
   defaultRestSeconds: v.number(),
   haptics: v.boolean(),
   analyticsOptOut: v.boolean(),
+  quickActions: v.array(
+    v.object({ id: quickActionIdValidator, visible: v.boolean() })
+  ),
+  /** The first-run "swipe right on a Set" hint was dismissed. */
+  swipeHintDismissed: v.boolean(),
+  /** Rest-end notifications play a sound. */
+  restEndSound: v.boolean(),
+};
+
+/** Saved settings hold only what a member changed; reads fill in defaults. */
+export const memberSettingsChangeFields = {
+  appearance: v.optional(memberSettingsFields.appearance),
+  units: v.optional(memberSettingsFields.units),
+  effortScale: v.optional(memberSettingsFields.effortScale),
+  defaultRestSeconds: v.optional(memberSettingsFields.defaultRestSeconds),
+  haptics: v.optional(memberSettingsFields.haptics),
+  analyticsOptOut: v.optional(memberSettingsFields.analyticsOptOut),
+  quickActions: v.optional(memberSettingsFields.quickActions),
+  swipeHintDismissed: v.optional(memberSettingsFields.swipeHintDismissed),
+  restEndSound: v.optional(memberSettingsFields.restEndSound),
 };
 
 export const exerciseTypeValidator = v.union(
@@ -66,7 +97,7 @@ export default defineSchema({
 
   memberSettings: defineTable({
     userId: v.string(),
-    ...memberSettingsFields,
+    ...memberSettingsChangeFields,
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
@@ -121,6 +152,14 @@ export default defineSchema({
     finishReason: v.optional(
       v.union(v.literal('all_sets_done'), v.literal('terminated_early'))
     ),
+    /** Rest between Sets; Groups and the live status read it. */
+    rest: v.optional(
+      v.object({
+        startedAt: v.number(),
+        plannedSeconds: v.number(),
+        adjustedSeconds: v.number(),
+      })
+    ),
   })
     .index('by_user_status', ['userId', 'status'])
     .index('by_user_started', ['userId', 'startedAt']),
@@ -135,6 +174,8 @@ export default defineSchema({
     repRangeMax: v.number(),
     stepKg: v.number(),
     plannedRestSeconds: v.optional(v.number()),
+    /** Skipped for this Workout: its unlogged Sets stop counting. */
+    skipped: v.optional(v.boolean()),
   }).index('by_workout', ['workoutId', 'order']),
 
   sets: defineTable({
@@ -148,6 +189,8 @@ export default defineSchema({
     reps: v.optional(v.number()),
     durationSeconds: v.optional(v.number()),
     distanceMeters: v.optional(v.number()),
+    /** Effort, stored canonically as RPE in 0.5 steps. */
+    rpe: v.optional(v.number()),
     completedAt: v.optional(v.number()),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])

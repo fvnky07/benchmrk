@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { NativeScreen } from '@/components/native/native-screen';
+import { SaveToRoutine } from '@/components/workout/save-to-routine';
 import { formatClock } from '@/lib/workout/format';
 
 export default function WorkoutFinishedScreen() {
@@ -88,6 +89,7 @@ export default function WorkoutFinishedScreen() {
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>Could not change</ListItem>
       ) : null}
+      <SaveToRoutine workoutId={workoutId} />
       <Button label="Done" onPress={() => router.dismissTo('/workout')} />
     </NativeScreen>
   );

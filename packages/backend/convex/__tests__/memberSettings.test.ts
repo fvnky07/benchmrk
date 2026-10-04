@@ -3,6 +3,16 @@ import { describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { createTest } from './harness.testing';
 
+const DEFAULT_QUICK_ACTIONS = [
+  { id: 'wand', visible: true },
+  { id: 'addSet', visible: true },
+  { id: 'info', visible: true },
+  { id: 'swap', visible: true },
+  { id: 'note', visible: true },
+  { id: 'setup', visible: true },
+  { id: 'plates', visible: false },
+];
+
 const DEFAULTS = {
   appearance: 'system',
   units: 'kg',
@@ -10,6 +20,9 @@ const DEFAULTS = {
   defaultRestSeconds: 60,
   haptics: true,
   analyticsOptOut: false,
+  quickActions: DEFAULT_QUICK_ACTIONS,
+  swipeHintDismissed: false,
+  restEndSound: true,
 };
 
 describe('member settings', () => {
@@ -43,6 +56,7 @@ describe('member settings', () => {
     });
 
     expect(await member.query(api.memberSettings.get, {})).toEqual({
+      ...DEFAULTS,
       appearance: 'dark',
       units: 'lb',
       effortScale: 'RIR',
@@ -83,5 +97,44 @@ describe('member settings', () => {
     await expect(
       member.mutation(api.memberSettings.update, { defaultRestSeconds: 12.5 })
     ).rejects.toThrow('INVALID_DEFAULT_REST');
+  });
+
+  test('keep the quick action chips in the order and visibility the member chose', async () => {
+    const member = createTest().withIdentity({ subject: 'member-a' });
+    const chosen = [
+      { id: 'info', visible: true },
+      { id: 'addSet', visible: true },
+      { id: 'plates', visible: true },
+      { id: 'wand', visible: false },
+      { id: 'swap', visible: true },
+      { id: 'note', visible: false },
+      { id: 'setup', visible: true },
+    ] as const;
+
+    await member.mutation(api.memberSettings.update, {
+      quickActions: [...chosen],
+    });
+
+    expect(
+      (await member.query(api.memberSettings.get, {}))?.quickActions
+    ).toEqual(chosen);
+  });
+
+  test('refuse a quick action list that drops or repeats a chip', async () => {
+    const member = createTest().withIdentity({ subject: 'member-a' });
+
+    await expect(
+      member.mutation(api.memberSettings.update, {
+        quickActions: DEFAULT_QUICK_ACTIONS.slice(1) as never,
+      })
+    ).rejects.toThrow('INVALID_QUICK_ACTIONS');
+    await expect(
+      member.mutation(api.memberSettings.update, {
+        quickActions: [
+          ...DEFAULT_QUICK_ACTIONS.slice(0, 6),
+          { id: 'wand', visible: false },
+        ] as never,
+      })
+    ).rejects.toThrow('INVALID_QUICK_ACTIONS');
   });
 });
