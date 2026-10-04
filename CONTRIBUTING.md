@@ -81,19 +81,34 @@ done; the page promises both.
 
 ## Running the apps
 
-```bash
-# Backend (interactive — keep this open in its own terminal)
-cd packages/backend && pnpm run dev
+`pnpm run dev` from the repo root starts the Convex backend and the website. It also builds the native development client, installs it on the Android phone connected over wireless debugging and launches it, with JavaScript served from this checkout.
 
-# Everything else, in parallel, from the repo root
+```bash
 pnpm run dev
 
 # Or one at a time
 pnpm run dev:web                                  # Next.js website
-cd apps/native && pnpm run dev                    # Expo dev server
+cd packages/backend && pnpm run dev               # Convex backend (interactive the first time)
+cd apps/native && pnpm run dev                    # Native app on the connected Android phone
+cd apps/native && pnpm start                      # Expo dev server only: QR code, iOS simulator
 ```
 
-Open `http://localhost:3000` for the web app. For native, the `pnpm run dev` script in `apps/native` runs `expo start` under the hood — scan the Expo QR code it prints, or press `i` / `a` to launch the iOS or Android simulator.
+Before anything starts, `pnpm run dev` checks two things, and stops with instructions if either fails:
+
+- an Android phone is connected over adb;
+- nothing else holds Metro's port, 8081.
+
+To connect a phone the first time:
+
+1. On the phone, open Settings → System → Developer options → Wireless debugging.
+2. Tap "Pair device with pairing code".
+3. Run `adb pair <IP:port> <code>`.
+
+Paired phones reconnect automatically while Wireless debugging is on and the phone shares this computer's Wi-Fi. If several phones are connected, choose one with `ANDROID_SERIAL=<serial> pnpm run dev`.
+
+`apps/native/android` is generated. The first run, and any run after the native config changes (app config, config plugins or native dependencies), regenerates it with a clean `expo prebuild`. Other runs rebuild incrementally with Gradle.
+
+Open `http://localhost:3000` for the web app.
 
 The shared Exercise catalog lives in `packages/backend/convex/lib/exerciseCatalog.ts`. Seed it into a new deployment once with `pnpm -F @repo/backend exec convex run init:seed`. Seeding only adds missing Exercises and never rewrites one, and after seeding the database is the source of truth, so catalog changes must only ever add Exercises.
 
@@ -161,7 +176,7 @@ benchmrk/
 
 | Command | What it does |
 |---------|-------------|
-| `pnpm run dev` | Start all apps in parallel |
+| `pnpm run dev` | Backend, website, and the native app built and launched on the connected Android phone |
 | `pnpm run dev:web` | Website only |
 | `pnpm run build` | Build all packages |
 | `pnpm run build:web` | Build website |

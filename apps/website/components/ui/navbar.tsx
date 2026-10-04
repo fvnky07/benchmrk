@@ -23,27 +23,31 @@ import {
 import { EASE } from '@/lib/animation-config';
 import { cn } from '@/lib/utils';
 
-// Simple logo component for the navbar
+// Default logo for the navbar: the benchmrk app icon (see app/icon.svg)
 const Logo = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
-      aria-label="Logo"
+      aria-label="benchmrk"
       role="img"
       fill="none"
       height="1em"
-      viewBox="0 0 324 323"
+      viewBox="0 0 1024 1024"
       width="1em"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <rect fill="currentColor" height="323" rx="161.5" width="323" x="0.5" />
-      <circle
-        cx="162"
-        cy="161.5"
-        fill="white"
-        r="60"
-        className="dark:fill-black"
+      <rect width="1024" height="1024" rx="260" fill="#28E2A4" />
+      <path
+        d="M480 79.013C480 72.6104 487.147 68.8019 492.462 72.3726L668.462 190.623C670.673 192.109 672 194.598 672 197.263V512.5V827.719C672 830.393 670.663 832.891 668.438 834.375L492.438 951.708C487.121 955.253 480 951.441 480 945.052V79.013Z"
+        fill="black"
       />
+      <path
+        d="M704 460.31C704 454.521 709.959 450.648 715.249 453L891.249 531.222C894.138 532.506 896 535.371 896 538.532V945.052C896 951.441 888.879 955.253 883.562 951.708L707.562 834.375C705.337 832.891 704 830.393 704 827.719V460.31Z"
+        fill="black"
+      />
+      <rect x="320" y="128" width="128" height="768" rx="16" fill="black" />
+      <rect x="160" y="256" width="128" height="512" rx="16" fill="black" />
+      <rect x="124" y="448" width="221" height="128" rx="24" fill="black" />
     </svg>
   );
 };

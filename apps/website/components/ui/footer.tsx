@@ -7,7 +7,7 @@ import Link from 'next/link';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
-import LogoSvg from '@/public/logo.svg';
+import LogoSvg from '@/public/logo-light.svg';
 
 import { Button } from './button';
 import { DotPattern } from './dot-pattern';
