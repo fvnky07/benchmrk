@@ -13,6 +13,7 @@ import {
 import { defaultStepKg } from './domain/units';
 import { requireVisibleExercise } from './lib/exercises';
 import { getIdentityId, requireIdentityId } from './lib/identity';
+import { applyOverloadTargets } from './lib/overload';
 import {
   requireActive,
   requireOwnedWorkout,
@@ -113,7 +114,10 @@ export const setSkipped = workoutMutation({
   },
 });
 
-/** Swaps an Exercise with nothing logged for another, keeping its Sets. */
+/**
+ * Swaps an Exercise with nothing logged for another. Its Sets stay, cleared of
+ * the old Exercise's values, and get the new Exercise's Overload targets.
+ */
 export const swapExercise = workoutMutation({
   args: {
     workoutExerciseId: v.id('workoutExercises'),
@@ -136,8 +140,18 @@ export const swapExercise = workoutMutation({
       stepKg: defaultStepKg(exercise.equipment, units),
     });
     for (const set of sets) {
-      await ctx.db.patch(set._id, { exerciseId: exercise._id });
+      await ctx.db.patch(set._id, {
+        exerciseId: exercise._id,
+        weightKg: undefined,
+        reps: undefined,
+        durationSeconds: undefined,
+        distanceMeters: undefined,
+        target: undefined,
+        fromTarget: undefined,
+      });
     }
+    const swapped = await ctx.db.get(workoutExercise._id);
+    if (swapped) await applyOverloadTargets(ctx, swapped);
   },
 });
 

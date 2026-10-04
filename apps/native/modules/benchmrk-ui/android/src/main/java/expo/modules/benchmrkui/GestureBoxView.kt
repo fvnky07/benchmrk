@@ -13,9 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
 import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
@@ -30,7 +34,9 @@ data class GestureBoxAction(
 
 data class GestureBoxProps(
   val label: String = "",
-  val actions: List<GestureBoxAction> = emptyList()
+  val actions: List<GestureBoxAction> = emptyList(),
+  val swipeable: Boolean = true,
+  val longPressable: Boolean = true
 ) : ComposeProps
 
 data class GestureBoxSwipe(@Field val direction: Int = 0) : Record
@@ -41,8 +47,8 @@ private val SWIPE_DISTANCE = 32.dp
 
 /**
  * Hosts Expo UI children with the gestures Expo UI doesn't expose on Android:
- * tap, long-press and a horizontal swipe (direction 1 = right, -1 = left).
- * Screen readers get the label and the named actions instead.
+ * tap, and when enabled long-press and a horizontal swipe (direction 1 =
+ * right, -1 = left). Screen readers get the label and the named actions.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -58,26 +64,37 @@ fun FunctionalComposableScope.GestureBoxContent(
 
   Box(
     Modifier
-      .semantics {
+      // Like iOS's accessibilityElement(children: .ignore): one element that
+      // announces the label, not the children's text.
+      .clearAndSetSemantics {
         contentDescription = props.label
+        role = Role.Button
+        onClick { onTap(); true }
+        if (props.longPressable) onLongClick { onLongPress(); true }
         customActions = props.actions.map { action ->
           CustomAccessibilityAction(action.label) { onAction(action.id); true }
         }
       }
-      .combinedClickable(onClick = onTap, onLongClick = onLongPress)
-      .pointerInput(Unit) {
-        detectHorizontalDragGestures(
-          onDragStart = { dragged = 0f },
-          onDragEnd = {
-            if (dragged >= swipePx) onSwipe(1)
-            if (dragged <= -swipePx) onSwipe(-1)
-          },
-          onHorizontalDrag = { change, amount ->
-            change.consume()
-            dragged += amount
-          }
-        )
-      }
+      .combinedClickable(
+        onClick = onTap,
+        onLongClick = if (props.longPressable) onLongPress else null
+      )
+      .then(
+        if (!props.swipeable) Modifier
+        else Modifier.pointerInput(Unit) {
+          detectHorizontalDragGestures(
+            onDragStart = { dragged = 0f },
+            onDragEnd = {
+              if (dragged >= swipePx) onSwipe(1)
+              if (dragged <= -swipePx) onSwipe(-1)
+            },
+            onHorizontalDrag = { change, amount ->
+              change.consume()
+              dragged += amount
+            }
+          )
+        }
+      )
   ) {
     Children(UIComposableScope())
   }

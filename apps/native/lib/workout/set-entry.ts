@@ -129,6 +129,24 @@ export function draftToStored(
   }
 }
 
+/** Only edited drafts are sent; an edited-empty field explicitly clears it. */
+export function draftsToPatch(
+  fields: readonly SetField[],
+  drafts: Partial<Record<SetField, string>> | undefined,
+  unit: WeightUnit
+): Partial<StoredValues> {
+  const patch: Partial<StoredValues> = {};
+  for (const field of fields) {
+    const draft = drafts?.[field];
+    if (draft === undefined) continue;
+    const value = draftToStored(field, draft, unit);
+    if (value !== null || draft.trim() === '') {
+      patch[storedKey(field)] = value;
+    }
+  }
+  return patch;
+}
+
 /** A stored value as the draft a member would have typed. */
 export function storedToDraft(
   field: SetField,
@@ -186,4 +204,40 @@ export function fieldHeading(field: SetField, unit: WeightUnit): string {
     distance: 'km',
   };
   return headings[field];
+}
+
+/** The part of a Set's Overload target the table shows. */
+export type SetTargetValues = { weightKg: number | null; reps: number };
+
+/** A field's Overload target as stored; only weight and reps have targets. */
+export const TARGET_VALUE: Record<
+  SetField,
+  (target: SetTargetValues) => number | null
+> = {
+  weight: (target) => target.weightKg,
+  reps: (target) => target.reps,
+  duration: () => null,
+  distance: () => null,
+};
+
+/** The Target column: "60 × 8", or "8 reps" when there's no weight to aim for. */
+export function targetText(target: SetTargetValues, unit: WeightUnit): string {
+  return target.weightKg === null
+    ? `${target.reps} reps`
+    : `${storedToDraft('weight', target.weightKg, unit)} × ${target.reps}`;
+}
+
+/** A Set's values in one line: "60 × 8", "8 reps", "1:00" or "5 km · 25:00". */
+export function setSummary(set: StoredValues, unit: WeightUnit): string {
+  if (set.reps !== null) {
+    return targetText({ weightKg: set.weightKg, reps: set.reps }, unit);
+  }
+  return [
+    set.distanceMeters === null
+      ? null
+      : `${storedToDraft('distance', set.distanceMeters, unit)} km`,
+    set.durationSeconds === null ? null : formatClock(set.durationSeconds),
+  ]
+    .filter((part) => part !== null)
+    .join(' · ');
 }
