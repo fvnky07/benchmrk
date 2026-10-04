@@ -1,11 +1,13 @@
-import { Column, Host, Row, ScrollView, Text } from '@expo/ui';
+import { Column, Host, RNHostView, Row, ScrollView, Text } from '@expo/ui';
 import { type ReactNode, useEffect } from 'react';
 import { AccessibilityInfo, useWindowDimensions } from 'react-native';
 
+import { BrandLogo } from '@/components/native/brand-logo';
 import { THEME, useAppearance } from '@/lib/ui';
 
 const CONTENT_MAX_WIDTH = 420;
 const OUTER_INSET = 24;
+const LOGO_SIZE = 56;
 
 /** Width of the auth content column: the phone width minus insets, capped at 420pt. */
 export function useAuthColumnWidth(): number {
@@ -15,8 +17,8 @@ export function useAuthColumnWidth(): number {
 
 /**
  * The shared layout of every authentication route: one native Host, a
- * scrollable centered column, route heading and supporting copy, the route's
- * content, then the factual legal footer.
+ * scrollable centered column, the benchmrk logo, route heading and supporting
+ * copy, the route's content, then the factual legal footer.
  */
 export function AuthShell({
   title,
@@ -31,6 +33,9 @@ export function AuthShell({
       <ScrollView showsIndicators>
         <Column alignment="center" style={{ padding: OUTER_INSET }}>
           <Column spacing={16} style={{ width: columnWidth }}>
+            <RNHostView matchContents>
+              <BrandLogo size={LOGO_SIZE} />
+            </RNHostView>
             <Column spacing={8}>
               <Text textStyle={{ fontSize: 30, fontWeight: '700' }}>
                 {title}
