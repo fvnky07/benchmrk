@@ -27,6 +27,9 @@ export const tables = {
     premiumUntil: v.optional(v.union(v.null(), v.number())),
     // NOTE: Custom field — User bio/description (max 150 chars)
     bio: v.optional(v.union(v.null(), v.string())),
+    // The uploaded profile photo in this component's storage, so it can be
+    // replaced or deleted; `image` holds its URL (or a provider's).
+    imageStorageId: v.optional(v.union(v.null(), v.string())),
   })
     .index('email', ['email'])
     .index('email_name', ['email', 'name'])
@@ -78,13 +81,18 @@ export const tables = {
     .index('expiresAt', ['expiresAt'])
     .index('identifier', ['identifier']),
 
-  // NOTE: Two-factor auth table (not used yet but required
-  // by Better Auth component schema)
+  // Better Auth two-factor plugin (TOTP secret, encrypted backup codes and
+  // the failed-attempt lockout it keeps since 1.6).
   twoFactor: defineTable({
     secret: v.string(),
     backupCodes: v.string(),
     userId: v.string(),
-  }).index('userId', ['userId']),
+    verified: v.optional(v.union(v.null(), v.boolean())),
+    failedVerificationCount: v.optional(v.union(v.null(), v.number())),
+    lockedUntil: v.optional(v.union(v.null(), v.number())),
+  })
+    .index('userId', ['userId'])
+    .index('secret', ['secret']),
 
   // NOTE: Passkey table (not used yet)
   passkey: defineTable({

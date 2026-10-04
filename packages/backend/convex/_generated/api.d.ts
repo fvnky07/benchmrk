@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as accountDeletion from "../accountDeletion.js";
 import type * as auth from "../auth.js";
 import type * as deletionRequests from "../deletionRequests.js";
 import type * as domain_effort from "../domain/effort.js";
@@ -16,6 +17,7 @@ import type * as exerciseComments from "../exerciseComments.js";
 import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as lib_appleRevocation from "../lib/appleRevocation.js";
 import type * as lib_email from "../lib/email.js";
 import type * as lib_exerciseCatalog from "../lib/exerciseCatalog.js";
 import type * as lib_exercises from "../lib/exercises.js";
@@ -37,6 +39,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  accountDeletion: typeof accountDeletion;
   auth: typeof auth;
   deletionRequests: typeof deletionRequests;
   "domain/effort": typeof domain_effort;
@@ -45,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   exercises: typeof exercises;
   http: typeof http;
   init: typeof init;
+  "lib/appleRevocation": typeof lib_appleRevocation;
   "lib/email": typeof lib_email;
   "lib/exerciseCatalog": typeof lib_exerciseCatalog;
   "lib/exercises": typeof lib_exercises;

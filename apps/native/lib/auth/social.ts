@@ -182,3 +182,39 @@ export async function runSocialAuth(
     onStatus?.('idle');
   }
 }
+
+/**
+ * Signs in with Apple again before deleting the account: the fresh session
+ * satisfies re-authentication, and the authorization code lets the backend
+ * revoke the Sign in with Apple grant.
+ */
+export async function reauthenticateWithApple(): Promise<
+  | { status: 'success'; authorizationCode: string }
+  | Exclude<SocialResult, { status: 'success' }>
+> {
+  try {
+    const nonce = Crypto.randomUUID();
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [],
+      nonce,
+    });
+    if (!credential.identityToken || !credential.authorizationCode) {
+      return {
+        status: 'failure',
+        message: 'Apple did not confirm it’s you. Please try again.',
+      };
+    }
+    const result = await exchange(
+      'apple',
+      { idToken: { token: credential.identityToken, nonce } },
+      false
+    );
+    return result.status === 'success'
+      ? { status: 'success', authorizationCode: credential.authorizationCode }
+      : result;
+  } catch (error) {
+    if (readErrorCode(error)?.toLowerCase() === 'err_request_canceled')
+      return { status: 'cancelled' };
+    return { status: 'failure', message: errorMessage(error) };
+  }
+}

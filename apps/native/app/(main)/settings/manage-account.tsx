@@ -63,6 +63,14 @@ export default function ManageAccountScreen() {
       >
         Change password
       </ListItem>
+      <ListItem
+        supportingText={
+          user.twoFactorEnabled === true ? 'On' : 'Authenticator app codes'
+        }
+        onPress={() => router.push('/(main)/settings/two-factor')}
+      >
+        Two-factor authentication
+      </ListItem>
       <SignInMethods />
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>
@@ -89,6 +97,12 @@ export default function ManageAccountScreen() {
       ) : (
         <Button label="Log out" onPress={() => setIsConfirmingLogout(true)} />
       )}
+      <ListItem
+        supportingText="Permanently delete your account and all its data"
+        onPress={() => router.push('/(main)/settings/delete-account')}
+      >
+        Delete account
+      </ListItem>
     </NativeScreen>
   );
 }

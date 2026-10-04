@@ -147,6 +147,9 @@ _Avoid_: Machine settings, Presets
 - Explicit **Account linking** may attach a **Provider identity** whose email differs from the **Benchmrk identity**
 - **Account linking** never changes profile details on the **Benchmrk identity**
 - A **Provider identity** is never attached to an existing **Benchmrk identity** solely because their email addresses match
+- Permanent deletion remains bound to the originally selected **Benchmrk identity**; confirming a different identity never deletes either
+- Permanent deletion immediately ends access to a **Benchmrk identity**, even while its owned data is being removed
+- A successful password reset remains successful if local sign-out cannot finish
 - A **Routine** is the plan; a **Workout** is what actually happened, and a **Workout** may be started from a **Routine** or from nothing
 - Each **Routine** maintains its **Exercise** count for list summaries; adding or removing an **Exercise** updates the count in the same transaction
 - Planned **Sets** per **Exercise** in a **Routine** are whole numbers from 1 to 20

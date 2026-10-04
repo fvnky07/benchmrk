@@ -3,24 +3,32 @@ import type { GenericCtx } from '@convex-dev/better-auth';
 import { createClient } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
-import { createAuthMiddleware } from 'better-auth/api';
-import { magicLink } from 'better-auth/plugins';
-import { components } from '../_generated/api';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { magicLink, twoFactor } from 'better-auth/plugins';
+import { components, internal } from '../_generated/api';
 import type { DataModel } from '../_generated/dataModel';
 import authConfig from '../auth.config';
+import { revokeAppleAuthorization } from '../lib/appleRevocation';
 import { actionEmail, sendEmail } from '../lib/email';
 import { authorizedMagicLinkFlow } from '../lib/magicLinkProof';
 import schema from './schema';
 
 const siteUrl = process.env.SITE_URL;
 
-/** Where verification links land in the app; the Expo plugin appends the session. */
+/** Where verification and reset links land in the app; the Expo plugin appends the session. */
 const EMAIL_VERIFIED_CALLBACK = 'native://email-verified';
+const PASSWORD_RESET_CALLBACK = 'native://reset-password';
+const PASSWORD_RESET_EXPIRES_IN_SECONDS = 60 * 60;
+/** How recently a member must have signed in to delete without a password. */
+const FRESH_SESSION_SECONDS = 10 * 60;
+/** Header carrying a fresh Sign in with Apple authorization code on deletion. */
+export const APPLE_AUTHORIZATION_CODE_HEADER = 'x-apple-authorization-code';
+export const DELETION_IDENTITY_HEADER = 'x-deletion-identity-id';
 
-/** A verification link that always returns to the app, whatever the client asked. */
-function nativeVerificationUrl(url: string): string {
+/** An emailed link that always returns to the app, whatever the client asked. */
+function withNativeCallback(url: string, callback: string): string {
   const link = new URL(url);
-  link.searchParams.set('callbackURL', EMAIL_VERIFIED_CALLBACK);
+  link.searchParams.set('callbackURL', callback);
   return link.toString();
 }
 
@@ -53,11 +61,74 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           ]
         : []),
     ],
+    session: { freshAge: FRESH_SESSION_SECONDS },
+    user: {
+      // Re-authentication must still refer to the originally selected identity.
+      // Revoke authentication immediately, then purge app data in scheduled batches.
+      deleteUser: {
+        enabled: true,
+        beforeDelete: async (user, request) => {
+          if (!('runMutation' in ctx)) {
+            throw new APIError('INTERNAL_SERVER_ERROR');
+          }
+          if (request?.headers.get(DELETION_IDENTITY_HEADER) !== user.id) {
+            throw new APIError('BAD_REQUEST', {
+              code: 'DELETION_IDENTITY_CHANGED',
+              message: 'The identity changed. Nothing was deleted.',
+            });
+          }
+          const usesApple = await ctx.runQuery(
+            components.betterAuth.identity.hasAppleAccount,
+            { userId: user.id }
+          );
+          if (usesApple) {
+            const code = request?.headers.get(APPLE_AUTHORIZATION_CODE_HEADER);
+            if (!code) {
+              throw new APIError('BAD_REQUEST', {
+                code: 'APPLE_REAUTHENTICATION_REQUIRED',
+                message: 'Confirm with Apple to delete this identity.',
+              });
+            }
+            try {
+              await revokeAppleAuthorization(code);
+            } catch {
+              throw new APIError('BAD_REQUEST', {
+                code: 'APPLE_REVOCATION_FAILED',
+                message: 'Apple didn’t confirm. Nothing was deleted.',
+              });
+            }
+          }
+          await ctx.runMutation(internal.accountDeletion.deleteIdentity, {
+            userId: user.id,
+            email: user.email,
+          });
+        },
+      },
+    },
     // Members can log Workouts before verifying; Groups and password recovery
     // check verification themselves.
     emailAndPassword: {
       requireEmailVerification: false,
       enabled: true,
+      resetPasswordTokenExpiresIn: PASSWORD_RESET_EXPIRES_IN_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      // Every request gets the same answer; only verified emails get mail.
+      sendResetPassword: async ({ user, url }) => {
+        if (!user.emailVerified) return;
+        await sendEmail({
+          to: user.email,
+          subject: 'Reset your password - benchmrk',
+          html: actionEmail({
+            title: 'Reset your benchmrk password',
+            heading: 'Reset your password',
+            body: 'Open this link on the phone where benchmrk is installed to choose a new password. Every device will be signed out.',
+            actionLabel: 'Choose a new password',
+            url: withNativeCallback(url, PASSWORD_RESET_CALLBACK),
+            footnote:
+              'This link expires in 1 hour and works once. If you didn’t ask for it, ignore this email; your password stays the same.',
+          }),
+        });
+      },
     },
     emailVerification: {
       sendOnSignUp: true,
@@ -71,7 +142,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             heading: 'Verify your email',
             body: 'Confirm this address to create Groups, join them and recover your password. Open the link on the phone where benchmrk is installed.',
             actionLabel: 'Verify email',
-            url: nativeVerificationUrl(url),
+            url: withNativeCallback(url, EMAIL_VERIFIED_CALLBACK),
             footnote:
               'If you didn’t create a benchmrk account, ignore this email.',
           }),
@@ -153,6 +224,13 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             });
           }
         },
+      }),
+      // TOTP authenticator apps and backup codes; no email OTP factor.
+      // Enrolling needs the password and a first valid code.
+      twoFactor({
+        issuer: 'benchmrk',
+        skipVerificationOnEnable: false,
+        backupCodeOptions: { amount: 10 },
       }),
       expo(),
       convex({ authConfig }),

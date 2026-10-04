@@ -42,6 +42,12 @@ export default function LoginScreen() {
           password,
         });
         if (error || !data) throw new Error('Sign in did not complete');
+        if ('twoFactorRedirect' in data && data.twoFactorRedirect) {
+          setPassword('');
+          setBusy(null);
+          router.push('/verify-2fa');
+          return;
+        }
         analytics.loginSuccess();
         setStatus({
           message: 'Signed in. Loading your Benchmrk identity…',

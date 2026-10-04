@@ -194,7 +194,8 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
   })
     .index('by_workoutExercise', ['workoutExerciseId', 'order'])
-    .index('by_workout', ['workoutId']),
+    .index('by_workout', ['workoutId'])
+    .index('by_userId', ['userId']),
 
   // Comments on exercises
   exerciseComments: defineTable({
@@ -202,5 +203,7 @@ export default defineSchema({
     userId: v.string(),
     body: v.string(),
     createdAt: v.number(),
-  }).index('by_exercise', ['exerciseId']),
+  })
+    .index('by_exercise', ['exerciseId'])
+    .index('by_userId', ['userId']),
 });
