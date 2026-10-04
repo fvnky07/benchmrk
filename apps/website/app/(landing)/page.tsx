@@ -28,7 +28,7 @@ export default function LandingPage() {
         url: 'https://benchmrk.app',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://benchmrk.app/opengraph-image',
+          url: 'https://benchmrk.app/icon-512.png',
         },
         sameAs: ['https://github.com/fvnky07/benchmrk'],
       },
