@@ -31,6 +31,7 @@ export default function WorkoutLayout() {
         name="finished/[id]"
         options={{ title: '', headerBackVisible: false, gestureEnabled: false }}
       />
+      <Stack.Screen name="recap/[groupId]" options={{ title: 'Group recap' }} />
       <Stack.Screen
         name="exercise/[slug]"
         options={{

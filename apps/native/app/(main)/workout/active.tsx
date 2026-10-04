@@ -35,6 +35,7 @@ import { SetTypeSheet } from '@/components/workout/set-type-sheet';
 import { StructureSheet } from '@/components/workout/structure-sheet';
 import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
+import { useReactionAlerts } from '@/lib/groups/use-reaction-alerts';
 import { useHaptics } from '@/lib/haptics';
 import { THEME, useAppearance } from '@/lib/ui';
 import { formatClock, weightInUnit } from '@/lib/workout/format';
@@ -98,6 +99,7 @@ function openTarget(set: WorkoutSet, targetsEnabled: boolean) {
 }
 
 export default function ActiveWorkoutScreen() {
+  useReactionAlerts();
   const workout = useQuery(api.workouts.getActive);
   const settings = useQuery(api.memberSettings.get);
   const group = useQuery(api.groups.getMine);

@@ -115,7 +115,11 @@ export function GroupDrawer({
           ) : null}
           <ScrollView>
             <Column style={{ paddingBottom: 24 }}>
-              <GroupGrid members={group.members} now={now} />
+              <GroupGrid
+                members={group.members}
+                now={now}
+                isHost={group.isHost}
+              />
             </Column>
           </ScrollView>
         </Column>

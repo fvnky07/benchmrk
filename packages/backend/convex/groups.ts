@@ -6,6 +6,7 @@ import { components } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { presenceOf } from './domain/presence';
+import { blockedEitherWayIds } from './lib/blocks';
 import {
   activeMembership,
   addMember,
@@ -19,6 +20,7 @@ import {
 import { getIdentityId, requireIdentityId } from './lib/identity';
 import { requireVerifiedEmail } from './lib/verifiedEmail';
 import { randomCode } from './lib/webCrypto';
+import { groupEventKindValidator } from './schema';
 
 const CODE_IDLE_MS = 24 * 60 * 60 * 1000;
 /** No 0/O or 1/I, so codes survive being read aloud. */
@@ -154,6 +156,34 @@ export const end = mutation({
   },
 });
 
+/** Removes a member from this Group without ending their Workout. */
+export const remove = mutation({
+  args: { username: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { group } = await requireMembership(ctx, userId);
+    requireHost(group, userId);
+    const profile = await ctx.runQuery(
+      components.betterAuth.users.getUserByUsername,
+      { username: args.username.trim().toLowerCase() }
+    );
+    const membership = profile
+      ? await activeMembership(ctx, profile._id)
+      : null;
+    if (
+      !profile ||
+      profile._id === userId ||
+      membership?.groupId !== group._id
+    ) {
+      throw new ConvexError('MEMBER_NOT_FOUND');
+    }
+    await ctx.db.patch(membership._id, { removed: true });
+    await leaveGroup(ctx, profile._id, 'removed');
+    return null;
+  },
+});
+
 /** Presence does not count as Group activity for the idle-end window. */
 export const heartbeat = mutation({
   args: {},
@@ -189,14 +219,13 @@ export const events = query({
   args: {},
   returns: v.array(
     v.object({
-      kind: v.union(
-        v.literal('joined'),
-        v.literal('left'),
-        v.literal('dropped'),
-        v.literal('hostChanged'),
-        v.literal('ended')
-      ),
+      eventId: v.id('groupEvents'),
+      kind: groupEventKindValidator,
       username: v.union(v.string(), v.null()),
+      isYou: v.boolean(),
+      exerciseName: v.union(v.string(), v.null()),
+      setNumber: v.union(v.number(), v.null()),
+      reacted: v.boolean(),
       at: v.number(),
     })
   ),
@@ -229,11 +258,29 @@ export const events = query({
       })
     );
     const usernames = new Map(profiles);
-    return groupEvents.map((event) => ({
-      kind: event.kind,
-      username: event.userId ? (usernames.get(event.userId) ?? null) : null,
-      at: event.at,
-    }));
+    return Promise.all(
+      groupEvents.map(async (event) => {
+        const targetId = event.targetId;
+        const reaction = targetId
+          ? await ctx.db
+              .query('groupReactions')
+              .withIndex('by_target_from', (q) =>
+                q.eq('targetId', targetId).eq('fromUserId', userId)
+              )
+              .first()
+          : null;
+        return {
+          eventId: event._id,
+          kind: event.kind,
+          username: event.userId ? (usernames.get(event.userId) ?? null) : null,
+          isYou: event.userId === userId,
+          exerciseName: event.exerciseName ?? null,
+          setNumber: event.setNumber ?? null,
+          reacted: reaction !== null,
+          at: event.at,
+        };
+      })
+    );
   },
 });
 
@@ -250,7 +297,10 @@ export const getMine = query({
     const group = membership ? await ctx.db.get(membership.groupId) : null;
     if (group?.status !== 'live') return null;
 
-    const members = await groupMembers(ctx, group);
+    const blockedIds = await blockedEitherWayIds(ctx, userId);
+    const members = (await groupMembers(ctx, group)).filter(
+      (member) => !blockedIds.has(member.userId)
+    );
     const now = Date.now();
     const boxes = await Promise.all(
       members.map(async (member) => {
