@@ -1,154 +1,389 @@
 import { ConvexError, v } from 'convex/values';
 
-import { components } from './_generated/api';
-import { mutation, query } from './_generated/server';
+import type { Doc, Id } from './_generated/dataModel';
+import {
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from './_generated/server';
+import { defaultStepKg } from './domain/units';
+import { requireVisibleExercise } from './lib/exercises';
+import { getIdentityId, requireIdentityId } from './lib/identity';
+import { readMemberSettings } from './memberSettings';
+import { routineExercisesOf } from './routines';
 
-const FREE_TIER_WORKOUT_LIMIT = 3;
+const DEFAULT_SETS_FOR_ADDED_EXERCISE = 3;
+const DEFAULT_REP_RANGE = { min: 6, max: 10 };
 
-export const createWorkout = mutation({
-  args: {
-    name: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
-    }
+async function requireOwnedWorkout(
+  ctx: QueryCtx,
+  userId: string,
+  workoutId: Id<'workouts'>
+): Promise<Doc<'workouts'>> {
+  const workout = await ctx.db.get(workoutId);
+  if (!workout || workout.userId !== userId) {
+    throw new ConvexError('WORKOUT_NOT_FOUND');
+  }
+  return workout;
+}
 
-    const userId = identity.subject;
-    const existing = await ctx.db
-      .query('workouts')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .take(FREE_TIER_WORKOUT_LIMIT + 1);
+function requireActive(workout: Doc<'workouts'>) {
+  if (workout.status !== 'active') {
+    throw new ConvexError('WORKOUT_NOT_ACTIVE');
+  }
+}
 
-    if (existing.length >= FREE_TIER_WORKOUT_LIMIT) {
-      throw new ConvexError('FREE_TIER_LIMIT');
-    }
+async function requireOwnedSet(
+  ctx: QueryCtx,
+  userId: string,
+  setId: Id<'sets'>
+) {
+  const set = await ctx.db.get(setId);
+  if (!set || set.userId !== userId) throw new ConvexError('SET_NOT_FOUND');
+  const workout = await requireOwnedWorkout(ctx, userId, set.workoutId);
+  return { set, workout };
+}
 
-    return await ctx.db.insert('workouts', {
-      userId,
-      name: args.name,
-      createdAt: Date.now(),
+async function requireOwnedWorkoutExercise(
+  ctx: QueryCtx,
+  userId: string,
+  workoutExerciseId: Id<'workoutExercises'>
+) {
+  const workoutExercise = await ctx.db.get(workoutExerciseId);
+  if (!workoutExercise) throw new ConvexError('WORKOUT_NOT_FOUND');
+  const workout = await requireOwnedWorkout(
+    ctx,
+    userId,
+    workoutExercise.workoutId
+  );
+  return { workout, workoutExercise };
+}
+
+async function findActiveWorkout(ctx: QueryCtx, userId: string) {
+  return ctx.db
+    .query('workouts')
+    .withIndex('by_user_status', (q) =>
+      q.eq('userId', userId).eq('status', 'active')
+    )
+    .first();
+}
+
+async function workoutExercisesOf(ctx: QueryCtx, workoutId: Id<'workouts'>) {
+  return ctx.db
+    .query('workoutExercises')
+    .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
+    .collect();
+}
+
+async function setsOfExercise(
+  ctx: QueryCtx,
+  workoutExerciseId: Id<'workoutExercises'>
+) {
+  return ctx.db
+    .query('sets')
+    .withIndex('by_workoutExercise', (q) =>
+      q.eq('workoutExerciseId', workoutExerciseId)
+    )
+    .collect();
+}
+
+async function setsOfWorkout(ctx: QueryCtx, workoutId: Id<'workouts'>) {
+  return ctx.db
+    .query('sets')
+    .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
+    .collect();
+}
+
+/** Planned Sets are every Set except warm-ups; progress counts the completed ones. */
+function progressOf(sets: Doc<'sets'>[]) {
+  const planned = sets.filter((set) => set.type !== 'warmup');
+  return {
+    done: planned.filter((set) => set.completedAt !== undefined).length,
+    total: planned.length,
+  };
+}
+
+async function insertPlannedSets(
+  ctx: MutationCtx,
+  workout: Doc<'workouts'>,
+  workoutExercise: Pick<Doc<'workoutExercises'>, '_id' | 'exerciseId'>,
+  count: number,
+  firstOrder = 0
+) {
+  for (let order = firstOrder; order < firstOrder + count; order += 1) {
+    await ctx.db.insert('sets', {
+      userId: workout.userId,
+      workoutId: workout._id,
+      workoutExerciseId: workoutExercise._id,
+      exerciseId: workoutExercise.exerciseId,
+      order,
+      type: 'normal',
     });
-  },
-});
+  }
+}
 
-export const listWorkouts = query({
+async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
+  const exercises = await Promise.all(
+    (await workoutExercisesOf(ctx, workout._id)).map(
+      async (workoutExercise) => {
+        const exercise = await ctx.db.get(workoutExercise.exerciseId);
+        if (!exercise) throw new ConvexError('EXERCISE_NOT_FOUND');
+        const sets = await setsOfExercise(ctx, workoutExercise._id);
+        return {
+          _id: workoutExercise._id,
+          exerciseId: exercise._id,
+          name: exercise.name,
+          slug: exercise.slug,
+          type: exercise.type,
+          equipment: exercise.equipment,
+          repRangeMin: workoutExercise.repRangeMin,
+          repRangeMax: workoutExercise.repRangeMax,
+          stepKg: workoutExercise.stepKg,
+          sets: sets.map((set) => ({
+            _id: set._id,
+            order: set.order,
+            type: set.type,
+            weightKg: set.weightKg ?? null,
+            reps: set.reps ?? null,
+            durationSeconds: set.durationSeconds ?? null,
+            distanceMeters: set.distanceMeters ?? null,
+            completedAt: set.completedAt ?? null,
+          })),
+        };
+      }
+    )
+  );
+
+  return {
+    _id: workout._id,
+    name: workout.name,
+    routineId: workout.routineId ?? null,
+    status: workout.status,
+    startedAt: workout.startedAt,
+    finishedAt: workout.finishedAt ?? null,
+    finishReason: workout.finishReason ?? null,
+    progress: progressOf(await setsOfWorkout(ctx, workout._id)),
+    exercises,
+  };
+}
+
+export const getActive = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return [];
-    }
-
-    const userId = identity.subject;
-    const workouts = await ctx.db
-      .query('workouts')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .collect();
-
-    return workouts.sort((a, b) => b.createdAt - a.createdAt);
+    const userId = await getIdentityId(ctx);
+    if (!userId) return null;
+    const workout = await findActiveWorkout(ctx, userId);
+    return workout ? workoutView(ctx, workout) : null;
   },
 });
 
-export const getWorkout = query({
+export const get = query({
+  args: { workoutId: v.id('workouts') },
+  handler: async (ctx, args) => {
+    const userId = await getIdentityId(ctx);
+    if (!userId) return null;
+    const workout = await ctx.db.get(args.workoutId);
+    if (!workout || workout.userId !== userId) return null;
+    return workoutView(ctx, workout);
+  },
+});
+
+/** Starts a Workout from a Routine, copying its plan, or from nothing. */
+export const start = mutation({
+  args: { routineId: v.optional(v.id('routines')) },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    if (await findActiveWorkout(ctx, userId)) {
+      throw new ConvexError('ACTIVE_WORKOUT_EXISTS');
+    }
+
+    const routine = args.routineId ? await ctx.db.get(args.routineId) : null;
+    if (args.routineId && (!routine || routine.userId !== userId)) {
+      throw new ConvexError('ROUTINE_NOT_FOUND');
+    }
+
+    const workoutId = await ctx.db.insert('workouts', {
+      userId,
+      name: routine?.name ?? 'Workout',
+      routineId: routine?._id,
+      status: 'active',
+      startedAt: Date.now(),
+    });
+    if (!routine) return workoutId;
+
+    const workout = await ctx.db.get(workoutId);
+    if (!workout) throw new ConvexError('WORKOUT_NOT_FOUND');
+    for (const routineExercise of await routineExercisesOf(ctx, routine._id)) {
+      const workoutExerciseId = await ctx.db.insert('workoutExercises', {
+        workoutId,
+        exerciseId: routineExercise.exerciseId,
+        routineExerciseId: routineExercise._id,
+        order: routineExercise.order,
+        repRangeMin: routineExercise.repRangeMin,
+        repRangeMax: routineExercise.repRangeMax,
+        stepKg: routineExercise.stepKg,
+        plannedRestSeconds: routineExercise.plannedRestSeconds,
+      });
+      await insertPlannedSets(
+        ctx,
+        workout,
+        { _id: workoutExerciseId, exerciseId: routineExercise.exerciseId },
+        routineExercise.targetSets
+      );
+    }
+    return workoutId;
+  },
+});
+
+export const addExercise = mutation({
+  args: { workoutId: v.id('workouts'), exerciseId: v.id('exercises') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const workout = await requireOwnedWorkout(ctx, userId, args.workoutId);
+    requireActive(workout);
+    const exercise = await requireVisibleExercise(ctx, userId, args.exerciseId);
+    const { units } = await readMemberSettings(ctx, userId);
+
+    const workoutExerciseId = await ctx.db.insert('workoutExercises', {
+      workoutId: workout._id,
+      exerciseId: exercise._id,
+      order: (await workoutExercisesOf(ctx, workout._id)).length,
+      repRangeMin: DEFAULT_REP_RANGE.min,
+      repRangeMax: DEFAULT_REP_RANGE.max,
+      stepKg: defaultStepKg(exercise.equipment, units),
+    });
+    await insertPlannedSets(
+      ctx,
+      workout,
+      { _id: workoutExerciseId, exerciseId: exercise._id },
+      DEFAULT_SETS_FOR_ADDED_EXERCISE
+    );
+    return workoutExerciseId;
+  },
+});
+
+export const addSet = mutation({
+  args: { workoutExerciseId: v.id('workoutExercises') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout, workoutExercise } = await requireOwnedWorkoutExercise(
+      ctx,
+      userId,
+      args.workoutExerciseId
+    );
+    requireActive(workout);
+    const sets = await setsOfExercise(ctx, workoutExercise._id);
+    await insertPlannedSets(ctx, workout, workoutExercise, 1, sets.length);
+  },
+});
+
+const setValues = {
+  weightKg: v.optional(v.number()),
+  reps: v.optional(v.number()),
+  durationSeconds: v.optional(v.number()),
+  distanceMeters: v.optional(v.number()),
+};
+
+function requireValidValues(values: {
+  weightKg?: number;
+  reps?: number;
+  durationSeconds?: number;
+  distanceMeters?: number;
+}) {
+  if (
+    Object.values(values).some(
+      (value) => value !== undefined && !(Number.isFinite(value) && value >= 0)
+    ) ||
+    (values.reps !== undefined && !Number.isInteger(values.reps))
+  ) {
+    throw new ConvexError('INVALID_SET_VALUE');
+  }
+}
+
+export const updateSet = mutation({
+  args: { setId: v.id('sets'), ...setValues },
+  handler: async (ctx, { setId, ...values }) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout } = await requireOwnedSet(ctx, userId, setId);
+    requireActive(workout);
+    requireValidValues(values);
+    await ctx.db.patch(setId, values);
+  },
+});
+
+export const completeSet = mutation({
+  args: { setId: v.id('sets'), ...setValues },
+  handler: async (ctx, { setId, ...values }) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout } = await requireOwnedSet(ctx, userId, setId);
+    requireActive(workout);
+    requireValidValues(values);
+    await ctx.db.patch(setId, { ...values, completedAt: Date.now() });
+  },
+});
+
+export const uncompleteSet = mutation({
+  args: { setId: v.id('sets') },
+  handler: async (ctx, args) => {
+    const userId = await requireIdentityId(ctx);
+    const { workout } = await requireOwnedSet(ctx, userId, args.setId);
+    requireActive(workout);
+    await ctx.db.patch(args.setId, { completedAt: undefined });
+  },
+});
+
+/**
+ * Ends the active Workout. Finish needs every planned Set done; Terminate ends
+ * early and keeps logged Sets. A Workout with nothing logged is abandoned.
+ */
+export const end = mutation({
   args: {
     workoutId: v.id('workouts'),
+    reason: v.union(v.literal('finish'), v.literal('terminate')),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return null;
+    const userId = await requireIdentityId(ctx);
+    const workout = await requireOwnedWorkout(ctx, userId, args.workoutId);
+    requireActive(workout);
+    const sets = await setsOfWorkout(ctx, workout._id);
+    const progress = progressOf(sets);
+    if (args.reason === 'finish' && progress.done < progress.total) {
+      throw new ConvexError('NOT_ALL_SETS_DONE');
     }
 
-    const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== identity.subject) {
-      return null;
+    const completedTimes = sets.flatMap((set) =>
+      set.completedAt === undefined ? [] : [set.completedAt]
+    );
+    if (completedTimes.length === 0) {
+      await ctx.db.patch(workout._id, {
+        status: 'abandoned',
+        finishedAt: Date.now(),
+      });
+      return 'abandoned' as const;
     }
 
-    return workout;
+    await ctx.db.patch(workout._id, {
+      status: 'completed',
+      finishedAt: Math.max(...completedTimes),
+      finishReason:
+        args.reason === 'finish' ? 'all_sets_done' : 'terminated_early',
+    });
+    return 'completed' as const;
   },
 });
 
-export const deleteWorkout = mutation({
-  args: {
-    workoutId: v.id('workouts'),
-  },
+export const setEndTime = mutation({
+  args: { workoutId: v.id('workouts'), finishedAt: v.number() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error('Not authenticated');
+    const userId = await requireIdentityId(ctx);
+    const workout = await requireOwnedWorkout(ctx, userId, args.workoutId);
+    if (workout.status !== 'completed') {
+      throw new ConvexError('WORKOUT_NOT_COMPLETED');
     }
-
-    const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== identity.subject) {
-      throw new Error('Workout not found');
+    if (args.finishedAt < workout.startedAt || args.finishedAt > Date.now()) {
+      throw new ConvexError('INVALID_END_TIME');
     }
-
-    const workoutExercises = await ctx.db
-      .query('workoutExercises')
-      .withIndex('by_workout', (q) => q.eq('workoutId', args.workoutId))
-      .collect();
-
-    for (const workoutExercise of workoutExercises) {
-      await ctx.db.delete(workoutExercise._id);
-    }
-
-    await ctx.db.delete(args.workoutId);
-    return args.workoutId;
-  },
-});
-
-export const getRecentWorkoutsWithProfiles = query({
-  args: {
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const limit = args.limit ?? 10;
-
-    const workouts = await ctx.db.query('workouts').order('desc').take(limit);
-
-    const workoutsWithProfiles = [];
-
-    for (const workout of workouts) {
-      const user = await ctx.runQuery(components.betterAuth.users.getUser, {
-        userId: workout.userId,
-      });
-
-      const workoutExercises = await ctx.db
-        .query('workoutExercises')
-        .withIndex('by_workout', (q) => q.eq('workoutId', workout._id))
-        .collect();
-
-      const totalVolume = workoutExercises.reduce((sum, we) => {
-        return sum + we.sets * we.reps * we.weight;
-      }, 0);
-
-      const totalSets = workoutExercises.reduce((sum, we) => sum + we.sets, 0);
-
-      workoutsWithProfiles.push({
-        _id: workout._id,
-        name: workout.name,
-        createdAt: workout.createdAt,
-        exerciseCount: workoutExercises.length,
-        totalSets,
-        totalVolume,
-        user: user
-          ? {
-              userId: user.userId,
-              name: user.name,
-              username: user.username,
-              image: user.image,
-            }
-          : {
-              userId: workout.userId,
-              name: 'Anonymous',
-              username: null,
-              image: null,
-            },
-      });
-    }
-
-    return workoutsWithProfiles;
+    await ctx.db.patch(workout._id, { finishedAt: args.finishedAt });
   },
 });

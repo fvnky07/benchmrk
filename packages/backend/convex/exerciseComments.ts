@@ -1,6 +1,8 @@
 import { ConvexError, v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
+import { requireVisibleExercise } from './lib/exercises';
+import { getIdentityId, requireIdentityId } from './lib/identity';
 
 /** List all comments for an exercise, ordered by createdAt ascending. */
 export const listComments = query({
@@ -8,6 +10,8 @@ export const listComments = query({
     exerciseId: v.id('exercises'),
   },
   handler: async (ctx, args) => {
+    const identityId = await getIdentityId(ctx);
+    await requireVisibleExercise(ctx, identityId ?? '', args.exerciseId);
     const comments = await ctx.db
       .query('exerciseComments')
       .withIndex('by_exercise', (q) => q.eq('exerciseId', args.exerciseId))
@@ -31,14 +35,12 @@ export const addComment = mutation({
     body: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error('Not authenticated');
+    const userId = await requireIdentityId(ctx);
+    await requireVisibleExercise(ctx, userId, args.exerciseId);
 
     const body = args.body.trim();
 
     if (!body) throw new ConvexError('EMPTY_COMMENT');
-
-    const userId = identity.subject;
 
     return await ctx.db.insert('exerciseComments', {
       exerciseId: args.exerciseId,

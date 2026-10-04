@@ -1,8 +1,41 @@
-// NOTE: Main app schema - waitlist table for tracking signups
-// before confirmation. Once confirmed via magic link, users
-// become Better Auth users with premiumUntil timestamp.
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+
+export const memberSettingsFields = {
+  appearance: v.union(
+    v.literal('system'),
+    v.literal('light'),
+    v.literal('dark')
+  ),
+  units: v.union(v.literal('kg'), v.literal('lb')),
+  effortScale: v.union(v.literal('RPE'), v.literal('RIR')),
+  defaultRestSeconds: v.number(),
+  haptics: v.boolean(),
+  analyticsOptOut: v.boolean(),
+};
+
+export const exerciseTypeValidator = v.union(
+  v.literal('strength'),
+  v.literal('bodyweight'),
+  v.literal('timed'),
+  v.literal('cardio')
+);
+
+export const equipmentValidator = v.union(
+  v.literal('barbell'),
+  v.literal('dumbbell'),
+  v.literal('machine'),
+  v.literal('cable'),
+  v.literal('bodyweight'),
+  v.literal('other')
+);
+
+export const setTypeValidator = v.union(
+  v.literal('normal'),
+  v.literal('warmup'),
+  v.literal('dropset'),
+  v.literal('failure')
+);
 
 export default defineSchema({
   // NOTE: Waitlist table for tracking users before they
@@ -15,71 +48,94 @@ export default defineSchema({
     .index('by_email', ['email'])
     .index('by_position', ['position']),
 
-  // NOTE: User preferences — one row per user, lazily created
-  // on first settings access with smart defaults
-  user_preferences: defineTable({
+  memberSettings: defineTable({
     userId: v.string(),
-
-    // Appearance
-    theme: v.union(v.literal('light'), v.literal('dark'), v.literal('system')),
-
-    // Workout — general
-    defaultRestTimer: v.number(),
-    weightUnit: v.union(v.literal('kg'), v.literal('lbs')),
-
-    // Workout — tracking
-    autoSaveWorkouts: v.boolean(),
-    syncToCloud: v.boolean(),
-
-    // Integrations
-    appleHealthEnabled: v.boolean(),
-    stravaEnabled: v.boolean(),
-
-    // Metadata
-    createdAt: v.number(),
+    ...memberSettingsFields,
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
-  // Exercises catalog (seeded by init.ts)
+  // Shared catalog Exercises have no creator; custom ones belong to `createdBy`.
   exercises: defineTable({
     slug: v.string(),
     name: v.string(),
-    description: v.string(),
+    description: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     category: v.optional(v.string()),
     muscleGroups: v.optional(v.array(v.string())),
     instructions: v.optional(v.string()),
-    exerciseType: v.optional(
-      v.union(
-        v.literal('strength'), // weight + reps
-        v.literal('bodyweight'), // reps only
-        v.literal('cardio'), // distance + duration
-        v.literal('timed') // duration only
-      )
-    ),
-    isCustom: v.optional(v.boolean()),
+    type: exerciseTypeValidator,
+    equipment: equipmentValidator,
     createdBy: v.optional(v.string()),
-  }).index('by_slug', ['slug']),
+  })
+    .index('by_slug', ['slug'])
+    .index('by_createdBy', ['createdBy']),
 
-  // User saved workouts (max 3 for free tier)
+  routines: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    exerciseCount: v.number(),
+    targetDurationSeconds: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  routineExercises: defineTable({
+    routineId: v.id('routines'),
+    exerciseId: v.id('exercises'),
+    order: v.number(),
+    targetSets: v.number(),
+    repRangeMin: v.number(),
+    repRangeMax: v.number(),
+    setRepTargets: v.array(v.number()),
+    startingWeightKg: v.optional(v.number()),
+    stepKg: v.number(),
+    plannedRestSeconds: v.optional(v.number()),
+  }).index('by_routine', ['routineId', 'order']),
+
   workouts: defineTable({
     userId: v.string(),
     name: v.string(),
-    createdAt: v.number(),
-  }).index('by_userId', ['userId']),
+    routineId: v.optional(v.id('routines')),
+    status: v.union(
+      v.literal('active'),
+      v.literal('completed'),
+      v.literal('abandoned')
+    ),
+    startedAt: v.number(),
+    finishedAt: v.optional(v.number()),
+    finishReason: v.optional(
+      v.union(v.literal('all_sets_done'), v.literal('terminated_early'))
+    ),
+  })
+    .index('by_user_status', ['userId', 'status'])
+    .index('by_user_started', ['userId', 'startedAt']),
 
-  // Join table: which exercises belong to a workout + config
+  // A Workout's Exercises; planning fields are copied from the Routine at start.
   workoutExercises: defineTable({
     workoutId: v.id('workouts'),
     exerciseId: v.id('exercises'),
+    routineExerciseId: v.optional(v.id('routineExercises')),
     order: v.number(),
-    sets: v.number(),
-    reps: v.number(),
-    weight: v.number(),
+    repRangeMin: v.number(),
+    repRangeMax: v.number(),
+    stepKg: v.number(),
+    plannedRestSeconds: v.optional(v.number()),
+  }).index('by_workout', ['workoutId', 'order']),
+
+  sets: defineTable({
+    userId: v.string(),
+    workoutId: v.id('workouts'),
+    workoutExerciseId: v.id('workoutExercises'),
+    exerciseId: v.id('exercises'),
+    order: v.number(),
+    type: setTypeValidator,
+    weightKg: v.optional(v.number()),
+    reps: v.optional(v.number()),
+    durationSeconds: v.optional(v.number()),
+    distanceMeters: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
   })
-    .index('by_workout', ['workoutId'])
-    .index('by_exercise', ['exerciseId'])
-    .index('by_workout_exercise', ['workoutId', 'exerciseId']),
+    .index('by_workoutExercise', ['workoutExerciseId', 'order'])
+    .index('by_workout', ['workoutId']),
 
   // Comments on exercises
   exerciseComments: defineTable({
@@ -88,50 +144,4 @@ export default defineSchema({
     body: v.string(),
     createdAt: v.number(),
   }).index('by_exercise', ['exerciseId']),
-
-  workoutSessions: defineTable({
-    userId: v.string(),
-    name: v.string(),
-    status: v.union(
-      v.literal('active'),
-      v.literal('completed'),
-      v.literal('abandoned')
-    ),
-    startedAt: v.number(),
-    completedAt: v.optional(v.number()),
-    durationSeconds: v.optional(v.number()),
-    workoutTemplateId: v.optional(v.id('workouts')),
-  })
-    .index('by_userId', ['userId'])
-    .index('by_user_status', ['userId', 'status'])
-    .index('by_user_started', ['userId', 'startedAt']),
-
-  sessionExercises: defineTable({
-    sessionId: v.id('workoutSessions'),
-    exerciseId: v.id('exercises'),
-    order: v.number(),
-    notes: v.optional(v.string()),
-  })
-    .index('by_session', ['sessionId'])
-    .index('by_session_order', ['sessionId', 'order']),
-
-  sessionSets: defineTable({
-    sessionExerciseId: v.id('sessionExercises'),
-    sessionId: v.id('workoutSessions'),
-    setNumber: v.number(),
-    type: v.union(
-      v.literal('normal'),
-      v.literal('warmup'),
-      v.literal('dropset'),
-      v.literal('failure')
-    ),
-    reps: v.optional(v.number()),
-    weightKg: v.optional(v.number()),
-    durationSeconds: v.optional(v.number()),
-    distanceMeters: v.optional(v.number()),
-    isCompleted: v.boolean(),
-    completedAt: v.optional(v.number()),
-  })
-    .index('by_session_exercise', ['sessionExerciseId'])
-    .index('by_session', ['sessionId']),
 });

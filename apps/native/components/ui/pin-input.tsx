@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   type NativeSyntheticEvent,
@@ -55,7 +54,6 @@ function PinInput({
       withTiming(5, { duration: 50 }),
       withTiming(0, { duration: 50 })
     );
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   }, [shakeX]);
 
   // Trigger shake when error state changes to true
@@ -93,9 +91,6 @@ function PinInput({
       const nextIndex = Math.min(index + digits.length, PIN_LENGTH - 1);
       inputRefs.current[nextIndex]?.focus();
 
-      // Light haptic for each digit
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
       // Check if complete
       const fullCode = newValue.join('');
       if (fullCode.length === PIN_LENGTH && onComplete) {
@@ -111,9 +106,6 @@ function PinInput({
     onChange(newValue);
 
     if (digit) {
-      // Light haptic on each digit
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
       // Auto-advance to next box
       if (index < PIN_LENGTH - 1) {
         inputRefs.current[index + 1]?.focus();

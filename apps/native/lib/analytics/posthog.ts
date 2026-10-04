@@ -2,12 +2,22 @@ import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import PostHog from 'posthog-react-native';
 
+// SDK consent may be persisted from a previous identity. Do not send anything
+// until this launch has loaded the current member's saved preference.
+let analyticsEnabled = false;
+
+export function setAnalyticsEnabled(enabled: boolean) {
+  analyticsEnabled = enabled;
+}
+
 const posthogApiKey = process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
 const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST;
 export const posthog =
   process.env.EXPO_PUBLIC_ENABLE_POSTHOG !== 'false' && posthogApiKey
     ? new PostHog(posthogApiKey, {
         host: posthogHost ?? 'https://us.i.posthog.com',
+        defaultOptIn: false,
+        before_send: (event) => (analyticsEnabled ? event : null),
         captureAppLifecycleEvents: true,
         enableSessionReplay: false,
       })
@@ -18,11 +28,13 @@ export const identifyUser = (
   userId: string,
   traits?: Record<string, string | number | boolean>
 ) => {
-  posthog?.identify(userId, traits);
+  if (analyticsEnabled) posthog?.identify(userId, traits);
 };
 
 /** Reset identity on logout */
 export const resetAnalytics = () => {
+  analyticsEnabled = false;
+  void posthog?.optOut();
   posthog?.reset();
 };
 
@@ -34,7 +46,7 @@ function capture(
   event: string,
   properties?: Record<string, string | number | boolean>
 ) {
-  posthog?.capture(event, properties);
+  if (analyticsEnabled) posthog?.capture(event, properties);
 }
 
 const ctx = () => ({
@@ -53,23 +65,8 @@ export const analytics = {
   restTimerChanged: (seconds: number) => {
     capture('rest_timer_changed', { seconds, ...ctx() });
   },
-  weightUnitChanged: (unit: 'kg' | 'lbs') => {
+  weightUnitChanged: (unit: 'kg' | 'lb') => {
     capture('weight_unit_changed', { unit, ...ctx() });
-  },
-  autoSaveToggled: (enabled: boolean) => {
-    capture('auto_save_toggled', { enabled, ...ctx() });
-  },
-  syncToggled: (enabled: boolean) => {
-    capture('sync_toggled', { enabled, ...ctx() });
-  },
-
-  // --- Integrations ---
-  integrationToggled: (integration: string, enabled: boolean) => {
-    capture('integration_toggled', {
-      integration,
-      enabled,
-      ...ctx(),
-    });
   },
 
   // --- Navigation ---

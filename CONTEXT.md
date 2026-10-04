@@ -113,7 +113,7 @@ A tablet presentation chosen by workflow: list/detail content may split into pan
 _Avoid_: Enlarged phone layout, tablet sidebar shell
 
 **Group**:
-A live shared session of up to six **Group members**, each on their own **Workout** and **Routine**, in which everyone sees each other's progress.
+A live shared session of **Group members**, each on their own **Workout** and **Routine**, in which everyone sees each other's progress. There is no product member cap; the backend refuses joins beyond a safety limit.
 _Avoid_: Jam, Room, Lobby, Party, Squad, Crew
 
 **Group host**:
@@ -148,6 +148,10 @@ _Avoid_: Machine settings, Presets
 - **Account linking** never changes profile details on the **Benchmrk identity**
 - A **Provider identity** is never attached to an existing **Benchmrk identity** solely because their email addresses match
 - A **Routine** is the plan; a **Workout** is what actually happened, and a **Workout** may be started from a **Routine** or from nothing
+- Each **Routine** maintains its **Exercise** count for list summaries; adding or removing an **Exercise** updates the count in the same transaction
+- Planned **Sets** per **Exercise** in a **Routine** are whole numbers from 1 to 20
+- A custom **Exercise** and its comments are visible only to its owning **Benchmrk identity**
+- Analytics stays disabled until the current **Benchmrk identity**'s saved consent is known; identification and lifecycle capture require consent
 - A **Set** belongs to exactly one **Workout** and one **Exercise**
 - A **Benchmrk identity** owns its **Routines**, **Workouts** and **Sets**
 - An **Overload target** is computed per **Exercise** from the member's own history and never from another member's data

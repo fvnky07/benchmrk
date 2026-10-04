@@ -9,8 +9,8 @@ import { useUserProfile } from '@/lib';
 import { analytics } from '@/lib/analytics';
 
 export default function SettingsScreen() {
-  const preferences = useQuery(api.userPreferences.getPreferences);
-  const resetToDefaults = useMutation(api.userPreferences.resetToDefaults);
+  const settings = useQuery(api.memberSettings.get);
+  const resetSettings = useMutation(api.memberSettings.reset);
   const [isResetting, setIsResetting] = useState(false);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function SettingsScreen() {
     try {
       setIsResetting(true);
       setErrorMessage(null);
-      await resetToDefaults();
+      await resetSettings();
       analytics.preferencesReset();
       setIsConfirmingReset(false);
     } catch {
@@ -36,7 +36,7 @@ export default function SettingsScreen() {
     }
   };
 
-  if (preferences === undefined) {
+  if (settings === undefined) {
     return (
       <NativeScreen>
         <Text textStyle={{ fontSize: 17 }}>Loading settings…</Text>
@@ -44,23 +44,23 @@ export default function SettingsScreen() {
     );
   }
 
-  if (preferences === null) {
+  if (settings === null) {
     return (
       <NativeScreen>
         <Text textStyle={{ fontSize: 17 }}>
-          Sign in to access your preferences.
+          Sign in to access your settings.
         </Text>
       </NativeScreen>
     );
   }
 
-  const themeLabel =
-    preferences.theme === 'system'
+  const appearanceLabel =
+    settings.appearance === 'system'
       ? 'System'
-      : preferences.theme === 'light'
+      : settings.appearance === 'light'
         ? 'Light'
         : 'Dark';
-  const workoutSummary = `Rest ${preferences.defaultRestTimer}s · ${preferences.weightUnit.toUpperCase()}`;
+  const workoutSummary = `Rest ${settings.defaultRestSeconds}s · ${settings.units} · ${settings.effortScale}`;
 
   return (
     <NativeScreen>
@@ -84,7 +84,7 @@ export default function SettingsScreen() {
         Integrations
       </ListItem>
       <ListItem
-        supportingText={themeLabel}
+        supportingText={appearanceLabel}
         onPress={() => router.push('/(main)/settings/appearance')}
       >
         Appearance
@@ -101,12 +101,20 @@ export default function SettingsScreen() {
       >
         Notifications
       </ListItem>
+      <ListItem
+        supportingText={
+          settings.analyticsOptOut ? 'Analytics off' : 'Analytics on'
+        }
+        onPress={() => router.push('/(main)/settings/privacy')}
+      >
+        Privacy
+      </ListItem>
       {errorMessage ? (
         <ListItem supportingText={errorMessage}>Could not reset</ListItem>
       ) : null}
       {isConfirmingReset ? (
         <>
-          <ListItem supportingText="This restores all preference values to defaults.">
+          <ListItem supportingText="This restores every setting to its default.">
             Confirm reset
           </ListItem>
           <Button
