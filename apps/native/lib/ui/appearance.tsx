@@ -10,7 +10,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { useColorScheme } from 'react-native';
+import { Appearance, useColorScheme } from 'react-native';
 
 import {
   type AppearancePreference,
@@ -53,6 +53,14 @@ export function AppearanceProvider({
     ? (optimisticPreference ?? persistedPreference)
     : 'system';
   const resolvedAppearance = resolveAppearance(preference, systemAppearance);
+
+  // System-drawn UI (sheets, dialogs, keyboard, system bars) and iOS system
+  // colours follow the window's scheme, so keep it on the app's preference.
+  useEffect(() => {
+    Appearance.setColorScheme(
+      preference === 'system' ? 'unspecified' : preference
+    );
+  }, [preference]);
 
   useEffect(() => {
     if (!isAuthenticated) {
