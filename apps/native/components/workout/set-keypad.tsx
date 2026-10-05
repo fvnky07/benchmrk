@@ -5,7 +5,7 @@ import {
   effortInScale,
 } from '@repo/backend/convex/domain/effort';
 
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { formatEffort } from '@/lib/workout/format';
 import type { KeypadKey, SetField } from '@/lib/workout/set-entry';
 
@@ -18,12 +18,12 @@ const KEY_ROWS: readonly (readonly KeypadKey[])[] = [
 
 const KEY_SIZE = { width: 76, height: 48 };
 
-/** Effort colour bands: hard red, near-limit amber, solid green, easy blue. */
-function effortColor(rpe: number): string {
-  if (rpe >= 9.5) return '#d33a32';
-  if (rpe >= 8.5) return '#d97706';
-  if (rpe >= 7.5) return '#2e9e4f';
-  return '#2a6fd6';
+/** Effort bands: hard error, near-limit tertiary, solid primary, easy secondary. */
+function effortBand(rpe: number) {
+  if (rpe >= 9.5) return { tone: 'error', onTone: 'onError' } as const;
+  if (rpe >= 8.5) return { tone: 'tertiary', onTone: 'onTertiary' } as const;
+  if (rpe >= 7.5) return { tone: 'primary', onTone: 'onPrimary' } as const;
+  return { tone: 'secondary', onTone: 'onSecondary' } as const;
 }
 
 type SetKeypadProps = {
@@ -61,14 +61,17 @@ export function SetKeypad({
   onLog,
   onHide,
 }: Readonly<SetKeypadProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const takesDecimal = field === 'weight' || field === 'distance';
 
   return (
     <Column
       spacing={10}
-      style={{ padding: 12, borderRadius: 16, backgroundColor: colors.muted }}
+      style={{
+        padding: 12,
+        borderRadius: 16,
+        backgroundColor: colors.surfaceContainerHigh,
+      }}
     >
       <Row spacing={8} alignment="center">
         <Text textStyle={{ fontSize: 14, fontWeight: '600' }}>{target}</Text>
@@ -79,6 +82,7 @@ export function SetKeypad({
         <Row spacing={6}>
           {EFFORT_DOT_RPES.map((dot) => {
             const selected = rpe === dot;
+            const band = effortBand(dot);
             return (
               <Column
                 key={dot}
@@ -89,15 +93,17 @@ export function SetKeypad({
                   paddingVertical: 8,
                   borderRadius: 22,
                   borderWidth: 2,
-                  borderColor: effortColor(dot),
-                  backgroundColor: selected ? effortColor(dot) : undefined,
+                  borderColor: colors[band.tone],
+                  backgroundColor: selected ? colors[band.tone] : undefined,
                 }}
               >
                 <Text
                   textStyle={{
                     fontSize: 14,
                     fontWeight: '700',
-                    color: selected ? '#ffffff' : undefined,
+                    color: selected
+                      ? textColor(colors[band.onTone])
+                      : undefined,
                   }}
                 >
                   {formatEffort(effortInScale(dot, effortScale))}

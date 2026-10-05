@@ -17,7 +17,7 @@ lib/
 │   └── posthog.ts     # PostHog configuration and helpers
 │
 ├── ui/                # UI-related utilities
-│   ├── theme.ts       # Theme configuration
+│   ├── colors.ts      # useColors(): Material 3 colour roles (Material You on Android, system colours on iOS)
 │   ├── toast.ts       # Toast notification helpers
 │   └── toast-config.tsx # Toast UI configuration
 │
@@ -37,7 +37,7 @@ lib/
 import { authClient } from '@/lib/auth/client';
 import { useAuth } from '@/lib/auth/hooks';
 import { analytics, identifyUser } from '@/lib/analytics';
-import { showToast, NAV_THEME } from '@/lib/ui';
+import { showToast, useColors } from '@/lib/ui';
 ```
 
 Auth and analytics have no barrel; import from the file that owns the helper.
@@ -46,7 +46,7 @@ Auth and analytics have no barrel; import from the file that owns the helper.
 
 - **auth/**: Authentication, sessions, and user management
 - **analytics/**: Event tracking and user analytics
-- **ui/**: UI configuration, themes, toasts
+- **ui/**: UI configuration, colours (`useColors`), toasts
 - **workout/**: Workout formatting, labels and hooks
 - **hooks/**: Reusable React hooks
 - **schemas/**: Zod or validation schemas

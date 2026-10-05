@@ -15,7 +15,7 @@ import { useMutation } from 'convex/react';
 import { useEffect, useState } from 'react';
 
 import { NativeTextField } from '@/components/native/native-text-field';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import type { ActiveWorkout } from '@/lib/workout/rounds';
 import { setLabels } from '@/lib/workout/set-entry';
 
@@ -131,8 +131,7 @@ export function NotesSheet({
   onDismiss,
 }: Readonly<NotesSheetProps>) {
   const saveNote = useMutation(api.notes.save);
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const [target, setTarget] = useState<NoteTarget | null>(opened);
   const [text, setText] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -222,7 +221,12 @@ export function NotesSheet({
               <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
                 {titleOf(workout, target)}
               </Text>
-              <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+              <Text
+                textStyle={{
+                  fontSize: 14,
+                  color: textColor(colors.onSurfaceVariant),
+                }}
+              >
                 {SCOPE_HINTS[target.kind]}
               </Text>
               <NativeTextField
@@ -260,7 +264,12 @@ export function NotesSheet({
             All notes, by target
           </Text>
           {listed.length === 0 ? (
-            <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+            <Text
+              textStyle={{
+                fontSize: 14,
+                color: textColor(colors.onSurfaceVariant),
+              }}
+            >
               No notes yet. Each note belongs to one Set, one Exercise or this
               Workout.
             </Text>

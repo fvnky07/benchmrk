@@ -31,7 +31,9 @@ function WorkoutStatus(
     props.restStartedAt !== null &&
     props.restEndsAt !== null &&
     !environment.isStale;
-  const tint = environment.isLuminanceReduced ? '#FFFFFF' : '#2E9E4F';
+  // The widget runs outside React, so no useColors(): SwiftUI's system blue is
+  // the iOS `primary` role.
+  const tint = environment.isLuminanceReduced ? 'white' : 'blue';
   const clock = (size: number) =>
     resting ? (
       <Text
@@ -54,7 +56,7 @@ function WorkoutStatus(
   const icon = (
     <Image
       systemName={resting ? 'timer' : 'figure.strengthtraining.traditional'}
-      color={tint}
+      modifiers={[foregroundStyle(tint)]}
     />
   );
 

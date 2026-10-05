@@ -13,7 +13,7 @@ import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { Text as NativeText, useWindowDimensions, View } from 'react-native';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock } from '@/lib/workout/format';
 
@@ -38,8 +38,7 @@ function MemberAvatars({
   group,
   width,
 }: Readonly<{ group: GroupView; width: number }>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   return (
     <ScrollView
       direction="horizontal"
@@ -70,8 +69,8 @@ function MemberAvatars({
                 marginLeft: index === 0 ? 0 : -AVATAR_OVERLAP,
                 borderRadius: AVATAR_SIZE / 2,
                 borderWidth: 2,
-                borderColor: colors.background,
-                backgroundColor: colors.muted,
+                borderColor: colors.surface,
+                backgroundColor: colors.surfaceContainerHigh,
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
@@ -86,7 +85,7 @@ function MemberAvatars({
                 <NativeText
                   allowFontScaling={false}
                   style={{
-                    color: colors.foreground,
+                    color: colors.onSurface,
                     fontSize: 13,
                     fontWeight: '700',
                   }}
@@ -114,8 +113,7 @@ export function GroupHeader({
   onInvite,
   menu,
 }: Readonly<GroupHeaderProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const { width } = useWindowDimensions();
   const together = `${formatClock((now - group.createdAt) / 1000)} together`;
   const yourProgress = group.members.find((member) => member.isYou)?.progress;
@@ -189,7 +187,9 @@ export function GroupHeader({
       <Text textStyle={{ fontSize: 18, fontWeight: '700' }}>
         {group.members.map((member) => member.username).join(', ')}
       </Text>
-      <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>
+      <Text
+        textStyle={{ fontSize: 15, color: textColor(colors.onSurfaceVariant) }}
+      >
         {`${yourProgress?.routineName ?? 'Your Workout'} · ${together}`}
       </Text>
       {menu}

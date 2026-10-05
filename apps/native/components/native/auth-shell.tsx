@@ -3,7 +3,7 @@ import { type ReactNode, useEffect } from 'react';
 import { AccessibilityInfo, useWindowDimensions } from 'react-native';
 
 import { BrandLogo } from '@/components/native/brand-logo';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useAppearance, useColors } from '@/lib/ui';
 
 const CONTENT_MAX_WIDTH = 420;
 const OUTER_INSET = 24;
@@ -26,6 +26,7 @@ export function AuthShell({
   children,
 }: Readonly<{ title: string; supportingText: string; children: ReactNode }>) {
   const { resolvedAppearance } = useAppearance();
+  const colors = useColors();
   const columnWidth = useAuthColumnWidth();
 
   return (
@@ -46,7 +47,7 @@ export function AuthShell({
             <Text
               textStyle={{
                 fontSize: 14,
-                color: THEME[resolvedAppearance].mutedForeground,
+                color: textColor(colors.onSurfaceVariant),
                 textAlign: 'center',
               }}
             >
@@ -61,8 +62,7 @@ export function AuthShell({
 
 /** A quiet hairline across the column with a centered `or`; not interactive. */
 export function AuthDivider() {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const hairlineWidth = (useAuthColumnWidth() - 40) / 2;
 
   return (
@@ -71,17 +71,19 @@ export function AuthDivider() {
         style={{
           height: 1,
           width: hairlineWidth,
-          backgroundColor: colors.border,
+          backgroundColor: colors.outlineVariant,
         }}
       />
-      <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>
+      <Text
+        textStyle={{ fontSize: 15, color: textColor(colors.onSurfaceVariant) }}
+      >
         or
       </Text>
       <Column
         style={{
           height: 1,
           width: hairlineWidth,
-          backgroundColor: colors.border,
+          backgroundColor: colors.outlineVariant,
         }}
       />
     </Row>
@@ -96,8 +98,7 @@ export function AuthStatus({
   message,
   tone = 'neutral',
 }: Readonly<{ message: string; tone?: 'neutral' | 'error' }>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
 
   useEffect(() => {
     AccessibilityInfo.announceForAccessibility(message);
@@ -107,7 +108,9 @@ export function AuthStatus({
     <Text
       textStyle={{
         fontSize: 15,
-        color: tone === 'error' ? colors.destructive : colors.mutedForeground,
+        color: textColor(
+          tone === 'error' ? colors.error : colors.onSurfaceVariant
+        ),
       }}
     >
       {message}

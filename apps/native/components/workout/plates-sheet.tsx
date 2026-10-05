@@ -17,7 +17,7 @@ import type { WeightUnit } from '@repo/backend/convex/domain/units';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
 
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { weightInUnit } from '@/lib/workout/format';
 import { plateLoad, plateStrip } from '@/lib/workout/plates';
 
@@ -27,7 +27,10 @@ const BARS: Record<WeightUnit, readonly number[]> = {
   lb: [45, 35, 25, 15],
 };
 
-/** Plate colours by size, heaviest first, like most gyms. */
+/**
+ * Plate colours by size, heaviest first, like most gyms. Intentionally fixed:
+ * they match the real plates, so they don't follow the app colour roles.
+ */
 const PLATE_COLORS = [
   '#c62828',
   '#1565c0',
@@ -61,8 +64,7 @@ export function PlatesSheet({
   onDismiss,
 }: Readonly<PlatesSheetProps>) {
   const updateSettings = useMutation(api.memberSettings.update);
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const [draft, setDraft] = useState(inventory);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -116,7 +118,12 @@ export function PlatesSheet({
               {`${weight} ${draft.unit}: ${plateStrip(weight, draft)}`}
             </Text>
           ) : (
-            <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>
+            <Text
+              textStyle={{
+                fontSize: 15,
+                color: textColor(colors.onSurfaceVariant),
+              }}
+            >
               Enter a weight for the plate breakdown.
             </Text>
           )}
@@ -127,7 +134,7 @@ export function PlatesSheet({
                   width: 40,
                   height: 8,
                   borderRadius: 2,
-                  backgroundColor: colors.mutedForeground,
+                  backgroundColor: colors.onSurfaceVariant,
                 }}
               />
               {load.perSide.map((plate, index) => (
@@ -139,9 +146,10 @@ export function PlatesSheet({
                     height: 24 + 56 * (plate / heaviest),
                     borderRadius: 3,
                     borderWidth: 1,
-                    borderColor: colors.border,
+                    borderColor: colors.outlineVariant,
                     backgroundColor:
-                      PLATE_COLORS[sizes.indexOf(plate)] ?? colors.muted,
+                      PLATE_COLORS[sizes.indexOf(plate)] ??
+                      colors.surfaceContainerHigh,
                   }}
                 />
               ))}
@@ -187,7 +195,10 @@ export function PlatesSheet({
                     {`${plate.weight} ${draft.unit}`}
                   </Text>
                   <Text
-                    textStyle={{ fontSize: 13, color: colors.mutedForeground }}
+                    textStyle={{
+                      fontSize: 13,
+                      color: textColor(colors.onSurfaceVariant),
+                    }}
                   >
                     {`${plate.pairs} ${plate.pairs === 1 ? 'pair' : 'pairs'}`}
                   </Text>

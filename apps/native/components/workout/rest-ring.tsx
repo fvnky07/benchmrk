@@ -1,11 +1,12 @@
 import { Text } from '@expo/ui';
+import type { ColorValue } from 'react-native';
 
 export type RestRingProps = {
   /** Remaining share of the rest, 1 → 0. */
   fraction: number;
   /** Remaining time, e.g. "1:05". */
   label: string;
-  color: string;
+  color: ColorValue;
 };
 
 /** Without a native ring (web, tests) only the remaining time shows. */
