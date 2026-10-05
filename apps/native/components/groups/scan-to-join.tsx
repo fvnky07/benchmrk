@@ -1,6 +1,4 @@
 import { Button, Column, ListItem } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -9,6 +7,7 @@ import { Platform } from 'react-native';
 
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
 import { joinCodeFrom } from '@/lib/groups/join-code';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -19,10 +18,7 @@ const ERROR_COPY: Record<string, string> = {
   EMAIL_NOT_VERIFIED: 'Verify your email to create or join Groups.',
 };
 
-const SCAN_ACCESSIBILITY =
-  Platform.OS === 'ios'
-    ? [accessibilityLabel('Scan a Group QR code')]
-    : [semantics({ contentDescription: 'Scan a Group QR code' })];
+const SCAN_ACCESSIBILITY = [accessibilityModifier('Scan a Group QR code')];
 
 export function ScanToJoin() {
   const joinByCode = useMutation(api.groups.joinByCode);

@@ -1,14 +1,12 @@
 import { BottomSheet, Button, Column, ListItem, ScrollView } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Platform } from 'react-native';
-
+import { Alert } from 'react-native';
 import { GroupGrid } from '@/components/groups/group-grid';
 import { GroupHeader } from '@/components/groups/group-header';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
 
@@ -21,6 +19,9 @@ const ERROR_COPY: Record<string, string> = {
   NOT_IN_GROUP: 'You’re no longer in this Group.',
   NOT_HOST: 'Only the Group host can end the Group.',
 };
+
+/** Sheet grabber, Group header and spacing above the member boxes. */
+const DRAWER_CHROME_HEIGHT = 240;
 
 /** A large native sheet keeps Group progress within the Workout. */
 export function GroupDrawer({
@@ -99,11 +100,7 @@ export function GroupDrawer({
                 disabled={busy}
                 label={actionLabel}
                 variant="text"
-                modifiers={[
-                  Platform.OS === 'ios'
-                    ? accessibilityLabel(actionLabel)
-                    : semantics({ contentDescription: actionLabel }),
-                ]}
+                modifiers={[accessibilityModifier(actionLabel)]}
                 onPress={() =>
                   group.isHost ? confirmEnd() : void attempt(() => leave({}))
                 }
@@ -119,6 +116,7 @@ export function GroupDrawer({
                 members={group.members}
                 now={now}
                 isHost={group.isHost}
+                reservedHeight={DRAWER_CHROME_HEIGHT}
               />
             </Column>
           </ScrollView>

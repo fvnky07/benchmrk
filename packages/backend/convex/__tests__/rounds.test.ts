@@ -2,11 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import {
-  createTest,
-  type TestBackend,
-  type TestMember,
-} from './harness.testing';
+import { createTest, type TestMember } from './harness.testing';
 import {
   activeWorkout,
   exerciseId,
@@ -88,45 +84,60 @@ async function logNext(member: TestMember, workoutExerciseId: string) {
   });
 }
 
-async function storedBlock(t: TestBackend, workoutId: Id<'workouts'>) {
-  const [block] = await t.run((ctx) =>
-    ctx.db
-      .query('workoutBlocks')
-      .withIndex('by_workout', (q) => q.eq('workoutId', workoutId))
-      .collect()
-  );
-  if (!block) throw new Error('no block');
-  return block;
-}
-
 describe('Alternating sets rounds', () => {
   test('uneven Set counts give rounds of 2, 2, then 1, with rest only after each round and none after the final Set', async () => {
-    const { t, member, workoutId } = await startAlternating();
+    const { member } = await startAlternating();
     const { bench, row, squat } = await exercises(member);
 
     const first = await logNext(member, bench._id);
     expect(first).toMatchObject({ next: row._id, roundCompleted: null });
     expect((await activeWorkout(member)).rest).toBeNull();
+    expect((await activeWorkout(member)).blocks[0]?.round).toMatchObject({
+      required: [bench._id, row._id],
+      done: [bench._id],
+    });
 
     const roundOne = await logNext(member, row._id);
     expect(roundOne).toMatchObject({ next: bench._id, roundCompleted: 1 });
+    expect((await activeWorkout(member)).blocks[0]).toMatchObject({
+      roundsCompleted: 1,
+      round: null,
+    });
+    expect((await activeWorkout(member)).rest?.startedAt).toBe(START + 60_000);
     expect((await activeWorkout(member)).rest?.plannedSeconds).toBe(
       BLOCK_REST_SECONDS
     );
 
     await logNext(member, bench._id);
+    expect((await activeWorkout(member)).rest).toBeNull();
+    expect((await activeWorkout(member)).blocks[0]?.round).toMatchObject({
+      number: 2,
+      required: [bench._id, row._id],
+      done: [bench._id],
+    });
     expect((await logNext(member, row._id)).roundCompleted).toBe(2);
+    expect((await activeWorkout(member)).blocks[0]).toMatchObject({
+      roundsCompleted: 2,
+      round: null,
+    });
+    expect((await activeWorkout(member)).rest?.startedAt).toBe(START + 120_000);
     const roundThree = await logNext(member, bench._id);
     expect(roundThree).toMatchObject({ next: squat._id, roundCompleted: 3 });
 
-    const block = await storedBlock(t, workoutId);
-    expect(block.completedRounds.map((round) => round.required.length)).toEqual(
-      [2, 2, 1]
-    );
-    expect(block.completedRounds.map((round) => round.completedAt)).toEqual([
-      START + 60_000,
-      START + 120_000,
-      START + 150_000,
+    const workout = await activeWorkout(member);
+    expect(workout.blocks[0]).toMatchObject({
+      roundsCompleted: 3,
+      round: null,
+    });
+    expect(workout.rest).toMatchObject({
+      plannedSeconds: BLOCK_REST_SECONDS,
+      startedAt: START + 150_000,
+    });
+    expect(
+      workout.exercises.find((item) => item._id === row._id)?.sets
+    ).toEqual([
+      expect.objectContaining({ completedAt: START + 60_000 }),
+      expect.objectContaining({ completedAt: START + 120_000 }),
     ]);
 
     await logNext(member, squat._id);
@@ -145,7 +156,7 @@ describe('Alternating sets rounds', () => {
   });
 
   test('unchecking a Set takes back its round credit but keeps the rest that started', async () => {
-    const { t, member, workoutId } = await startAlternating();
+    const { member } = await startAlternating();
     const { bench, row } = await exercises(member);
     await logNext(member, bench._id);
     await logNext(member, row._id);
@@ -154,9 +165,9 @@ describe('Alternating sets rounds', () => {
       setId: (await exercises(member)).row.sets[0]?._id as Id<'sets'>,
     });
 
-    const block = await storedBlock(t, workoutId);
-    expect(block.completedRounds).toEqual([]);
-    expect(block.round).toMatchObject({ number: 1, done: [bench._id] });
+    const block = (await activeWorkout(member)).blocks[0];
+    expect(block?.roundsCompleted).toBe(0);
+    expect(block?.round).toMatchObject({ number: 1, done: [bench._id] });
     expect((await activeWorkout(member)).rest?.plannedSeconds).toBe(
       BLOCK_REST_SECONDS
     );
@@ -208,7 +219,7 @@ describe('regrouping mid-Workout', () => {
   });
 
   test('an unlinked Exercise leaves the open round, which is credited without starting rest', async () => {
-    const { t, member, workoutId } = await startAlternating();
+    const { member } = await startAlternating();
     const { bench, row, squat } = await exercises(member);
     await member.mutation(api.workoutStructure.linkExercise, {
       workoutExerciseId: squat._id,
@@ -222,11 +233,8 @@ describe('regrouping mid-Workout', () => {
     });
 
     expect((await activeWorkout(member)).rest).toBeNull();
-    const block = await storedBlock(t, workoutId);
-    expect(block.round).toBeUndefined();
-    expect(block.completedRounds.map((round) => round.required)).toEqual([
-      [bench._id, row._id],
-    ]);
+    const block = (await activeWorkout(member)).blocks[0];
+    expect(block).toMatchObject({ round: null, roundsCompleted: 1 });
     expect((await logNext(member, squat._id)).roundCompleted).toBeNull();
     expect((await activeWorkout(member)).rest?.plannedSeconds).toBe(60);
   });
@@ -251,7 +259,7 @@ describe('regrouping mid-Workout', () => {
   });
 
   test('finishing leaves an open round incomplete and invents no Set or rest', async () => {
-    const { t, member, workoutId } = await startAlternating();
+    const { member, workoutId } = await startAlternating();
     const { bench } = await exercises(member);
     await logNext(member, bench._id);
 
@@ -260,10 +268,11 @@ describe('regrouping mid-Workout', () => {
       reason: 'terminate',
     });
 
-    const block = await storedBlock(t, workoutId);
-    expect(block.round).toBeUndefined();
-    expect(block.completedRounds).toEqual([]);
     const workout = await member.query(api.workouts.get, { workoutId });
+    expect(workout?.blocks[0]).toMatchObject({
+      round: null,
+      roundsCompleted: 0,
+    });
     expect(workout?.rest).toBeNull();
     expect(
       workout?.exercises.flatMap((item) =>

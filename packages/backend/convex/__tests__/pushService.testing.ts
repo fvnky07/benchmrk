@@ -5,14 +5,15 @@ import type { TestBackend } from './harness.testing';
 const SEND_URL = 'https://exp.host/--/api/v2/push/send';
 const RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
 
+/** A badge-only refresh carries just `to` and `badge`. */
 export interface PushMessage {
   to: string;
-  title: string;
-  body: string;
-  sound: string;
-  channelId: string;
+  title?: string;
+  body?: string;
+  sound?: string;
+  channelId?: string;
   badge?: number;
-  data: { type: string; inviteId?: string; kind?: string };
+  data?: { type: string; inviteId?: string; kind?: string };
 }
 
 interface PushReceipt {

@@ -1,6 +1,7 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { useGroupHeartbeat } from '@/lib/groups/use-group-heartbeat';
+import { useReactionAlerts } from '@/lib/groups/use-reaction-alerts';
 import { useGroupNotifications } from '@/lib/push/use-group-notifications';
 import { usePushRegistration } from '@/lib/push/use-push-registration';
 import { useAppearance } from '@/lib/ui';
@@ -15,6 +16,7 @@ export default function MainLayout() {
   useResumeActiveWorkout();
   useWorkoutLiveStatus();
   useGroupHeartbeat();
+  useReactionAlerts();
   usePushRegistration();
   useGroupNotifications();
 

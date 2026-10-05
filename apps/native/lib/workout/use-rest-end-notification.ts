@@ -3,23 +3,32 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 const NOTIFICATION_ID = 'rest-end';
-/** Android fixes a channel's sound when it's created, so sound and silence get one each. */
-const CHANNELS = {
-  sound: 'rest-end-sound',
-  silent: 'rest-end-silent',
-} as const;
+/** Sound and vibration are immutable channel settings, so each pair has its own channel. */
+const CHANNELS: Readonly<
+  Record<'sound' | 'silent', Readonly<Record<'haptics' | 'quiet', string>>>
+> = {
+  sound: {
+    haptics: 'rest-end-sound-haptics',
+    quiet: 'rest-end-sound-quiet',
+  },
+  silent: {
+    haptics: 'rest-end-silent-haptics',
+    quiet: 'rest-end-silent-quiet',
+  },
+};
 
-async function ensureAndroidChannel(sound: boolean) {
+async function ensureAndroidChannel(
+  channelId: string,
+  sound: boolean,
+  haptics: boolean
+) {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(
-    sound ? CHANNELS.sound : CHANNELS.silent,
-    {
-      name: sound ? 'Rest over' : 'Rest over (silent)',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: sound ? 'default' : null,
-      enableVibrate: true,
-    }
-  );
+  await Notifications.setNotificationChannelAsync(channelId, {
+    name: `Rest over${sound ? '' : ' (silent)'}${haptics ? '' : ' (no vibration)'}`,
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: sound ? 'default' : null,
+    enableVibrate: haptics,
+  });
 }
 
 /**
@@ -31,17 +40,24 @@ async function ensureAndroidChannel(sound: boolean) {
  */
 export function useRestEndNotification(
   endsAt: number | null,
-  { sound, nextExercise }: { sound: boolean; nextExercise: string | null }
+  {
+    sound,
+    haptics,
+    nextExercise,
+  }: { sound: boolean; haptics: boolean; nextExercise: string | null }
 ) {
   useEffect(() => {
     let cancelled = false;
+    const channelId =
+      CHANNELS[sound ? 'sound' : 'silent'][haptics ? 'haptics' : 'quiet'];
 
     const sync = async () => {
       await cancelRestEndNotification();
       if (endsAt === null || endsAt <= Date.now()) return;
       const { granted } = await Notifications.getPermissionsAsync();
       if (!granted || cancelled) return;
-      await ensureAndroidChannel(sound);
+      await ensureAndroidChannel(channelId, sound, haptics);
+      if (cancelled) return;
       await Notifications.scheduleNotificationAsync({
         identifier: NOTIFICATION_ID,
         content: {
@@ -54,7 +70,7 @@ export function useRestEndNotification(
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: new Date(endsAt),
-          channelId: sound ? CHANNELS.sound : CHANNELS.silent,
+          channelId,
         },
       });
     };
@@ -63,7 +79,7 @@ export function useRestEndNotification(
     return () => {
       cancelled = true;
     };
-  }, [endsAt, sound, nextExercise]);
+  }, [endsAt, sound, haptics, nextExercise]);
 }
 
 /** Cancels a pending "Rest over" alert, e.g. when the Workout ends. */

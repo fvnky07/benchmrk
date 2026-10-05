@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
   type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import { START, useWorkoutClock } from './workoutFixtures.testing';
 
@@ -24,22 +24,8 @@ async function backend() {
 }
 
 /** A member with a verified email (unless asked otherwise) and a username. */
-async function member(
-  t: TestBackend,
-  username: string,
-  { verified = true }: { verified?: boolean } = {}
-): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: verified,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
-
 async function hostInGroup(t: TestBackend) {
-  const host = await member(t, 'host');
+  const host = await verifiedMember(t, 'host');
   await host.mutation(api.groups.create, {});
   return host;
 }
@@ -58,7 +44,7 @@ describe('Group invites', () => {
   test('an invite reaches only the member with that exact username', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const lifter = await member(t, 'lifter');
+    const lifter = await verifiedMember(t, 'lifter');
 
     await expect(
       host.mutation(api.groupInvites.send, { username: 'lift' })
@@ -78,7 +64,7 @@ describe('Group invites', () => {
   test('only Group members can invite, and never someone already in the Group', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const outsider = await member(t, 'outsider');
+    const outsider = await verifiedMember(t, 'outsider');
 
     await expect(
       outsider.mutation(api.groupInvites.send, { username: 'host' })
@@ -91,12 +77,12 @@ describe('Group invites', () => {
   test('“nobody” and unverified invitees get nothing, yet the invite looks sent', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const private_ = await member(t, 'private');
+    const private_ = await verifiedMember(t, 'private');
     await private_.mutation(api.memberSettings.update, {
       invitesFrom: 'nobody',
     });
-    const unverified = await member(t, 'newbie', { verified: false });
-    const open = await member(t, 'open');
+    const unverified = await verifiedMember(t, 'newbie', { verified: false });
+    const open = await verifiedMember(t, 'open');
 
     const delivered = await host.mutation(api.groupInvites.send, {
       username: 'open',
@@ -118,11 +104,11 @@ describe('Group invites', () => {
   test('“people I’ve been in a Group with” lets in past Group members only', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const picky = await member(t, 'picky');
+    const picky = await verifiedMember(t, 'picky');
     await picky.mutation(api.memberSettings.update, {
       invitesFrom: 'groupmates',
     });
-    const stranger = await member(t, 'stranger');
+    const stranger = await verifiedMember(t, 'stranger');
     await stranger.mutation(api.groups.create, {});
 
     await stranger.mutation(api.groupInvites.send, { username: 'picky' });
@@ -144,7 +130,7 @@ describe('Group invites', () => {
     const t = await backend();
     const host = await hostInGroup(t);
     const { code } = await host.mutation(api.groups.shareCode, {});
-    const early = await member(t, 'early');
+    const early = await verifiedMember(t, 'early');
     await early.mutation(api.memberSettings.update, {
       invitesFrom: 'groupmates',
     });
@@ -152,7 +138,7 @@ describe('Group invites', () => {
     vi.setSystemTime(START + 10 * 60 * 1000);
     await early.mutation(api.groups.leave, {});
     vi.setSystemTime(START + 20 * 60 * 1000);
-    const late = await member(t, 'late');
+    const late = await verifiedMember(t, 'late');
     await late.mutation(api.groups.joinByCode, { code });
 
     await late.mutation(api.groupInvites.send, { username: 'early' });
@@ -163,8 +149,8 @@ describe('Group invites', () => {
   test('an invite lasts 24 hours or until the Group ends', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const late = await member(t, 'late');
-    const ended = await member(t, 'ended');
+    const late = await verifiedMember(t, 'late');
+    const ended = await verifiedMember(t, 'ended');
     await host.mutation(api.groupInvites.send, { username: 'late' });
 
     vi.setSystemTime(START + 24 * HOUR + 1);
@@ -191,7 +177,7 @@ describe('Group invites', () => {
     const t = await backend();
     const host = await hostInGroup(t);
     for (let index = 0; index < 11; index += 1) {
-      await member(t, `lifter${index}`);
+      await verifiedMember(t, `lifter${index}`);
     }
     for (let index = 0; index < 10; index += 1) {
       await host.mutation(api.groupInvites.send, {
@@ -210,7 +196,7 @@ describe('Group invites', () => {
   test('after a decline, the inviter can’t invite that member again for an hour', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const busy = await member(t, 'busy');
+    const busy = await verifiedMember(t, 'busy');
     await host.mutation(api.groupInvites.send, { username: 'busy' });
     const invite = await onlyInvite(busy);
     await busy.mutation(api.groupInvites.decline, {
@@ -230,8 +216,8 @@ describe('Group invites', () => {
   test('accepting joins the Group under the normal join rules', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const guest = await member(t, 'guest');
-    const taken = await member(t, 'taken');
+    const guest = await verifiedMember(t, 'guest');
+    const taken = await verifiedMember(t, 'taken');
     await host.mutation(api.groupInvites.send, { username: 'guest' });
     await host.mutation(api.groupInvites.send, { username: 'taken' });
     await taken.mutation(api.groups.create, {});
@@ -258,11 +244,11 @@ describe('Group invites', () => {
   test('accepting is refused when the Group is full', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const invitee = await member(t, 'invitee');
+    const invitee = await verifiedMember(t, 'invitee');
     await host.mutation(api.groupInvites.send, { username: 'invitee' });
     const { code } = await host.mutation(api.groups.shareCode, {});
     for (let index = 1; index < 20; index += 1) {
-      await (await member(t, `lifter${index}`)).mutation(
+      await (await verifiedMember(t, `lifter${index}`)).mutation(
         api.groups.joinByCode,
         { code }
       );
@@ -279,8 +265,8 @@ describe('Group invites', () => {
   test('only the invitee can answer their invite', async () => {
     const t = await backend();
     const host = await hostInGroup(t);
-    const guest = await member(t, 'guest');
-    const snoop = await member(t, 'snoop');
+    const guest = await verifiedMember(t, 'guest');
+    const snoop = await verifiedMember(t, 'snoop');
     await host.mutation(api.groupInvites.send, { username: 'guest' });
     const invite = await onlyInvite(guest);
 

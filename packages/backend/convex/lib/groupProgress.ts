@@ -3,12 +3,13 @@
 // leaving or ending a Group.
 import { ConvexError, type Infer } from 'convex/values';
 
-import { components, internal } from '../_generated/api';
+import { components } from '../_generated/api';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { meetsTarget } from '../domain/overload';
 import type { groupProgressValidator } from '../schema';
 import { blockedEitherWayIds } from './blocks';
+import { notifyGroupEvent } from './groupPushes';
 import { isWorkingSet } from './overload';
 import {
   findActiveWorkout,
@@ -168,13 +169,7 @@ export async function groupMembers(ctx: QueryCtx, group: Doc<'groups'>) {
     .collect();
 }
 
-/** Joins this close after the first one go out as one push. */
-export const JOIN_MERGE_MS = 60_000;
-
-/**
- * Records a Group event, its recipient-owned inbox entries and its push.
- * Joins open a push merge window; leaves and drops tell members still there.
- */
+/** Records a Group event and recipient-owned inbox entries; lifecycle code schedules pushes. */
 export async function recordGroupEvent(
   ctx: MutationCtx,
   groupId: Id<'groups'>,
@@ -225,38 +220,7 @@ export async function recordGroupEvent(
       });
     }
   }
-  if (kind === 'joined') {
-    const recent = await ctx.db
-      .query('groupEvents')
-      .withIndex('by_group_at', (q) =>
-        q.eq('groupId', groupId).gt('at', at - JOIN_MERGE_MS)
-      )
-      .collect();
-    const windowOpen = recent.some(
-      (event) => event.batchUntil !== undefined && event.batchUntil > at
-    );
-    if (!windowOpen) {
-      const until = at + JOIN_MERGE_MS;
-      await ctx.db.patch(eventId, { batchUntil: until });
-      await ctx.scheduler.runAfter(JOIN_MERGE_MS, internal.push.sendJoins, {
-        groupId,
-        from: at,
-        until,
-      });
-    }
-  } else if ((kind === 'left' || kind === 'dropped') && userId) {
-    const group = await ctx.db.get(groupId);
-    const recipientIds = group
-      ? (await groupMembers(ctx, group)).map((member) => member.userId)
-      : [];
-    if (recipientIds.length) {
-      await ctx.scheduler.runAfter(0, internal.push.sendGroupEvent, {
-        kind: 'left',
-        actorId: userId,
-        recipientIds,
-      });
-    }
-  }
+  return eventId;
 }
 
 /** Adds the member to the Group, with their current progress summary. */
@@ -274,7 +238,8 @@ export async function addMember(
     progress: await progressSummary(ctx, userId, false),
   });
   await ctx.db.patch(group._id, { lastActivityAt: now });
-  await recordGroupEvent(ctx, group._id, 'joined', userId);
+  const eventId = await recordGroupEvent(ctx, group._id, 'joined', userId);
+  await notifyGroupEvent(ctx, { kind: 'joined', groupId: group._id, eventId });
 }
 
 /**
@@ -442,16 +407,12 @@ export async function endGroup(
     }
   }
   await ctx.db.patch(group._id, { status: 'ended', endedAt: now });
-  const recipientIds = members
-    .map((member) => member.userId)
-    .filter((userId) => userId !== endedBy);
-  if (recipientIds.length) {
-    await ctx.scheduler.runAfter(0, internal.push.sendGroupEvent, {
-      kind: 'ended',
-      actorId: endedBy,
-      recipientIds,
-    });
-  }
+  await notifyGroupEvent(ctx, {
+    kind: 'ended',
+    groupId: group._id,
+    actorId: endedBy,
+    recipientIds: members.map((member) => member.userId),
+  });
 }
 
 /**
@@ -477,6 +438,14 @@ export async function leaveGroup(
   await ctx.db.patch(group._id, { lastActivityAt: now });
   await recordGroupEvent(ctx, group._id, reason, userId);
   const remaining = await groupMembers(ctx, group);
+  if (reason !== 'removed') {
+    await notifyGroupEvent(ctx, {
+      kind: 'left',
+      groupId: group._id,
+      actorId: userId,
+      recipientIds: remaining.map((member) => member.userId),
+    });
+  }
   const [nextHost] = remaining;
   if (!nextHost) {
     await endGroup(ctx, group);

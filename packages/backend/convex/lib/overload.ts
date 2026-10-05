@@ -19,6 +19,9 @@ import {
 export const isWorkingSet = (set: Doc<'sets'>) =>
   set.type === 'normal' || set.type === 'failure';
 
+export const isPlannedWorkingSet = (set: Doc<'sets'>) =>
+  isWorkingSet(set) && !set.extra;
+
 /** How far back the engine looks: the Plateau rule needs three Workouts. */
 const MAX_EXPOSURES = 3;
 
@@ -50,7 +53,7 @@ export async function recentExposures(
   for await (const set of newestFirst) {
     if (exposures.length === MAX_EXPOSURES) break;
     if (checked.has(set.workoutExerciseId)) continue;
-    if (!isWorkingSet(set) || set.completedAt === undefined) continue;
+    if (!isPlannedWorkingSet(set) || set.completedAt === undefined) continue;
     checked.add(set.workoutExerciseId);
     const workoutExercise = await ctx.db.get(set.workoutExerciseId);
     if (!workoutExercise || workoutExercise.skipped) continue;
@@ -66,8 +69,16 @@ export async function recentExposures(
       isWorkingSet
     );
     const { overload } = workoutExercise;
+    const plannedSets = working.filter(isPlannedWorkingSet).map((item) => ({
+      target: item.target ?? null,
+      logged: item.completedAt !== undefined,
+      weightKg: item.weightKg ?? null,
+      reps: item.reps ?? null,
+      rpe: item.rpe ?? null,
+    }));
     exposures.push({
       workoutExerciseId: workoutExercise._id,
+      plannedSets,
       sets: working
         .filter((item) => item.completedAt !== undefined)
         .map((item) => ({
@@ -82,17 +93,7 @@ export async function recentExposures(
         max: workoutExercise.repRangeMax,
       },
       reason: overload?.reason ?? null,
-      stalled:
-        overload !== undefined &&
-        isStalled(
-          overload,
-          working.map((item) => ({
-            target: item.target ?? null,
-            logged: item.completedAt !== undefined,
-            weightKg: item.weightKg ?? null,
-            reps: item.reps ?? null,
-          }))
-        ),
+      stalled: overload !== undefined && isStalled(overload, plannedSets),
       plateauDismissed: workoutExercise.plateauDismissed ?? false,
     });
   }
@@ -160,7 +161,7 @@ export async function applyOverloadTargets(
       ? routineExercise
       : null;
   const working = (await setsOfExercise(ctx, workoutExercise._id)).filter(
-    isWorkingSet
+    isPlannedWorkingSet
   );
   const exposures = await recentExposures(ctx, workout.userId, exercise._id);
   const enabled =

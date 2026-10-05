@@ -2,28 +2,17 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api, internal } from '../_generated/api';
 import {
-  createAuthIdentity,
   createTest,
   type TestBackend,
-  type TestMember,
+  verifiedMember,
 } from './harness.testing';
 import { START, useWorkoutClock } from './workoutFixtures.testing';
 
 beforeEach(useWorkoutClock);
 afterEach(() => vi.useRealTimers());
 
-async function member(t: TestBackend, username: string): Promise<TestMember> {
-  const identityId = await createAuthIdentity(t, {
-    email: `${username}@example.com`,
-    emailVerified: true,
-  });
-  const signedIn = t.withIdentity({ subject: identityId });
-  await signedIn.mutation(api.profile.updateProfile, { username });
-  return signedIn;
-}
-
 async function hostWithCode(t: TestBackend) {
-  const host = await member(t, 'host');
+  const host = await verifiedMember(t, 'host');
   await host.mutation(api.groups.create, {});
   const { code } = await host.mutation(api.groups.shareCode, {});
   return { host, code };
@@ -33,7 +22,7 @@ describe('Group presence and lifecycle', () => {
   test('a box reconnects at 30 seconds and becomes active after a heartbeat', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const guest = await member(t, 'guest');
+    const guest = await verifiedMember(t, 'guest');
     await guest.mutation(api.groups.joinByCode, { code });
 
     vi.setSystemTime(START + 29_999);
@@ -66,7 +55,7 @@ describe('Group presence and lifecycle', () => {
   test('a member drops at 10 minutes and can rejoin a still-live Group', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const guest = await member(t, 'guest');
+    const guest = await verifiedMember(t, 'guest');
     await guest.mutation(api.groups.joinByCode, { code });
 
     vi.setSystemTime(START + 599_999);
@@ -127,8 +116,8 @@ describe('Group presence and lifecycle', () => {
   test('a dropped host hands hosting to the longest-present member', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const pat = await member(t, 'pat');
-    const sam = await member(t, 'sam');
+    const pat = await verifiedMember(t, 'pat');
+    const sam = await verifiedMember(t, 'sam');
     vi.setSystemTime(START + 1_000);
     await pat.mutation(api.groups.joinByCode, { code });
     vi.setSystemTime(START + 2_000);
@@ -175,8 +164,8 @@ describe('Group presence and lifecycle', () => {
   test('a leaving host hands hosting to the longest-present member', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const pat = await member(t, 'pat');
-    const sam = await member(t, 'sam');
+    const pat = await verifiedMember(t, 'pat');
+    const sam = await verifiedMember(t, 'sam');
     vi.setSystemTime(START + 1_000);
     await pat.mutation(api.groups.joinByCode, { code });
     vi.setSystemTime(START + 2_000);
@@ -210,14 +199,16 @@ describe('Group presence and lifecycle', () => {
     });
     await pat.mutation(api.groups.revokeCode, {});
     await expect(
-      (await member(t, 'late')).mutation(api.groups.joinByCode, { code })
+      (await verifiedMember(t, 'late')).mutation(api.groups.joinByCode, {
+        code,
+      })
     ).rejects.toThrow('CODE_INVALID');
   });
 
   test('four hours of idle time ends a Group even while heartbeats continue', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const late = await member(t, 'late');
+    const late = await verifiedMember(t, 'late');
 
     vi.setSystemTime(START + 4 * 3_600_000 - 1);
     await host.mutation(api.groups.heartbeat, {});
@@ -236,8 +227,8 @@ describe('Group presence and lifecycle', () => {
   test('events start at the viewer’s arrival and are newest first', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const early = await member(t, 'early');
-    const late = await member(t, 'late');
+    const early = await verifiedMember(t, 'early');
+    const late = await verifiedMember(t, 'late');
     vi.setSystemTime(START + 1_000);
     await early.mutation(api.groups.joinByCode, { code });
     vi.setSystemTime(START + 2_000);
@@ -316,7 +307,7 @@ describe('Group presence and lifecycle', () => {
   test('dropping the last member ends the Group and invalidates its code', async () => {
     const t = createTest();
     const { host, code } = await hostWithCode(t);
-    const late = await member(t, 'late');
+    const late = await verifiedMember(t, 'late');
     vi.setSystemTime(START + 600_000);
     await t.mutation(internal.groupSweeps.sweep, {});
 

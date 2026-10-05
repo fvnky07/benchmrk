@@ -373,6 +373,8 @@ export default defineSchema({
     order: v.number(),
     type: setTypeValidator,
     weightKg: v.optional(v.number()),
+    /** Added or duplicated after the Exercise's initial plan; ignored by Overload. */
+    extra: v.optional(v.boolean()),
     reps: v.optional(v.number()),
     durationSeconds: v.optional(v.number()),
     distanceMeters: v.optional(v.number()),
@@ -561,7 +563,8 @@ export default defineSchema({
   })
     .index('by_invitee', ['inviteeId', 'delivered', 'status', 'createdAt'])
     .index('by_inviter', ['inviterId', 'createdAt'])
-    .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt']),
+    .index('by_inviter_invitee', ['inviterId', 'inviteeId', 'createdAt'])
+    .index('by_group', ['groupId']),
 
   blocks: defineTable({
     blockerId: v.string(),
@@ -574,7 +577,7 @@ export default defineSchema({
   reports: defineTable({
     reporterId: v.string(),
     reportedId: v.string(),
-    groupId: v.optional(v.id('groups')),
+    groupId: v.id('groups'),
     reason: v.union(
       v.literal('harassment'),
       v.literal('spam'),

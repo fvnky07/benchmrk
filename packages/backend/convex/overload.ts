@@ -6,7 +6,7 @@ import { requireVisibleExercise } from './lib/exercises';
 import { requireIdentityId } from './lib/identity';
 import {
   applyOverloadTargets,
-  isWorkingSet,
+  isPlannedWorkingSet,
   recentExposures,
   replanActiveWorkout,
   retargetPatch,
@@ -40,7 +40,7 @@ export const targetSheet = query({
     const settings = await readMemberSettings(ctx, userId);
     const [last] = await recentExposures(ctx, userId, exercise._id);
     const working = (await setsOfExercise(ctx, workoutExercise._id)).filter(
-      isWorkingSet
+      isPlannedWorkingSet
     );
     return {
       exerciseId: exercise._id,
@@ -75,7 +75,7 @@ async function requireOpenExercise(
   );
   requireActive(workout);
   const unlogged = (await setsOfExercise(ctx, workoutExercise._id)).filter(
-    (set) => isWorkingSet(set) && set.completedAt === undefined
+    (set) => isPlannedWorkingSet(set) && set.completedAt === undefined
   );
   return { userId, workoutExercise, unlogged };
 }

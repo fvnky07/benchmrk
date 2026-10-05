@@ -8,10 +8,11 @@ import {
   ScrollView,
   Text,
 } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
+import { defaultMinSize, semantics } from '@expo/ui/jetpack-compose/modifiers';
 import {
   accessibilityElement,
   accessibilityLabel,
+  frame,
 } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { presenceOf } from '@repo/backend/convex/domain/presence';
@@ -25,6 +26,7 @@ import { MemberActionsSheet } from '@/components/groups/member-actions-sheet';
 import { ExerciseTile } from '@/components/workout/exercise-strip';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { THEME, useAppearance } from '@/lib/ui';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock, formatWeight } from '@/lib/workout/format';
 
 type GroupView = NonNullable<FunctionReturnType<typeof api.groups.getMine>>;
@@ -34,6 +36,9 @@ const SCREEN_PADDING = 24;
 const GAP = 12;
 const AVATAR = 32;
 const LOCK = { ios: 'lock.fill', android: LockIcon } as const;
+const ACTIONS_WIDTH = 44;
+/** Tall enough for a full box, so a lone member's box never clips its content. */
+const MIN_FILL_HEIGHT = 460;
 
 function statusText(progress: MemberBox['progress'], now: number): string {
   switch (progress.status) {
@@ -83,6 +88,7 @@ function MemberBoxView({
   box,
   width,
   headerHeight,
+  fillHeight,
   compact,
   units,
   now,
@@ -91,6 +97,7 @@ function MemberBoxView({
   box: MemberBox;
   width: number;
   headerHeight: number;
+  fillHeight: number | null;
   compact: boolean;
   units: WeightUnit;
   now: number;
@@ -123,10 +130,22 @@ function MemberBoxView({
       ? []
       : [`${exercise.name}: target ${exercise.targetMet ? 'met' : 'missed'}`]
   );
+  const routineLine =
+    progress.startedAt === null
+      ? 'Not started'
+      : [
+          progress.routineName,
+          progress.status === 'finished'
+            ? null
+            : formatClock((now - progress.startedAt) / 1000),
+        ]
+          .filter(Boolean)
+          .join(' · ');
   const label = [
     box.username,
     tag,
-    reconnecting ? 'Reconnecting' : statusText(progress, now),
+    reconnecting ? 'Reconnecting' : routineLine,
+    reconnecting ? null : statusText(progress, now),
     `Pace ${Math.round(pace * 100)}%`,
     currentExercise,
     ...targetResults,
@@ -137,6 +156,10 @@ function MemberBoxView({
   ]
     .filter(Boolean)
     .join(', ');
+  const textWidth = Math.max(
+    48,
+    width - 24 - AVATAR - 8 - (box.isYou ? 0 : ACTIONS_WIDTH + 8)
+  );
 
   return (
     <>
@@ -144,8 +167,19 @@ function MemberBoxView({
         spacing={8}
         modifiers={
           Platform.OS === 'ios'
-            ? [accessibilityElement('contain'), accessibilityLabel(label)]
-            : [semantics({ contentDescription: label })]
+            ? [
+                accessibilityElement('contain'),
+                accessibilityLabel(label),
+                frame({
+                  width,
+                  minHeight: fillHeight ?? undefined,
+                  alignment: 'topLeading',
+                }),
+              ]
+            : [
+                semantics({ contentDescription: label }),
+                defaultMinSize({ minHeight: fillHeight ?? undefined }),
+              ]
         }
         style={{
           width,
@@ -155,13 +189,16 @@ function MemberBoxView({
           borderColor: colors.border,
         }}
       >
-        <Column style={{ height: headerHeight }}>
+        <Column
+          modifiers={[
+            Platform.OS === 'ios'
+              ? frame({ minHeight: headerHeight, alignment: 'topLeading' })
+              : defaultMinSize({ minHeight: headerHeight }),
+          ]}
+        >
           <Row spacing={8} alignment="start">
             <Avatar box={box} />
-            <Column
-              spacing={4}
-              style={{ width: Math.max(48, width - 24 - AVATAR - 8) }}
-            >
+            <Column spacing={4} style={{ width: textWidth }}>
               <Text
                 numberOfLines={1}
                 textStyle={{ fontSize: 15, fontWeight: '700' }}
@@ -178,25 +215,21 @@ function MemberBoxView({
                 numberOfLines={1}
                 textStyle={{ fontSize: 12, color: colors.mutedForeground }}
               >
-                {reconnecting ? 'Reconnecting…' : 'Active'}
+                {reconnecting ? 'Reconnecting…' : routineLine}
               </Text>
             </Column>
+            {!box.isYou ? (
+              <Button
+                label="…"
+                modifiers={[
+                  accessibilityModifier(`Actions for ${box.username}`),
+                ]}
+                onPress={() => setActionsPresented(true)}
+                variant="text"
+              />
+            ) : null}
           </Row>
         </Column>
-        {!box.isYou ? (
-          <Button
-            label="…"
-            modifiers={[
-              Platform.OS === 'ios'
-                ? accessibilityLabel(`Actions for ${box.username}`)
-                : semantics({
-                    contentDescription: `Actions for ${box.username}`,
-                  }),
-            ]}
-            onPress={() => setActionsPresented(true)}
-            variant="text"
-          />
-        ) : null}
         <Column
           style={{
             height: 1,
@@ -282,13 +315,9 @@ function MemberBoxView({
                       {exercise.targetMet !== null ? (
                         <Text
                           modifiers={[
-                            Platform.OS === 'ios'
-                              ? accessibilityLabel(
-                                  `${exercise.name}: target ${exercise.targetMet ? 'met' : 'missed'}`
-                                )
-                              : semantics({
-                                  contentDescription: `${exercise.name}: target ${exercise.targetMet ? 'met' : 'missed'}`,
-                                }),
+                            accessibilityModifier(
+                              `${exercise.name}: target ${exercise.targetMet ? 'met' : 'missed'}`
+                            ),
                           ]}
                           textStyle={{
                             fontSize: 12,
@@ -320,17 +349,30 @@ function MemberBoxView({
   );
 }
 
-/** Member boxes share a fixed, font-scaled header height so row dividers align. */
+/**
+ * Member boxes share a font-scaled minimum header height so dividers align
+ * while large text can grow. A lone box fills at least the remaining screen.
+ */
 export function GroupGrid({
   members,
   now,
   isHost,
-}: Readonly<{ members: readonly MemberBox[]; now: number; isHost: boolean }>) {
+  reservedHeight,
+}: Readonly<{
+  members: readonly MemberBox[];
+  now: number;
+  isHost: boolean;
+  reservedHeight: number;
+}>) {
   const settings = useQuery(api.memberSettings.get);
-  const { width, fontScale } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
   const fullWidth = width - SCREEN_PADDING * 2;
   const halfWidth = (fullWidth - GAP) / 2;
   const headerHeight = 76 * Math.max(1, fontScale);
+  const fillHeight = Math.max(
+    MIN_FILL_HEIGHT * Math.max(1, fontScale),
+    height - reservedHeight
+  );
   const compact = members.length >= 9;
   const units = settings?.units ?? 'kg';
 
@@ -339,6 +381,7 @@ export function GroupGrid({
       <Column spacing={GAP}>
         {members.map((box) => (
           <MemberBoxView
+            fillHeight={members.length === 1 ? fillHeight : null}
             key={box.username}
             box={box}
             width={fullWidth}
@@ -367,6 +410,7 @@ export function GroupGrid({
         >
           {row.map((box) => (
             <MemberBoxView
+              fillHeight={null}
               key={box.username}
               box={box}
               width={halfWidth}

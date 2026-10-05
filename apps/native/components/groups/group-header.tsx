@@ -7,21 +7,14 @@ import {
   Spacer,
   Text,
 } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import type { api } from '@repo/backend/convex/_generated/api';
 import type { FunctionReturnType } from 'convex/server';
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
-import {
-  Text as NativeText,
-  Platform,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-
+import { Text as NativeText, useWindowDimensions, View } from 'react-native';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { THEME, useAppearance } from '@/lib/ui';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock } from '@/lib/workout/format';
 
 type GroupView = NonNullable<FunctionReturnType<typeof api.groups.getMine>>;
@@ -185,11 +178,7 @@ export function GroupHeader({
           <Button
             label="Workout"
             variant="text"
-            modifiers={[
-              Platform.OS === 'ios'
-                ? accessibilityLabel('Back to your Workout')
-                : semantics({ contentDescription: 'Back to your Workout' }),
-            ]}
+            modifiers={[accessibilityModifier('Back to your Workout')]}
             onPress={onBack}
           />
         ) : null}

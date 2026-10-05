@@ -1,12 +1,9 @@
 import { Button, Column, ListItem } from '@expo/ui';
-import { semantics } from '@expo/ui/jetpack-compose/modifiers';
-import { accessibilityLabel } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
-import { Platform } from 'react-native';
-
 import { NativeTextField } from '@/components/native/native-text-field';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -63,11 +60,7 @@ export function InviteByUsername() {
       <Button
         disabled={busy || username.trim() === ''}
         label="Invite"
-        modifiers={[
-          Platform.OS === 'ios'
-            ? accessibilityLabel('Invite by username')
-            : semantics({ contentDescription: 'Invite by username' }),
-        ]}
+        modifiers={[accessibilityModifier('Invite by username')]}
         onPress={() => void invite()}
       />
       {sent ? <ListItem>Invite sent</ListItem> : null}

@@ -223,6 +223,7 @@ export const addSet = workoutMutation({
         workoutExerciseId: workoutExercise._id,
         exerciseId: workoutExercise.exerciseId,
         type,
+        extra: true,
       }
     );
   },
@@ -243,6 +244,7 @@ export const duplicateSet = workoutMutation({
       workoutExerciseId: set.workoutExerciseId,
       exerciseId: set.exerciseId,
       type: set.type,
+      extra: true,
       weightKg: set.weightKg,
       reps: set.reps,
       durationSeconds: set.durationSeconds,
