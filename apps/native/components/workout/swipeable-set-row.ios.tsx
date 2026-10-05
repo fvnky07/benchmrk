@@ -1,6 +1,7 @@
 import { Button, SwipeActions } from '@expo/ui/swift-ui';
 import { tint } from '@expo/ui/swift-ui/modifiers';
 
+import { useColors } from '@/lib/ui';
 import type { SwipeableSetRowProps } from './swipeable-set-row';
 
 /**
@@ -15,6 +16,7 @@ export function SwipeableSetRow({
   onDelete,
   children,
 }: Readonly<SwipeableSetRowProps>) {
+  const colors = useColors();
   return (
     <SwipeActions>
       {children}
@@ -24,7 +26,7 @@ export function SwipeableSetRow({
             label="Complete"
             systemImage="checkmark"
             onPress={onComplete}
-            modifiers={[tint('#2e9e4f')]}
+            modifiers={[tint(colors.primary)]}
           />
         </SwipeActions.Actions>
       ) : null}
@@ -33,13 +35,13 @@ export function SwipeableSetRow({
           label="Duplicate"
           systemImage="plus.square.on.square"
           onPress={onDuplicate}
-          modifiers={[tint('#2a6fd6')]}
+          modifiers={[tint(colors.secondary)]}
         />
         <Button
           label="Note"
           systemImage="note.text"
           onPress={onNote}
-          modifiers={[tint('#8a6d1f')]}
+          modifiers={[tint(colors.tertiary)]}
         />
         {onDelete ? (
           // biome-ignore lint/a11y/useValidAriaRole: SwiftUI ButtonRole, not an ARIA role

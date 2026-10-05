@@ -2,16 +2,13 @@ import { Column, Text } from '@expo/ui';
 import { useEffect, useRef } from 'react';
 
 import { useHaptics } from '@/lib/haptics';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
 import { GestureBox } from '@/modules/benchmrk-ui';
 import { RestRing } from './rest-ring';
 
 const ADJUST_SECONDS = 15;
 const PULSE_FROM_SECONDS = 10;
-const REST_COLOR = '#2a6fd6';
-const PULSE_COLORS = ['#d33a32', '#d97706'] as const;
-const DONE_COLOR = '#2e9e4f';
 
 export type RestState = {
   startedAt: number;
@@ -45,8 +42,7 @@ export function RestTimer({
   onReset,
   onOpenOptions,
 }: Readonly<RestTimerProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const haptic = useHaptics();
   const remaining = rest ? Math.max(0, (rest.endsAt - now) / 1000) : null;
   const isResting = remaining !== null && remaining > 0;
@@ -62,8 +58,10 @@ export function RestTimer({
   const clock = formatClock(Math.ceil(remaining ?? plannedSeconds));
   const color =
     remaining !== null && remaining <= PULSE_FROM_SECONDS
-      ? PULSE_COLORS[Math.floor(remaining) % 2]
-      : REST_COLOR;
+      ? Math.floor(remaining) % 2 === 0
+        ? colors.error
+        : colors.tertiary
+      : colors.primary;
 
   const act = (id: string) => {
     if (id === 'options') onOpenOptions();
@@ -108,12 +106,21 @@ export function RestTimer({
           />
         ) : isOver ? (
           <Text
-            textStyle={{ fontSize: 15, fontWeight: '700', color: DONE_COLOR }}
+            textStyle={{
+              fontSize: 15,
+              fontWeight: '700',
+              color: textColor(colors.secondary),
+            }}
           >
             ✓ Rest
           </Text>
         ) : (
-          <Text textStyle={{ fontSize: 15, color: colors.mutedForeground }}>
+          <Text
+            textStyle={{
+              fontSize: 15,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
             {clock}
           </Text>
         )}

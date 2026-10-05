@@ -1,6 +1,6 @@
 import { BottomSheet, Button, Column, Row, ScrollView, Text } from '@expo/ui';
 
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 
 export type StructureExercise = {
   key: string;
@@ -38,8 +38,7 @@ export function StructureSheet({
   onUnlink,
   onDismiss,
 }: Readonly<StructureSheetProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
 
   return (
     <BottomSheet
@@ -51,7 +50,12 @@ export function StructureSheet({
       <ScrollView>
         <Column spacing={12} style={{ padding: 16 }}>
           <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Exercises</Text>
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          <Text
+            textStyle={{
+              fontSize: 14,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
             Changes apply to this Workout only. At finish you can save them to
             the Routine.
           </Text>
@@ -67,7 +71,7 @@ export function StructureSheet({
                 style={{
                   padding: 12,
                   borderRadius: 12,
-                  backgroundColor: colors.muted,
+                  backgroundColor: colors.surfaceContainerHigh,
                 }}
               >
                 <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>

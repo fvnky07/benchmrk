@@ -30,7 +30,7 @@ import { ScanToJoin } from '@/components/groups/scan-to-join';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { usePushPermissionReoffer } from '@/lib/push/use-push-permission-reoffer';
-import { THEME, useAppearance } from '@/lib/ui';
+import { useAppearance, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
@@ -63,7 +63,7 @@ export default function GroupScreen() {
   const setMuted = useMutation(api.reactions.setMuted);
   const setShowWeights = useMutation(api.groups.setShowWeights);
   const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const { width } = useWindowDimensions();
   const now = useNow();
   const [code, setCode] = useState('');
@@ -356,9 +356,9 @@ export default function GroupScreen() {
             top: 0,
             left: 0,
             right: 0,
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface,
             borderBottomWidth: 1,
-            borderBottomColor: colors.border,
+            borderBottomColor: colors.outlineVariant,
           }}
         >
           <Host

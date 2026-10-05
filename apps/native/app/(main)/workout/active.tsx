@@ -36,7 +36,7 @@ import { StructureSheet } from '@/components/workout/structure-sheet';
 import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { formatClock, weightInUnit } from '@/lib/workout/format';
 import { setupSummary } from '@/lib/workout/machine-setup';
 import { plateStrip } from '@/lib/workout/plates';
@@ -142,8 +142,7 @@ export default function ActiveWorkoutScreen() {
   const skipForNow = useMutation(api.workouts.skipForNow);
   const haptic = useHaptics();
   const now = useNow();
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Drafts>({});
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
@@ -493,7 +492,11 @@ export default function ActiveWorkoutScreen() {
         spacing={8}
         alignment="center"
         onPress={() => setIsPlatesOpen(true)}
-        style={{ padding: 10, borderRadius: 10, backgroundColor: colors.muted }}
+        style={{
+          padding: 10,
+          borderRadius: 10,
+          backgroundColor: colors.surfaceContainerHigh,
+        }}
       >
         <Text textStyle={{ fontSize: 14 }}>
           {plateStrip(
@@ -554,7 +557,7 @@ export default function ActiveWorkoutScreen() {
           alignment="center"
           onPress={() => setNoteTarget({ kind: 'workout' })}
         >
-          <Icon name={NOTE_ICON} size={14} color={colors.mutedForeground} />
+          <Icon name={NOTE_ICON} size={14} color={colors.onSurfaceVariant} />
           <Text textStyle={{ fontSize: 14 }}>{workout.note}</Text>
         </Row>
       ) : null}
@@ -587,7 +590,12 @@ export default function ActiveWorkoutScreen() {
           {`${workout.progress.done}/${workout.progress.total} Sets`}
         </Text>
         {settings.aheadBehind && workout.targetDurationSeconds ? (
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          <Text
+            textStyle={{
+              fontSize: 14,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
             {aheadBehind(
               (now - workout.startedAt) / 1000,
               workout.targetDurationSeconds,
@@ -722,7 +730,7 @@ export default function ActiveWorkoutScreen() {
                 })
               }
             >
-              <Icon name={PIN_ICON} size={14} color={colors.mutedForeground} />
+              <Icon name={PIN_ICON} size={14} color={colors.onSurfaceVariant} />
               <Text textStyle={{ fontSize: 14 }}>{exercise.standingNote}</Text>
             </Row>
           ) : null}

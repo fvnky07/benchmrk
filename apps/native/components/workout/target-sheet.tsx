@@ -18,7 +18,7 @@ import type { WeightUnit } from '@repo/backend/convex/domain/units';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { formatEffort, weightInUnit } from '@/lib/workout/format';
 import {
   effortNotCheckedText,
@@ -58,8 +58,7 @@ export function TargetSheet({
   const resetTargets = useMutation(api.overload.resetTargets);
   const setTargetsEnabled = useMutation(api.overload.setTargetsEnabled);
   const dismissPlateau = useMutation(api.overload.dismissPlateau);
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const run = async (action: () => Promise<unknown>, failure: string) => {
@@ -73,7 +72,9 @@ export function TargetSheet({
   };
 
   const label = (text: string) => (
-    <Text textStyle={{ fontSize: 13, color: colors.mutedForeground }}>
+    <Text
+      textStyle={{ fontSize: 13, color: textColor(colors.onSurfaceVariant) }}
+    >
       {text}
     </Text>
   );
@@ -127,7 +128,12 @@ export function TargetSheet({
               : 'None yet'}
           </Text>
           {lastTime && targeted ? (
-            <Text textStyle={{ fontSize: 13, color: colors.mutedForeground }}>
+            <Text
+              textStyle={{
+                fontSize: 13,
+                color: textColor(colors.onSurfaceVariant),
+              }}
+            >
               {lastTime
                 .map((set) =>
                   set.rpe === null
@@ -242,7 +248,7 @@ export function TargetSheet({
                 style={{
                   padding: 12,
                   borderRadius: 12,
-                  backgroundColor: colors.muted,
+                  backgroundColor: colors.surfaceContainerHigh,
                 }}
               >
                 <Text textStyle={{ fontSize: 15 }}>{PLATEAU_TEXT}</Text>

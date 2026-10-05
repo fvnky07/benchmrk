@@ -25,7 +25,7 @@ import { Platform, useWindowDimensions } from 'react-native';
 import { MemberActionsSheet } from '@/components/groups/member-actions-sheet';
 import { ExerciseTile } from '@/components/workout/exercise-strip';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock, formatWeight } from '@/lib/workout/format';
 
@@ -54,7 +54,7 @@ function statusText(progress: MemberBox['progress'], now: number): string {
 }
 
 function Avatar({ box }: Readonly<{ box: MemberBox }>) {
-  const { resolvedAppearance } = useAppearance();
+  const colors = useColors();
   if (box.image) {
     return (
       <RNHostView matchContents>
@@ -73,7 +73,7 @@ function Avatar({ box }: Readonly<{ box: MemberBox }>) {
         width: AVATAR,
         height: AVATAR,
         borderRadius: AVATAR / 2,
-        backgroundColor: THEME[resolvedAppearance].muted,
+        backgroundColor: colors.surfaceContainerHigh,
         paddingTop: 7,
       }}
     >
@@ -103,8 +103,8 @@ function MemberBoxView({
   now: number;
   isHost: boolean;
 }>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
+  const mutedText = textColor(colors.onSurfaceVariant);
   const [actionsPresented, setActionsPresented] = useState(false);
   const { progress } = box;
   const reconnecting = presenceOf(box.lastSeenAt, now) === 'reconnecting';
@@ -186,7 +186,7 @@ function MemberBoxView({
           padding: 12,
           borderRadius: 16,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.outlineVariant,
         }}
       >
         <Column
@@ -207,13 +207,13 @@ function MemberBoxView({
               </Text>
               <Text
                 numberOfLines={1}
-                textStyle={{ fontSize: 12, color: colors.mutedForeground }}
+                textStyle={{ fontSize: 12, color: mutedText }}
               >
                 {tag}
               </Text>
               <Text
                 numberOfLines={1}
-                textStyle={{ fontSize: 12, color: colors.mutedForeground }}
+                textStyle={{ fontSize: 12, color: mutedText }}
               >
                 {reconnecting ? 'Reconnecting…' : routineLine}
               </Text>
@@ -234,7 +234,7 @@ function MemberBoxView({
           style={{
             height: 1,
             width: width - 24,
-            backgroundColor: colors.border,
+            backgroundColor: colors.outlineVariant,
           }}
         />
         {compact ? (
@@ -252,7 +252,7 @@ function MemberBoxView({
                 <WorkoutProgress fraction={pace} />
               </RNHostView>
               <Text
-                textStyle={{ fontSize: 12, color: colors.mutedForeground }}
+                textStyle={{ fontSize: 12, color: mutedText }}
               >{`Pace ${Math.round(pace * 100)}%`}</Text>
             </Column>
             <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
@@ -268,7 +268,7 @@ function MemberBoxView({
                 </Text>
                 {progress.volumeKg !== null ? (
                   <Text
-                    textStyle={{ fontSize: 12, color: colors.mutedForeground }}
+                    textStyle={{ fontSize: 12, color: mutedText }}
                   >{`Volume ${formatWeight(progress.volumeKg, units)}`}</Text>
                 ) : null}
               </Column>
@@ -277,12 +277,10 @@ function MemberBoxView({
                 <Icon
                   name={LOCK}
                   size={14}
-                  color={colors.mutedForeground}
+                  color={colors.onSurfaceVariant}
                   accessibilityLabel="Weights hidden"
                 />
-                <Text
-                  textStyle={{ fontSize: 13, color: colors.mutedForeground }}
-                >
+                <Text textStyle={{ fontSize: 13, color: mutedText }}>
                   Weights hidden
                 </Text>
               </Row>
@@ -321,7 +319,7 @@ function MemberBoxView({
                           ]}
                           textStyle={{
                             fontSize: 12,
-                            color: colors.mutedForeground,
+                            color: mutedText,
                           }}
                         >
                           {exercise.targetMet

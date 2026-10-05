@@ -2,8 +2,7 @@ import LinkIcon from '@expo/material-symbols/link.xml';
 import { Button, Column, Icon, Row, ScrollView, Text } from '@expo/ui';
 import { type ComponentProps, Fragment } from 'react';
 
-import { useAppearance } from '@/lib/ui';
-import { BENCHMRK_ACCENT } from '@/lib/ui/accent';
+import { useColors } from '@/lib/ui';
 
 const LINK = { ios: 'link', android: LinkIcon } as const satisfies Readonly<
   Record<'ios' | 'android', ComponentProps<typeof Icon>['name']>
@@ -38,9 +37,7 @@ export function ExerciseTile({
   onSelect?: () => void;
   pipVariant?: 'workout' | 'group';
 }>) {
-  const { navigationTheme, resolvedAppearance } = useAppearance();
-  const { colors } = navigationTheme;
-  const accent = BENCHMRK_ACCENT[resolvedAppearance];
+  const colors = useColors();
 
   return (
     <Column
@@ -51,7 +48,7 @@ export function ExerciseTile({
         width: 116,
         borderRadius: 12,
         borderWidth: selected ? 2 : 1,
-        borderColor: selected ? colors.primary : colors.border,
+        borderColor: selected ? colors.primary : colors.outlineVariant,
         opacity: exercise.skipped ? 0.5 : 1,
       }}
     >
@@ -69,16 +66,14 @@ export function ExerciseTile({
               borderRadius: 2,
               borderWidth:
                 pipVariant === 'group' && set.current && !set.done ? 1 : 0,
-              borderColor: accent,
+              borderColor: colors.primary,
               backgroundColor: set.done
-                ? pipVariant === 'group'
-                  ? accent
-                  : colors.primary
+                ? colors.primary
                 : set.current
                   ? pipVariant === 'group'
                     ? 'transparent'
-                    : colors.text
-                  : colors.border,
+                    : colors.onSurface
+                  : colors.outlineVariant,
             }}
           />
         ))}
@@ -97,8 +92,7 @@ export function ExerciseStrip({
   onSelect,
   onAdd,
 }: Readonly<ExerciseStripProps>) {
-  const { navigationTheme } = useAppearance();
-  const { colors } = navigationTheme;
+  const colors = useColors();
 
   return (
     <ScrollView direction="horizontal" showsIndicators={false}>
