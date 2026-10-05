@@ -81,6 +81,29 @@ useEffect(() => {
 const { username, avatarUrl, initials } = useUserProfile();
 ```
 
+## Shared sign-in lock
+
+- The email form and native provider buttons share one pending lock.
+- Successful social sign-in keeps the lock held while navigation leaves the
+  auth route. The route's cleanup releases it; cancellation, provider failure
+  and unexpected errors release it immediately so another method can retry.
+
+## Enumeration-safe email requests
+
+- Public password-reset requests acknowledge identically for eligible,
+  ineligible and undeliverable addresses. Eligibility and email delivery run in
+  a scheduled Convex action, with at most one delayed retry.
+- Native waitlist sign-in requests use the same scheduled delivery policy;
+  only confirmed Waitlist identities receive a link. Delivery failures never
+  alter the public acknowledgement.
+  The cooldown, Better Auth token and delivery job commit in one mutation.
+  Failed delivery releases the matching token reservation before retrying.
+- Delivery logs omit the email address. Signed-in verification resends can
+  still return `EMAIL_DELIVERY_FAILED` so members can retry.
+- Website deletion confirmations atomically reserve their token and cooldown
+  before sending. Failed delivery releases only the matching reservation, so
+  an immediate retry can issue a valid link.
+
 ## Notification lifecycle
 
 - Profile setup ends with the skippable **Get Group invites and rest timers**
@@ -115,8 +138,8 @@ const { user, isAuthenticated } = useAuth();
 // Use useUserProfile() for profile data
 const { username, bio, avatarUrl } = useUserProfile();
 
-// Export types from auth module
-import type { User, UseAuthReturn } from '@/lib/auth';
+// Import types from the module that owns them
+import type { User, UseAuthReturn } from '@/lib/auth/hooks';
 ```
 
 ### ❌ DON'T
@@ -147,7 +170,6 @@ lib/auth/
 ├── client.ts       # Better Auth client configuration
 ├── hooks.ts        # useAuth() - THE ONLY place calling useSession()
 ├── store.ts        # Zustand store for auth state
-├── index.ts        # Public exports
 └── README.md       # This file
 ```
 

@@ -60,7 +60,7 @@ test('unauthenticated post is rejected', async () => {
       exerciseId,
       body: 'Should fail',
     })
-  ).rejects.toThrow('Not authenticated');
+  ).rejects.toThrow('NOT_AUTHENTICATED');
 });
 
 test('custom Exercise comments are private to their owning Benchmrk identity', async () => {

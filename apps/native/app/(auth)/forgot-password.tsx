@@ -4,7 +4,10 @@ import { useState } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { authClient, emailSchema, useAuthStore } from '@/lib';
+import { authClient } from '@/lib/auth/client';
+import { authErrorCopy } from '@/lib/auth/error-copy';
+import { useAuthStore } from '@/lib/auth/store';
+import { emailSchema } from '@/lib/schemas/auth';
 
 type Status = { message: string; tone: 'neutral' | 'error' } | null;
 
@@ -36,10 +39,19 @@ export default function ForgotPasswordScreen() {
         email: parsed.data,
         redirectTo: RESET_CALLBACK,
       });
-      if (error) throw new Error(error.code ?? 'request failed');
+      if (error) {
+        setStatus({
+          message: authErrorCopy(
+            error.code,
+            'Couldn’t request a reset link. Check your connection and try again.'
+          ),
+          tone: 'error',
+        });
+        return;
+      }
       setStatus({
         message:
-          'If this email belongs to a verified benchmrk account, a reset link is on its way. Open it on this phone.',
+          'If this email belongs to a verified Benchmrk identity, a reset link is on its way. Open it on this phone.',
         tone: 'neutral',
       });
     } catch {

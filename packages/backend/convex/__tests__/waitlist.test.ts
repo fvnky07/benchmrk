@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { api } from '../_generated/api';
+import { api, components } from '../_generated/api';
+import { hasSession, sessionCookie } from './authTestClient.testing';
 import {
   createAuthIdentity,
   createTest,
@@ -57,9 +58,9 @@ describe('native sign-in links', () => {
       'registered-only@example.com',
       '  CONFIRMED@example.com ',
     ]) {
-      expect(
-        await t.mutation(api.waitlist.requestSignInLink, { email })
-      ).toEqual({ status: 'accepted' });
+      expect(await t.action(api.waitlist.requestSignInLink, { email })).toEqual(
+        { status: 'accepted' }
+      );
     }
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 
@@ -74,30 +75,141 @@ describe('native sign-in links', () => {
       emailVerified: true,
     });
 
-    await t.mutation(api.waitlist.requestSignInLink, {
+    await t.action(api.waitlist.requestSignInLink, {
       email: 'confirmed@example.com',
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     vi.advanceTimersByTime(4 * 60 * 1000);
-    await t.mutation(api.waitlist.requestSignInLink, {
+    await t.action(api.waitlist.requestSignInLink, {
       email: 'confirmed@example.com',
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(mailedTo()).toHaveLength(1);
 
     vi.advanceTimersByTime(2 * 60 * 1000);
-    await t.mutation(api.waitlist.requestSignInLink, {
+    await t.action(api.waitlist.requestSignInLink, {
       email: 'confirmed@example.com',
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(mailedTo()).toHaveLength(2);
   });
 
+  test('concurrent waitlist requests send exactly one usable sign-in link', async () => {
+    const t = createTest();
+    await joinWaitlist(t, 'confirmed@example.com');
+    await createAuthIdentity(t, {
+      email: 'confirmed@example.com',
+      emailVerified: true,
+    });
+
+    await Promise.all([
+      t.action(api.waitlist.requestSignInLink, {
+        email: 'confirmed@example.com',
+      }),
+      t.action(api.waitlist.requestSignInLink, {
+        email: 'confirmed@example.com',
+      }),
+    ]);
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(mailedTo()).toEqual(['confirmed@example.com']);
+
+    const mail = JSON.parse(String(resend.mock.calls[0]?.[1]?.body)) as {
+      html: string;
+    };
+    const href = mail.html.match(/href="([^"]+)"/)?.[1];
+    if (!href) throw new Error('No sign-in link');
+    const link = new URL(href.replaceAll('&amp;', '&'));
+    const signedIn = await t.fetch(link.pathname + link.search, {
+      headers: { origin: 'native://' },
+      redirect: 'manual',
+    });
+    expect(await hasSession(t, sessionCookie(signedIn))).toBe(true);
+  });
+
+  test.each(['provider 503', 'network failure', 'missing configuration'])(
+    '%s preserves the same acknowledgement and allows a later delivery retry',
+    async (failure) => {
+      const t = createTest();
+      await joinWaitlist(t, 'confirmed@example.com');
+      await createAuthIdentity(t, {
+        email: 'confirmed@example.com',
+        emailVerified: true,
+      });
+      if (failure === 'provider 503') {
+        resend.mockResolvedValue(new Response('{}', { status: 503 }));
+      } else if (failure === 'network failure') {
+        resend.mockRejectedValue(new TypeError('Network unavailable'));
+      } else {
+        vi.stubEnv('RESEND_API_KEY', '');
+      }
+
+      const acknowledgements = await Promise.all(
+        ['confirmed@example.com', 'unknown@example.com'].map((email) =>
+          t.action(api.waitlist.requestSignInLink, { email })
+        )
+      );
+      expect(acknowledgements).toEqual([
+        { status: 'accepted' },
+        { status: 'accepted' },
+      ]);
+      expect(resend).not.toHaveBeenCalled();
+      await t.finishAllScheduledFunctions(vi.runAllTimers);
+      expect(mailedTo()).toEqual(
+        failure === 'missing configuration'
+          ? []
+          : ['confirmed@example.com', 'confirmed@example.com']
+      );
+      vi.stubEnv('RESEND_API_KEY', 'test-resend-key');
+      resend.mockResolvedValue(new Response('{}', { status: 200 }));
+      await expect(
+        t.action(api.waitlist.requestSignInLink, {
+          email: 'confirmed@example.com',
+        })
+      ).resolves.toEqual({ status: 'accepted' });
+      await t.finishAllScheduledFunctions(vi.runAllTimers);
+      expect(mailedTo().at(-1)).toBe('confirmed@example.com');
+    }
+  );
+
   test('a malformed email is refused', async () => {
     const t = createTest();
 
     await expect(
-      t.mutation(api.waitlist.requestSignInLink, { email: 'not-an-email' })
+      t.action(api.waitlist.requestSignInLink, { email: 'not-an-email' })
     ).rejects.toThrow('INVALID_EMAIL');
+  });
+});
+
+describe('waitlist confirmation', () => {
+  test('following the confirmation link verifies the email and grants nothing', async () => {
+    const t = createTest();
+    await t.mutation(api.waitlist.addEmailToWaitlist, {
+      email: 'pat@example.com',
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    const html = String(
+      JSON.parse(String(resend.mock.calls.at(-1)?.[1]?.body)).html
+    );
+    const link = html.match(/href="([^"]*magic-link\/verify[^"]*)"/)?.[1];
+    expect(link).toBeDefined();
+
+    const confirmed = await t.fetch(
+      new URL(link?.replaceAll('&amp;', '&') ?? '').pathname +
+        new URL(link?.replaceAll('&amp;', '&') ?? '').search,
+      { headers: { origin: 'native://' }, redirect: 'manual' }
+    );
+
+    expect(confirmed.status).toBeLessThan(400);
+    const identity = await t.query(components.betterAuth.users.getUserByEmail, {
+      email: 'pat@example.com',
+    });
+    expect(identity).toMatchObject({ emailVerified: true });
+    expect(identity?.premiumUntil ?? null).toBeNull();
+    expect(
+      await t.run(async (ctx) => ({
+        settings: await ctx.db.query('memberSettings').collect(),
+        devices: await ctx.db.query('deviceTokens').collect(),
+      }))
+    ).toEqual({ settings: [], devices: [] });
   });
 });

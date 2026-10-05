@@ -46,7 +46,7 @@ describe('member settings', () => {
     expect(await t.query(api.memberSettings.get, {})).toBeNull();
     await expect(
       t.mutation(api.memberSettings.update, { units: 'lb' })
-    ).rejects.toThrow('Not authenticated');
+    ).rejects.toThrow('NOT_AUTHENTICATED');
   });
 
   test('come back with defaults before anything is saved', async () => {

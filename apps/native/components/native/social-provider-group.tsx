@@ -6,13 +6,13 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useNetworkState } from 'expo-network';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-
 import {
   isAppleAvailable,
   isGoogleAvailable,
   runSocialAuth,
   type SocialProvider,
-} from '@/lib/auth';
+} from '@/lib/auth/social';
+import { runPendingSocialAuth, useAuthStore } from '@/lib/auth/store';
 import { useAppearance } from '@/lib/ui';
 
 import { AuthDivider, AuthStatus, useAuthColumnWidth } from './auth-shell';
@@ -39,8 +39,7 @@ export function SocialProviderGroup({
   const [appleNative, setAppleNative] = useState<boolean | null>(
     Platform.OS === 'ios' ? null : false
   );
-  const [busy, setBusy] = useState<SocialProvider | null>(null);
-  const [isPendingNavigation, setIsPendingNavigation] = useState(false);
+  const pendingPath = useAuthStore((state) => state.pendingPath);
   const [status, setStatus] = useState<Status>(null);
 
   useEffect(() => {
@@ -53,19 +52,20 @@ export function SocialProviderGroup({
   const isResolved = config !== undefined && appleNative !== null;
   const showApple = isAppleAvailable(config, appleNative ?? false);
   const showGoogle = isGoogleAvailable(config);
-  const isLocked = busy !== null || isPendingNavigation || isOffline;
+  const isLocked = pendingPath !== null || isOffline;
 
   const signIn = async (provider: SocialProvider) => {
     if (!config || isLocked) return;
-    setBusy(provider);
-    setStatus({
-      message: `Signing in with ${PROVIDER_NAME[provider]}…`,
-      tone: 'neutral',
-    });
     try {
-      const result = await runSocialAuth(provider, config);
+      const result = await runPendingSocialAuth(provider, async () => {
+        setStatus({
+          message: `Signing in with ${PROVIDER_NAME[provider]}…`,
+          tone: 'neutral',
+        });
+        return runSocialAuth(provider, config);
+      });
+      if (!result) return;
       if (result.status === 'success') {
-        setIsPendingNavigation(true);
         setStatus({
           message: 'Signed in. Loading your Benchmrk identity…',
           tone: 'neutral',
@@ -78,8 +78,11 @@ export function SocialProviderGroup({
       } else {
         setStatus({ message: `${result.message} Try again.`, tone: 'error' });
       }
-    } finally {
-      setBusy(null);
+    } catch {
+      setStatus({
+        message: 'Couldn’t complete sign-in. Try again.',
+        tone: 'error',
+      });
     }
   };
 

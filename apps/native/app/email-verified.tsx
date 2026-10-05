@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
 import { AuthShell } from '@/components/native/auth-shell';
-import { storeLinkedSession } from '@/lib/auth';
+import { storeLinkedSession } from '@/lib/auth/client';
 
 /**
  * Where a verification link lands (`native://email-verified`). A verified

@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth/hooks';
 import { useNotificationTap } from './use-notification-tap';
 
 const TOKEN_KEY = 'benchmrk.push.expo-token';

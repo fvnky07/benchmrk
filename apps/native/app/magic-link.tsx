@@ -3,7 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
-import { storeLinkedSession, useAuth } from '@/lib/auth';
+import { storeLinkedSession } from '@/lib/auth/client';
+import { useAuth } from '@/lib/auth/hooks';
 
 /**
  * Where a native sign-in link lands (`native://magic-link`). A verified link

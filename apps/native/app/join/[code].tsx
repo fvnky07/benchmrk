@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth/hooks';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {

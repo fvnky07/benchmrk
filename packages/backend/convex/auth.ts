@@ -1,8 +1,11 @@
 // NOTE: Re-exports from convex/betterAuth/auth.ts + app-level
 // auth queries. The auth config lives in betterAuth/auth.ts
 // per the official Convex integration docs.
+import { betterAuth } from 'better-auth';
 import { v } from 'convex/values';
-import { query } from './_generated/server';
+import { components, internal } from './_generated/api';
+import { internalAction, query } from './_generated/server';
+import { createAuthOptions } from './betterAuth/auth';
 import { getIdentityId } from './lib/identity';
 import { findAuthIdentity } from './lib/verifiedEmail';
 
@@ -69,5 +72,34 @@ export const getSocialAuthConfig = query({
       ),
       google,
     };
+  },
+});
+
+/** Public reset requests acknowledge first; eligibility and delivery stay here. */
+export const sendPasswordReset = internalAction({
+  args: { email: v.string(), retry: v.optional(v.boolean()) },
+  returns: v.null(),
+  handler: async (ctx, { email, retry }) => {
+    try {
+      const identity = await ctx.runQuery(
+        components.betterAuth.users.getUserByEmail,
+        { email }
+      );
+      if (!identity?.emailVerified) return null;
+      // Internal API use bypasses only the HTTP hook that queues this action.
+      const auth = betterAuth({ ...createAuthOptions(ctx), hooks: undefined });
+      await auth.api.requestPasswordReset({
+        body: { email, redirectTo: 'native://reset-password' },
+      });
+    } catch {
+      console.error('Password reset delivery failed');
+      if (!retry) {
+        await ctx.scheduler.runAfter(60_000, internal.auth.sendPasswordReset, {
+          email,
+          retry: true,
+        });
+      }
+    }
+    return null;
   },
 });

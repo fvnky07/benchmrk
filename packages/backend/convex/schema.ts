@@ -226,10 +226,11 @@ export default defineSchema({
     .index('by_email', ['email'])
     .index('by_position', ['position']),
 
-  // Last native sign-in link mailed per email, to rate-limit requests.
+  // Native sign-in link cooldown and the token claimed by its delivery job.
   magicLinkRequests: defineTable({
     email: v.string(),
     lastSentAt: v.number(),
+    token: v.optional(v.string()),
   }).index('by_email', ['email']),
 
   // Website deletion requests (Google Play). Only the SHA-256 of the emailed
@@ -239,6 +240,7 @@ export default defineSchema({
     tokenHash: v.string(),
     linkSentAt: v.number(),
     confirmedAt: v.optional(v.number()),
+    notifiedAt: v.optional(v.number()),
   })
     .index('by_email', ['email'])
     .index('by_tokenHash', ['tokenHash']),
