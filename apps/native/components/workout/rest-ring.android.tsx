@@ -1,6 +1,7 @@
 import { Box, CircularProgressIndicator, Text } from '@expo/ui/jetpack-compose';
 import { size } from '@expo/ui/jetpack-compose/modifiers';
 
+import { textColor } from '@/lib/ui';
 import type { RestRingProps } from './rest-ring';
 
 const RING_SIZE = 52;
@@ -14,7 +15,7 @@ export function RestRing({ fraction, label, color }: Readonly<RestRingProps>) {
         color={color}
         modifiers={[size(RING_SIZE, RING_SIZE)]}
       />
-      <Text style={{ typography: 'labelMedium' }} color={color}>
+      <Text style={{ typography: 'labelMedium' }} color={textColor(color)}>
         {label}
       </Text>
     </Box>

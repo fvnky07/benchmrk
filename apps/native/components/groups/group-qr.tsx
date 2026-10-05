@@ -34,6 +34,7 @@ export function GroupQr({ link }: { link: string }) {
           height={QR_SIZE}
           viewBox={`0 0 ${size} ${size}`}
         >
+          {/* Black on white regardless of appearance or wallpaper, so the code stays scannable. */}
           <Rect width={size} height={size} fill="#FFFFFF" />
           <Path d={path} fill="#000000" />
         </Svg>

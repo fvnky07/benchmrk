@@ -7,6 +7,8 @@ import {
 } from '@expo/ui';
 import { useEffect } from 'react';
 
+import { textColor, useColors } from '@/lib/ui';
+
 type NativeTextFieldProps = Omit<TextInputProps, 'onChangeText' | 'value'> & {
   error?: string;
   label: string;
@@ -21,6 +23,7 @@ export function NativeTextField({
   value,
   ...props
 }: Readonly<NativeTextFieldProps>) {
+  const colors = useColors();
   const nativeValue = useNativeState(value);
 
   useEffect(() => {
@@ -34,7 +37,9 @@ export function NativeTextField({
       <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{label}</Text>
       <TextInput {...props} value={nativeValue} onChangeText={onChangeText} />
       {error ? (
-        <Text textStyle={{ color: 'red', fontSize: 14 }}>{error}</Text>
+        <Text textStyle={{ color: textColor(colors.error), fontSize: 14 }}>
+          {error}
+        </Text>
       ) : null}
     </Column>
   );

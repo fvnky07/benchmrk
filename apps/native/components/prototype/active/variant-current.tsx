@@ -14,7 +14,7 @@ import { RestTimer } from '@/components/workout/rest-timer';
 import { SetKeypad } from '@/components/workout/set-keypad';
 import { SetTable } from '@/components/workout/set-table';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
 import type { ActiveVariantProps } from './model';
 
@@ -25,8 +25,7 @@ export function VariantCurrent({
   model,
   actions,
 }: Readonly<ActiveVariantProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const {
     workout,
     settings,
@@ -74,7 +73,11 @@ export function VariantCurrent({
         spacing={8}
         alignment="center"
         onPress={actions.openPlates}
-        style={{ padding: 10, borderRadius: 10, backgroundColor: colors.muted }}
+        style={{
+          padding: 10,
+          borderRadius: 10,
+          backgroundColor: colors.surfaceContainerHigh,
+        }}
       >
         <Text textStyle={{ fontSize: 14 }}>{model.plateStrip}</Text>
       </Row>
@@ -122,7 +125,7 @@ export function VariantCurrent({
       </Row>
       {workout.note ? (
         <Row spacing={6} alignment="center" onPress={actions.openWorkoutNote}>
-          <Icon name={NOTE_ICON} size={14} color={colors.mutedForeground} />
+          <Icon name={NOTE_ICON} size={14} color={colors.onSurfaceVariant} />
           <Text textStyle={{ fontSize: 14 }}>{workout.note}</Text>
         </Row>
       ) : null}
@@ -149,7 +152,12 @@ export function VariantCurrent({
           {`${workout.progress.done}/${workout.progress.total} Sets`}
         </Text>
         {model.aheadBehind !== null ? (
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+          <Text
+            textStyle={{
+              fontSize: 14,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
             {model.aheadBehind}
           </Text>
         ) : null}
@@ -225,7 +233,7 @@ export function VariantCurrent({
               alignment="center"
               onPress={actions.openExerciseNote}
             >
-              <Icon name={PIN_ICON} size={14} color={colors.mutedForeground} />
+              <Icon name={PIN_ICON} size={14} color={colors.onSurfaceVariant} />
               <Text textStyle={{ fontSize: 14 }}>{exercise.standingNote}</Text>
             </Row>
           ) : null}

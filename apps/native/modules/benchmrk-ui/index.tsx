@@ -1,5 +1,6 @@
 import { requireNativeView, requireOptionalNativeModule } from 'expo';
 import type { ReactNode } from 'react';
+import type { ColorValue } from 'react-native';
 
 /**
  * Narrow Expo UI extensions for gestures Expo UI doesn't expose. Render them
@@ -94,7 +95,7 @@ export const LiveStatus = requireOptionalNativeModule<{
 export type StackedBarChartProps = {
   bars: {
     label: string;
-    segments: { label: string; value: number; color: string }[];
+    segments: { label: string; value: number; color: ColorValue }[];
   }[];
   horizontal: boolean;
 };

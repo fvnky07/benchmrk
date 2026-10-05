@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { analytics } from '@/lib/analytics';
 import { authErrorCopy } from '@/lib/auth/error-copy';
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 
 const AVATAR_SIZE = 112;
@@ -32,8 +32,7 @@ type ProfileFormProps = {
 
 /** Name, username, bio and photo, for Profile setup and for editing in settings. */
 export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const profile = useQuery(api.profile.getCurrentProfile);
   const suggested = useQuery(
     api.profile.suggestUsername,
@@ -193,7 +192,7 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
               width: AVATAR_SIZE,
               height: AVATAR_SIZE,
               borderRadius: AVATAR_SIZE / 2,
-              backgroundColor: colors.muted,
+              backgroundColor: colors.surfaceContainerHigh,
               paddingTop: 36,
             }}
           >
@@ -235,7 +234,9 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
         value={username}
         onChangeText={(value) => setUsername(value.toLowerCase())}
       />
-      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+      <Text
+        textStyle={{ fontSize: 14, color: textColor(colors.onSurfaceVariant) }}
+      >
         {usernameStatus}
       </Text>
       <NativeTextField
@@ -246,7 +247,9 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
         value={bio}
         onChangeText={setBio}
       />
-      <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
+      <Text
+        textStyle={{ fontSize: 14, color: textColor(colors.onSurfaceVariant) }}
+      >
         {`${bio.length}/${BIO_MAX_LENGTH}`}
       </Text>
       {errorMessage ? (

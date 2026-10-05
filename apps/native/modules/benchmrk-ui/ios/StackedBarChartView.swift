@@ -1,11 +1,12 @@
 import Charts
 import ExpoModulesCore
 import SwiftUI
+import UIKit
 
 public final class StackedSegment: Record {
   @Field public var label: String = ""
   @Field public var value: Double = 0
-  @Field public var color: String = "#8E8E93"
+  @Field public var color: UIColor = .systemGray
 
   public required init() {}
 }
@@ -40,13 +41,13 @@ public struct StackedBarChartView: ExpoSwiftUI.View {
               x: .value("Value", segment.value),
               y: .value("Bar", bar.label)
             )
-            .foregroundStyle(Color(chartHex: segment.color))
+            .foregroundStyle(Color(uiColor: segment.color))
           } else {
             BarMark(
               x: .value("Bar", bar.label),
               y: .value("Value", segment.value)
             )
-            .foregroundStyle(Color(chartHex: segment.color))
+            .foregroundStyle(Color(uiColor: segment.color))
           }
         }
       }
@@ -55,18 +56,5 @@ public struct StackedBarChartView: ExpoSwiftUI.View {
     .chartYAxis(props.horizontal && props.bars.count == 1 ? .hidden : .automatic)
     .chartLegend(.hidden)
     .accessibilityHidden(true)
-  }
-}
-
-private extension Color {
-  init(chartHex: String) {
-    let value = UInt64(chartHex.dropFirst(), radix: 16) ?? 0
-    self.init(
-      .sRGB,
-      red: Double((value >> 16) & 0xFF) / 255,
-      green: Double((value >> 8) & 0xFF) / 255,
-      blue: Double(value & 0xFF) / 255,
-      opacity: 1
-    )
   }
 }

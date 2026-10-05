@@ -3,14 +3,14 @@
 ## Source of truth
 
 - Status: Active
-- Last refreshed: 2026-09-08
+- Last refreshed: 2026-10-05
 - Primary product surfaces: Native authentication routes in `apps/native/app/(auth)/`: `welcome.tsx`, `login.tsx`, and `register.tsx`.
 - Evidence reviewed:
   - Product language and identity boundaries in `CONTEXT.md`.
   - Repository contribution guidelines and development conventions in `CONTRIBUTING.md`.
   - Auth routes and navigation in `apps/native/app/(auth)/_layout.tsx`, `welcome.tsx`, `login.tsx`, and `register.tsx`.
   - Existing native shell and controls in `apps/native/components/native/native-screen.tsx` and `native-text-field.tsx`.
-  - Existing appearance/theme implementation in `apps/native/lib/ui/appearance.tsx`, `appearance-state.ts`, `theme.ts`, and platform navigation-theme files.
+  - Existing appearance/colour implementation in `apps/native/lib/ui/appearance.tsx`, `appearance-state.ts`, `colors*.ts`, and platform navigation-theme files.
   - Social-provider availability and state contract in `apps/native/lib/auth/social.ts`, `apps/native/app.config.ts`, and `apps/native/__tests__/social-auth.test.ts`.
   - Email/password validation contract in `apps/native/lib/schemas/auth.ts` and shared email state in `apps/native/lib/auth/store.ts`.
   - Auth/provider wiring in `apps/native/app/_layout.tsx` and `apps/native/package.json`.
@@ -20,7 +20,7 @@
 
 ## Brand
 
-- Personality: Clear, calm, capable, and native to the device. Authentication should feel like a trustworthy Benchmrk entry point, not a marketing landing page.
+- Personality: Clear, calm, capable, and native to the device. Authentication should feel like a trustworthy Benchmrk entry point, not a marketing landing page. App-wide direction (2026-10-05): feel native, look like MacroFactor: monochrome surfaces, content grouped on rounded containers, strong type hierarchy with tabular numbers, colour reserved for status and the one primary action.
 - Trust signals: Directly labeled email/password controls, platform-native Apple and Google controls, explicit validation and network feedback, system navigation, and familiar safe-area/keyboard behavior.
 - Avoid: Browser-style OAuth or web sign-in language; Clerk branding, Clerk code, Clerk assets, Clerk component names in the product; decorative gradients, arbitrary illustrations, dense card stacks, or provider buttons that cannot complete authentication.
 
@@ -76,11 +76,11 @@
 
 ## Visual language
 
-- Color: Use the existing semantic theme in `apps/native/lib/ui/theme.ts` and platform appearance providers. Light uses a white background, near-black foreground, black primary, subtle gray secondary/muted surfaces, and destructive red; dark inverts foreground/primary appropriately on the near-black background. Provider controls use official component styling rather than recolored imitations. Verify contrast for text, borders, focus, errors, and disabled states in both modes.
+- Color: One colour source, `useColors()` in `apps/native/lib/ui/colors.ts`, with Material 3 role names. Android uses Material You (wallpaper) colours via `useMaterialColors`; iOS maps the roles to system colours; web uses the Material 3 baseline. Pair each `on*` role with the surface it names. The app's appearance preference is applied to the native window (`Appearance.setColorScheme`) so system sheets, dialogs and bars match. Do not add fixed palettes or hex colours; the only fixed colours are real-world plate colours and the black-on-white QR code. Provider controls use official component styling rather than recolored imitations. Verify contrast for text, borders, focus, errors, and disabled states in both modes.
 - Typography: Use native system typography through `@expo/ui`/React Native. Route title is the strongest text (approximately 28–32pt, semibold/bold consistent with existing `welcome.tsx` and route forms); supporting copy is body-sized (approximately 16–17pt); labels are semibold body-sized; helper/error text is at least 14pt and remains readable under Dynamic Type. Exact system font, weight, and scaling stay platform-native.
 - Spacing/layout rhythm: Use an 8pt base rhythm. Safe-area content starts at 24pt horizontal inset on phones, with 16pt minimum vertical separation between major groups and 8pt between label/control and helper/error text. Maintain at least 24pt between header and first action group. On tablets, center a readable content column while retaining 24–32pt outer insets; do not stretch fields across the full tablet width.
 - Max width: Cap the auth content column at 420pt on tablets and landscape; phone layouts use available width minus safe-area insets. Provider and primary controls fill the column. Do not create a floating desktop card unless platform conventions require one.
-- Shape/radius/elevation: Follow existing `THEME.*.radius` (10pt equivalent) and native component corner treatment. Prefer flat surfaces and semantic borders; no ornamental elevation. Keep the divider visually quiet and aligned to the same content column.
+- Shape/radius/elevation: 10–16pt corners on grouped containers and inputs, plus native component corner treatment. Prefer flat filled surfaces (`surfaceContainer*` roles) over borders; hairlines use `outlineVariant`; no ornamental elevation. Keep the divider visually quiet and aligned to the same content column.
 - Imagery/iconography: No decorative imagery is required, and the native app currently has no confirmed Benchmrk auth logo asset: `apps/native/app.json` points to the configured Expo icon/splash assets under `apps/native/assets/images/`, while the canonical Benchmrk SVG marks live only in `apps/website/public/logo.svg` and `logo-dark.svg`. Do not invent or copy a new native mark for this flow; use the existing textual product name only if a brand cue is needed. Use official Apple/Google provider visuals supplied by their components, not hand-drawn logos.
 
 ## Components
@@ -89,17 +89,17 @@
   - `NativeScreen` for safe native host, scroll behavior, appearance, and baseline 24pt padding.
   - `NativeTextField` / `@expo/ui` `TextInput`, `Column`, `Text`, `Button`, and `ListItem` patterns.
   - `@react-native-google-signin/google-signin` `GoogleSigninButton` and `expo-apple-authentication` `AppleAuthenticationButton`.
-  - `useAppearance`, `THEME`, navigation themes, `showToast`, auth client/store, and existing validation hooks/schemas.
+  - `useAppearance`, `useColors`, navigation themes, `showToast`, auth client/store, and existing validation hooks/schemas.
 - New/changed components: One shared auth visual shell/layout composition consumed by welcome, login, and register; route-specific form content and state messaging; an availability-aware provider group; and a semantic divider. Prefer existing files/components or a small native auth component under `apps/native/components/native/` over a new styling layer.
 - Control ordering:
   - Welcome: brand/route heading → supporting copy → usable Apple (iOS only) → usable Google → divider with `or` → `Create account` primary → `Log in` secondary/outlined → legal/footer copy.
   - Login: heading → supporting copy → email → password → `Forgot password?` → primary `Continue with email` → secondary `Email me a sign-in link` → provider group/divider as an alternative → route switch `Create an account` → legal/footer copy.
   - Register: heading → supporting copy → email → password → confirm password → primary `Create account` → provider group/divider as an alternative → route switch `Log in instead` → legal/footer copy.
   - The final implementation must keep labels, errors, and submit controls associated in accessibility order. Providers remain below the credential submit action on login/register; the complete form is always visible.
-- Divider: A full-column hairline using the theme border color with centered, muted `or` text; at least 16pt clear space above and below. It separates credential actions from provider alternatives and is not itself interactive.
+- Divider: A full-column hairline using the `outlineVariant` role with centered `onSurfaceVariant` `or` text; at least 16pt clear space above and below. It separates credential actions from provider alternatives and is not itself interactive.
 - Legal/footer content: The shared auth shell ends with a secondary, non-interactive footer after the route switch. On welcome, login, and register it displays the exact factual copy `Terms of Service and Privacy Policy coming soon.` as plain text with no links and no consent implication. Do not say `By continuing, you agree` (or equivalent) until finalized documents exist. Omit any `Secured by Benchmrk` badge. Replacing this placeholder copy is tracked by issue #100. The footer remains reachable after the form, uses muted readable styling, and wraps without truncation in Dynamic Type and dark mode.
 - Variants and states: welcome/login/register; light/dark; iOS/Android; phone/tablet; available/unavailable provider; eligible/ineligible magic-link email; idle/focused/filled/invalid/disabled; submitting; provider or magic-link loading; provider cancelled; provider, magic-link delivery, or server failure; offline/slow network; successful authentication pending navigation; keyboard open; reduced motion; VoiceOver/TalkBack and Dynamic Type.
-- Token/component ownership: Semantic colors and radius come from `apps/native/lib/ui/theme.ts` and platform navigation themes. Appearance resolution comes from `apps/native/lib/ui/appearance.tsx` / `appearance-state.ts`. Platform provider components own provider visual rules. The shared shell owns layout spacing and hierarchy; routes own copy, validation, and auth actions.
+- Token/component ownership: Semantic colours come from `useColors()` (`apps/native/lib/ui/colors*.ts`) and platform navigation themes. Appearance resolution comes from `apps/native/lib/ui/appearance.tsx` / `appearance-state.ts`. Platform provider components own provider visual rules. The shared shell owns layout spacing and hierarchy; routes own copy, validation, and auth actions.
 
 ## Accessibility
 
@@ -132,8 +132,8 @@
 
 ## Implementation constraints
 
-- Framework/styling system: Expo Router and React Native in `apps/native`; use existing `@expo/ui` native primitives, NativeWind/UI components where already appropriate, and platform-native Apple/Google components. Do not install Clerk or change Better Auth + Convex.
-- Design-token constraints: Extend `apps/native/lib/ui/theme.ts` and existing appearance/navigation tokens rather than creating parallel colors or radii. Provider brand styling remains owned by official provider components.
+- Framework/styling system: Expo Router and React Native in `apps/native`; use `@expo/ui` native primitives custom-styled with colour roles, shape and type (ADR 0003), React Native views inside `RNHostView` only for hero pieces such as Set rows, rest ring and member tiles, and platform-native Apple/Google components. No NativeWind. Do not install Clerk or change Better Auth + Convex.
+- Design-token constraints: Extend `useColors()` roles and existing appearance/navigation tokens rather than creating parallel colours or radii. Provider brand styling remains owned by official provider components.
 - Performance constraints: Avoid unnecessary auth/provider probes and re-renders; do not block rendering the complete email/password forms on provider configuration. Keep native scroll/keyboard behavior responsive.
 - Compatibility constraints: Apple Social sign-in is iOS only and must use the existing `isAppleAvailable` contract. Google is configured for iOS/Android through existing `isGoogleAvailable`, `app.config.ts`, and environment configuration. Show actions only when they can complete. Native magic-link sign-in is limited to existing confirmed Waitlist identities, uses the existing Better Auth magic-link capability, returns enumeration-safe responses, and must not grant access or premium status to an unknown email. Keep Better Auth, Convex, existing route names, profile setup boundary, and platform navigation intact.
 - Test/screenshot expectations:

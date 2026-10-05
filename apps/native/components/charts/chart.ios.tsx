@@ -2,17 +2,16 @@ import { Host, Chart as SwiftChart } from '@expo/ui/swift-ui';
 import { accessibilityHidden } from '@expo/ui/swift-ui/modifiers';
 import { View } from 'react-native';
 
-import { useAppearance } from '@/lib/ui';
-import { BENCHMRK_ACCENT } from '@/lib/ui/accent';
+import { type AppColors, useAppearance, useColors } from '@/lib/ui';
 import { StackedBarChart } from '@/modules/benchmrk-ui';
 import type { ChartProps, ChartTone } from './chart-types';
 
-const TONE_COLORS: Record<ChartTone, Record<'light' | 'dark', string>> = {
-  accent: BENCHMRK_ACCENT,
-  secondary: { light: '#007AFF', dark: '#0A84FF' },
-  tertiary: { light: '#FF9500', dark: '#FF9F0A' },
-  neutral: { light: '#8E8E93', dark: '#8E8E93' },
-};
+const TONE_ROLES = {
+  accent: 'primary',
+  secondary: 'secondary',
+  tertiary: 'tertiary',
+  neutral: 'outline',
+} as const satisfies Record<ChartTone, keyof AppColors>;
 
 /**
  * One VoiceOver summary, with the native plot hidden from accessibility.
@@ -21,6 +20,7 @@ const TONE_COLORS: Record<ChartTone, Record<'light' | 'dark', string>> = {
  */
 export function Chart(props: ChartProps) {
   const { resolvedAppearance } = useAppearance();
+  const colors = useColors();
   const height =
     props.height ??
     (props.kind === 'stackedBar' && props.horizontal ? 28 : 180);
@@ -45,7 +45,7 @@ export function Chart(props: ChartProps) {
               segments: bar.segments.map((segment) => ({
                 label: segment.label,
                 value: segment.value,
-                color: TONE_COLORS[segment.tone][resolvedAppearance],
+                color: colors[TONE_ROLES[segment.tone]],
               })),
             }))}
           />
@@ -55,7 +55,7 @@ export function Chart(props: ChartProps) {
             data={props.points.map((point) => ({
               x: point.label,
               y: point.value,
-              color: TONE_COLORS[props.tone ?? 'accent'][resolvedAppearance],
+              color: colors[TONE_ROLES[props.tone ?? 'accent']],
             }))}
             showGrid
             showLegend={false}
@@ -63,8 +63,7 @@ export function Chart(props: ChartProps) {
               props.kind === 'trend'
                 ? {
                     pointStyle: 'circle',
-                    color:
-                      TONE_COLORS[props.tone ?? 'accent'][resolvedAppearance],
+                    color: colors[TONE_ROLES[props.tone ?? 'accent']],
                   }
                 : undefined
             }
@@ -76,7 +75,7 @@ export function Chart(props: ChartProps) {
             ruleStyle={
               props.kind === 'trend' && props.reference
                 ? {
-                    color: TONE_COLORS.neutral[resolvedAppearance],
+                    color: colors[TONE_ROLES.neutral],
                     lineWidth: 1,
                     dashArray: [4, 4],
                   }

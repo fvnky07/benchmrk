@@ -1,6 +1,6 @@
 // PROTOTYPE — throwaway (prototype/workout-ui branch).
 // Variant A "Current": today's in-Group presentation, moved verbatim out of
-// the route. It keeps its own legacy colours (THEME) on purpose.
+// the route.
 import { Button, Column, Host, Row, ScrollView, Switch } from '@expo/ui';
 import { useState } from 'react';
 import {
@@ -12,7 +12,7 @@ import { GroupActivity } from '@/components/groups/group-activity';
 import { GroupGrid } from '@/components/groups/group-grid';
 import { GroupHeader } from '@/components/groups/group-header';
 import { InviteInbox } from '@/components/groups/invite-inbox';
-import { THEME, useAppearance } from '@/lib/ui';
+import { useAppearance, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import type { GroupActions, GroupModel } from './model';
 
@@ -25,7 +25,7 @@ export function VariantCurrent({
 }: Readonly<{ model: GroupModel; actions: GroupActions }>) {
   const { group, now, status } = model;
   const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const { width } = useWindowDimensions();
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
@@ -131,7 +131,7 @@ export function VariantCurrent({
             right: 0,
             backgroundColor: colors.background,
             borderBottomWidth: 1,
-            borderBottomColor: colors.border,
+            borderBottomColor: colors.outlineVariant,
           }}
         >
           <Host

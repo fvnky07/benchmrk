@@ -9,7 +9,7 @@ import {
 import { Image } from 'expo-image';
 import { Platform, Text, View } from 'react-native';
 
-import { THEME, useAppearance } from '@/lib/ui';
+import { useColors } from '@/lib/ui';
 
 type GroupChipProps = {
   members: readonly { username: string; image: string | null }[];
@@ -21,8 +21,7 @@ const AVATAR_OVERLAP = 8;
 
 /** The fixed Group chip uses the same native surfaces as QuickActionChip. */
 export function GroupChip({ members, onPress }: Readonly<GroupChipProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const label = `Group, members: ${members.map((member) => member.username).join(', ')}`;
   const avatars = (
     <RNHostView matchContents>
@@ -39,8 +38,8 @@ export function GroupChip({ members, onPress }: Readonly<GroupChipProps>) {
               height: AVATAR_SIZE,
               borderRadius: AVATAR_SIZE / 2,
               borderWidth: 1,
-              borderColor: colors.background,
-              backgroundColor: colors.muted,
+              borderColor: colors.surface,
+              backgroundColor: colors.surfaceContainerHigh,
               alignItems: 'center',
               justifyContent: 'center',
               marginLeft: index === 0 ? 0 : -AVATAR_OVERLAP,
@@ -57,7 +56,7 @@ export function GroupChip({ members, onPress }: Readonly<GroupChipProps>) {
                 style={{
                   fontSize: 10,
                   fontWeight: '700',
-                  color: colors.foreground,
+                  color: colors.onSurface,
                 }}
               >
                 {member.username.slice(0, 2).toUpperCase()}

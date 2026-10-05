@@ -8,7 +8,7 @@ import {
 } from '@repo/backend/convex/domain/effort';
 import type { ComponentProps } from 'react';
 
-import { THEME, useAppearance } from '@/lib/ui';
+import { textColor, useColors } from '@/lib/ui';
 import { formatEffort } from '@/lib/workout/format';
 import {
   FIELD_LABELS,
@@ -118,8 +118,7 @@ export function SetTable({
   onDismissSwipeHint,
   targetHeading,
 }: Readonly<SetTableProps>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const colors = useColors();
   const labels = setLabels(sets.map((set) => set.type));
   // Target settings remain reachable even when targets are switched off.
   const showTargets =
@@ -161,7 +160,7 @@ export function SetTable({
           style={{
             padding: 12,
             borderRadius: 12,
-            backgroundColor: colors.muted,
+            backgroundColor: colors.surfaceContainerHigh,
           }}
         >
           <Text textStyle={{ fontSize: 14 }}>
@@ -190,7 +189,10 @@ export function SetTable({
               </Text>
               {set.rpe === null ? null : (
                 <Text
-                  textStyle={{ fontSize: 11, color: colors.mutedForeground }}
+                  textStyle={{
+                    fontSize: 11,
+                    color: textColor(colors.onSurfaceVariant),
+                  }}
                 >
                   {`${effortScale} ${formatEffort(effortInScale(set.rpe, effortScale))}`}
                 </Text>
@@ -200,7 +202,7 @@ export function SetTable({
                   label={`Note on Set ${labels[index]}`}
                   onTap={() => onNote(set._id)}
                 >
-                  <Icon name={NOTE} size={14} color={colors.mutedForeground} />
+                  <Icon name={NOTE} size={14} color={colors.onSurfaceVariant} />
                 </GestureBox>
               ) : null}
             </Column>
@@ -243,7 +245,9 @@ export function SetTable({
                       paddingVertical: 10,
                       borderRadius: 10,
                       borderWidth: focused ? 2 : 1,
-                      borderColor: focused ? colors.primary : colors.border,
+                      borderColor: focused
+                        ? colors.primary
+                        : colors.outlineVariant,
                     }}
                   >
                     <Row spacing={2} alignment="center">
@@ -252,7 +256,7 @@ export function SetTable({
                           fontSize: 17,
                           color:
                             cell.value === ''
-                              ? colors.mutedForeground
+                              ? textColor(colors.onSurfaceVariant)
                               : undefined,
                         }}
                       >
@@ -270,7 +274,7 @@ export function SetTable({
                           <Icon
                             name={SPARKLE}
                             size={12}
-                            color={colors.mutedForeground}
+                            color={colors.onSurfaceVariant}
                           />
                         </GestureBox>
                       ) : null}
