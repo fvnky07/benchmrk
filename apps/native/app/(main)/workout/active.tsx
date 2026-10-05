@@ -1,47 +1,42 @@
-import EditNoteIcon from '@expo/material-symbols/edit_note.xml';
-import KeepIcon from '@expo/material-symbols/keep.xml';
-import {
-  BottomSheet,
-  Button,
-  Column,
-  Icon,
-  ListItem,
-  Row,
-  Spacer,
-  Text,
-} from '@expo/ui';
+import { BottomSheet, Button, Column, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
-import { GroupChip } from '@/components/groups/group-chip';
 import { GroupDrawer } from '@/components/groups/group-drawer';
-import { DockedScreen } from '@/components/native/docked-screen';
 import { NativeScreen } from '@/components/native/native-screen';
+import type {
+  ActiveActions,
+  ActiveModel,
+  ExerciseTable,
+  Focus,
+  WorkoutExercise,
+  WorkoutSet,
+} from '@/components/prototype/active/model';
+import { VariantCurrent } from '@/components/prototype/active/variant-current';
+import { VariantFocus } from '@/components/prototype/active/variant-focus';
+import { VariantOverview } from '@/components/prototype/active/variant-overview';
+import { VariantTable } from '@/components/prototype/active/variant-table';
+import {
+  PrototypeVariants,
+  useVariant,
+} from '@/components/prototype/variant-switcher';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
-import { ExerciseStrip } from '@/components/workout/exercise-strip';
-import { ExerciseTitlePager } from '@/components/workout/exercise-title-pager';
 import { MachineSetupSheet } from '@/components/workout/machine-setup-sheet';
 import { NotesSheet, type NoteTarget } from '@/components/workout/notes-sheet';
 import { PlatesSheet } from '@/components/workout/plates-sheet';
-import { QuickActionRow } from '@/components/workout/quick-action-row';
 import { RestOptionsSheet } from '@/components/workout/rest-options-sheet';
-import { RestTimer } from '@/components/workout/rest-timer';
-import { SetKeypad } from '@/components/workout/set-keypad';
-import { SetTable } from '@/components/workout/set-table';
 import { SetTypeSheet } from '@/components/workout/set-type-sheet';
 import { StructureSheet } from '@/components/workout/structure-sheet';
 import { TargetSheet } from '@/components/workout/target-sheet';
-import { WorkoutProgress } from '@/components/workout/workout-progress';
 import { useHaptics } from '@/lib/haptics';
-import { THEME, useAppearance } from '@/lib/ui';
-import { formatClock, weightInUnit } from '@/lib/workout/format';
+import { weightInUnit } from '@/lib/workout/format';
 import { setupSummary } from '@/lib/workout/machine-setup';
 import { plateStrip } from '@/lib/workout/plates';
+import type { QuickActionId } from '@/lib/workout/quick-actions';
 import {
-  type ActiveWorkout,
   blockPartners,
   canSkipForNow,
   roundNumber,
@@ -77,13 +72,15 @@ import {
   useStillWorkingOut,
 } from '@/lib/workout/use-still-working-out';
 
-type WorkoutExercise = ActiveWorkout['exercises'][number];
-type WorkoutSet = WorkoutExercise['sets'][number];
-type Focus = { setId: Id<'sets'>; field: SetField };
 type Drafts = Record<string, Partial<Record<SetField, string>>>;
 
-const NOTE_ICON = { ios: 'note.text', android: EditNoteIcon } as const;
-const PIN_ICON = { ios: 'pin.fill', android: KeepIcon } as const;
+// PROTOTYPE: the presentation of this route switches on `?variant=`.
+const VARIANTS = [
+  { key: 'A', name: 'Current' },
+  { key: 'B', name: 'Table' },
+  { key: 'C', name: 'Focus' },
+  { key: 'D', name: 'Overview' },
+] as const;
 
 /** A Working Set's target is visible only while targets are enabled. */
 function workingTarget(set: WorkoutSet, targetsEnabled: boolean) {
@@ -142,8 +139,7 @@ export default function ActiveWorkoutScreen() {
   const skipForNow = useMutation(api.workouts.skipForNow);
   const haptic = useHaptics();
   const now = useNow();
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
+  const variant = useVariant(VARIANTS);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Drafts>({});
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
@@ -345,6 +341,10 @@ export default function ActiveWorkoutScreen() {
   };
 
   const logSet = (set: WorkoutSet) => {
+    // The Set may belong to an Exercise other than the selected one.
+    const owner = workout.exercises.find((item) =>
+      item.sets.some((candidate) => candidate._id === set._id)
+    );
     const local = withSetLogged(workout, set._id, Date.now(), settings);
     const nextIndex = workout.exercises.findIndex(
       (item) => item._id === local?.next
@@ -362,7 +362,11 @@ export default function ActiveWorkoutScreen() {
     return attempt(async () => {
       const { targetMet } = await completeSet({
         setId: set._id,
-        ...draftsToPatch(fields, drafts[set._id], units),
+        ...draftsToPatch(
+          owner ? SET_FIELDS[owner.type] : fields,
+          drafts[set._id],
+          units
+        ),
       });
       haptic(targetMet ? 'target-met' : 'set-completed');
     }, 'Could not log this Set.');
@@ -427,56 +431,6 @@ export default function ActiveWorkoutScreen() {
     );
   finishFromIdle.current = finishNow;
 
-  const keypad =
-    focus && focusSet && isKeypadOpen ? (
-      <SetKeypad
-        target={`Set ${labels[exercise?.sets.indexOf(focusSet) ?? 0]} · ${FIELD_LABELS[focus.field]}`}
-        field={focus.field}
-        effortScale={effortScale}
-        rpe={focusSet.rpe}
-        isFailure={focusSet.type === 'failure'}
-        onKey={pressKey}
-        onStep={step}
-        onRate={(rpe) =>
-          attempt(
-            () =>
-              updateSet({
-                setId: focusSet._id,
-                effort: rpe === null ? null : { scale: 'RPE', value: rpe },
-              }),
-            'Could not save the effort.'
-          )
-        }
-        onToggleScale={() =>
-          attempt(
-            () =>
-              updateSettings({
-                effortScale: effortScale === 'RPE' ? 'RIR' : 'RPE',
-              }),
-            'Could not switch the effort scale.'
-          )
-        }
-        onToggleFailure={() =>
-          setType(
-            focusSet._id,
-            focusSet.type === 'failure' ? 'normal' : 'failure'
-          )
-        }
-        onLog={() => logSet(focusSet)}
-        onHide={() => setIsKeypadOpen(false)}
-      />
-    ) : focusSet ? (
-      <Row spacing={8}>
-        <Button
-          label="Show keypad"
-          variant="outlined"
-          onPress={() => setIsKeypadOpen(true)}
-        />
-        <Spacer />
-        <Button label="Log Set" onPress={() => logSet(focusSet)} />
-      </Row>
-    ) : null;
-
   // While a barbell weight is being edited: its per-side plate breakdown.
   const editedWeightKg =
     exercise?.equipment === 'barbell' &&
@@ -487,426 +441,362 @@ export default function ActiveWorkoutScreen() {
         openTarget(focusSet, targetsEnabled)?.weightKg ??
         null)
       : null;
-  const plateStripRow =
-    editedWeightKg === null ? null : (
-      <Row
-        spacing={8}
-        alignment="center"
-        onPress={() => setIsPlatesOpen(true)}
-        style={{ padding: 10, borderRadius: 10, backgroundColor: colors.muted }}
-      >
-        <Text textStyle={{ fontSize: 14 }}>
-          {plateStrip(
+
+  // One Exercise's Set table, as SetTable takes it.
+  const tableFor = (item: WorkoutExercise): ExerciseTable => {
+    const itemFields = SET_FIELDS[item.type];
+    const itemTargetsEnabled =
+      settings.overloadTargets &&
+      !settings.targetsOffExerciseIds.includes(item.exerciseId);
+    const itemShowsPrevious = item.type === 'timed' || item.type === 'cardio';
+    return {
+      sets: item.sets.map((set) => {
+        const target = workingTarget(set, itemTargetsEnabled);
+        const open = openTarget(set, itemTargetsEnabled);
+        return {
+          _id: set._id,
+          type: set.type,
+          rpe: set.rpe,
+          done: set.completedAt !== null,
+          hasNote: set.note !== null,
+          target: itemShowsPrevious
+            ? set.previous &&
+              setSummary(
+                {
+                  weightKg: null,
+                  reps: null,
+                  durationSeconds: set.previous.durationSeconds ?? null,
+                  distanceMeters: set.previous.distanceMeters ?? null,
+                },
+                units
+              )
+            : target && targetText(target, units),
+          cells: itemFields.map((field) => ({
+            field,
+            value: displayDraft(field, draftOf(set, field)),
+            placeholder: displayDraft(
+              field,
+              storedToDraft(
+                field,
+                open ? TARGET_VALUE[field](open) : null,
+                units
+              )
+            ),
+            fromTarget:
+              itemTargetsEnabled &&
+              drafts[set._id]?.[field] === undefined &&
+              (field === 'weight' || field === 'reps') &&
+              set.fromTarget?.[field] === true,
+          })),
+        };
+      }),
+      labels: setLabels(item.sets.map((set) => set.type)),
+      headings: itemFields.map((field) => fieldHeading(field, units)),
+      fields: itemFields,
+      targetHeading: itemShowsPrevious ? 'Last time' : 'Target',
+    };
+  };
+
+  const progressFraction =
+    workout.progress.total === 0
+      ? 0
+      : workout.progress.done / workout.progress.total;
+
+  const model: ActiveModel = {
+    workout,
+    settings,
+    group,
+    now,
+    elapsedSeconds: (now - workout.startedAt) / 1000,
+    units,
+    effortScale,
+    index,
+    exercise,
+    table: exercise ? tableFor(exercise) : null,
+    tableFor,
+    strip: workout.exercises.map((item, itemIndex) => ({
+      key: item._id,
+      name: item.name,
+      skipped: item.skipped,
+      linkedToNext:
+        item.blockId !== null &&
+        workout.exercises[itemIndex + 1]?.blockId === item.blockId,
+      sets: item.sets.map((set) => ({ done: set.completedAt !== null })),
+    })),
+    titlePages: workout.exercises.map((item) => {
+      const next = item.sets.findIndex((set) => set.completedAt === null);
+      return {
+        key: item._id,
+        name: item.name,
+        status:
+          next === -1
+            ? `All ${item.sets.length} Sets logged`
+            : `Set ${next + 1} of ${item.sets.length}`,
+      };
+    }),
+    alternating:
+      exercise && partners.length > 0
+        ? {
+            roundLabel: `Alternating sets · Round ${roundNumber(workout, exercise._id) ?? (block?.roundsCompleted ?? 0) + 1}`,
+            withNames: `With ${partners.map((partner) => partner.name).join(', ')}`,
+            stayOnName:
+              stayOn !== null
+                ? (workout.exercises[stayOn]?.name ?? null)
+                : null,
+            canSkipForNow: canSkipForNow(workout, exercise._id),
+          }
+        : null,
+    plannedRestSeconds: exercisePlannedRest,
+    machineSetup:
+      usesMachineSetup && exercise?.machineSetup
+        ? setupSummary(exercise.machineSetup)
+        : null,
+    quickActionBadges: {
+      note: exercise
+        ? exercise.sets.filter((set) => set.note !== null).length +
+          (exercise.standingNote ? 1 : 0)
+        : 0,
+    },
+    progressFraction,
+    allDone,
+    aheadBehind:
+      settings.aheadBehind && workout.targetDurationSeconds
+        ? aheadBehind(
+            (now - workout.startedAt) / 1000,
+            workout.targetDurationSeconds,
+            progressFraction
+          )
+        : null,
+    isIdle: stillWorkingOut.isIdle,
+    isConfirmingTerminate,
+    errorMessage,
+    focus,
+    focusSet,
+    isKeypadOpen,
+    keypadTarget:
+      focus && focusSet
+        ? `Set ${labels[exercise?.sets.indexOf(focusSet) ?? 0]} · ${FIELD_LABELS[focus.field]}`
+        : null,
+    plateStrip:
+      editedWeightKg === null
+        ? null
+        : plateStrip(
             weightInUnit(editedWeightKg, settings.plates.unit),
             settings.plates
-          )}
-        </Text>
-      </Row>
-    );
+          ),
+  };
+
+  const quick: Partial<Record<QuickActionId, () => void>> = exercise
+    ? {
+        note: () =>
+          setNoteTarget(
+            focusSet
+              ? {
+                  kind: 'set',
+                  workoutExerciseId: exercise._id,
+                  setId: focusSet._id,
+                }
+              : { kind: 'exercise', workoutExerciseId: exercise._id }
+          ),
+        ...(usesMachineSetup &&
+          !exercise.machineSetup && {
+            setup: () => setSetupFor(exercise._id),
+          }),
+        ...(exercise.sets.some(
+          (set) =>
+            openTarget(set, targetsEnabled) !== null &&
+            set.weightKg === null &&
+            set.reps === null
+        ) && {
+          wand: () =>
+            attempt(
+              () => fillFromTargets({ workoutExerciseId: exercise._id }),
+              'Could not fill the Sets from the target.'
+            ),
+        }),
+        addSet: () =>
+          attempt(
+            () => addSet({ workoutExerciseId: exercise._id }),
+            'Could not add a Set.'
+          ),
+        info: () => router.push(`/workout/exercise/${exercise.slug}`),
+        ...(exercise.equipment === 'barbell' && {
+          plates: () => setIsPlatesOpen(true),
+        }),
+        ...(exercise.sets.every((set) => set.completedAt === null) && {
+          swap: () => setPickerMode('swap'),
+        }),
+      }
+    : {};
+
+  const actions: ActiveActions = {
+    selectExercise,
+    openAddExercise: () => setPickerMode('add'),
+    openStructure: () => setIsStructureOpen(true),
+    openMenu: () => setIsMenuOpen(true),
+    openGroup: () => router.push('/workout/group'),
+    openGroupDrawer: () => setGroupOpen(true),
+    openWorkoutNote: () => setNoteTarget({ kind: 'workout' }),
+    askTerminate: () => setIsConfirmingTerminate(true),
+    cancelTerminate: () => setIsConfirmingTerminate(false),
+    terminate: () => end('terminate'),
+    finish: () => end('finish'),
+    finishNow,
+    keepGoing: stillWorkingOut.markActive,
+    adjustRest: (seconds) =>
+      attempt(
+        () => adjustRest({ workoutId: workout._id, seconds }),
+        'Could not adjust rest.'
+      ),
+    skipRest: () =>
+      attempt(
+        () => skipRest({ workoutId: workout._id }),
+        'Could not skip rest.'
+      ),
+    resetRest: () =>
+      attempt(
+        () => resetRest({ workoutId: workout._id }),
+        'Could not restart rest.'
+      ),
+    openRestOptions: () => setIsRestSheetOpen(true),
+    stayOn: () => {
+      if (stayOn === null) return;
+      setSelectedIndex(stayOn);
+      setStayOn(null);
+    },
+    skipForNow: () => {
+      if (!exercise) return;
+      void attempt(async () => {
+        const { next } = await skipForNow({
+          workoutExerciseId: exercise._id,
+        });
+        const nextIndex = workout.exercises.findIndex(
+          (item) => item._id === next
+        );
+        if (nextIndex >= 0) selectExercise(nextIndex);
+      }, 'Could not skip this Exercise for now.');
+    },
+    openExerciseNote: () => {
+      if (exercise) {
+        setNoteTarget({ kind: 'exercise', workoutExerciseId: exercise._id });
+      }
+    },
+    editSetup: () => {
+      if (exercise) setSetupFor(exercise._id);
+    },
+    quick,
+    addWarmupSet: () => {
+      if (!exercise) return;
+      void attempt(
+        () => addSet({ workoutExerciseId: exercise._id, type: 'warmup' }),
+        'Could not add a Warm-up Set.'
+      );
+    },
+    openPlates: () => setIsPlatesOpen(true),
+    focusCell: (setId, field) => moveFocus({ setId, field }),
+    focusCellOf: (exerciseIndex, setId, field) => {
+      if (exerciseIndex === index) {
+        moveFocus({ setId, field });
+        return;
+      }
+      stillWorkingOut.markActive();
+      if (focusSet) void saveDrafts(focusSet);
+      setStayOn(null);
+      setSelectedIndex(exerciseIndex);
+      setChosenFocus({ setId, field });
+      setIsKeypadOpen(true);
+    },
+    fillFromTarget: (setId, field) => {
+      moveFocus({ setId, field });
+      void attempt(
+        () => fillFromTarget({ setId }),
+        'Could not fill this Set from the target.'
+      );
+    },
+    toggleDone: (row, done) => {
+      const set = workout.exercises
+        .flatMap((item) => item.sets)
+        .find((item) => item._id === row._id);
+      if (!set) return;
+      if (done) void logSet(set);
+      else
+        void attempt(
+          () => uncompleteSet({ setId: set._id }),
+          'Could not update this Set.'
+        );
+    },
+    openSetNote: (setId) => {
+      const owner = workout.exercises.find((item) =>
+        item.sets.some((candidate) => candidate._id === setId)
+      );
+      if (owner) {
+        setNoteTarget({
+          kind: 'set',
+          workoutExerciseId: owner._id,
+          setId,
+        });
+      }
+    },
+    duplicateSet: (setId) =>
+      attempt(() => duplicateSet({ setId }), 'Could not duplicate this Set.'),
+    deleteSet: (setId) =>
+      attempt(() => deleteSet({ setId }), 'Could not delete this Set.'),
+    openSetType: setTypeSheetSetId,
+    openTarget: (workoutExerciseId) => {
+      const target = workoutExerciseId ?? exercise?._id;
+      if (target) setTargetSheetId(target);
+    },
+    dismissSwipeHint: () =>
+      attempt(
+        () => updateSettings({ swipeHintDismissed: true }),
+        'Could not dismiss the hint.'
+      ),
+    pressKey,
+    step,
+    rate: (rpe) => {
+      if (!focusSet) return;
+      void attempt(
+        () =>
+          updateSet({
+            setId: focusSet._id,
+            effort: rpe === null ? null : { scale: 'RPE', value: rpe },
+          }),
+        'Could not save the effort.'
+      );
+    },
+    toggleScale: () =>
+      attempt(
+        () =>
+          updateSettings({
+            effortScale: effortScale === 'RPE' ? 'RIR' : 'RPE',
+          }),
+        'Could not switch the effort scale.'
+      ),
+    toggleFailure: () => {
+      if (!focusSet) return;
+      void setType(
+        focusSet._id,
+        focusSet.type === 'failure' ? 'normal' : 'failure'
+      );
+    },
+    logFocused: () => {
+      if (focusSet) void logSet(focusSet);
+    },
+    hideKeypad: () => setIsKeypadOpen(false),
+    showKeypad: () => setIsKeypadOpen(true),
+  };
 
   return (
-    <DockedScreen
-      dock={
-        plateStripRow ? (
-          <Column spacing={8}>
-            {plateStripRow}
-            {keypad}
-          </Column>
-        ) : (
-          keypad
-        )
-      }
-    >
-      <Row spacing={12} alignment="center">
-        <Button
-          label="Workout menu"
-          variant="text"
-          onPress={() => setIsMenuOpen(true)}
-        />
-        <Column spacing={2}>
-          <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
-            {workout.name}
-          </Text>
-          <Text textStyle={{ fontSize: 15 }}>
-            {formatClock((now - workout.startedAt) / 1000)}
-          </Text>
-        </Column>
-        <Spacer />
-        <Button
-          label="Group"
-          variant="text"
-          onPress={() => router.push('/workout/group')}
-        />
-        <Button
-          label="Exercises"
-          variant="text"
-          onPress={() => setIsStructureOpen(true)}
-        />
-        <Button
-          label="Terminate"
-          variant="text"
-          onPress={() => setIsConfirmingTerminate(true)}
-        />
-      </Row>
-      {workout.note ? (
-        <Row
-          spacing={6}
-          alignment="center"
-          onPress={() => setNoteTarget({ kind: 'workout' })}
-        >
-          <Icon name={NOTE_ICON} size={14} color={colors.mutedForeground} />
-          <Text textStyle={{ fontSize: 14 }}>{workout.note}</Text>
-        </Row>
-      ) : null}
-      {stillWorkingOut.isIdle ? (
-        <Column spacing={8}>
-          <ListItem supportingText="Nothing has happened for 20 minutes.">
-            Still working out?
-          </ListItem>
-          <Row spacing={8}>
-            <Button label="Finish Workout" onPress={finishNow} />
-            <Button
-              label="Keep going"
-              variant="outlined"
-              onPress={stillWorkingOut.markActive}
-            />
-          </Row>
-        </Column>
-      ) : null}
-      <Row spacing={12} alignment="center">
-        <Column style={{ width: 260 }}>
-          <WorkoutProgress
-            fraction={
-              workout.progress.total === 0
-                ? 0
-                : workout.progress.done / workout.progress.total
-            }
-          />
-        </Column>
-        <Text textStyle={{ fontSize: 14 }}>
-          {`${workout.progress.done}/${workout.progress.total} Sets`}
-        </Text>
-        {settings.aheadBehind && workout.targetDurationSeconds ? (
-          <Text textStyle={{ fontSize: 14, color: colors.mutedForeground }}>
-            {aheadBehind(
-              (now - workout.startedAt) / 1000,
-              workout.targetDurationSeconds,
-              workout.progress.total === 0
-                ? 0
-                : workout.progress.done / workout.progress.total
-            )}
-          </Text>
-        ) : null}
-      </Row>
-      {isConfirmingTerminate ? (
-        <Column spacing={8}>
-          <ListItem
-            supportingText={`${workout.progress.done} of ${workout.progress.total} planned Sets are logged. Logged Sets are kept.`}
-          >
-            Terminate this Workout?
-          </ListItem>
-          <Button label="Terminate Workout" onPress={() => end('terminate')} />
-          <Button
-            label="Keep going"
-            variant="outlined"
-            onPress={() => setIsConfirmingTerminate(false)}
-          />
-        </Column>
-      ) : null}
-      <ExerciseStrip
-        exercises={workout.exercises.map((item, itemIndex) => ({
-          key: item._id,
-          name: item.name,
-          skipped: item.skipped,
-          linkedToNext:
-            item.blockId !== null &&
-            workout.exercises[itemIndex + 1]?.blockId === item.blockId,
-          sets: item.sets.map((set) => ({ done: set.completedAt !== null })),
-        }))}
-        selectedIndex={index}
-        onSelect={selectExercise}
-        onAdd={() => setPickerMode('add')}
-      />
-      {exercise ? (
-        <>
-          <Row spacing={8} alignment="center">
-            <ExerciseTitlePager
-              pages={workout.exercises.map((item) => {
-                const next = item.sets.findIndex(
-                  (set) => set.completedAt === null
-                );
-                return {
-                  key: item._id,
-                  name: item.name,
-                  status:
-                    next === -1
-                      ? `All ${item.sets.length} Sets logged`
-                      : `Set ${next + 1} of ${item.sets.length}`,
-                };
-              })}
-              selectedIndex={index}
-              onSelect={selectExercise}
-            />
-            <RestTimer
-              rest={workout.rest}
-              plannedSeconds={exercisePlannedRest}
-              now={now}
-              onAdjust={(seconds) =>
-                attempt(
-                  () => adjustRest({ workoutId: workout._id, seconds }),
-                  'Could not adjust rest.'
-                )
-              }
-              onSkip={() =>
-                attempt(
-                  () => skipRest({ workoutId: workout._id }),
-                  'Could not skip rest.'
-                )
-              }
-              onReset={() =>
-                attempt(
-                  () => resetRest({ workoutId: workout._id }),
-                  'Could not restart rest.'
-                )
-              }
-              onOpenOptions={() => setIsRestSheetOpen(true)}
-            />
-          </Row>
-          {partners.length > 0 ? (
-            <Row spacing={8} alignment="center">
-              <Column spacing={2}>
-                <Text textStyle={{ fontSize: 14, fontWeight: '600' }}>
-                  {`Alternating sets · Round ${roundNumber(workout, exercise._id) ?? (block?.roundsCompleted ?? 0) + 1}`}
-                </Text>
-                <Text textStyle={{ fontSize: 13 }}>
-                  {`With ${partners.map((partner) => partner.name).join(', ')}`}
-                </Text>
-              </Column>
-              <Spacer />
-              {stayOn !== null && workout.exercises[stayOn] ? (
-                <Button
-                  label={`Stay on ${workout.exercises[stayOn].name}`}
-                  variant="text"
-                  onPress={() => {
-                    setSelectedIndex(stayOn);
-                    setStayOn(null);
-                  }}
-                />
-              ) : canSkipForNow(workout, exercise._id) ? (
-                <Button
-                  label="Skip for now"
-                  variant="text"
-                  onPress={() =>
-                    attempt(async () => {
-                      const { next } = await skipForNow({
-                        workoutExerciseId: exercise._id,
-                      });
-                      const nextIndex = workout.exercises.findIndex(
-                        (item) => item._id === next
-                      );
-                      if (nextIndex >= 0) selectExercise(nextIndex);
-                    }, 'Could not skip this Exercise for now.')
-                  }
-                />
-              ) : null}
-            </Row>
-          ) : null}
-          {exercise.standingNote ? (
-            <Row
-              spacing={6}
-              alignment="center"
-              onPress={() =>
-                setNoteTarget({
-                  kind: 'exercise',
-                  workoutExerciseId: exercise._id,
-                })
-              }
-            >
-              <Icon name={PIN_ICON} size={14} color={colors.mutedForeground} />
-              <Text textStyle={{ fontSize: 14 }}>{exercise.standingNote}</Text>
-            </Row>
-          ) : null}
-          {usesMachineSetup && exercise.machineSetup ? (
-            <Row spacing={8} alignment="center">
-              <Text textStyle={{ fontSize: 14 }}>
-                {setupSummary(exercise.machineSetup)}
-              </Text>
-              <Spacer />
-              <Button
-                label="Edit setup"
-                variant="text"
-                onPress={() => setSetupFor(exercise._id)}
-              />
-            </Row>
-          ) : null}
-          <QuickActionRow
-            leading={
-              group ? (
-                <GroupChip
-                  members={group.members}
-                  onPress={() => setGroupOpen(true)}
-                />
-              ) : null
-            }
-            actions={settings.quickActions}
-            badges={{
-              note:
-                exercise.sets.filter((set) => set.note !== null).length +
-                (exercise.standingNote ? 1 : 0),
-            }}
-            handlers={{
-              note: () =>
-                setNoteTarget(
-                  focusSet
-                    ? {
-                        kind: 'set',
-                        workoutExerciseId: exercise._id,
-                        setId: focusSet._id,
-                      }
-                    : { kind: 'exercise', workoutExerciseId: exercise._id }
-                ),
-              ...(usesMachineSetup &&
-                !exercise.machineSetup && {
-                  setup: () => setSetupFor(exercise._id),
-                }),
-              ...(exercise.sets.some(
-                (set) =>
-                  openTarget(set, targetsEnabled) !== null &&
-                  set.weightKg === null &&
-                  set.reps === null
-              ) && {
-                wand: () =>
-                  attempt(
-                    () => fillFromTargets({ workoutExerciseId: exercise._id }),
-                    'Could not fill the Sets from the target.'
-                  ),
-              }),
-              addSet: () =>
-                attempt(
-                  () => addSet({ workoutExerciseId: exercise._id }),
-                  'Could not add a Set.'
-                ),
-              info: () => router.push(`/workout/exercise/${exercise.slug}`),
-              ...(exercise.equipment === 'barbell' && {
-                plates: () => setIsPlatesOpen(true),
-              }),
-              ...(exercise.sets.every((set) => set.completedAt === null) && {
-                swap: () => setPickerMode('swap'),
-              }),
-            }}
-          />
-          <SetTable
-            sets={exercise.sets.map((set) => {
-              const target = workingTarget(set, targetsEnabled);
-              const open = openTarget(set, targetsEnabled);
-              return {
-                _id: set._id,
-                type: set.type,
-                rpe: set.rpe,
-                done: set.completedAt !== null,
-                hasNote: set.note !== null,
-                target: showsPrevious
-                  ? set.previous &&
-                    setSummary(
-                      {
-                        weightKg: null,
-                        reps: null,
-                        durationSeconds: set.previous.durationSeconds ?? null,
-                        distanceMeters: set.previous.distanceMeters ?? null,
-                      },
-                      units
-                    )
-                  : target && targetText(target, units),
-                cells: fields.map((field) => ({
-                  field,
-                  value: displayDraft(field, draftOf(set, field)),
-                  placeholder: displayDraft(
-                    field,
-                    storedToDraft(
-                      field,
-                      open ? TARGET_VALUE[field](open) : null,
-                      units
-                    )
-                  ),
-                  fromTarget:
-                    targetsEnabled &&
-                    drafts[set._id]?.[field] === undefined &&
-                    (field === 'weight' || field === 'reps') &&
-                    set.fromTarget?.[field] === true,
-                })),
-              };
-            })}
-            headings={fields.map((field) => fieldHeading(field, units))}
-            effortScale={effortScale}
-            focus={isKeypadOpen ? focus : null}
-            showSwipeHint={!settings.swipeHintDismissed}
-            onFocus={(setId, field) => moveFocus({ setId, field })}
-            onFillFromTarget={(setId, field) => {
-              moveFocus({ setId, field });
-              void attempt(
-                () => fillFromTarget({ setId }),
-                'Could not fill this Set from the target.'
-              );
-            }}
-            onToggleDone={(row, done) => {
-              const set = exercise.sets.find((item) => item._id === row._id);
-              if (!set) return;
-              if (done) void logSet(set);
-              else
-                void attempt(
-                  () => uncompleteSet({ setId: set._id }),
-                  'Could not update this Set.'
-                );
-            }}
-            onNote={(setId) =>
-              setNoteTarget({
-                kind: 'set',
-                workoutExerciseId: exercise._id,
-                setId,
-              })
-            }
-            onDuplicate={(setId) =>
-              attempt(
-                () => duplicateSet({ setId }),
-                'Could not duplicate this Set.'
-              )
-            }
-            onDelete={(setId) =>
-              attempt(() => deleteSet({ setId }), 'Could not delete this Set.')
-            }
-            onOpenType={setTypeSheetSetId}
-            onOpenTarget={() => setTargetSheetId(exercise._id)}
-            targetHeading={showsPrevious ? 'Last time' : 'Target'}
-            onDismissSwipeHint={() =>
-              attempt(
-                () => updateSettings({ swipeHintDismissed: true }),
-                'Could not dismiss the hint.'
-              )
-            }
-          />
-          <Button
-            label="Warm-up Set"
-            variant="text"
-            onPress={() =>
-              attempt(
-                () =>
-                  addSet({ workoutExerciseId: exercise._id, type: 'warmup' }),
-                'Could not add a Warm-up Set.'
-              )
-            }
-          />
-        </>
+    <PrototypeVariants variants={VARIANTS}>
+      {variant === 'B' ? (
+        <VariantTable model={model} actions={actions} />
+      ) : variant === 'C' ? (
+        <VariantFocus model={model} actions={actions} />
+      ) : variant === 'D' ? (
+        <VariantOverview model={model} actions={actions} />
       ) : (
-        <ListItem supportingText="Add an Exercise from the strip above to start logging Sets.">
-          No Exercises yet
-        </ListItem>
+        <VariantCurrent model={model} actions={actions} />
       )}
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Something went wrong</ListItem>
-      ) : null}
-      {allDone ? (
-        <Button label="Finish Workout" onPress={() => end('finish')} />
-      ) : null}
       <BottomSheet
         isPresented={isMenuOpen}
         onDismiss={() => setIsMenuOpen(false)}
@@ -1019,7 +909,9 @@ export default function ActiveWorkoutScreen() {
       />
       <SetTypeSheet
         current={
-          exercise?.sets.find((set) => set._id === typeSheetSetId)?.type ?? null
+          workout.exercises
+            .flatMap((item) => item.sets)
+            .find((set) => set._id === typeSheetSetId)?.type ?? null
         }
         onPick={(type) => {
           if (typeSheetSetId) void setType(typeSheetSetId, type);
@@ -1105,6 +997,6 @@ export default function ActiveWorkoutScreen() {
           }, 'Could not add this Exercise.');
         }}
       />
-    </DockedScreen>
+    </PrototypeVariants>
   );
 }

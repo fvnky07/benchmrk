@@ -1,45 +1,45 @@
+// PROTOTYPE — throwaway (prototype/workout-ui branch).
+// The in-Group presentation switches on `?variant=`; queries, mutations,
+// state, handlers and sheets stay here, rendered once outside the switch.
 import {
   BottomSheet,
   Button,
   Column,
-  Host,
   ListItem,
-  Row,
   ScrollView,
-  Switch,
   Text,
 } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  ScrollView as NativeScrollView,
-  Share,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { type ComponentType, useEffect, useState } from 'react';
+import { Share } from 'react-native';
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
-import { GroupActivity } from '@/components/groups/group-activity';
-import { GroupGrid } from '@/components/groups/group-grid';
-import { GroupHeader } from '@/components/groups/group-header';
 import { GroupQr } from '@/components/groups/group-qr';
 import { InviteByUsername } from '@/components/groups/invite-by-username';
 import { InviteInbox } from '@/components/groups/invite-inbox';
 import { ScanToJoin } from '@/components/groups/scan-to-join';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import type {
+  GroupActions,
+  GroupModel,
+  GroupVariantProps,
+} from '@/components/prototype/group/model';
+import { VariantCurrent } from '@/components/prototype/group/variant-current';
+import { VariantLeaderboard } from '@/components/prototype/group/variant-leaderboard';
+import { VariantSpotlight } from '@/components/prototype/group/variant-spotlight';
+import { VariantTiles } from '@/components/prototype/group/variant-tiles';
+import {
+  PrototypeVariants,
+  useVariant,
+} from '@/components/prototype/variant-switcher';
 import { usePushPermissionReoffer } from '@/lib/push/use-push-permission-reoffer';
-import { THEME, useAppearance } from '@/lib/ui';
-import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
 
 /** Group links open the website, which hands over to the app. */
 const JOIN_LINK_BASE = 'https://benchmrk.app/join';
-
-/** Navigation bar, Group header, weights switch and spacing above the member boxes. */
-const GROUP_CHROME_HEIGHT = 420;
 
 const ERROR_COPY: Record<string, string> = {
   EMAIL_NOT_VERIFIED: 'Verify your email to create or join Groups.',
@@ -51,6 +51,20 @@ const ERROR_COPY: Record<string, string> = {
   NOT_IN_GROUP: 'This Group has ended. Create or join another Group.',
 };
 
+const GROUP_VARIANTS = [
+  { key: 'A', name: 'Current' },
+  { key: 'B', name: 'Leaderboard' },
+  { key: 'C', name: 'Tiles' },
+  { key: 'D', name: 'Spotlight' },
+] as const;
+
+const PRESENTATIONS: Record<string, ComponentType<GroupVariantProps>> = {
+  A: VariantCurrent,
+  B: VariantLeaderboard,
+  C: VariantTiles,
+  D: VariantSpotlight,
+};
+
 export default function GroupScreen() {
   const group = useQuery(api.groups.getMine);
   const create = useMutation(api.groups.create);
@@ -60,12 +74,11 @@ export default function GroupScreen() {
   const leave = useMutation(api.groups.leave);
   const end = useMutation(api.groups.end);
   const reactions = useQuery(api.reactions.mine);
+  const settings = useQuery(api.memberSettings.get);
   const setMuted = useMutation(api.reactions.setMuted);
   const setShowWeights = useMutation(api.groups.setShowWeights);
-  const { resolvedAppearance } = useAppearance();
-  const colors = THEME[resolvedAppearance];
-  const { width } = useWindowDimensions();
   const now = useNow();
+  const variant = useVariant(GROUP_VARIANTS);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -73,7 +86,6 @@ export default function GroupScreen() {
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
   const [qrLink, setQrLink] = useState<string | null>(null);
   const [isInviting, setIsInviting] = useState(false);
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   // Members who skipped notifications get one more offer when Groups matter.
   const reofferPush = usePushPermissionReoffer();
 
@@ -167,217 +179,114 @@ export default function GroupScreen() {
           setQrLink(`${JOIN_LINK_BASE}/${current}`);
         });
 
-  const menu = (
-    <ScrollView
-      direction="horizontal"
-      showsIndicators={false}
-      style={{ width: width - 48 }}
-    >
-      <Row spacing={8}>
-        <Button
-          disabled={busy}
-          label="Share code"
-          variant="text"
-          onPress={share}
-        />
-        <Button
-          disabled={busy}
-          label={qrLink ? 'Hide QR' : 'Show QR'}
-          variant="text"
-          onPress={toggleQr}
-        />
-        {group.isHost ? (
-          <Button
-            disabled={busy}
-            label="Revoke code"
-            variant="text"
-            onPress={() =>
-              attempt(async () => {
-                await revokeCode({});
-                setQrLink(null);
-              })
-            }
-          />
-        ) : null}
-        <Button
-          disabled={busy || reactions === undefined}
-          label={reactions?.muted ? 'Unmute reactions' : 'Mute reactions'}
-          modifiers={[
-            accessibilityModifier(
-              reactions?.muted ? 'Unmute reactions' : 'Mute reactions'
-            ),
-          ]}
-          variant="text"
-          onPress={() =>
-            void attempt(() =>
-              setMuted({ muted: !(reactions?.muted ?? false) })
-            )
-          }
-        />
-        <Button
-          disabled={busy}
-          label={group.isHost ? 'End Group' : 'Leave Group'}
-          variant="text"
-          onPress={() =>
-            group.isHost
-              ? setIsConfirmingEnd(true)
-              : void attempt(() => leave({}))
-          }
-        />
-      </Row>
-    </ScrollView>
-  );
+  const self = group.members.find((member) => member.isYou);
+
+  const model: GroupModel = {
+    group,
+    members: group.members,
+    now,
+    isHost: group.isHost,
+    muted: reactions === undefined ? null : reactions.muted,
+    showWeights: group.showWeights,
+    units: settings?.units ?? 'kg',
+    busy,
+    qrShown: qrLink !== null,
+    selfProgress: self?.progress ?? null,
+    status,
+  };
+
+  const actions: GroupActions = {
+    onBack: () =>
+      router.replace(
+        self?.progress.startedAt == null ? '/workout' : '/workout/active'
+      ),
+    onInvite: () => setIsInviting(true),
+    onShare: share,
+    onToggleQr: toggleQr,
+    onRevokeCode: () =>
+      attempt(async () => {
+        await revokeCode({});
+        setQrLink(null);
+      }),
+    onToggleMuted: () =>
+      void attempt(() => setMuted({ muted: !(reactions?.muted ?? false) })),
+    onLeaveOrEnd: () =>
+      group.isHost ? setIsConfirmingEnd(true) : void attempt(() => leave({})),
+    onSetShowWeights: (shown) => void attempt(() => setShowWeights({ shown })),
+  };
+
+  const Presentation = PRESENTATIONS[variant] ?? VariantCurrent;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <NativeScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        scrollEventThrottle={16}
-        onScroll={({ nativeEvent }) => {
-          const collapsed = nativeEvent.contentOffset.y > 120;
-          setIsHeaderCollapsed((current) =>
-            current === collapsed ? current : collapsed
-          );
-        }}
+    <PrototypeVariants variants={GROUP_VARIANTS}>
+      <Presentation actions={actions} model={model} />
+      <BottomSheet
+        isPresented={isInviting}
+        onDismiss={() => setIsInviting(false)}
+        showDragIndicator
+        snapPoints={['half']}
       >
-        <Host
-          colorScheme={resolvedAppearance}
-          matchContents={{ vertical: true }}
-          style={{ width }}
-        >
+        <ScrollView>
           <Column spacing={16} style={{ padding: 24 }}>
-            <InviteInbox />
-            <GroupHeader
-              group={group}
-              now={now}
-              variant="full"
-              onBack={() =>
-                router.replace(
-                  group.members.find((member) => member.isYou)?.progress
-                    .startedAt == null
-                    ? '/workout'
-                    : '/workout/active'
-                )
-              }
-              onInvite={() => setIsInviting(true)}
-              menu={menu}
-            />
-            <Switch
+            <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
+              Invite to your Group
+            </Text>
+            <InviteByUsername />
+            <Button
               disabled={busy}
-              label="Show my weights, reps and volume"
-              value={group.showWeights}
-              onValueChange={(shown) =>
-                void attempt(() => setShowWeights({ shown }))
-              }
+              label="Share code"
+              variant="outlined"
+              onPress={share}
             />
-            <GroupGrid
-              members={group.members}
-              now={now}
-              isHost={group.isHost}
-              reservedHeight={GROUP_CHROME_HEIGHT}
-            />
-            <GroupActivity />
             {status}
-            <BottomSheet
-              isPresented={isInviting}
-              onDismiss={() => setIsInviting(false)}
-              showDragIndicator
-              snapPoints={['half']}
-            >
-              <ScrollView>
-                <Column spacing={16} style={{ padding: 24 }}>
-                  <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-                    Invite to your Group
-                  </Text>
-                  <InviteByUsername />
-                  <Button
-                    disabled={busy}
-                    label="Share code"
-                    variant="outlined"
-                    onPress={share}
-                  />
-                  {status}
-                </Column>
-              </ScrollView>
-            </BottomSheet>
-            <BottomSheet
-              isPresented={qrLink !== null}
-              onDismiss={() => setQrLink(null)}
-              showDragIndicator
-              snapPoints={['half', 'full']}
-            >
-              <ScrollView>
-                <Column spacing={16} style={{ padding: 24 }}>
-                  <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-                    Join this Group
-                  </Text>
-                  {qrLink ? <GroupQr link={qrLink} /> : null}
-                  <Button
-                    label="Hide QR"
-                    variant="text"
-                    onPress={() => setQrLink(null)}
-                  />
-                </Column>
-              </ScrollView>
-            </BottomSheet>
-            <BottomSheet
-              isPresented={isConfirmingEnd}
-              onDismiss={() => setIsConfirmingEnd(false)}
-              showDragIndicator
-              snapPoints={['half']}
-            >
-              <ScrollView>
-                <Column spacing={16} style={{ padding: 24 }}>
-                  <ListItem supportingText="Everyone leaves the Group. Workouts carry on.">
-                    End this Group?
-                  </ListItem>
-                  <Button
-                    disabled={busy}
-                    label="End Group"
-                    onPress={() => attempt(() => end({}))}
-                  />
-                  <Button
-                    label="Cancel"
-                    variant="text"
-                    onPress={() => setIsConfirmingEnd(false)}
-                  />
-                  {status}
-                </Column>
-              </ScrollView>
-            </BottomSheet>
           </Column>
-        </Host>
-      </NativeScrollView>
-      {isHeaderCollapsed ? (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: colors.background,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border,
-          }}
-        >
-          <Host
-            colorScheme={resolvedAppearance}
-            matchContents={{ vertical: true }}
-            style={{ width }}
-          >
-            <Column style={{ paddingHorizontal: 24, paddingVertical: 8 }}>
-              <GroupHeader
-                group={group}
-                now={now}
-                variant="full"
-                collapsed
-                menu={menu}
-              />
-            </Column>
-          </Host>
-        </View>
-      ) : null}
-    </View>
+        </ScrollView>
+      </BottomSheet>
+      <BottomSheet
+        isPresented={qrLink !== null}
+        onDismiss={() => setQrLink(null)}
+        showDragIndicator
+        snapPoints={['half', 'full']}
+      >
+        <ScrollView>
+          <Column spacing={16} style={{ padding: 24 }}>
+            <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
+              Join this Group
+            </Text>
+            {qrLink ? <GroupQr link={qrLink} /> : null}
+            <Button
+              label="Hide QR"
+              variant="text"
+              onPress={() => setQrLink(null)}
+            />
+          </Column>
+        </ScrollView>
+      </BottomSheet>
+      <BottomSheet
+        isPresented={isConfirmingEnd}
+        onDismiss={() => setIsConfirmingEnd(false)}
+        showDragIndicator
+        snapPoints={['half']}
+      >
+        <ScrollView>
+          <Column spacing={16} style={{ padding: 24 }}>
+            <ListItem supportingText="Everyone leaves the Group. Workouts carry on.">
+              End this Group?
+            </ListItem>
+            <Button
+              disabled={busy}
+              label="End Group"
+              onPress={() => attempt(() => end({}))}
+            />
+            <Button
+              label="Cancel"
+              variant="text"
+              onPress={() => setIsConfirmingEnd(false)}
+            />
+            {status}
+          </Column>
+        </ScrollView>
+      </BottomSheet>
+    </PrototypeVariants>
   );
 }
