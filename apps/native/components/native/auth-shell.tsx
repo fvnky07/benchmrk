@@ -1,6 +1,7 @@
 import { Column, Host, RNHostView, Row, ScrollView, Text } from '@expo/ui';
 import { type ReactNode, useEffect } from 'react';
 import { AccessibilityInfo, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/native/brand-logo';
 import { textColor, useAppearance, useColors } from '@/lib/ui';
@@ -18,7 +19,9 @@ export function useAuthColumnWidth(): number {
 /**
  * The shared layout of every authentication route: one native Host, a
  * scrollable centered column, the benchmrk logo, route heading and supporting
- * copy, the route's content, then the factual legal footer.
+ * copy, the route's content, then the factual legal footer. The safe area
+ * keeps headerless routes clear of the status and navigation bars; it adds
+ * nothing below a native header.
  */
 export function AuthShell({
   title,
@@ -30,33 +33,48 @@ export function AuthShell({
   const columnWidth = useAuthColumnWidth();
 
   return (
-    <Host colorScheme={resolvedAppearance} style={{ flex: 1 }}>
-      <ScrollView showsIndicators>
-        <Column alignment="center" style={{ padding: OUTER_INSET }}>
-          <Column spacing={16} style={{ width: columnWidth }}>
-            <RNHostView matchContents>
-              <BrandLogo size={LOGO_SIZE} />
-            </RNHostView>
-            <Column spacing={8}>
-              <Text textStyle={{ fontSize: 30, fontWeight: '700' }}>
-                {title}
+    <SafeAreaView style={{ flex: 1 }}>
+      <Host colorScheme={resolvedAppearance} style={{ flex: 1 }}>
+        <ScrollView showsIndicators>
+          <Column alignment="center" style={{ padding: OUTER_INSET }}>
+            <Column spacing={16} style={{ width: columnWidth }}>
+              <RNHostView matchContents>
+                <BrandLogo size={LOGO_SIZE} />
+              </RNHostView>
+              <Column spacing={8}>
+                <Text
+                  textStyle={{
+                    fontSize: 30,
+                    fontWeight: '700',
+                    color: textColor(colors.onSurface),
+                  }}
+                >
+                  {title}
+                </Text>
+                <Text
+                  textStyle={{
+                    fontSize: 17,
+                    color: textColor(colors.onSurface),
+                  }}
+                >
+                  {supportingText}
+                </Text>
+              </Column>
+              {children}
+              <Text
+                textStyle={{
+                  fontSize: 14,
+                  color: textColor(colors.onSurfaceVariant),
+                  textAlign: 'center',
+                }}
+              >
+                Terms of Service and Privacy Policy coming soon.
               </Text>
-              <Text textStyle={{ fontSize: 17 }}>{supportingText}</Text>
             </Column>
-            {children}
-            <Text
-              textStyle={{
-                fontSize: 14,
-                color: textColor(colors.onSurfaceVariant),
-                textAlign: 'center',
-              }}
-            >
-              Terms of Service and Privacy Policy coming soon.
-            </Text>
           </Column>
-        </Column>
-      </ScrollView>
-    </Host>
+        </ScrollView>
+      </Host>
+    </SafeAreaView>
   );
 }
 
