@@ -8,6 +8,7 @@ import {
 import {
   containerRelativeFrame,
   font,
+  foregroundStyle,
   id,
   scrollPosition,
   scrollTargetBehavior,
@@ -15,14 +16,19 @@ import {
 } from '@expo/ui/swift-ui/modifiers';
 import { useEffect } from 'react';
 
+import { useColors } from '@/lib/ui';
 import type { ExerciseTitlePagerProps } from './exercise-title-pager';
 
-/** A paging ScrollView of Exercise titles; it stops at the first and last. */
+/**
+ * A paging ScrollView of Exercise titles, each a big bold name over
+ * "Set n of m"; it stops at the first and last.
+ */
 export function ExerciseTitlePager({
   pages,
   selectedIndex,
   onSelect,
 }: Readonly<ExerciseTitlePagerProps>) {
+  const colors = useColors();
   const selectedKey = pages[selectedIndex]?.key ?? null;
   const position = useNativeState<string | null>(selectedKey);
 
@@ -58,10 +64,20 @@ export function ExerciseTitlePager({
               id(page.key),
             ]}
           >
-            <Text modifiers={[font({ textStyle: 'title3', weight: 'bold' })]}>
+            <Text
+              modifiers={[
+                font({ size: 28, weight: 'heavy' }),
+                foregroundStyle(colors.onSurface),
+              ]}
+            >
               {page.name}
             </Text>
-            <Text modifiers={[font({ textStyle: 'subheadline' })]}>
+            <Text
+              modifiers={[
+                font({ size: 15 }),
+                foregroundStyle(colors.onSurfaceVariant),
+              ]}
+            >
               {page.status}
             </Text>
           </VStack>

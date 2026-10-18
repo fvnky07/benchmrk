@@ -1,4 +1,5 @@
-import { BottomSheet, Button, Column, ListItem, ScrollView } from '@expo/ui';
+import LogoutIcon from '@expo/material-symbols/logout.xml';
+import { BottomSheet, Column, ScrollView } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
@@ -6,7 +7,9 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { GroupGrid } from '@/components/groups/group-grid';
 import { GroupHeader } from '@/components/groups/group-header';
-import { accessibilityModifier } from '@/lib/ui/accessibility';
+import { Card, CardRow } from '@/components/native/card';
+import { PillChip } from '@/components/native/pill-chip';
+import { space } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 import { useNow } from '@/lib/workout/use-now';
 
@@ -19,6 +22,11 @@ const ERROR_COPY: Record<string, string> = {
   NOT_IN_GROUP: 'You’re no longer in this Group.',
   NOT_HOST: 'Only the Group host can end the Group.',
 };
+
+const LEAVE_ICON = {
+  ios: 'rectangle.portrait.and.arrow.right',
+  android: LogoutIcon,
+} as const;
 
 /** Sheet grabber, Group header and spacing above the member boxes. */
 const DRAWER_CHROME_HEIGHT = 240;
@@ -85,7 +93,10 @@ export function GroupDrawer({
       snapPoints={['full']}
     >
       {group ? (
-        <Column spacing={16}>
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingTop: space.sm }}
+        >
           <GroupHeader
             group={group}
             now={now}
@@ -96,11 +107,11 @@ export function GroupDrawer({
               dismiss();
             }}
             menu={
-              <Button
+              <PillChip
                 disabled={busy}
+                icon={LEAVE_ICON}
                 label={actionLabel}
-                variant="text"
-                modifiers={[accessibilityModifier(actionLabel)]}
+                tone="error"
                 onPress={() =>
                   group.isHost ? confirmEnd() : void attempt(() => leave({}))
                 }
@@ -108,10 +119,12 @@ export function GroupDrawer({
             }
           />
           {errorMessage ? (
-            <ListItem supportingText={errorMessage}>Couldn’t do that</ListItem>
+            <Card>
+              <CardRow supportingText={errorMessage}>Couldn’t do that</CardRow>
+            </Card>
           ) : null}
           <ScrollView>
-            <Column style={{ paddingBottom: 24 }}>
+            <Column style={{ paddingBottom: space.xl }}>
               <GroupGrid
                 members={group.members}
                 now={now}

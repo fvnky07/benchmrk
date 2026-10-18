@@ -1,10 +1,14 @@
-import { Button } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { useAuth } from '@/lib/auth/hooks';
 import { errorCode } from '@/lib/workout/format';
 
@@ -23,6 +27,7 @@ export default function JoinGroupScreen() {
   const joinByCode = useMutation(api.groups.joinByCode);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const attempted = useRef(false);
+  const columnWidth = useAuthColumnWidth();
 
   useEffect(() => {
     if (!isAuthenticated || !code || attempted.current) return;
@@ -42,7 +47,11 @@ export default function JoinGroupScreen() {
         title="Join a Group"
         supportingText="Log in to benchmrk, then open the link again."
       >
-        <Button label="Log in" onPress={() => router.replace('/login')} />
+        <PrimaryButton
+          label="Log in"
+          width={columnWidth}
+          onPress={() => router.replace('/login')}
+        />
       </AuthShell>
     );
   }
@@ -52,7 +61,11 @@ export default function JoinGroupScreen() {
       {errorMessage ? (
         <>
           <AuthStatus message={errorMessage} tone="error" />
-          <Button label="Back" onPress={() => router.replace('/')} />
+          <PrimaryButton
+            label="Back"
+            width={columnWidth}
+            onPress={() => router.replace('/')}
+          />
         </>
       ) : (
         <AuthStatus message="Joining…" />

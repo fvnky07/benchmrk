@@ -1,7 +1,7 @@
 import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 
-import type { Doc } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { timeByExercise } from './domain/time';
 import { requireIdentityId } from './lib/identity';
@@ -38,6 +38,9 @@ function finishedAt(workout: Doc<'workouts'>): number {
   return workout.finishedAt;
 }
 
+/** `stats` reads at most this many of the newest completed Workouts. */
+const STATS_LIMIT = 500;
+
 /** Completed Workouts, including those terminated early, newest finish first. */
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -68,6 +71,84 @@ export const list = query({
         })
       ),
     };
+  },
+});
+
+/**
+ * Completed Workouts for stats, oldest first: completed Sets, Volume (weight ×
+ * reps over the completed Sets that have both) and completed Sets per
+ * Exercise. `since` is a lower bound on the finish time in ms, or null for
+ * all; either way only the newest 500 are read.
+ */
+export const stats = query({
+  args: { since: nullableNumber },
+  returns: v.array(
+    v.object({
+      workoutId: v.id('workouts'),
+      finishedAt: v.number(),
+      sets: v.number(),
+      volumeKg: v.number(),
+      exercises: v.array(
+        v.object({
+          exerciseId: v.id('exercises'),
+          name: v.string(),
+          sets: v.number(),
+        })
+      ),
+    })
+  ),
+  handler: async (ctx, { since }) => {
+    const userId = await requireIdentityId(ctx);
+    const newestFirst = await ctx.db
+      .query('workouts')
+      .withIndex('by_user_status_finished', (q) => {
+        const completed = q.eq('userId', userId).eq('status', 'completed');
+        return since === null ? completed : completed.gte('finishedAt', since);
+      })
+      .order('desc')
+      .take(STATS_LIMIT);
+    const names = new Map<Id<'exercises'>, Promise<string>>();
+    const nameOf = (exerciseId: Id<'exercises'>) => {
+      let name = names.get(exerciseId);
+      if (name === undefined) {
+        name = ctx.db
+          .get(exerciseId)
+          .then((exercise) => exercise?.name ?? 'Exercise');
+        names.set(exerciseId, name);
+      }
+      return name;
+    };
+    return Promise.all(
+      newestFirst.reverse().map(async (workout) => {
+        const completed = (await setsOfWorkout(ctx, workout._id)).filter(
+          (set) => set.completedAt !== undefined
+        );
+        const setsByExercise = new Map<Id<'exercises'>, number>();
+        let volumeKg = 0;
+        for (const set of completed) {
+          setsByExercise.set(
+            set.exerciseId,
+            (setsByExercise.get(set.exerciseId) ?? 0) + 1
+          );
+          if (set.weightKg !== undefined && set.reps !== undefined) {
+            volumeKg += set.weightKg * set.reps;
+          }
+        }
+        return {
+          workoutId: workout._id,
+          finishedAt: finishedAt(workout),
+          sets: completed.length,
+          volumeKg,
+          exercises: await Promise.all(
+            [...setsByExercise].map(async ([exerciseId, sets]) => ({
+              exerciseId,
+              name: await nameOf(exerciseId),
+              sets,
+            }))
+          ),
+        };
+      })
+    );
   },
 });
 

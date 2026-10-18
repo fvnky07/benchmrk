@@ -1,6 +1,9 @@
-import { BottomSheet, Button, Column, Row, ScrollView, Text } from '@expo/ui';
+import { BottomSheet, Column, Row, ScrollView, Text } from '@expo/ui';
 
-import { textColor, useColors } from '@/lib/ui';
+import { Card } from '@/components/native/card';
+import { PillChip } from '@/components/native/pill-chip';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 
 export type StructureExercise = {
   key: string;
@@ -48,89 +51,98 @@ export function StructureSheet({
       snapPoints={['full']}
     >
       <ScrollView>
-        <Column spacing={12} style={{ padding: 16 }}>
-          <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Exercises</Text>
-          <Text
-            textStyle={{
-              fontSize: 14,
-              color: textColor(colors.onSurfaceVariant),
-            }}
-          >
-            Changes apply to this Workout only. At finish you can save them to
-            the Routine.
-          </Text>
-          {exercises.map((exercise, index) => {
-            const next = exercises[index + 1];
-            const linkedToNext =
-              exercise.blockKey !== null &&
-              next?.blockKey === exercise.blockKey;
-            return (
-              <Column
-                key={exercise.key}
-                spacing={4}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceContainerHigh,
-                }}
-              >
-                <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
-                  {exercise.skipped
-                    ? `${exercise.name} (skipped)`
-                    : exercise.name}
-                </Text>
-                {linkedToNext ? (
-                  <Text textStyle={{ fontSize: 13 }}>
-                    {`Alternates with ${next.name}`}
-                  </Text>
-                ) : null}
-                <Row spacing={4}>
-                  <Button
-                    label="Up"
-                    variant="text"
-                    disabled={index === 0}
-                    onPress={() => onMove(exercise.key, index - 1)}
-                  />
-                  <Button
-                    label="Down"
-                    variant="text"
-                    disabled={index === exercises.length - 1}
-                    onPress={() => onMove(exercise.key, index + 1)}
-                  />
-                  <Button
-                    label={exercise.skipped ? 'Resume' : 'Skip'}
-                    variant="text"
-                    onPress={() =>
-                      onSetSkipped(exercise.key, !exercise.skipped)
-                    }
-                  />
-                  {exercise.hasLoggedSets ? null : (
-                    <Button
-                      label="Remove"
-                      variant="text"
-                      onPress={() => onRemove(exercise.key)}
-                    />
-                  )}
-                </Row>
-                <Row spacing={4}>
-                  {exercise.blockKey !== null ? (
-                    <Button
-                      label="Unlink"
-                      variant="text"
-                      onPress={() => onUnlink(exercise.key)}
-                    />
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+        >
+          <SectionHeader
+            title="Exercises"
+            supportingText="Changes apply to this Workout only. At finish you can save them to the Routine."
+          />
+          <Card divided>
+            {exercises.map((exercise, index) => {
+              const next = exercises[index + 1];
+              const linkedToNext =
+                exercise.blockKey !== null &&
+                next?.blockKey === exercise.blockKey;
+              const canLink = next !== undefined && !linkedToNext;
+              return (
+                <Column
+                  key={exercise.key}
+                  spacing={space.md}
+                  style={{ padding: space.lg }}
+                >
+                  <Column spacing={2}>
+                    <Text
+                      textStyle={{
+                        ...font.bodyStrong,
+                        color: textColor(colors.onSurface),
+                      }}
+                    >
+                      {exercise.skipped
+                        ? `${exercise.name} (skipped)`
+                        : exercise.name}
+                    </Text>
+                    {linkedToNext ? (
+                      <Text
+                        textStyle={{
+                          ...font.caption,
+                          color: textColor(colors.onSurfaceVariant),
+                        }}
+                      >
+                        {`Alternates with ${next.name}`}
+                      </Text>
+                    ) : null}
+                  </Column>
+                  <ScrollView direction="horizontal" showsIndicators={false}>
+                    <Row spacing={space.sm}>
+                      <PillChip
+                        label="Up"
+                        disabled={index === 0}
+                        onPress={() => onMove(exercise.key, index - 1)}
+                      />
+                      <PillChip
+                        label="Down"
+                        disabled={index === exercises.length - 1}
+                        onPress={() => onMove(exercise.key, index + 1)}
+                      />
+                      <PillChip
+                        label={exercise.skipped ? 'Resume' : 'Skip'}
+                        onPress={() =>
+                          onSetSkipped(exercise.key, !exercise.skipped)
+                        }
+                      />
+                      {exercise.hasLoggedSets ? null : (
+                        <PillChip
+                          label="Remove"
+                          tone="error"
+                          onPress={() => onRemove(exercise.key)}
+                        />
+                      )}
+                    </Row>
+                  </ScrollView>
+                  {exercise.blockKey !== null || canLink ? (
+                    <ScrollView direction="horizontal" showsIndicators={false}>
+                      <Row spacing={space.sm}>
+                        {exercise.blockKey !== null ? (
+                          <PillChip
+                            label="Unlink"
+                            onPress={() => onUnlink(exercise.key)}
+                          />
+                        ) : null}
+                        {canLink ? (
+                          <PillChip
+                            label={`Link with ${next.name}`}
+                            onPress={() => onLink(exercise.key, next.key)}
+                          />
+                        ) : null}
+                      </Row>
+                    </ScrollView>
                   ) : null}
-                  {next && !linkedToNext ? (
-                    <Button
-                      label={`Link with ${next.name}`}
-                      variant="text"
-                      onPress={() => onLink(exercise.key, next.key)}
-                    />
-                  ) : null}
-                </Row>
-              </Column>
-            );
-          })}
+                </Column>
+              );
+            })}
+          </Card>
         </Column>
       </ScrollView>
     </BottomSheet>

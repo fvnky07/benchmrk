@@ -1,4 +1,4 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button, Column, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { router, useFocusEffect } from 'expo-router';
@@ -6,13 +6,16 @@ import { useCallback, useState } from 'react';
 
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
 import { SignInMethods } from '@/components/account/sign-in-methods';
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
 import { authClient } from '@/lib/auth/client';
 import { useUserProfile } from '@/lib/hooks/use-user-profile';
 import { unregisterThisDevice } from '@/lib/push/use-push-registration';
+import { font, space, textColor, useColors } from '@/lib/ui';
 
 export default function ManageAccountScreen() {
+  const colors = useColors();
   const { user, username, bio } = useUserProfile();
   const unregister = useMutation(api.deviceTokens.unregister);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -42,7 +45,12 @@ export default function ManageAccountScreen() {
   if (!user) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>
+        <Text
+          textStyle={{
+            ...font.body,
+            color: textColor(colors.onSurfaceVariant),
+          }}
+        >
           Loading your Benchmrk identity…
         </Text>
       </NativeScreen>
@@ -51,65 +59,97 @@ export default function ManageAccountScreen() {
 
   return (
     <NativeScreen>
-      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
-        Manage account
-      </Text>
-      <EmailVerificationRow />
-      <ListItem supportingText={user.name ?? 'Not set'}>Name</ListItem>
-      <ListItem supportingText={username}>Username</ListItem>
-      <ListItem supportingText={bio ?? 'Not set'}>Bio</ListItem>
-      <ListItem
-        supportingText="Username, bio and photo"
-        onPress={() => router.push('/(main)/settings/edit-profile')}
-      >
-        Edit profile
-      </ListItem>
-      <ListItem
-        supportingText="Signs out your other devices"
-        onPress={() => router.push('/(main)/settings/change-password')}
-      >
-        Change password
-      </ListItem>
-      <ListItem
-        supportingText={
-          user.twoFactorEnabled === true ? 'On' : 'Authenticator app codes'
-        }
-        onPress={() => router.push('/(main)/settings/two-factor')}
-      >
-        Two-factor authentication
-      </ListItem>
+      <Card divided>
+        <EmailVerificationRow />
+        <CardRow supportingText={user.name ?? 'Not set'}>Name</CardRow>
+        <CardRow supportingText={username}>Username</CardRow>
+        <CardRow supportingText={bio ?? 'Not set'}>Bio</CardRow>
+      </Card>
+      <Card divided>
+        <CardRow
+          chevron
+          supportingText="Username, bio and photo"
+          onPress={() => router.push('/(main)/settings/edit-profile')}
+        >
+          Edit profile
+        </CardRow>
+        <CardRow
+          chevron
+          supportingText="Signs out your other devices"
+          onPress={() => router.push('/(main)/settings/change-password')}
+        >
+          Change password
+        </CardRow>
+        <CardRow
+          chevron
+          supportingText={
+            user.twoFactorEnabled === true ? 'On' : 'Authenticator app codes'
+          }
+          onPress={() => router.push('/(main)/settings/two-factor')}
+        >
+          Two-factor authentication
+        </CardRow>
+      </Card>
       <SignInMethods />
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Could not complete action
-        </ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>
+            Could not complete action
+          </CardRow>
+        </Card>
       ) : null}
       {isConfirmingLogout ? (
-        <>
-          <ListItem supportingText="You will need to sign in again to access this Benchmrk identity.">
-            Confirm log out
-          </ListItem>
-          <Button
-            disabled={isLoggingOut}
-            label={isLoggingOut ? 'Logging out…' : 'Log out'}
-            onPress={() => void handleLogout()}
-          />
-          <Button
-            disabled={isLoggingOut}
-            label="Cancel"
-            variant="outlined"
-            onPress={() => setIsConfirmingLogout(false)}
-          />
-        </>
+        <Card tone="high" padding={space.lg} spacing={space.md}>
+          <Column spacing={2}>
+            <Text
+              textStyle={{
+                ...font.bodyStrong,
+                color: textColor(colors.onSurface),
+              }}
+            >
+              Confirm log out
+            </Text>
+            <Text
+              textStyle={{
+                ...font.caption,
+                color: textColor(colors.onSurfaceVariant),
+              }}
+            >
+              You will need to sign in again to access this Benchmrk identity.
+            </Text>
+          </Column>
+          <Row spacing={space.sm}>
+            <Button
+              disabled={isLoggingOut}
+              label={isLoggingOut ? 'Logging out…' : 'Log out'}
+              onPress={() => void handleLogout()}
+            />
+            <Button
+              disabled={isLoggingOut}
+              label="Cancel"
+              variant="outlined"
+              onPress={() => setIsConfirmingLogout(false)}
+            />
+          </Row>
+        </Card>
       ) : (
-        <Button label="Log out" onPress={() => setIsConfirmingLogout(true)} />
+        <Button
+          label="Log out"
+          variant="outlined"
+          onPress={() => setIsConfirmingLogout(true)}
+        />
       )}
-      <ListItem
-        supportingText="Permanently delete your Benchmrk identity and all its data"
-        onPress={() => router.push('/(main)/settings/delete-account')}
-      >
-        Delete account
-      </ListItem>
+      <Card>
+        <CardRow
+          chevron
+          supportingText="Permanently delete your Benchmrk identity and all its data"
+          onPress={() => router.push('/(main)/settings/delete-account')}
+        >
+          <Text textStyle={{ ...font.body, color: textColor(colors.error) }}>
+            Delete account
+          </Text>
+        </CardRow>
+      </Card>
     </NativeScreen>
   );
 }

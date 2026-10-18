@@ -1,11 +1,19 @@
-import { Button, Column, Row, ScrollView, Spacer, Text } from '@expo/ui';
+import { RNHostView } from '@expo/ui';
 import {
   EFFORT_DOT_RPES,
   type EffortScale,
   effortInScale,
 } from '@repo/backend/convex/domain/effort';
+import {
+  type ColorValue,
+  Pressable,
+  Text,
+  type TextStyle,
+  View,
+} from 'react-native';
 
-import { textColor, useColors } from '@/lib/ui';
+import { pillColors } from '@/components/native/pill-chip';
+import { type AppColors, font, radius, size, space, useColors } from '@/lib/ui';
 import { formatEffort } from '@/lib/workout/format';
 import type { KeypadKey, SetField } from '@/lib/workout/set-entry';
 
@@ -16,23 +24,187 @@ const KEY_ROWS: readonly (readonly KeypadKey[])[] = [
   ['.', '0', 'back'],
 ];
 
-const KEY_SIZE = { width: 76, height: 48 };
+const KEY_GAP = space.sm;
+const KEY_RADIUS = 12;
+const DOT_SIZE = 36;
+const SMALL_CHIP_HEIGHT = 28;
 
-/** Effort bands: hard error, near-limit tertiary, solid primary, easy secondary. */
-function effortBand(rpe: number) {
-  if (rpe >= 9.5) return { tone: 'error', onTone: 'onError' } as const;
-  if (rpe >= 8.5) return { tone: 'tertiary', onTone: 'onTertiary' } as const;
-  if (rpe >= 7.5) return { tone: 'primary', onTone: 'onPrimary' } as const;
-  return { tone: 'secondary', onTone: 'onSecondary' } as const;
+/** Tabular figures, so weights, reps, effort and clocks line up. */
+export const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
+
+/** Effort bands, hardest first: error, tertiary, primary, secondary. */
+export function effortTone(
+  rpe: number,
+  colors: AppColors
+): { fill: ColorValue; on: ColorValue } {
+  if (rpe >= 9.5) return { fill: colors.error, on: colors.onError };
+  if (rpe >= 8.5) return { fill: colors.tertiary, on: colors.onTertiary };
+  if (rpe >= 7.5) return { fill: colors.primary, on: colors.onPrimary };
+  return { fill: colors.secondary, on: colors.onSecondary };
+}
+
+/** A 28pt pill inside the React Native hero pieces: the Set rows and this keypad. */
+export function SmallChip({
+  label,
+  accessibilityLabel,
+  tone = 'neutral',
+  onPress,
+}: Readonly<{
+  label: string;
+  /** Defaults to `label`. */
+  accessibilityLabel?: string;
+  tone?: 'neutral' | 'error';
+  onPress: () => void;
+}>) {
+  const { fill, on } = pillColors(useColors(), { tone });
+
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        height: SMALL_CHIP_HEIGHT,
+        paddingHorizontal: space.md,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: fill,
+        opacity: pressed ? 0.6 : 1,
+      })}
+    >
+      <Text style={{ color: on, fontSize: 13, fontWeight: '600' }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** One filled key; the confirm key is solid primary. */
+function Key({
+  label,
+  accessibilityLabel,
+  onPress,
+  disabled = false,
+  grow = false,
+  height = size.key,
+  confirm = false,
+}: Readonly<{
+  label: string;
+  accessibilityLabel?: string;
+  onPress: () => void;
+  disabled?: boolean;
+  /** Shares its row's width with the other keys. */
+  grow?: boolean;
+  height?: number;
+  confirm?: boolean;
+}>) {
+  const colors = useColors();
+
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: grow ? 1 : undefined,
+        height,
+        borderRadius: KEY_RADIUS,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: confirm ? colors.primary : colors.surfaceContainerHigh,
+        opacity: disabled ? 0.35 : pressed ? 0.6 : 1,
+      })}
+    >
+      <Text
+        style={[
+          TABULAR,
+          confirm
+            ? { color: colors.onPrimary, fontSize: 17, fontWeight: '700' }
+            : { color: colors.onSurface, ...font.key },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** The effort dots: tap one to rate the Set, tap it again to clear. */
+function EffortDots({
+  rpe,
+  scale,
+  onRate,
+}: Readonly<{
+  rpe: number | null;
+  scale: EffortScale;
+  onRate: (rpe: number | null) => void;
+}>) {
+  const colors = useColors();
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
+    >
+      {EFFORT_DOT_RPES.map((dot) => {
+        const selected = rpe === dot;
+        const tone = effortTone(dot, colors);
+        const value = formatEffort(effortInScale(dot, scale));
+        return (
+          <Pressable
+            key={dot}
+            accessibilityLabel={`${scale} ${value}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            onPress={() => onRate(selected ? null : dot)}
+            style={{
+              width: DOT_SIZE,
+              height: DOT_SIZE,
+              borderRadius: DOT_SIZE / 2,
+              borderWidth: 2,
+              borderColor: tone.fill,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: selected ? tone.fill : 'transparent',
+            }}
+          >
+            <Text
+              style={[
+                TABULAR,
+                {
+                  color: selected ? tone.on : colors.onSurface,
+                  fontSize: 14,
+                  fontWeight: '700',
+                },
+              ]}
+            >
+              {value}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 }
 
 type SetKeypadProps = {
-  /** "Set 2 · Weight (kg)": what the keys are typing into. */
+  /** The dock's inner width; the keys share it. */
+  width: number;
+  /** "Set 2 · Weight": what the keys are typing into. */
   target: string;
   field: SetField;
   effortScale: EffortScale;
   rpe: number | null;
   isFailure: boolean;
+  /** The per-side plate breakdown while a barbell weight is typed; null otherwise. */
+  plateStrip: string | null;
+  onOpenPlates: () => void;
   onKey: (key: KeypadKey) => void;
   onStep: (direction: 1 | -1) => void;
   onRate: (rpe: number | null) => void;
@@ -43,16 +215,19 @@ type SetKeypadProps = {
 };
 
 /**
- * The docked keypad. Neither system number pad can carry the effort row, the
- * scale key or the normal/failure toggle, so it's built from Expo UI parts on
- * both platforms.
+ * The docked keypad: filled keys, effort dots and a tall primary key that
+ * logs the Set. Neither system number pad can carry the effort row, the scale
+ * or the normal/failure toggle, so it's a React Native hero piece.
  */
 export function SetKeypad({
+  width,
   target,
   field,
   effortScale,
   rpe,
   isFailure,
+  plateStrip,
+  onOpenPlates,
   onKey,
   onStep,
   onRate,
@@ -65,99 +240,83 @@ export function SetKeypad({
   const takesDecimal = field === 'weight' || field === 'distance';
 
   return (
-    <Column
-      spacing={10}
-      style={{
-        padding: 12,
-        borderRadius: 16,
-        backgroundColor: colors.surfaceContainerHigh,
-      }}
-    >
-      <Row spacing={8} alignment="center">
-        <Text textStyle={{ fontSize: 14, fontWeight: '600' }}>{target}</Text>
-        <Spacer />
-        <Button label="Hide keypad" variant="text" onPress={onHide} />
-      </Row>
-      <ScrollView direction="horizontal" showsIndicators={false}>
-        <Row spacing={6}>
-          {EFFORT_DOT_RPES.map((dot) => {
-            const selected = rpe === dot;
-            const band = effortBand(dot);
-            return (
-              <Column
-                key={dot}
-                alignment="center"
-                onPress={() => onRate(selected ? null : dot)}
-                style={{
-                  width: 44,
-                  paddingVertical: 8,
-                  borderRadius: 22,
-                  borderWidth: 2,
-                  borderColor: colors[band.tone],
-                  backgroundColor: selected ? colors[band.tone] : undefined,
-                }}
-              >
-                <Text
-                  textStyle={{
-                    fontSize: 14,
-                    fontWeight: '700',
-                    color: selected
-                      ? textColor(colors[band.onTone])
-                      : undefined,
-                  }}
-                >
-                  {formatEffort(effortInScale(dot, effortScale))}
-                </Text>
-              </Column>
-            );
-          })}
-        </Row>
-      </ScrollView>
-      <Row spacing={8}>
-        <Column spacing={8}>
-          {KEY_ROWS.map((keys) => (
-            <Row key={keys.join('')} spacing={8}>
-              {keys.map((key) => (
-                <Button
-                  key={key}
-                  disabled={key === '.' && !takesDecimal}
-                  label={key === 'back' ? '⌫' : key}
-                  variant="outlined"
-                  style={KEY_SIZE}
-                  onPress={() => onKey(key)}
-                />
-              ))}
-            </Row>
-          ))}
-        </Column>
-        <Column spacing={8}>
-          <Button
-            label="−"
-            variant="outlined"
-            style={KEY_SIZE}
-            onPress={() => onStep(-1)}
-          />
-          <Button
-            label="+"
-            variant="outlined"
-            style={KEY_SIZE}
-            onPress={() => onStep(1)}
-          />
-          <Button
+    <RNHostView matchContents>
+      <View style={{ width, gap: KEY_GAP }}>
+        {plateStrip === null ? null : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onOpenPlates}
+            style={{
+              padding: 10,
+              borderRadius: radius.control,
+              backgroundColor: colors.surfaceContainerHigh,
+            }}
+          >
+            <Text style={[TABULAR, { color: colors.onSurface, fontSize: 14 }]}>
+              {plateStrip}
+            </Text>
+          </Pressable>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text
+            numberOfLines={1}
+            style={{ flex: 1, color: colors.onSurfaceVariant, ...font.label }}
+          >
+            {target}
+          </Text>
+          <SmallChip
             label={isFailure ? 'Failure' : 'Normal'}
-            variant={isFailure ? 'filled' : 'outlined'}
-            style={KEY_SIZE}
+            tone={isFailure ? 'error' : 'neutral'}
             onPress={onToggleFailure}
           />
-          <Button
-            label={effortScale}
-            variant="outlined"
-            style={KEY_SIZE}
-            onPress={onToggleScale}
+          <SmallChip label={effortScale} onPress={onToggleScale} />
+          <SmallChip
+            label="Hide"
+            accessibilityLabel="Hide keypad"
+            onPress={onHide}
           />
-        </Column>
-      </Row>
-      <Button label="Log Set" onPress={onLog} />
-    </Column>
+        </View>
+        <EffortDots rpe={rpe} scale={effortScale} onRate={onRate} />
+        <View style={{ flexDirection: 'row', gap: KEY_GAP }}>
+          <View style={{ flex: 3, gap: KEY_GAP }}>
+            {KEY_ROWS.map((keys) => (
+              <View
+                key={keys.join('')}
+                style={{ flexDirection: 'row', gap: KEY_GAP }}
+              >
+                {keys.map((key) => (
+                  <Key
+                    key={key}
+                    grow
+                    label={key === 'back' ? '⌫' : key}
+                    accessibilityLabel={key === 'back' ? 'Delete' : key}
+                    disabled={key === '.' && !takesDecimal}
+                    onPress={() => onKey(key)}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
+          <View style={{ flex: 1, gap: KEY_GAP }}>
+            <Key
+              label="−"
+              accessibilityLabel="Decrease"
+              onPress={() => onStep(-1)}
+            />
+            <Key
+              label="+"
+              accessibilityLabel="Increase"
+              onPress={() => onStep(1)}
+            />
+            <Key
+              confirm
+              label="Log Set"
+              height={2 * size.key + KEY_GAP}
+              onPress={onLog}
+            />
+          </View>
+        </View>
+      </View>
+    </RNHostView>
   );
 }

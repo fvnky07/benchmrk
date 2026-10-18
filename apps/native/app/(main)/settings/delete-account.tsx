@@ -1,10 +1,11 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
 import { analytics } from '@/lib/analytics';
@@ -12,6 +13,14 @@ import { authClient } from '@/lib/auth/client';
 import { useAuth } from '@/lib/auth/hooks';
 import { reauthenticateWithApple, runSocialAuth } from '@/lib/auth/social';
 import { useHaptics } from '@/lib/haptics';
+import {
+  font,
+  size,
+  space,
+  textColor,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
 
 /** Must match APPLE_AUTHORIZATION_CODE_HEADER in the backend auth config. */
 const APPLE_CODE_HEADER = 'x-apple-authorization-code';
@@ -34,6 +43,8 @@ const ERROR_COPY: Record<string, string> = {
  * revoked immediately; its owned data is then removed in scheduled batches.
  */
 export default function DeleteAccountScreen() {
+  const colors = useColors();
+  const contentWidth = useContentWidth();
   const { user } = useAuth();
   const config = useQuery(api.auth.getSocialAuthConfig);
   const haptic = useHaptics();
@@ -123,42 +134,55 @@ export default function DeleteAccountScreen() {
   };
 
   const appleUnavailable = methods?.apple === true && Platform.OS !== 'ios';
+  const confirmWithGoogle =
+    methods !== null && !methods.password && !methods.apple && methods.google;
+  const confirmWithApple = methods?.apple === true && !appleUnavailable;
 
   return (
     <NativeScreen>
-      <Text textStyle={{ fontSize: 17 }}>
+      <Text
+        textStyle={{ ...font.body, color: textColor(colors.onSurfaceVariant) }}
+      >
         This permanently deletes this Benchmrk identity and its data: Routines,
         Workouts, Sets, custom Exercises, settings and profile. Sign-in stops
         right away; the remaining data is removed in the background.
       </Text>
       {methods?.password ? (
-        <NativeTextField
-          autoCapitalize="none"
-          autoComplete="password"
-          editable={!busy}
-          label="Password"
-          onChangeText={setPassword}
-          secureTextEntry
-          value={password}
-        />
+        <Card padding={space.lg} spacing={space.md}>
+          <NativeTextField
+            autoCapitalize="none"
+            autoComplete="password"
+            editable={!busy}
+            label="Password"
+            onChangeText={setPassword}
+            secureTextEntry
+            value={password}
+          />
+        </Card>
       ) : null}
-      {methods && !methods.password && !methods.apple && methods.google ? (
-        <ListItem supportingText="You’ll sign in with Google once more to confirm it’s you.">
-          Confirm with Google
-        </ListItem>
-      ) : null}
-      {methods?.apple && !appleUnavailable ? (
-        <ListItem supportingText="You’ll confirm with Apple, which also removes benchmrk’s access to your Apple ID.">
-          Confirm with Apple
-        </ListItem>
-      ) : null}
-      {appleUnavailable ? (
-        <ListItem supportingText="Your Benchmrk identity uses Sign in with Apple, so deleting it needs an iPhone. You can also request deletion at benchmrk.app/delete-account.">
-          Delete from an iPhone
-        </ListItem>
+      {confirmWithGoogle || confirmWithApple || appleUnavailable ? (
+        <Card divided>
+          {confirmWithGoogle ? (
+            <CardRow supportingText="You’ll sign in with Google once more to confirm it’s you.">
+              Confirm with Google
+            </CardRow>
+          ) : null}
+          {confirmWithApple ? (
+            <CardRow supportingText="You’ll confirm with Apple, which also removes benchmrk’s access to your Apple ID.">
+              Confirm with Apple
+            </CardRow>
+          ) : null}
+          {appleUnavailable ? (
+            <CardRow supportingText="Your Benchmrk identity uses Sign in with Apple, so deleting it needs an iPhone. You can also request deletion at benchmrk.app/delete-account.">
+              Delete from an iPhone
+            </CardRow>
+          ) : null}
+        </Card>
       ) : null}
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Not deleted</ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>Not deleted</CardRow>
+        </Card>
       ) : null}
       <Button
         disabled={
@@ -167,9 +191,16 @@ export default function DeleteAccountScreen() {
           appleUnavailable ||
           (methods.password && password === '')
         }
-        label={busy ? 'Deleting…' : 'Delete Benchmrk identity permanently'}
+        style={{ width: contentWidth, height: size.button }}
+        variant="outlined"
         onPress={deleteAccount}
-      />
+      >
+        <Text
+          textStyle={{ ...font.bodyStrong, color: textColor(colors.error) }}
+        >
+          {busy ? 'Deleting…' : 'Delete Benchmrk identity permanently'}
+        </Text>
+      </Button>
       <Button
         disabled={busy}
         label="Keep my Benchmrk identity"

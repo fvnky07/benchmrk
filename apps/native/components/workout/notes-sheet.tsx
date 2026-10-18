@@ -1,21 +1,15 @@
-import {
-  BottomSheet,
-  Button,
-  Column,
-  ListItem,
-  Picker,
-  Row,
-  ScrollView,
-  Spacer,
-  Text,
-} from '@expo/ui';
+import { BottomSheet, Column, Picker, Row, ScrollView, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation } from 'convex/react';
 import { useEffect, useState } from 'react';
 
+import { Card, CardRow } from '@/components/native/card';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { textColor, useColors } from '@/lib/ui';
+import { PillChip } from '@/components/native/pill-chip';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import type { ActiveWorkout } from '@/lib/workout/rounds';
 import { setLabels } from '@/lib/workout/set-entry';
 
@@ -187,6 +181,7 @@ export function NotesSheet({
   };
 
   const listed = allNotes(workout);
+  const muted = { ...font.caption, color: textColor(colors.onSurfaceVariant) };
 
   return (
     <BottomSheet
@@ -196,8 +191,11 @@ export function NotesSheet({
       snapPoints={['half', 'full']}
     >
       <ScrollView>
-        <Column spacing={12} style={{ padding: 16 }}>
-          <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Notes</Text>
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+        >
+          <SectionHeader title="Notes" />
           {target ? (
             <>
               <Picker
@@ -218,17 +216,17 @@ export function NotesSheet({
                     />
                   ))}
               </Picker>
-              <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
-                {titleOf(workout, target)}
-              </Text>
-              <Text
-                textStyle={{
-                  fontSize: 14,
-                  color: textColor(colors.onSurfaceVariant),
-                }}
-              >
-                {SCOPE_HINTS[target.kind]}
-              </Text>
+              <Column spacing={2}>
+                <Text
+                  textStyle={{
+                    ...font.bodyStrong,
+                    color: textColor(colors.onSurface),
+                  }}
+                >
+                  {titleOf(workout, target)}
+                </Text>
+                <Text textStyle={muted}>{SCOPE_HINTS[target.kind]}</Text>
+              </Column>
               <NativeTextField
                 label="Note"
                 multiline
@@ -240,55 +238,58 @@ export function NotesSheet({
                   setText(next);
                 }}
               />
-              <Row spacing={8}>
-                {saved ? (
-                  <Button
+              <PrimaryButton
+                label="Save note"
+                disabled={text.trim() === (saved ?? '')}
+                onPress={() => void save(text)}
+              />
+              {saved ? (
+                <Row>
+                  <PillChip
                     label="Remove"
-                    variant="outlined"
-                    onPress={() => save('')}
+                    tone="error"
+                    onPress={() => void save('')}
                   />
-                ) : null}
-                <Spacer />
-                <Button
-                  label="Save note"
-                  disabled={text.trim() === (saved ?? '')}
-                  onPress={() => save(text)}
-                />
-              </Row>
+                </Row>
+              ) : null}
               {errorMessage ? (
-                <Text textStyle={{ fontSize: 15 }}>{errorMessage}</Text>
+                <Text
+                  textStyle={{
+                    ...font.caption,
+                    color: textColor(colors.error),
+                  }}
+                >
+                  {errorMessage}
+                </Text>
               ) : null}
             </>
           ) : null}
-          <Text textStyle={{ fontSize: 15, fontWeight: '700' }}>
-            All notes, by target
-          </Text>
+          <SectionHeader title="All notes, by target" />
           {listed.length === 0 ? (
-            <Text
-              textStyle={{
-                fontSize: 14,
-                color: textColor(colors.onSurfaceVariant),
-              }}
-            >
-              No notes yet. Each note belongs to one Set, one Exercise or this
-              Workout.
-            </Text>
+            <Card padding={space.lg}>
+              <Text textStyle={muted}>
+                No notes yet. Each note belongs to one Set, one Exercise or this
+                Workout.
+              </Text>
+            </Card>
           ) : (
-            listed.map((note) => (
-              <ListItem
-                key={`${note.target.kind}-${'setId' in note.target ? note.target.setId : 'workoutExerciseId' in note.target ? note.target.workoutExerciseId : 'workout'}`}
-                supportingText={titleOf(workout, note.target).replace(
-                  'Note on ',
-                  ''
-                )}
-                onPress={() => {
-                  onActivity();
-                  setTarget(note.target);
-                }}
-              >
-                {note.text}
-              </ListItem>
-            ))
+            <Card divided>
+              {listed.map((note) => (
+                <CardRow
+                  key={`${note.target.kind}-${'setId' in note.target ? note.target.setId : 'workoutExerciseId' in note.target ? note.target.workoutExerciseId : 'workout'}`}
+                  supportingText={titleOf(workout, note.target).replace(
+                    'Note on ',
+                    ''
+                  )}
+                  onPress={() => {
+                    onActivity();
+                    setTarget(note.target);
+                  }}
+                >
+                  {note.text}
+                </CardRow>
+              ))}
+            </Card>
           )}
         </Column>
       </ScrollView>

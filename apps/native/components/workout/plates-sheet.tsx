@@ -17,7 +17,11 @@ import type { WeightUnit } from '@repo/backend/convex/domain/units';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
 
-import { textColor, useColors } from '@/lib/ui';
+import { Card } from '@/components/native/card';
+import { PillChip } from '@/components/native/pill-chip';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, tabularDigits, textColor, useColors } from '@/lib/ui';
 import { weightInUnit } from '@/lib/workout/format';
 import { plateLoad, plateStrip } from '@/lib/workout/plates';
 
@@ -77,6 +81,7 @@ export function PlatesSheet({
   const bars = [...new Set([...BARS[draft.unit], draft.barWeight])].sort(
     (a, b) => b - a
   );
+  const muted = { ...font.caption, color: textColor(colors.onSurfaceVariant) };
   const editDraft: typeof setDraft = (update) => {
     onActivity();
     setDraft(update);
@@ -111,51 +116,57 @@ export function PlatesSheet({
       snapPoints={['half', 'full']}
     >
       <ScrollView>
-        <Column spacing={12} style={{ padding: 16 }}>
-          <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Plates</Text>
-          {weight !== null ? (
-            <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
-              {`${weight} ${draft.unit}: ${plateStrip(weight, draft)}`}
-            </Text>
-          ) : (
-            <Text
-              textStyle={{
-                fontSize: 15,
-                color: textColor(colors.onSurfaceVariant),
-              }}
-            >
-              Enter a weight for the plate breakdown.
-            </Text>
-          )}
-          {load?.kind === 'loaded' && load.perSide.length > 0 ? (
-            <Row spacing={3} alignment="center">
-              <Column
-                style={{
-                  width: 40,
-                  height: 8,
-                  borderRadius: 2,
-                  backgroundColor: colors.onSurfaceVariant,
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+        >
+          <SectionHeader title="Plates" />
+          <Card padding={space.lg} spacing={space.md}>
+            {weight !== null ? (
+              <Text
+                textStyle={{
+                  ...font.bodyStrong,
+                  color: textColor(colors.onSurface),
                 }}
-              />
-              {load.perSide.map((plate, index) => (
+                modifiers={tabularDigits()}
+              >
+                {`${weight} ${draft.unit}: ${plateStrip(weight, draft)}`}
+              </Text>
+            ) : (
+              <Text textStyle={muted}>
+                Enter a weight for the plate breakdown.
+              </Text>
+            )}
+            {load?.kind === 'loaded' && load.perSide.length > 0 ? (
+              <Row spacing={3} alignment="center">
                 <Column
-                  // biome-ignore lint/suspicious/noArrayIndexKey: plates repeat by size
-                  key={index}
                   style={{
-                    width: 12,
-                    height: 24 + 56 * (plate / heaviest),
-                    borderRadius: 3,
-                    borderWidth: 1,
-                    borderColor: colors.outlineVariant,
-                    backgroundColor:
-                      PLATE_COLORS[sizes.indexOf(plate)] ??
-                      colors.surfaceContainerHigh,
+                    width: 40,
+                    height: 8,
+                    borderRadius: 2,
+                    backgroundColor: colors.onSurfaceVariant,
                   }}
                 />
-              ))}
-            </Row>
-          ) : null}
-          <Text textStyle={{ fontSize: 15, fontWeight: '700' }}>Bar</Text>
+                {load.perSide.map((plate, index) => (
+                  <Column
+                    // biome-ignore lint/suspicious/noArrayIndexKey: plates repeat by size
+                    key={index}
+                    style={{
+                      width: 12,
+                      height: 24 + 56 * (plate / heaviest),
+                      borderRadius: 3,
+                      borderWidth: 1,
+                      borderColor: colors.outlineVariant,
+                      backgroundColor:
+                        PLATE_COLORS[sizes.indexOf(plate)] ??
+                        colors.surfaceContainerHigh,
+                    }}
+                  />
+                ))}
+              </Row>
+            ) : null}
+          </Card>
+          <SectionHeader title="Bar" />
           <Picker
             selectedValue={draft.barWeight}
             onValueChange={(value) => {
@@ -172,9 +183,7 @@ export function PlatesSheet({
               />
             ))}
           </Picker>
-          <Text textStyle={{ fontSize: 15, fontWeight: '700' }}>
-            Plates you have (pairs)
-          </Text>
+          <SectionHeader title="Plates you have (pairs)" />
           <Picker
             selectedValue={draft.unit}
             onValueChange={(value) => {
@@ -186,41 +195,54 @@ export function PlatesSheet({
             <Picker.Item label="Plates in kilograms" value="kg" />
             <Picker.Item label="Plates in pounds" value="lb" />
           </Picker>
-          {[...draft.plates]
-            .sort((a, b) => b.weight - a.weight)
-            .map((plate) => (
-              <Row key={plate.weight} spacing={8} alignment="center">
-                <Column spacing={2}>
-                  <Text textStyle={{ fontSize: 15 }}>
-                    {`${plate.weight} ${draft.unit}`}
-                  </Text>
-                  <Text
-                    textStyle={{
-                      fontSize: 13,
-                      color: textColor(colors.onSurfaceVariant),
-                    }}
-                  >
-                    {`${plate.pairs} ${plate.pairs === 1 ? 'pair' : 'pairs'}`}
-                  </Text>
-                </Column>
-                <Spacer />
-                <Button
-                  label="−1 pair"
-                  variant="outlined"
-                  disabled={plate.pairs === 0}
-                  onPress={() => setPairs(plate.weight, plate.pairs - 1)}
-                />
-                <Button
-                  label="+1 pair"
-                  variant="outlined"
-                  onPress={() => setPairs(plate.weight, plate.pairs + 1)}
-                />
-              </Row>
-            ))}
+          <Card divided>
+            {[...draft.plates]
+              .sort((a, b) => b.weight - a.weight)
+              .map((plate) => (
+                <Row
+                  key={plate.weight}
+                  spacing={space.sm}
+                  alignment="center"
+                  style={{
+                    paddingHorizontal: space.lg,
+                    paddingVertical: space.md,
+                  }}
+                >
+                  <Column spacing={2}>
+                    <Text
+                      textStyle={{
+                        ...font.body,
+                        color: textColor(colors.onSurface),
+                      }}
+                      modifiers={tabularDigits()}
+                    >
+                      {`${plate.weight} ${draft.unit}`}
+                    </Text>
+                    <Text textStyle={muted}>
+                      {`${plate.pairs} ${plate.pairs === 1 ? 'pair' : 'pairs'}`}
+                    </Text>
+                  </Column>
+                  <Spacer flexible />
+                  <PillChip
+                    label="−1 pair"
+                    disabled={plate.pairs === 0}
+                    onPress={() => setPairs(plate.weight, plate.pairs - 1)}
+                  />
+                  <PillChip
+                    label="+1 pair"
+                    onPress={() => setPairs(plate.weight, plate.pairs + 1)}
+                  />
+                </Row>
+              ))}
+          </Card>
           {errorMessage ? (
-            <Text textStyle={{ fontSize: 15 }}>{errorMessage}</Text>
+            <Text
+              textStyle={{ ...font.caption, color: textColor(colors.error) }}
+            >
+              {errorMessage}
+            </Text>
           ) : null}
-          <Button label="Save plates" onPress={save} />
+          <PrimaryButton label="Save plates" onPress={() => void save()} />
           <Button
             label="Reset to defaults"
             variant="text"

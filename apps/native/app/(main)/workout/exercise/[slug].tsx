@@ -1,15 +1,19 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button, Column, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { TrendCard } from '@/components/charts/trend-card';
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 
 export default function ExerciseDetailScreen() {
   const params = useLocalSearchParams<{ slug: string }>();
+  const colors = useColors();
   const [commentBody, setCommentBody] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const exercise = useQuery(
@@ -42,10 +46,22 @@ export default function ExerciseDetailScreen() {
     }
   };
 
+  const caption = {
+    ...font.caption,
+    color: textColor(colors.onSurfaceVariant),
+  };
+
   if (exercise === undefined) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>Loading exercise…</Text>
+        <Text
+          textStyle={{
+            ...font.body,
+            color: textColor(colors.onSurfaceVariant),
+          }}
+        >
+          Loading exercise…
+        </Text>
       </NativeScreen>
     );
   }
@@ -53,68 +69,112 @@ export default function ExerciseDetailScreen() {
   if (exercise === null) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
+        <Text
+          textStyle={{ ...font.heading, color: textColor(colors.onSurface) }}
+        >
           Exercise not found
         </Text>
-        <Text textStyle={{ fontSize: 17 }}>
+        <Text
+          textStyle={{
+            ...font.body,
+            color: textColor(colors.onSurfaceVariant),
+          }}
+        >
           This exercise could not be loaded.
         </Text>
       </NativeScreen>
     );
   }
 
+  const hasDetails =
+    Boolean(exercise.description) ||
+    Boolean(exercise.instructions) ||
+    Boolean(exercise.muscleGroups?.length);
+
   return (
     <NativeScreen>
-      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
-        {exercise.name}
-      </Text>
-      {exercise.category ? (
-        <ListItem supportingText={exercise.category}>Category</ListItem>
-      ) : null}
-      <Text textStyle={{ fontSize: 17 }}>{exercise.description}</Text>
-      {exercise.instructions ? (
-        <ListItem supportingText={exercise.instructions}>Instructions</ListItem>
-      ) : null}
-      {exercise.muscleGroups?.length ? (
-        <ListItem supportingText={exercise.muscleGroups.join(' · ')}>
-          Muscles worked
-        </ListItem>
+      <Column spacing={space.xs}>
+        <Text
+          textStyle={{ ...font.heading, color: textColor(colors.onSurface) }}
+        >
+          {exercise.name}
+        </Text>
+        {exercise.category ? (
+          <Text textStyle={caption}>{exercise.category}</Text>
+        ) : null}
+      </Column>
+      {hasDetails ? (
+        <Card divided>
+          {exercise.description ? (
+            <CardRow key="description" supportingText={exercise.description}>
+              Description
+            </CardRow>
+          ) : null}
+          {exercise.instructions ? (
+            <CardRow key="instructions" supportingText={exercise.instructions}>
+              Instructions
+            </CardRow>
+          ) : null}
+          {exercise.muscleGroups?.length ? (
+            <CardRow
+              key="muscles"
+              supportingText={exercise.muscleGroups.join(' · ')}
+            >
+              Muscles worked
+            </CardRow>
+          ) : null}
+        </Card>
       ) : null}
       {trends === undefined ? (
-        <Text>Loading trends…</Text>
+        <Text textStyle={caption}>Loading trends…</Text>
       ) : (
         <TrendCard duration={trends.duration} rest={trends.rest} />
       )}
-      <NativeTextField
-        label="Comment"
-        multiline
-        numberOfLines={3}
-        onChangeText={setCommentBody}
-        placeholder="Leave a note about this exercise"
-        value={commentBody}
-      />
-      <Button
-        disabled={commentBody.trim().length === 0}
-        label="Add comment"
-        onPress={handleAddComment}
-      />
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Could not add comment</ListItem>
-      ) : null}
-      <ListItem>Comments</ListItem>
+      <SectionHeader title="Comments" />
       {comments === undefined ? (
-        <ListItem supportingText="Loading comments…">Comments</ListItem>
+        <Text textStyle={caption}>Loading comments…</Text>
       ) : comments.length === 0 ? (
-        <ListItem supportingText="Be the first to add one.">
-          No comments yet
-        </ListItem>
+        <Card>
+          <CardRow supportingText="Be the first to add one.">
+            No comments yet
+          </CardRow>
+        </Card>
       ) : (
-        comments.map((comment) => (
-          <ListItem key={comment._id} supportingText={comment.body}>
-            {comment.userId}
-          </ListItem>
-        ))
+        <Card divided>
+          {comments.map((comment) => (
+            <CardRow key={comment._id} supportingText={comment.body}>
+              {comment.userId}
+            </CardRow>
+          ))}
+        </Card>
       )}
+      <Card padding={space.lg} spacing={space.md}>
+        <NativeTextField
+          label="Comment"
+          multiline
+          numberOfLines={3}
+          onChangeText={setCommentBody}
+          placeholder="Leave a note about this exercise"
+          value={commentBody}
+        />
+        <Button
+          disabled={commentBody.trim().length === 0}
+          label="Add comment"
+          onPress={handleAddComment}
+        />
+      </Card>
+      {errorMessage ? (
+        <Card tone="high" padding={space.lg} spacing={space.xs}>
+          <Text
+            textStyle={{ ...font.label, color: textColor(colors.onSurface) }}
+          >
+            Could not add comment
+          </Text>
+          <Text textStyle={{ ...font.caption, color: textColor(colors.error) }}>
+            {errorMessage}
+          </Text>
+        </Card>
+      ) : null}
     </NativeScreen>
   );
 }

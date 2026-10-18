@@ -113,6 +113,111 @@ describe('Workout history', () => {
     ).rejects.toThrow('NOT_FOUND');
   });
 
+  test('stats list only the member’s completed Workouts, oldest first, with Sets, Volume and Sets per Exercise', async () => {
+    const { t, member, routineId } = await memberWithRoutine();
+    const benchId = await exerciseId(t, 'bench-press');
+    const rowId = await exerciseId(t, 'bent-over-row');
+    const pullUpId = await exerciseId(t, 'pull-up');
+
+    const fullId = await member.mutation(api.workouts.start, { routineId });
+    for (const [index, set] of (await activeWorkout(member)).exercises
+      .flatMap((exercise) => exercise.sets)
+      .entries()) {
+      at(30 * (index + 1));
+      await member.mutation(api.workouts.completeSet, {
+        setId: set._id,
+        weightKg: 60,
+        reps: 8,
+      });
+    }
+    await member.mutation(api.workouts.end, {
+      workoutId: fullId,
+      reason: 'finish',
+    });
+
+    at(200);
+    const abandonedId = await member.mutation(api.workouts.start, {
+      routineId,
+    });
+    await member.mutation(api.workouts.end, {
+      workoutId: abandonedId,
+      reason: 'terminate',
+    });
+
+    const other = t.withIdentity({ subject: 'member-b' });
+    at(300);
+    const otherId = await other.mutation(api.workouts.start, {});
+    await other.mutation(api.workouts.addExercise, {
+      workoutId: otherId,
+      exerciseId: benchId,
+    });
+    await logFirst(other, 350);
+    await other.mutation(api.workouts.end, {
+      workoutId: otherId,
+      reason: 'terminate',
+    });
+
+    at(400);
+    const earlyId = await member.mutation(api.workouts.start, { routineId });
+    await member.mutation(api.workouts.addExercise, {
+      workoutId: earlyId,
+      exerciseId: pullUpId,
+    });
+    await logFirst(member, 450);
+    const pullUp = (await activeWorkout(member)).exercises.find(
+      (exercise) => exercise.exerciseId === pullUpId
+    )?.sets[0];
+    if (!pullUp) throw new Error('missing Pull-up Set');
+    at(480);
+    await member.mutation(api.workouts.completeSet, {
+      setId: pullUp._id,
+      weightKg: null,
+      reps: 10,
+    });
+    await member.mutation(api.workouts.end, {
+      workoutId: earlyId,
+      reason: 'terminate',
+    });
+    at(600);
+    await member.mutation(api.workouts.start, { routineId });
+
+    const full = {
+      workoutId: fullId,
+      finishedAt: START + 150_000,
+      sets: 5,
+      volumeKg: 5 * 60 * 8,
+      exercises: [
+        { exerciseId: benchId, name: 'Bench Press', sets: 2 },
+        { exerciseId: rowId, name: 'Bent-over Row', sets: 3 },
+      ],
+    };
+    const early = {
+      workoutId: earlyId,
+      finishedAt: START + 480_000,
+      sets: 2,
+      volumeKg: 60 * 8,
+      exercises: [
+        { exerciseId: benchId, name: 'Bench Press', sets: 1 },
+        { exerciseId: pullUpId, name: 'Pull-up', sets: 1 },
+      ],
+    };
+    expect(await member.query(api.history.stats, { since: null })).toEqual([
+      full,
+      early,
+    ]);
+    expect(
+      await member.query(api.history.stats, { since: START + 150_000 })
+    ).toEqual([full, early]);
+    expect(
+      await member.query(api.history.stats, { since: START + 150_001 })
+    ).toEqual([early]);
+    expect(
+      (await other.query(api.history.stats, { since: null })).map(
+        (workout) => workout.workoutId
+      )
+    ).toEqual([otherId]);
+  });
+
   test('detail preserves Set types, Effort, saved targets and notes; Last time excludes itself and later Workouts', async () => {
     const { member, routineId } = await memberWithRoutine();
     const routine = await member.query(api.routines.get, { routineId });

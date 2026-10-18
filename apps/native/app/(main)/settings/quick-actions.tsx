@@ -1,9 +1,17 @@
-import { Button, Column, ListItem, Row, Switch, Text } from '@expo/ui';
+import { Button, Column, Row, Switch, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
+import {
+  accessibilityModifier,
+  font,
+  space,
+  textColor,
+  useColors,
+} from '@/lib/ui';
 import {
   AVAILABLE_QUICK_ACTIONS,
   QUICK_ACTIONS,
@@ -33,14 +41,16 @@ function moved(
 }
 
 export default function QuickActionsScreen() {
+  const colors = useColors();
   const settings = useQuery(api.memberSettings.get);
   const updateSettings = useMutation(api.memberSettings.update);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const caption = { ...font.body, color: textColor(colors.onSurfaceVariant) };
 
   if (!settings) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>Loading quick actions…</Text>
+        <Text textStyle={caption}>Loading quick actions…</Text>
       </NativeScreen>
     );
   }
@@ -56,47 +66,60 @@ export default function QuickActionsScreen() {
 
   return (
     <NativeScreen>
-      <Text textStyle={{ fontSize: 17 }}>
+      <Text textStyle={caption}>
         Choose which chips appear under the Exercise title, and in what order.
         While you’re in a Group, the Group chip always comes first.
       </Text>
-      {settings.quickActions.map((action, index) => {
-        if (!AVAILABLE_QUICK_ACTIONS.has(action.id)) return null;
-        const { label } = QUICK_ACTIONS[action.id];
-        const up = moved(settings.quickActions, index, -1);
-        const down = moved(settings.quickActions, index, 1);
-        return (
-          <Column key={action.id} spacing={4}>
-            <Switch
-              label={label}
-              value={action.visible}
-              onValueChange={(visible) =>
-                void save(
-                  settings.quickActions.map((item) =>
-                    item.id === action.id ? { ...item, visible } : item
-                  )
-                )
-              }
-            />
-            <Row spacing={8}>
-              <Button
-                disabled={!up}
-                label={`Move ${label} up`}
-                variant="text"
-                onPress={() => up && void save(up)}
-              />
-              <Button
-                disabled={!down}
-                label={`Move ${label} down`}
-                variant="text"
-                onPress={() => down && void save(down)}
-              />
-            </Row>
-          </Column>
-        );
-      })}
+      <Card divided>
+        {settings.quickActions.map((action, index) => {
+          if (!AVAILABLE_QUICK_ACTIONS.has(action.id)) return null;
+          const { label } = QUICK_ACTIONS[action.id];
+          const up = moved(settings.quickActions, index, -1);
+          const down = moved(settings.quickActions, index, 1);
+          return (
+            <Column key={action.id}>
+              <CardRow
+                trailing={
+                  <Switch
+                    modifiers={[accessibilityModifier(label)]}
+                    value={action.visible}
+                    onValueChange={(visible) =>
+                      void save(
+                        settings.quickActions.map((item) =>
+                          item.id === action.id ? { ...item, visible } : item
+                        )
+                      )
+                    }
+                  />
+                }
+              >
+                {label}
+              </CardRow>
+              <Row
+                spacing={space.sm}
+                style={{ paddingHorizontal: space.sm, paddingBottom: space.sm }}
+              >
+                <Button
+                  disabled={!up}
+                  label={`Move ${label} up`}
+                  variant="text"
+                  onPress={() => up && void save(up)}
+                />
+                <Button
+                  disabled={!down}
+                  label={`Move ${label} down`}
+                  variant="text"
+                  onPress={() => down && void save(down)}
+                />
+              </Row>
+            </Column>
+          );
+        })}
+      </Card>
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Not saved</ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>Not saved</CardRow>
+        </Card>
       ) : null}
     </NativeScreen>
   );

@@ -1,10 +1,19 @@
-import { Button, Column, ListItem, Row, Text } from '@expo/ui';
+import { Button, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
+
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { accessibilityModifier } from '@/lib/ui/accessibility';
+import { PrimaryButton } from '@/components/native/primary-button';
+import {
+  accessibilityModifier,
+  font,
+  space,
+  textColor,
+  useColors,
+} from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -13,6 +22,7 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 export default function BlockedMembersScreen() {
+  const colors = useColors();
   const blocked = useQuery(api.safety.blocked, {});
   const block = useMutation(api.safety.block);
   const unblock = useMutation(api.safety.unblock);
@@ -39,53 +49,67 @@ export default function BlockedMembersScreen() {
 
   return (
     <NativeScreen>
-      <Text textStyle={{ fontSize: 28, fontWeight: '700' }}>
-        Blocked members
-      </Text>
-      <Column spacing={12}>
-        {blocked === undefined ? (
-          <Text>Loading blocked members…</Text>
-        ) : blocked.length === 0 ? (
-          <Text>No one blocked</Text>
-        ) : (
-          blocked.map((member) => (
-            <Row key={member.username} spacing={12} alignment="center">
-              <Text>{member.username}</Text>
-              <Button
-                disabled={busy}
-                label="Unblock"
-                modifiers={[
-                  accessibilityModifier(`Unblock ${member.username}`),
-                ]}
-                onPress={() =>
-                  void perform(() => unblock({ username: member.username }))
-                }
-                variant="text"
-              />
-            </Row>
-          ))
-        )}
-      </Column>
-      <NativeTextField
-        autoCapitalize="none"
-        autoCorrect={false}
-        label="Username"
-        onChangeText={setUsername}
-        placeholder="Username"
-        value={username}
-      />
-      <Button
+      {blocked === undefined || blocked.length === 0 ? (
+        <Card padding={space.lg}>
+          <Text
+            textStyle={{
+              ...font.caption,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
+            {blocked === undefined
+              ? 'Loading blocked members…'
+              : 'No one blocked'}
+          </Text>
+        </Card>
+      ) : (
+        <Card divided>
+          {blocked.map((member) => (
+            <CardRow
+              key={member.username}
+              trailing={
+                <Button
+                  disabled={busy}
+                  label="Unblock"
+                  modifiers={[
+                    accessibilityModifier(`Unblock ${member.username}`),
+                  ]}
+                  onPress={() =>
+                    void perform(() => unblock({ username: member.username }))
+                  }
+                  variant="text"
+                />
+              }
+            >
+              {member.username}
+            </CardRow>
+          ))}
+        </Card>
+      )}
+      <Card padding={space.lg} spacing={space.md}>
+        <NativeTextField
+          autoCapitalize="none"
+          autoCorrect={false}
+          label="Username"
+          onChangeText={setUsername}
+          placeholder="Username"
+          value={username}
+        />
+      </Card>
+      {errorMessage ? (
+        <Card>
+          <CardRow supportingText={errorMessage}>
+            Couldn’t update blocked members
+          </CardRow>
+        </Card>
+      ) : null}
+      <PrimaryButton
         disabled={busy || username.trim().length === 0}
         label="Block"
         onPress={() =>
           void perform(() => block({ username: username.trim() }), true)
         }
       />
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Couldn’t update blocked members
-        </ListItem>
-      ) : null}
     </NativeScreen>
   );
 }

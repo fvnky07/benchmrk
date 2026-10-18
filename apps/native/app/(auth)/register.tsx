@@ -2,8 +2,13 @@ import { Button } from '@expo/ui';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { SocialProviderGroup } from '@/components/native/social-provider-group';
 import { analytics } from '@/lib/analytics';
 import { authClient } from '@/lib/auth/client';
@@ -35,6 +40,7 @@ export default function RegisterScreen() {
   const beginPending = useAuthStore((state) => state.beginPending);
   const endPending = useAuthStore((state) => state.endPending);
   const [status, setStatus] = useState<Status>(null);
+  const columnWidth = useAuthColumnWidth();
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: registerSchema,
@@ -86,6 +92,7 @@ export default function RegisterScreen() {
 
   return (
     <AuthShell
+      edges={['bottom']}
       title="Sign up"
       supportingText="Use your email and a password, or continue with Apple or Google."
     >
@@ -134,9 +141,10 @@ export default function RegisterScreen() {
         secureTextEntry
         value={confirmPassword}
       />
-      <Button
+      <PrimaryButton
         disabled={pendingPath !== null}
         label={pendingPath === 'register' ? 'Signing up…' : 'Sign up'}
+        width={columnWidth}
         onPress={signUp}
       />
       {status ? (

@@ -1,18 +1,12 @@
 import { Stack } from 'expo-router';
 
-import { useAppearance } from '@/lib/ui';
-
 export default function AuthLayout() {
-  const { navigationTheme } = useAppearance();
-
   return (
     <Stack
       screenOptions={{
         headerShown: true,
         headerBackButtonDisplayMode: 'minimal',
-        headerStyle: { backgroundColor: navigationTheme.colors.card },
-        headerTintColor: navigationTheme.colors.primary,
-        headerTitleStyle: { color: navigationTheme.colors.text },
+        headerTitleAlign: 'center',
       }}
     >
       <Stack.Screen

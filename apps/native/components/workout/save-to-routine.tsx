@@ -1,10 +1,13 @@
-import { Button, Column, ListItem, Text } from '@expo/ui';
+import { Button, Column, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { useState } from 'react';
 
+import { Card, CardRow } from '@/components/native/card';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
 
 type Plan = NonNullable<
@@ -47,14 +50,21 @@ function ShapeList({
   title: string;
   shapes: readonly Shape[];
 }) {
+  const colors = useColors();
+
   return (
-    <Column spacing={4}>
-      <Text textStyle={{ fontSize: 15, fontWeight: '700' }}>{title}</Text>
+    <Column spacing={space.xs}>
+      <Text textStyle={{ ...font.label, color: textColor(colors.onSurface) }}>
+        {title}
+      </Text>
       {shapes.map((shape, index) => (
         <Text
           // biome-ignore lint/suspicious/noArrayIndexKey: a Routine can list an Exercise twice
           key={index}
-          textStyle={{ fontSize: 15 }}
+          textStyle={{
+            ...font.caption,
+            color: textColor(colors.onSurfaceVariant),
+          }}
         >
           {`${index + 1}. ${shape.name} · ${shape.sets} Sets · ${restText(shape.restSeconds)}${shape.linkedToNext ? ' · alternates with the next' : ''}`}
         </Text>
@@ -70,6 +80,7 @@ function ShapeList({
 export function SaveToRoutine({
   workoutId,
 }: Readonly<{ workoutId: Id<'workouts'> }>) {
+  const colors = useColors();
   const plan = useQuery(api.workoutStructure.getChanges, { workoutId });
   const saveToRoutine = useMutation(api.workoutStructure.saveToRoutine);
   const [isSaved, setIsSaved] = useState(false);
@@ -77,42 +88,64 @@ export function SaveToRoutine({
 
   if (isSaved) {
     return (
-      <ListItem supportingText="Your next Workout from it starts with these changes.">
-        Routine updated
-      </ListItem>
+      <Column spacing={space.sm}>
+        <SectionHeader title="Update Routine" />
+        <Card>
+          <CardRow supportingText="Your next Workout from it starts with these changes.">
+            Routine updated
+          </CardRow>
+        </Card>
+      </Column>
     );
   }
   if (!plan || plan.changes.length === 0) return null;
 
   return (
-    <Column spacing={12}>
-      <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-        Save changes to Routine?
-      </Text>
-      <Column spacing={4}>
-        {plan.changes.map((change) => (
-          <Text key={describe(change)} textStyle={{ fontSize: 15 }}>
-            {`• ${describe(change)}`}
-          </Text>
-        ))}
-      </Column>
-      <ShapeList title={`${plan.routineName} now`} shapes={plan.before} />
-      <ShapeList title="After saving" shapes={plan.after} />
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Not saved</ListItem>
-      ) : null}
-      <Button
-        label="Save changes to Routine"
-        onPress={async () => {
-          try {
-            setErrorMessage(null);
-            await saveToRoutine({ workoutId });
-            setIsSaved(true);
-          } catch {
-            setErrorMessage('Could not update the Routine. Try again.');
-          }
-        }}
+    <Column spacing={space.sm}>
+      <SectionHeader
+        title="Update Routine"
+        supportingText="Save these changes as the new default"
       />
+      <Card padding={space.lg} spacing={space.md}>
+        <Column spacing={space.xs}>
+          {plan.changes.map((change) => (
+            <Text
+              key={describe(change)}
+              textStyle={{ ...font.body, color: textColor(colors.onSurface) }}
+            >
+              {`• ${describe(change)}`}
+            </Text>
+          ))}
+        </Column>
+        <ShapeList title={`${plan.routineName} now`} shapes={plan.before} />
+        <ShapeList title="After saving" shapes={plan.after} />
+        {errorMessage ? (
+          <Column spacing={space.xs}>
+            <Text
+              textStyle={{ ...font.label, color: textColor(colors.onSurface) }}
+            >
+              Not saved
+            </Text>
+            <Text
+              textStyle={{ ...font.caption, color: textColor(colors.error) }}
+            >
+              {errorMessage}
+            </Text>
+          </Column>
+        ) : null}
+        <Button
+          label="Save changes to Routine"
+          onPress={async () => {
+            try {
+              setErrorMessage(null);
+              await saveToRoutine({ workoutId });
+              setIsSaved(true);
+            } catch {
+              setErrorMessage('Could not update the Routine. Try again.');
+            }
+          }}
+        />
+      </Card>
     </Column>
   );
 }

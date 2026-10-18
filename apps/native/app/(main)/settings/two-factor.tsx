@@ -1,13 +1,17 @@
-import { Button, Column, ListItem, Text } from '@expo/ui';
+import { Button, Text } from '@expo/ui';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking } from 'react-native';
 
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
 import { authClient } from '@/lib/auth/client';
 import { useAuth } from '@/lib/auth/hooks';
+import { font, space, tabularDigits, textColor, useColors } from '@/lib/ui';
 
 /**
  * Enrollment state. Secret material lives only here, only while it's shown,
@@ -24,6 +28,8 @@ function setupKey(totpURI: string): string {
 }
 
 export default function TwoFactorScreen() {
+  const colors = useColors();
+  const lead = { ...font.body, color: textColor(colors.onSurfaceVariant) };
   const { user } = useAuth();
   const isEnabled = user?.twoFactorEnabled === true;
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
@@ -109,10 +115,12 @@ export default function TwoFactorScreen() {
   if (hasPassword === false) {
     return (
       <NativeScreen>
-        <ListItem supportingText="Two-factor authentication protects password sign-in. Set a password in Manage Account first.">
-          Needs a password
-        </ListItem>
-        <Button label="Back" onPress={() => router.back()} />
+        <Card>
+          <CardRow supportingText="Two-factor authentication protects password sign-in. Set a password in Manage Account first.">
+            Needs a password
+          </CardRow>
+        </Card>
+        <PrimaryButton label="Back" onPress={() => router.back()} />
       </NativeScreen>
     );
   }
@@ -120,26 +128,30 @@ export default function TwoFactorScreen() {
   if (step.kind === 'password') {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>
+        <Text textStyle={lead}>
           {step.purpose === 'enable'
             ? 'Confirm your password to set up two-factor authentication.'
             : 'Confirm your password to turn off two-factor authentication.'}
         </Text>
-        <NativeTextField
-          autoCapitalize="none"
-          autoComplete="password"
-          label="Password"
-          onChangeText={setPassword}
-          secureTextEntry
-          value={password}
-        />
+        <Card padding={space.lg} spacing={space.md}>
+          <NativeTextField
+            autoCapitalize="none"
+            autoComplete="password"
+            label="Password"
+            onChangeText={setPassword}
+            secureTextEntry
+            value={password}
+          />
+        </Card>
         {errorMessage ? (
-          <ListItem supportingText={errorMessage}>Not changed</ListItem>
+          <Card>
+            <CardRow supportingText={errorMessage}>Not changed</CardRow>
+          </Card>
         ) : null}
-        <Button
+        <PrimaryButton
           disabled={busy || password === ''}
           label={busy ? 'Checking…' : 'Continue'}
-          onPress={() => submitPassword(step.purpose)}
+          onPress={() => void submitPassword(step.purpose)}
         />
         <Button label="Cancel" variant="text" onPress={finish} />
       </NativeScreen>
@@ -149,35 +161,42 @@ export default function TwoFactorScreen() {
   if (step.kind === 'scan') {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>
+        <Text textStyle={lead}>
           Add benchmrk to your authenticator app, then enter the code it shows.
         </Text>
-        <Button
-          label="Open in authenticator app"
-          onPress={() => void Linking.openURL(step.totpURI)}
-        />
-        <ListItem
-          supportingText={setupKey(step.totpURI)}
-          onPress={() => void Clipboard.setStringAsync(setupKey(step.totpURI))}
-        >
-          Setup key (tap to copy)
-        </ListItem>
-        <NativeTextField
-          autoComplete="one-time-code"
-          keyboardType="number-pad"
-          label="Code from your app"
-          maxLength={6}
-          onChangeText={setCode}
-          placeholder="123456"
-          value={code}
-        />
+        <Card divided>
+          <CardRow chevron onPress={() => void Linking.openURL(step.totpURI)}>
+            Open in authenticator app
+          </CardRow>
+          <CardRow
+            supportingText={setupKey(step.totpURI)}
+            onPress={() =>
+              void Clipboard.setStringAsync(setupKey(step.totpURI))
+            }
+          >
+            Setup key (tap to copy)
+          </CardRow>
+        </Card>
+        <Card padding={space.lg} spacing={space.md}>
+          <NativeTextField
+            autoComplete="one-time-code"
+            keyboardType="number-pad"
+            label="Code from your app"
+            maxLength={6}
+            onChangeText={setCode}
+            placeholder="123456"
+            value={code}
+          />
+        </Card>
         {errorMessage ? (
-          <ListItem supportingText={errorMessage}>Not turned on yet</ListItem>
+          <Card>
+            <CardRow supportingText={errorMessage}>Not turned on yet</CardRow>
+          </Card>
         ) : null}
-        <Button
+        <PrimaryButton
           disabled={busy || code.trim().length !== 6}
           label={busy ? 'Checking…' : 'Turn on two-factor authentication'}
-          onPress={() => confirmCode(step.backupCodes)}
+          onPress={() => void confirmCode(step.backupCodes)}
         />
         <Button label="Cancel" variant="text" onPress={finish} />
       </NativeScreen>
@@ -187,23 +206,25 @@ export default function TwoFactorScreen() {
   if (step.kind === 'backup-codes') {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
-          Save your backup codes
-        </Text>
-        <Text textStyle={{ fontSize: 15 }}>
-          Each code signs you in once if you lose your authenticator. They won’t
-          be shown again.
-        </Text>
-        <Column spacing={4}>
+        <SectionHeader
+          title="Save your backup codes"
+          supportingText="Each code signs you in once if you lose your authenticator. They won’t be shown again."
+        />
+        <Card divided>
           {step.backupCodes.map((backupCode) => (
-            <Text
-              key={backupCode}
-              textStyle={{ fontSize: 17, fontWeight: '600' }}
-            >
-              {backupCode}
-            </Text>
+            <CardRow key={backupCode}>
+              <Text
+                modifiers={tabularDigits()}
+                textStyle={{
+                  ...font.bodyStrong,
+                  color: textColor(colors.onSurface),
+                }}
+              >
+                {backupCode}
+              </Text>
+            </CardRow>
           ))}
-        </Column>
+        </Card>
         <Button
           label="Copy codes"
           variant="outlined"
@@ -211,35 +232,40 @@ export default function TwoFactorScreen() {
             void Clipboard.setStringAsync(step.backupCodes.join('\n'))
           }
         />
-        <Button label="I saved them" onPress={finish} />
+        <PrimaryButton label="I saved them" onPress={finish} />
       </NativeScreen>
     );
   }
 
   return (
     <NativeScreen>
-      <ListItem
-        supportingText={
-          isEnabled
-            ? 'Signing in with your password also needs a code from your authenticator app.'
-            : 'Add a code from an authenticator app to password sign-in.'
-        }
-      >
-        {isEnabled
-          ? 'Two-factor authentication is on'
-          : 'Two-factor authentication is off'}
-      </ListItem>
-      <Button
-        disabled={hasPassword === null}
-        label={isEnabled ? 'Turn off' : 'Set up'}
-        variant={isEnabled ? 'outlined' : 'filled'}
-        onPress={() =>
-          setStep({
-            kind: 'password',
-            purpose: isEnabled ? 'disable' : 'enable',
-          })
-        }
-      />
+      <Card>
+        <CardRow
+          supportingText={
+            isEnabled
+              ? 'Signing in with your password also needs a code from your authenticator app.'
+              : 'Add a code from an authenticator app to password sign-in.'
+          }
+        >
+          {isEnabled
+            ? 'Two-factor authentication is on'
+            : 'Two-factor authentication is off'}
+        </CardRow>
+      </Card>
+      {isEnabled ? (
+        <Button
+          disabled={hasPassword === null}
+          label="Turn off"
+          variant="outlined"
+          onPress={() => setStep({ kind: 'password', purpose: 'disable' })}
+        />
+      ) : (
+        <PrimaryButton
+          disabled={hasPassword === null}
+          label="Set up"
+          onPress={() => setStep({ kind: 'password', purpose: 'enable' })}
+        />
+      )}
     </NativeScreen>
   );
 }

@@ -1,18 +1,14 @@
 import LockIcon from '@expo/material-symbols/lock.xml';
-import {
-  Button,
-  Column,
-  Icon,
-  RNHostView,
-  Row,
-  ScrollView,
-  Text,
-} from '@expo/ui';
+import MoreIcon from '@expo/material-symbols/more_horiz.xml';
+import { Column, Icon, RNHostView, Row, ScrollView, Text } from '@expo/ui';
 import { defaultMinSize, semantics } from '@expo/ui/jetpack-compose/modifiers';
 import {
   accessibilityElement,
   accessibilityLabel,
+  background,
+  clipShape,
   frame,
+  padding,
 } from '@expo/ui/swift-ui/modifiers';
 import { api } from '@repo/backend/convex/_generated/api';
 import { presenceOf } from '@repo/backend/convex/domain/presence';
@@ -23,20 +19,31 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { MemberActionsSheet } from '@/components/groups/member-actions-sheet';
+import { PillChip } from '@/components/native/pill-chip';
 import { ExerciseTile } from '@/components/workout/exercise-strip';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
-import { textColor, useColors } from '@/lib/ui';
+import {
+  font,
+  radius,
+  size,
+  space,
+  tabularDigits,
+  textColor,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock, formatWeight } from '@/lib/workout/format';
 
 type GroupView = NonNullable<FunctionReturnType<typeof api.groups.getMine>>;
 type MemberBox = GroupView['members'][number];
 
-const SCREEN_PADDING = 24;
-const GAP = 12;
+const GAP = space.md;
+const TILE_PADDING = space.md;
 const AVATAR = 32;
 const LOCK = { ios: 'lock.fill', android: LockIcon } as const;
-const ACTIONS_WIDTH = 44;
+const MORE = { ios: 'ellipsis', android: MoreIcon } as const;
+const ACTIONS_WIDTH = size.chip;
 /** Tall enough for a full box, so a lone member's box never clips its content. */
 const MIN_FILL_HEIGHT = 460;
 
@@ -73,11 +80,17 @@ function Avatar({ box }: Readonly<{ box: MemberBox }>) {
         width: AVATAR,
         height: AVATAR,
         borderRadius: AVATAR / 2,
-        backgroundColor: colors.surfaceContainerHigh,
+        backgroundColor: colors.surfaceContainerHighest,
         paddingTop: 7,
       }}
     >
-      <Text textStyle={{ fontSize: 13, fontWeight: '700' }}>
+      <Text
+        textStyle={{
+          ...font.caption,
+          fontWeight: '700',
+          color: textColor(colors.onSurface),
+        }}
+      >
         {box.username.slice(0, 2).toUpperCase()}
       </Text>
     </Column>
@@ -105,6 +118,7 @@ function MemberBoxView({
 }>) {
   const colors = useColors();
   const mutedText = textColor(colors.onSurfaceVariant);
+  const onSurface = textColor(colors.onSurface);
   const [actionsPresented, setActionsPresented] = useState(false);
   const { progress } = box;
   const reconnecting = presenceOf(box.lastSeenAt, now) === 'reconnecting';
@@ -158,36 +172,52 @@ function MemberBoxView({
     .join(', ');
   const textWidth = Math.max(
     48,
-    width - 24 - AVATAR - 8 - (box.isYou ? 0 : ACTIONS_WIDTH + 8)
+    width -
+      TILE_PADDING * 2 -
+      AVATAR -
+      space.sm -
+      (box.isYou ? 0 : ACTIONS_WIDTH + space.sm)
   );
+  const innerWidth = width - TILE_PADDING * 2;
+  // Your own tile is raised; everyone else's sits on the default card surface.
+  const fill = box.isYou
+    ? colors.surfaceContainerHigh
+    : colors.surfaceContainer;
 
   return (
     <>
       <Column
-        spacing={8}
+        spacing={space.sm}
         modifiers={
           Platform.OS === 'ios'
             ? [
-                accessibilityElement('contain'),
-                accessibilityLabel(label),
+                // SwiftUI paints the fill after sizing, so the minimum height is filled too.
+                padding({ all: TILE_PADDING }),
                 frame({
                   width,
                   minHeight: fillHeight ?? undefined,
                   alignment: 'topLeading',
                 }),
+                background(fill),
+                clipShape('roundedRectangle', radius.card),
+                accessibilityElement('contain'),
+                accessibilityLabel(label),
               ]
             : [
                 semantics({ contentDescription: label }),
                 defaultMinSize({ minHeight: fillHeight ?? undefined }),
               ]
         }
-        style={{
-          width,
-          padding: 12,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: colors.outlineVariant,
-        }}
+        style={
+          Platform.OS === 'ios'
+            ? undefined
+            : {
+                width,
+                padding: TILE_PADDING,
+                borderRadius: radius.card,
+                backgroundColor: fill,
+              }
+        }
       >
         <Column
           modifiers={[
@@ -196,36 +226,34 @@ function MemberBoxView({
               : defaultMinSize({ minHeight: headerHeight }),
           ]}
         >
-          <Row spacing={8} alignment="start">
+          <Row spacing={space.sm} alignment="start">
             <Avatar box={box} />
-            <Column spacing={4} style={{ width: textWidth }}>
+            <Column spacing={2} style={{ width: textWidth }}>
               <Text
                 numberOfLines={1}
-                textStyle={{ fontSize: 15, fontWeight: '700' }}
+                textStyle={{ ...font.label, color: onSurface }}
               >
                 {box.username}
               </Text>
               <Text
                 numberOfLines={1}
-                textStyle={{ fontSize: 12, color: mutedText }}
+                textStyle={{ ...font.caption, color: mutedText }}
               >
                 {tag}
               </Text>
               <Text
                 numberOfLines={1}
-                textStyle={{ fontSize: 12, color: mutedText }}
+                textStyle={{ ...font.caption, color: mutedText }}
               >
                 {reconnecting ? 'Reconnecting…' : routineLine}
               </Text>
             </Column>
             {!box.isYou ? (
-              <Button
-                label="…"
-                modifiers={[
-                  accessibilityModifier(`Actions for ${box.username}`),
-                ]}
+              <PillChip
+                icon={MORE}
+                iconOnly
+                label={`Actions for ${box.username}`}
                 onPress={() => setActionsPresented(true)}
-                variant="text"
               />
             ) : null}
           </Row>
@@ -233,7 +261,7 @@ function MemberBoxView({
         <Column
           style={{
             height: 1,
-            width: width - 24,
+            width: innerWidth,
             backgroundColor: colors.outlineVariant,
           }}
         />
@@ -241,34 +269,49 @@ function MemberBoxView({
           <Text
             numberOfLines={1}
             style={{ opacity: reconnecting ? 0.45 : 1 }}
-            textStyle={{ fontSize: 14 }}
+            textStyle={{ ...font.label, color: onSurface }}
           >
             {currentExercise ?? statusText(progress, now)}
           </Text>
         ) : (
-          <Column spacing={8} style={{ opacity: reconnecting ? 0.45 : 1 }}>
-            <Column spacing={4}>
-              <RNHostView matchContents style={{ width: width - 24 }}>
+          <Column
+            spacing={space.sm}
+            style={{ opacity: reconnecting ? 0.45 : 1 }}
+          >
+            <Column spacing={6}>
+              <Row alignment="end" spacing={space.xs}>
+                <Text
+                  modifiers={tabularDigits()}
+                  textStyle={{ ...font.stat, color: onSurface }}
+                >{`${Math.round(pace * 100)}%`}</Text>
+                <Text textStyle={{ ...font.caption, color: mutedText }}>
+                  Pace
+                </Text>
+              </Row>
+              <RNHostView matchContents style={{ width: innerWidth }}>
                 <WorkoutProgress fraction={pace} />
               </RNHostView>
-              <Text
-                textStyle={{ fontSize: 12, color: mutedText }}
-              >{`Pace ${Math.round(pace * 100)}%`}</Text>
             </Column>
-            <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+            <Text textStyle={{ ...font.bodyStrong, color: onSurface }}>
               {statusText(progress, now)}
             </Text>
             {currentExercise ? (
-              <Text textStyle={{ fontSize: 14 }}>{currentExercise}</Text>
+              <Text textStyle={{ ...font.caption, color: onSurface }}>
+                {currentExercise}
+              </Text>
             ) : null}
             {progress.weightsShown ? (
-              <Column spacing={4}>
-                <Text textStyle={{ fontSize: 15, fontWeight: '600' }}>
+              <Column spacing={space.xs}>
+                <Text
+                  modifiers={tabularDigits()}
+                  textStyle={{ ...font.bodyStrong, color: onSurface }}
+                >
                   {setValue}
                 </Text>
                 {progress.volumeKg !== null ? (
                   <Text
-                    textStyle={{ fontSize: 12, color: mutedText }}
+                    modifiers={tabularDigits()}
+                    textStyle={{ ...font.caption, color: mutedText }}
                   >{`Volume ${formatWeight(progress.volumeKg, units)}`}</Text>
                 ) : null}
               </Column>
@@ -280,7 +323,7 @@ function MemberBoxView({
                   color={colors.onSurfaceVariant}
                   accessibilityLabel="Weights hidden"
                 />
-                <Text textStyle={{ fontSize: 13, color: mutedText }}>
+                <Text textStyle={{ ...font.caption, color: mutedText }}>
                   Weights hidden
                 </Text>
               </Row>
@@ -289,14 +332,14 @@ function MemberBoxView({
               <ScrollView
                 direction="horizontal"
                 showsIndicators={false}
-                style={{ width: width - 24 }}
+                style={{ width: innerWidth }}
               >
-                <Row spacing={8}>
+                <Row spacing={space.sm}>
                   {progress.exercises.map((exercise, index) => (
                     <Column
                       // biome-ignore lint/suspicious/noArrayIndexKey: Exercises retain their ordered positions in the summary
                       key={index}
-                      spacing={4}
+                      spacing={space.xs}
                       style={{ width: 116 }}
                     >
                       <ExerciseTile
@@ -317,10 +360,7 @@ function MemberBoxView({
                               `${exercise.name}: target ${exercise.targetMet ? 'met' : 'missed'}`
                             ),
                           ]}
-                          textStyle={{
-                            fontSize: 12,
-                            color: mutedText,
-                          }}
+                          textStyle={{ ...font.caption, color: mutedText }}
                         >
                           {exercise.targetMet
                             ? '✓ target met'
@@ -363,8 +403,8 @@ export function GroupGrid({
   reservedHeight: number;
 }>) {
   const settings = useQuery(api.memberSettings.get);
-  const { width, height, fontScale } = useWindowDimensions();
-  const fullWidth = width - SCREEN_PADDING * 2;
+  const { height, fontScale } = useWindowDimensions();
+  const fullWidth = useContentWidth();
   const halfWidth = (fullWidth - GAP) / 2;
   const headerHeight = 76 * Math.max(1, fontScale);
   const fillHeight = Math.max(
