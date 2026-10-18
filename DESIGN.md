@@ -77,20 +77,39 @@
 ## Visual language
 
 - Color: One colour source, `useColors()` in `apps/native/lib/ui/colors.ts`, with Material 3 role names. Android uses Material You (wallpaper) colours via `useMaterialColors`; iOS maps the roles to system colours; web uses the Material 3 baseline. Pair each `on*` role with the surface it names. The app's appearance preference is applied to the native window (`Appearance.setColorScheme`) so system sheets, dialogs and bars match. Do not add fixed palettes or hex colours; the only fixed colours are real-world plate colours and the black-on-white QR code. Provider controls use official component styling rather than recolored imitations. Verify contrast for text, borders, focus, errors, and disabled states in both modes.
-- Typography: Use native system typography through `@expo/ui`/React Native. Route title is the strongest text (approximately 28–32pt, semibold/bold consistent with existing `welcome.tsx` and route forms); supporting copy is body-sized (approximately 16–17pt); labels are semibold body-sized; helper/error text is at least 14pt and remains readable under Dynamic Type. Exact system font, weight, and scaling stay platform-native.
-- Spacing/layout rhythm: Use an 8pt base rhythm. Safe-area content starts at 24pt horizontal inset on phones, with 16pt minimum vertical separation between major groups and 8pt between label/control and helper/error text. Maintain at least 24pt between header and first action group. On tablets, center a readable content column while retaining 24–32pt outer insets; do not stretch fields across the full tablet width.
-- Max width: Cap the auth content column at 420pt on tablets and landscape; phone layouts use available width minus safe-area insets. Provider and primary controls fill the column. Do not create a floating desktop card unless platform conventions require one.
-- Shape/radius/elevation: 10–16pt corners on grouped containers and inputs, plus native component corner treatment. Prefer flat filled surfaces (`surfaceContainer*` roles) over borders; hairlines use `outlineVariant`; no ornamental elevation. Keep the divider visually quiet and aligned to the same content column.
+- Typography: Use the native system font through `@expo/ui`; sizes and weights come only from `font` in `apps/native/lib/ui/tokens.ts`: `title` 32/700 (header-less screen title; auth route title), `heading` 22/700 (in-content name), `section` 17/700 (`SectionHeader`), `body` 16, `bodyStrong` 16/600, `label` 14/600 (field labels, chips, table headings), `caption` 13 (supporting, muted and error copy), `stat` 28/700 (stat numbers), `key` 22/500 (keypad). Under a native header the header carries the title; never repeat it in the body. Text never shrinks to fit and wraps under Dynamic Type.
+- Numbers: Stats, clocks, weights, reps and set counts use tabular digits (`tabularDigits()` in `apps/native/lib/ui/modifiers.ts`: SwiftUI `monospacedDigit` on iOS; Roboto digits are already tabular on Android) so columns and ticking clocks do not jitter.
+- Spacing/layout rhythm: 8pt rhythm from `space` (`xs` 4, `sm` 8, `md` 12, `lg` 16, `xl` 24, `xxl` 32). Screens use a 24pt (`space.screen`) inset with 16pt between groups and 8pt between a label/control and its helper/error text; tiles and chips in a row sit 12pt apart. Numeric widths (buttons, tiles, segmented tracks, keypad keys) derive from `useContentWidth()` (window width minus both screen insets). Fixed control sizes come from `size` (44 touch, 52 button, 36 chip/badge, 48 key).
+- Max width: Cap the auth content column at 420pt on tablets and landscape (`useAuthColumnWidth()`); phone layouts use the content width. Provider and primary controls fill the column. Do not create a floating desktop card unless platform conventions require one.
+- Shape/radius/elevation: Radii come from `radius`: 10 controls, 16 grouped cards and stat tiles, 24 docks and sheets, pill for chips, badges and segmented controls; native buttons keep their platform shape. Content is grouped in flat, full-width `surfaceContainer` cards (`surfaceContainerHigh` for emphasis) with `outlineVariant` hairlines between rows — no borders, no ornamental elevation.
+- Selection: Selected chips and segments use `inverseSurface` with `inverseOnSurface` content; destructive chips use `errorContainer`/`onErrorContainer`; resting chips use `surfaceContainerHigh`/`onSurface`. Each screen has at most one full-width filled primary action.
 - Imagery/iconography: No decorative imagery is required, and the native app currently has no confirmed Benchmrk auth logo asset: `apps/native/app.json` points to the configured Expo icon/splash assets under `apps/native/assets/images/`, while the canonical Benchmrk SVG marks live only in `apps/website/public/logo.svg` and `logo-dark.svg`. Do not invent or copy a new native mark for this flow; use the existing textual product name only if a brand cue is needed. Use official Apple/Google provider visuals supplied by their components, not hand-drawn logos.
 
 ## Components
 
-- Existing components to reuse:
-  - `NativeScreen` for safe native host, scroll behavior, appearance, and baseline 24pt padding.
-  - `NativeTextField` / `@expo/ui` `TextInput`, `Column`, `Text`, `Button`, and `ListItem` patterns.
-  - `@react-native-google-signin/google-signin` `GoogleSigninButton` and `expo-apple-authentication` `AppleAuthenticationButton`.
-  - `useAppearance`, `useColors`, navigation themes, `showToast`, auth client/store, and existing validation hooks/schemas.
-- New/changed components: One shared auth visual shell/layout composition consumed by welcome, login, and register; route-specific form content and state messaging; an availability-aware provider group; and a semantic divider. Prefer existing files/components or a small native auth component under `apps/native/components/native/` over a new styling layer.
+- Screen shells (`apps/native/components/native/`), each a `react-native-safe-area-context` `SafeAreaView` around one `@expo/ui` `Host`:
+  - `NativeScreen` — scrolling column with the 24pt inset and 16pt rhythm.
+  - `DockedScreen` (`.ios`/`.android`) — the same with a pinned bottom `dock` (keypad, Done); iOS renders a plain SwiftUI `List` so rows can carry swipe actions.
+  - `AuthShell` — centred 420pt-capped auth column with logo, title, supporting copy and legal footer; `edges` defaults to `['top', 'bottom']`.
+  - `UnavailableCapability` — `ScreenTitle` plus a `Card` explaining why a capability is unavailable.
+  - Every shell takes `edges?: readonly ('top' | 'bottom')[]` and always pads left/right. Declare `top` only when no navigation header draws above the content (NativeTabs leaf screens, Stack screens with `headerShown: false`, root-Stack routes); declare `bottom` only outside the tab bar (auth, onboarding, root routes). Screens under a native header inside the tabs declare nothing.
+- Design kit (`apps/native/components/native/`; universal `@expo/ui` only, colours only from `useColors()`):
+
+  | Component | Use |
+  |---|---|
+  | `ScreenTitle` (`title`, `subtitle?`, `trailing?`) | Large `font.title` title of a header-less root screen only. |
+  | `SectionHeader` (`title`, `supportingText?`, `action?`) | `font.section` heading above a group, optional text-button action. Replaces every ad-hoc heading. |
+  | `Card` (`padding?`, `spacing?`, `tone?`, `divided?`) | Full-width rounded `surfaceContainer` group; `divided` puts a `Hairline` between children. |
+  | `CardRow` (`ListItem` props + `chevron?`) | Transparent `ListItem` row inside a `Card`; `chevron` adds a trailing chevron for navigation rows. Rows inside a Card are always `CardRow`. |
+  | `Hairline` | Full-width `outlineVariant` rule. |
+  | `StatTile` / `StatRow` | Muted label over a `font.stat` tabular number with optional unit and caption; `StatRow` lays tiles out at equal widths. |
+  | `PillChip` / `pillColors` | 36pt pill action or filter chip (icon, icon-only, selected, error tone, disabled). |
+  | `PrimaryButton` | The screen's one full-width, 52pt filled native button. |
+  | `SegmentedControl` | Pill track of equal segments with an inverse-surface selected segment. |
+  | `NativeTextField` | `font.label` muted label, native `TextInput`, `font.caption` error. |
+
+- Also reuse: `@expo/ui` `TextInput`, `Column`, `Row`, `Text`, `Button`, `Icon`, `ListItem`; `@react-native-google-signin/google-signin` `GoogleSigninButton` and `expo-apple-authentication` `AppleAuthenticationButton`; `useAppearance`, `useColors`, navigation themes, `showToast`, auth client/store, and existing validation hooks/schemas.
+- Auth composition: One shared auth visual shell consumed by every auth route; route-specific form content and state messaging; an availability-aware provider group; and a semantic divider. Prefer existing files/components or a small native component under `apps/native/components/native/` over a new styling layer.
 - Control ordering:
   - Welcome: brand/route heading → supporting copy → usable Apple (iOS only) → usable Google → divider with `or` → `Create account` primary → `Log in` secondary/outlined → legal/footer copy.
   - Login: heading → supporting copy → email → password → `Forgot password?` → primary `Continue with email` → secondary `Email me a sign-in link` → provider group/divider as an alternative → route switch `Create an account` → legal/footer copy.
@@ -99,7 +118,14 @@
 - Divider: A full-column hairline using the `outlineVariant` role with centered `onSurfaceVariant` `or` text; at least 16pt clear space above and below. It separates credential actions from provider alternatives and is not itself interactive.
 - Legal/footer content: The shared auth shell ends with a secondary, non-interactive footer after the route switch. On welcome, login, and register it displays the exact factual copy `Terms of Service and Privacy Policy coming soon.` as plain text with no links and no consent implication. Do not say `By continuing, you agree` (or equivalent) until finalized documents exist. Omit any `Secured by Benchmrk` badge. Replacing this placeholder copy is tracked by issue #100. The footer remains reachable after the form, uses muted readable styling, and wraps without truncation in Dynamic Type and dark mode.
 - Variants and states: welcome/login/register; light/dark; iOS/Android; phone/tablet; available/unavailable provider; eligible/ineligible magic-link email; idle/focused/filled/invalid/disabled; submitting; provider or magic-link loading; provider cancelled; provider, magic-link delivery, or server failure; offline/slow network; successful authentication pending navigation; keyboard open; reduced motion; VoiceOver/TalkBack and Dynamic Type.
-- Token/component ownership: Semantic colours come from `useColors()` (`apps/native/lib/ui/colors*.ts`) and platform navigation themes. Appearance resolution comes from `apps/native/lib/ui/appearance.tsx` / `appearance-state.ts`. Platform provider components own provider visual rules. The shared shell owns layout spacing and hierarchy; routes own copy, validation, and auth actions.
+- Token/component ownership: Semantic colours come from `useColors()` (`apps/native/lib/ui/colors*.ts`) and platform navigation themes. Spacing, radii, sizes and type come from `space`, `radius`, `size` and `font` (`apps/native/lib/ui/tokens.ts`); content widths from `useContentWidth()` (`layout.ts`); platform modifier helpers (`tabularDigits`, `fullWidthSurface`, `accessibilityModifier`) from `modifiers.ts`/`accessibility.ts` — all exported from `@/lib/ui`. Appearance resolution comes from `apps/native/lib/ui/appearance.tsx` / `appearance-state.ts`. Platform provider components own provider visual rules. Shells and kit components own layout spacing and hierarchy; routes own copy, validation, and actions.
+
+### App screens
+
+- Headers: Stack screens show the native header (centred title, minimal back button, colours from the navigation theme) and never repeat its title in the body. Header-less roots (Workouts, Home, Explore, onboarding) open with `ScreenTitle`.
+- Structure: headings are `SectionHeader`; related rows are grouped in `Card divided` of `CardRow`s (`chevron` for navigation); summaries are `StatRow`s; filters and quick actions are `PillChip`s or a `SegmentedControl`; the main action is one `PrimaryButton`; empty, loading and error states are a `Card` with caption copy.
+- Workout screens: Active Workout hides the native header and draws its own top bar (menu, elapsed clock, rest timer, exercises) above a docked custom keypad; History pairs a Sets/Volume `SegmentedControl`, Average/Total tiles, a bar chart and range chips; Workout Complete shows stat tiles, the time breakdown, the Update Routine section and a docked full-width Done.
+- Settings, profile, group and routine screens sit under the native header inside the tabs, so their shells declare no safe-area edges.
 
 ## Accessibility
 
@@ -133,14 +159,15 @@
 ## Implementation constraints
 
 - Framework/styling system: Expo Router and React Native in `apps/native`; use `@expo/ui` native primitives custom-styled with colour roles, shape and type (ADR 0003), React Native views inside `RNHostView` only for hero pieces such as Set rows, rest ring and member tiles, and platform-native Apple/Google components. No NativeWind. Do not install Clerk or change Better Auth + Convex.
-- Design-token constraints: Extend `useColors()` roles and existing appearance/navigation tokens rather than creating parallel colours or radii. Provider brand styling remains owned by official provider components.
+- Design-token constraints: Extend `useColors()` roles and the `space`/`radius`/`size`/`font` tokens rather than creating parallel colours, radii or type sizes; no `fontSize`/`fontWeight` literals where a `font` token fits. Provider brand styling remains owned by official provider components.
+- Safe-area constraints: `@expo/ui` `Host` never pads for window insets on Android, and `react-native-safe-area-context` reports the root provider's full insets regardless of a view's position (so a `SafeAreaView` under a native header would pad the top twice). Each route therefore declares its shell `edges` statically per the rule in Components: `top` only without a navigation header above, `bottom` only outside the tab bar (expo-router's NativeTabs pad the bottom inside tabs), left/right always. Do not add a `SafeAreaView` anywhere else.
 - Performance constraints: Avoid unnecessary auth/provider probes and re-renders; do not block rendering the complete email/password forms on provider configuration. Keep native scroll/keyboard behavior responsive.
 - Compatibility constraints: Apple Social sign-in is iOS only and must use the existing `isAppleAvailable` contract. Google is configured for iOS/Android through existing `isGoogleAvailable`, `app.config.ts`, and environment configuration. Show actions only when they can complete. Native magic-link sign-in is limited to existing confirmed Waitlist identities, uses the existing Better Auth magic-link capability, returns enumeration-safe responses, and must not grant access or premium status to an unknown email. Keep Better Auth, Convex, existing route names, profile setup boundary, and platform navigation intact.
 - Test/screenshot expectations:
   - Capture welcome, login, and register on iOS and Android at phone and tablet sizes in light and dark modes: 3 routes × 2 platforms × 2 device classes × 2 appearances = 24 baseline screenshots (or an explicitly documented platform limitation).
   - Capture focused/keyboard-open and Dynamic Type/reflow variants for login and register; capture provider-present and provider-absent variants, including Apple absent on Android and Google absent when configuration is missing.
   - Capture loading, validation error, provider cancellation/failure, magic-link eligible/ineligible/delivery-failure responses, server/offline error, disabled submit, and success/pending-navigation states. Screenshots must show no clipping, overlap, unreadable contrast, hidden errors, or controls below an inaccessible keyboard.
-  - Compare hierarchy, spacing, native control treatment, safe areas, navigation/back behavior, and accessibility labels against this contract. The Clerk AuthView screenshots are a composition/hierarchy reference only, never a pixel-copy target or dependency.
+  - Compare hierarchy, spacing, native control treatment, safe areas, navigation/back behavior, and accessibility labels against this contract. The Clerk AuthView screenshots and the MacroFactor reference screenshot (`/tmp/mf-ref/issue-199.png`, issue #199) are composition/hierarchy references only, never pixel-copy targets or dependencies.
 
 ## Open questions
 

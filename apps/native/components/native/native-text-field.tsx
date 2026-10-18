@@ -7,7 +7,7 @@ import {
 } from '@expo/ui';
 import { useEffect } from 'react';
 
-import { textColor, useColors } from '@/lib/ui';
+import { font, space, textColor, useColors } from '@/lib/ui';
 
 type NativeTextFieldProps = Omit<TextInputProps, 'onChangeText' | 'value'> & {
   error?: string;
@@ -33,11 +33,18 @@ export function NativeTextField({
   }, [nativeValue, value]);
 
   return (
-    <Column spacing={8}>
-      <Text textStyle={{ fontSize: 16, fontWeight: '600' }}>{label}</Text>
+    <Column spacing={space.sm}>
+      <Text
+        textStyle={{
+          ...font.label,
+          color: textColor(colors.onSurfaceVariant),
+        }}
+      >
+        {label}
+      </Text>
       <TextInput {...props} value={nativeValue} onChangeText={onChangeText} />
       {error ? (
-        <Text textStyle={{ color: textColor(colors.error), fontSize: 14 }}>
+        <Text textStyle={{ ...font.caption, color: textColor(colors.error) }}>
           {error}
         </Text>
       ) : null}
