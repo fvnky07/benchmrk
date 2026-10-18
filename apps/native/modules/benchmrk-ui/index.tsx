@@ -7,24 +7,6 @@ import type { ColorValue } from 'react-native';
  * inside an Expo UI Host, like any Expo UI view.
  */
 
-export type SwipeRowProps = {
-  /** Offer swipe-right Complete; logged Sets are already complete. */
-  canComplete: boolean;
-  /** Offer Delete; logged Sets can't be deleted. */
-  canDelete: boolean;
-  onComplete: () => void;
-  onDuplicate: () => void;
-  onNote: () => void;
-  onDelete: () => void;
-  children: ReactNode;
-};
-
-/** Android-only Compose swipe row (iOS uses SwiftUI List swipe actions). */
-export const SwipeRow: React.ComponentType<SwipeRowProps> = requireNativeView(
-  'BenchmrkUI',
-  'SwipeRowView'
-);
-
 export type GestureBoxAction = { id: string; label: string };
 
 export type GestureBoxProps = {
@@ -37,7 +19,7 @@ export type GestureBoxProps = {
   onLongPress?: () => void;
   /**
    * 1 = swiped right, -1 = swiped left. Only handled boxes claim horizontal
-   * drags, so an unhandled box leaves them to an enclosing swipe row.
+   * drags, so an unhandled box leaves them to its scroll container.
    */
   onSwipe?: (direction: 1 | -1) => void;
   onAction?: (id: string) => void;

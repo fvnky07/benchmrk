@@ -125,7 +125,11 @@ export default function RoutineBuilderScreen() {
       />
       <SectionHeader
         title="Exercises"
-        action={{ label: 'Add', onPress: () => setIsPickerOpen(true) }}
+        action={{
+          label: 'Add',
+          accessibilityLabel: 'Add Exercise',
+          onPress: () => setIsPickerOpen(true),
+        }}
       />
       {routine.exercises.length === 0 ? (
         <Card>

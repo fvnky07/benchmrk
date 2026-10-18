@@ -47,4 +47,6 @@ export const font = {
   stat: { fontSize: 28, fontWeight: '700' },
   /** Keypad keys. */
   key: { fontSize: 22, fontWeight: '500' },
+  /** `PrimaryButton` label. */
+  button: { fontSize: 17, fontWeight: '600' },
 } as const satisfies Record<string, TextStyle>;

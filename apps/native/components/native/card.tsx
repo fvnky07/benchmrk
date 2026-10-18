@@ -1,8 +1,15 @@
 import ChevronRightIcon from '@expo/material-symbols/chevron_right.xml';
 import { Column, Icon, ListItem, type ListItemProps } from '@expo/ui';
+import { alpha } from '@expo/ui/jetpack-compose/modifiers';
+import {
+  disabled as swiftDisabled,
+  opacity as swiftOpacity,
+  padding as swiftPadding,
+} from '@expo/ui/swift-ui/modifiers';
 import { Children, isValidElement, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
-import { fullWidthSurface, radius, useColors } from '@/lib/ui';
+import { fullWidthSurface, radius, space, useColors } from '@/lib/ui';
 
 const CHEVRON = { ios: 'chevron.right', android: ChevronRightIcon } as const;
 
@@ -50,13 +57,37 @@ export function Card({
   );
 }
 
-export type CardRowProps = ListItemProps & Readonly<{ chevron?: boolean }>;
+export type CardRowProps = ListItemProps &
+  Readonly<{
+    chevron?: boolean;
+    /** Dims the row and ignores taps. */
+    disabled?: boolean;
+  }>;
+
+/**
+ * Material `ListItem` carries 16dp/8dp insets on Android; the iOS `ListItem`
+ * is a bare `Button`, so the row inset is added here.
+ */
+const ROW_INSET =
+  Platform.OS === 'ios'
+    ? [swiftPadding({ horizontal: space.lg, vertical: space.md })]
+    : [];
+
+/** Material's disabled content opacity. */
+const DISABLED_OPACITY = 0.38;
+const DISABLED =
+  Platform.OS === 'ios'
+    ? [swiftDisabled(true), swiftOpacity(DISABLED_OPACITY)]
+    : [alpha(DISABLED_OPACITY)];
 
 /** A row inside a `Card`: a transparent `ListItem`, optionally with a trailing chevron. */
 export function CardRow({
   chevron = false,
+  disabled = false,
   colors: rowColors,
   trailing,
+  modifiers,
+  onPress,
   ...props
 }: CardRowProps) {
   const colors = useColors();
@@ -64,6 +95,12 @@ export function CardRow({
   return (
     <ListItem
       {...props}
+      onPress={disabled ? undefined : onPress}
+      modifiers={[
+        ...ROW_INSET,
+        ...(modifiers ?? []),
+        ...(disabled ? DISABLED : []),
+      ]}
       colors={{ containerColor: 'transparent', ...rowColors }}
       trailing={
         trailing ??

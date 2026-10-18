@@ -47,7 +47,7 @@ const DEFAULT_SETTINGS: MemberSettings = {
   haptics: true,
   analyticsOptOut: false,
   quickActions: DEFAULT_QUICK_ACTIONS,
-  swipeHintDismissed: false,
+  holdHintDismissed: false,
   restEndSound: true,
   overloadTargets: true,
   targetsOffExerciseIds: [],
@@ -96,6 +96,7 @@ export async function readMemberSettings(
     _creationTime,
     userId: _owner,
     updatedAt: _updatedAt,
+    swipeHintDismissed: _legacySwipeHint,
     ...changes
   } = saved;
   const settings = { ...DEFAULT_SETTINGS, ...changes };
@@ -110,7 +111,10 @@ export async function readMemberSettings(
 }
 
 type SettingsChanges = Partial<
-  Omit<Doc<'memberSettings'>, '_id' | '_creationTime' | 'userId' | 'updatedAt'>
+  Omit<
+    Doc<'memberSettings'>,
+    '_id' | '_creationTime' | 'userId' | 'updatedAt' | 'swipeHintDismissed'
+  >
 >;
 
 /** Saves a member's changed settings, creating their settings on first save. */

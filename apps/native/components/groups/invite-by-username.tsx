@@ -1,11 +1,11 @@
-import { Button, Column } from '@expo/ui';
+import { Column } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
 import { Card, CardRow } from '@/components/native/card';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { size, space, useContentWidth } from '@/lib/ui';
-import { accessibilityModifier } from '@/lib/ui/accessibility';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { space } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -18,7 +18,6 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 export function InviteByUsername() {
-  const contentWidth = useContentWidth();
   const send = useMutation(api.groupInvites.send);
   const [username, setUsername] = useState('');
   const [busy, setBusy] = useState(false);
@@ -60,11 +59,10 @@ export function InviteByUsername() {
         }}
         value={username}
       />
-      <Button
+      <PrimaryButton
+        accessibilityLabel="Invite by username"
         disabled={busy || username.trim() === ''}
         label="Invite"
-        modifiers={[accessibilityModifier('Invite by username')]}
-        style={{ width: contentWidth, height: size.button }}
         onPress={() => void invite()}
       />
       {sent || errorMessage ? (

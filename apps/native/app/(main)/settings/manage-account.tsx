@@ -1,6 +1,6 @@
 import { Button, Column, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
@@ -18,6 +18,9 @@ export default function ManageAccountScreen() {
   const colors = useColors();
   const { user, username, bio } = useUserProfile();
   const unregister = useMutation(api.deviceTokens.unregister);
+  // `EmailVerificationRow` renders nothing until this loads; gate it here so
+  // `Card divided` draws no leading hairline. Convex shares the subscription.
+  const verification = useQuery(api.auth.getEmailVerification);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export default function ManageAccountScreen() {
   return (
     <NativeScreen>
       <Card divided>
-        <EmailVerificationRow />
+        {verification ? <EmailVerificationRow /> : null}
         <CardRow supportingText={user.name ?? 'Not set'}>Name</CardRow>
         <CardRow supportingText={username}>Username</CardRow>
         <CardRow supportingText={bio ?? 'Not set'}>Bio</CardRow>

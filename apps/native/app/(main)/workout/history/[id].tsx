@@ -144,11 +144,6 @@ export default function WorkoutHistoryDetailScreen() {
     targetDurationSeconds === null
       ? null
       : workout.durationSeconds - targetDurationSeconds;
-  const setsDone = workout.exercises.reduce(
-    (count, exercise) =>
-      count + exercise.sets.filter((set) => set.completedAt !== null).length,
-    0
-  );
   const valueText = {
     ...font.bodyStrong,
     color: textColor(colors.onSurface),
@@ -169,7 +164,7 @@ export default function WorkoutHistoryDetailScreen() {
       <StatRow
         tiles={[
           { label: 'Duration', value: formatClock(workout.durationSeconds) },
-          { label: 'Sets', value: String(setsDone) },
+          { label: 'Sets', value: String(workout.setsDone) },
         ]}
       />
       <Card padding={space.lg} spacing={space.sm}>

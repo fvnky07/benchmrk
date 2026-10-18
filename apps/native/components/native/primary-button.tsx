@@ -1,6 +1,7 @@
 import { Button, Text } from '@expo/ui';
 
-import { size, useContentWidth } from '@/lib/ui';
+import { font, size, useContentWidth } from '@/lib/ui';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 
 export type PrimaryButtonProps = Readonly<{
   label: string;
@@ -8,6 +9,8 @@ export type PrimaryButtonProps = Readonly<{
   disabled?: boolean;
   /** Defaults to the content column width. */
   width?: number;
+  /** What screen readers announce when `label` alone is ambiguous. */
+  accessibilityLabel?: string;
 }>;
 
 /**
@@ -19,6 +22,7 @@ export function PrimaryButton({
   onPress,
   disabled,
   width,
+  accessibilityLabel,
 }: PrimaryButtonProps) {
   const contentWidth = useContentWidth();
 
@@ -26,9 +30,14 @@ export function PrimaryButton({
     <Button
       onPress={onPress}
       disabled={disabled}
+      modifiers={
+        accessibilityLabel
+          ? [accessibilityModifier(accessibilityLabel)]
+          : undefined
+      }
       style={{ width: width ?? contentWidth, height: size.button }}
     >
-      <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>{label}</Text>
+      <Text textStyle={font.button}>{label}</Text>
     </Button>
   );
 }

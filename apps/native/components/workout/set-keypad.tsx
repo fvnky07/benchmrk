@@ -28,6 +28,8 @@ const KEY_GAP = space.sm;
 const KEY_RADIUS = 12;
 const DOT_SIZE = 36;
 const SMALL_CHIP_HEIGHT = 28;
+/** Grows a small chip's target to the 44pt/48dp minimum. */
+const SMALL_CHIP_SLOP = { top: 10, bottom: 10, left: 4, right: 4 };
 
 /** Tabular figures, so weights, reps, effort and clocks line up. */
 export const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
@@ -62,6 +64,7 @@ export function SmallChip({
     <Pressable
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
+      hitSlop={SMALL_CHIP_SLOP}
       onPress={onPress}
       style={({ pressed }) => ({
         height: SMALL_CHIP_HEIGHT,

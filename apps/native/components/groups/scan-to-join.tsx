@@ -135,7 +135,7 @@ export function ScanToJoin() {
     <Column spacing={space.lg}>
       <Card divided>
         <CardRow
-          chevron
+          chevron={available && !busy}
           leading={
             <Icon name={SCAN_ICON} size={24} color={colors.onSurfaceVariant} />
           }

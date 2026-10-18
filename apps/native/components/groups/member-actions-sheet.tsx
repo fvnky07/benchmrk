@@ -5,14 +5,7 @@ import { useState } from 'react';
 import { Card, CardRow } from '@/components/native/card';
 import { PrimaryButton } from '@/components/native/primary-button';
 import { SectionHeader } from '@/components/native/section-header';
-import {
-  font,
-  size,
-  space,
-  textColor,
-  useColors,
-  useContentWidth,
-} from '@/lib/ui';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 
 import { errorCode } from '@/lib/workout/format';
@@ -49,7 +42,6 @@ export function MemberActionsSheet({
 }>) {
   const colors = useColors();
   const mutedText = textColor(colors.onSurfaceVariant);
-  const contentWidth = useContentWidth();
   const report = useMutation(api.safety.report);
   const block = useMutation(api.safety.block);
   const remove = useMutation(api.groups.remove);
@@ -144,15 +136,13 @@ export function MemberActionsSheet({
                 <CardRow
                   key={reason.value}
                   chevron
+                  disabled={busy}
                   modifiers={[accessibilityModifier(reason.label)]}
-                  onPress={
-                    busy
-                      ? undefined
-                      : () =>
-                          void perform(
-                            () => report({ username, reason: reason.value }),
-                            true
-                          )
+                  onPress={() =>
+                    void perform(
+                      () => report({ username, reason: reason.value }),
+                      true
+                    )
                   }
                 >
                   {reason.label}
@@ -179,13 +169,10 @@ export function MemberActionsSheet({
             <Text textStyle={{ ...font.body, color: mutedText }}>
               {`${username} leaves this Group and can’t rejoin it. Their Workout carries on.`}
             </Text>
-            <Button
+            <PrimaryButton
+              accessibilityLabel={`Remove ${username} from Group`}
               disabled={busy}
               label="Remove from Group"
-              modifiers={[
-                accessibilityModifier(`Remove ${username} from Group`),
-              ]}
-              style={{ width: contentWidth, height: size.button }}
               onPress={() => void perform(() => remove({ username }))}
             />
           </>

@@ -4,11 +4,13 @@ import {
   type EffortScale,
   effortInScale,
 } from '@repo/backend/convex/domain/effort';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { type ColorValue, Pressable, Text, View } from 'react-native';
 
 import {
   type AppColors,
+  font,
   radius,
   size,
   space,
@@ -79,6 +81,10 @@ const CHECK_SIZE = 32;
 const CELL_WIDTH = 68;
 const ROW_RADIUS = 14;
 const WHY_ACTION = { name: 'why', label: 'Why this target' };
+const NOTE_ICON = { ios: 'note.text', android: 'edit_note' } as const;
+const NOTE_ICON_SIZE = 16;
+/** Grows the note marker's target to the 44pt/48dp minimum. */
+const NOTE_SLOP = (size.touch - NOTE_ICON_SIZE) / 2;
 
 /** What a screen reader announces for a value cell. */
 function cellLabel(cell: SetTableCell, setLabel: string): string {
@@ -112,8 +118,9 @@ function badgeColors(
  * The Set table, a React Native hero piece: round Set numbers, the Target
  * column, filled value cells and a check per Set; logged Sets are tinted. Tap
  * a value to type it on the keypad, a faded target to fill the Set from it,
- * the Target column or a sparkle for why, the number for the Set type, and
- * hold a Set for Note, Duplicate and Delete.
+ * the Target column or a sparkle for why, the number for the Set type, a
+ * Set's note icon to open its note, and hold a Set for Note, Duplicate and
+ * Delete.
  */
 export function SetTable({
   sets,
@@ -290,6 +297,21 @@ export function SetTable({
                     </Text>
                   )}
                 </Pressable>
+                {set.hasNote ? (
+                  <Pressable
+                    accessibilityLabel={`Note on Set ${label}`}
+                    accessibilityRole="button"
+                    hitSlop={NOTE_SLOP}
+                    onPress={() => onNote(set._id)}
+                    onLongPress={() => hold(set._id)}
+                  >
+                    <SymbolView
+                      name={NOTE_ICON}
+                      size={NOTE_ICON_SIZE}
+                      tintColor={colors.onSurfaceVariant}
+                    />
+                  </Pressable>
+                ) : null}
                 {set.cells.map((cell) => {
                   const focused =
                     focus?.setId === set._id && focus.field === cell.field;
@@ -417,7 +439,11 @@ export function SetTable({
             }}
           >
             <Text
-              style={{ flex: 1, color: colors.onSurfaceVariant, fontSize: 13 }}
+              style={{
+                ...font.caption,
+                flex: 1,
+                color: colors.onSurfaceVariant,
+              }}
             >
               Hold a Set to add a note, duplicate or delete it.
             </Text>

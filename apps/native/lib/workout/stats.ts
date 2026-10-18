@@ -17,7 +17,7 @@ export type StatsMetric = 'sets' | 'volume';
 /** What one bar of a range covers. */
 export type StatsBucket = 'day' | 'week' | 'month';
 
-/** A completed Workout as `history.stats` returns it. */
+/** A completed Workout as `history.stats` returns it; Sets are completed Working Sets. */
 export type StatsWorkout = Readonly<{
   finishedAt: number;
   sets: number;
@@ -184,7 +184,7 @@ export function bucketStats(
   };
 }
 
-/** The Exercises with the most completed Sets, most first; ties by name. */
+/** The Exercises with the most completed Working Sets, most first; ties by name. */
 export function topExercises(
   workouts: readonly StatsWorkout[],
   limit = 5

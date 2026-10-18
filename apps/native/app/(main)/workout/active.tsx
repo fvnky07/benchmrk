@@ -1,39 +1,18 @@
 import EditNoteIcon from '@expo/material-symbols/edit_note.xml';
 import KeepIcon from '@expo/material-symbols/keep.xml';
-import {
-  BottomSheet,
-  Column,
-  Host,
-  Icon,
-  type IconProps,
-  Row,
-  ScrollView,
-  Text,
-} from '@expo/ui';
-import {
-  background,
-  clip,
-  fillMaxSize,
-  fillMaxWidth,
-  paddingAll,
-  Shapes,
-  weight,
-} from '@expo/ui/jetpack-compose/modifiers';
+import { BottomSheet, Column, Icon, type IconProps, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { type ColorValue, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import type { ColorValue } from 'react-native';
 
 import { GroupChip } from '@/components/groups/group-chip';
 import { GroupDrawer } from '@/components/groups/group-drawer';
 import { Card, CardRow } from '@/components/native/card';
-import {
-  NativeScreen,
-  shellSafeAreaEdges,
-} from '@/components/native/native-screen';
+import { DockedScreen } from '@/components/native/docked-screen';
+import { NativeScreen } from '@/components/native/native-screen';
 import { PillChip } from '@/components/native/pill-chip';
 import { PrimaryButton } from '@/components/native/primary-button';
 import { SectionHeader } from '@/components/native/section-header';
@@ -64,7 +43,6 @@ import {
   space,
   tabularDigits,
   textColor,
-  useAppearance,
   useColors,
   useContentWidth,
 } from '@/lib/ui';
@@ -128,88 +106,6 @@ function workingTarget(set: WorkoutSet, targetsEnabled: boolean) {
 /** The target an empty field of an unlogged Working Set shows and logs. */
 function openTarget(set: WorkoutSet, targetsEnabled: boolean) {
   return set.completedAt === null ? workingTarget(set, targetsEnabled) : null;
-}
-
-/**
- * The dock's surface: full width, `surfaceContainer`, rounded on top. SwiftUI
- * has no per-corner clip modifier here, so iOS rounds every corner.
- */
-function dockSurface(color: ColorValue) {
-  return Platform.OS === 'android'
-    ? {
-        modifiers: [
-          fillMaxWidth(),
-          clip(
-            Shapes.RoundedCorner({
-              topStart: radius.dock,
-              topEnd: radius.dock,
-            })
-          ),
-          background(color),
-          paddingAll(space.md),
-        ],
-      }
-    : fullWidthSurface({
-        backgroundColor: color,
-        borderRadius: radius.dock,
-        padding: space.md,
-      });
-}
-
-/**
- * The Active Workout frame: a top bar fixed above the scrolling Workout and
- * a docked panel below it. `DockedScreen` has no header slot, and a scrolling
- * top bar would take the clock and the rest timer off screen.
- */
-function WorkoutFrame({
-  header,
-  dock,
-  children,
-}: Readonly<{ header: ReactNode; dock: ReactNode; children: ReactNode }>) {
-  const { resolvedAppearance } = useAppearance();
-  const colors = useColors();
-  const isAndroid = Platform.OS === 'android';
-
-  return (
-    <SafeAreaView edges={shellSafeAreaEdges(['top'])} style={{ flex: 1 }}>
-      <Host colorScheme={resolvedAppearance} style={{ flex: 1 }}>
-        <Column spacing={0} modifiers={isAndroid ? [fillMaxSize()] : undefined}>
-          <Column
-            style={{
-              paddingHorizontal: space.screen,
-              paddingTop: space.sm,
-              paddingBottom: space.xs,
-            }}
-          >
-            {header}
-          </Column>
-          <ScrollView
-            showsIndicators={false}
-            modifiers={isAndroid ? [weight(1)] : undefined}
-          >
-            <Column
-              spacing={space.lg}
-              style={{
-                paddingHorizontal: space.screen,
-                paddingTop: space.sm,
-                paddingBottom: space.lg,
-              }}
-            >
-              {children}
-            </Column>
-          </ScrollView>
-          {dock ? (
-            <Column
-              spacing={space.sm}
-              {...dockSurface(colors.surfaceContainer)}
-            >
-              {dock}
-            </Column>
-          ) : null}
-        </Column>
-      </Host>
-    </SafeAreaView>
-  );
 }
 
 /** A full-width tinted card: the idle prompt, Terminate confirmation, errors and Alternating sets. */
@@ -486,6 +382,9 @@ export default function ActiveWorkoutScreen() {
         ? { setId: nextSet._id, field: fields[0] }
         : null;
   const focusSet = exercise?.sets.find((set) => set._id === focus?.setId);
+  // Once every planned Set is logged, Finish takes the dock unless the member
+  // chose a Set to edit.
+  const isKeypadShown = isKeypadOpen && (!allDone || focusedSet !== undefined);
 
   // Every Workout edit goes through here, so each one moves the idle alert.
   const attempt = async (action: () => Promise<unknown>, failure: string) => {
@@ -613,7 +512,7 @@ export default function ActiveWorkoutScreen() {
   // While a barbell weight is being edited: its per-side plate breakdown.
   const editedWeightKg =
     exercise?.equipment === 'barbell' &&
-    isKeypadOpen &&
+    isKeypadShown &&
     focusSet &&
     focus?.field === 'weight'
       ? (draftToStored('weight', draftOf(focusSet, 'weight'), units) ??
@@ -638,7 +537,7 @@ export default function ActiveWorkoutScreen() {
   const muted = { ...font.caption, color: textColor(colors.onSurfaceVariant) };
 
   const dock =
-    focus && focusSet && isKeypadOpen ? (
+    focus && focusSet && isKeypadShown ? (
       <SetKeypad
         width={dockWidth}
         target={`Set ${labels[exercise?.sets.indexOf(focusSet) ?? 0]} · ${FIELD_LABELS[focus.field]}`}
@@ -703,7 +602,8 @@ export default function ActiveWorkoutScreen() {
     ) : null;
 
   return (
-    <WorkoutFrame
+    <DockedScreen
+      edges={['top']}
       header={
         <WorkoutTopBar
           elapsedSeconds={(now - workout.startedAt) / 1000}
@@ -741,6 +641,7 @@ export default function ActiveWorkoutScreen() {
         />
       }
       dock={dock}
+      dockFill={colors.surfaceContainer}
     >
       <Column spacing={6}>
         <WorkoutProgress fraction={progressFraction} />
@@ -1043,8 +944,8 @@ export default function ActiveWorkoutScreen() {
             })}
             headings={fields.map((field) => fieldHeading(field, units))}
             effortScale={effortScale}
-            focus={isKeypadOpen ? focus : null}
-            showHint={!settings.swipeHintDismissed}
+            focus={isKeypadShown ? focus : null}
+            showHint={!settings.holdHintDismissed}
             onFocus={(setId, field) => moveFocus({ setId, field })}
             // The keypad dock would cover the held Set's chips.
             onHold={() => setIsKeypadOpen(false)}
@@ -1086,7 +987,7 @@ export default function ActiveWorkoutScreen() {
             targetHeading={showsPrevious ? 'Last time' : 'Target'}
             onDismissHint={() =>
               attempt(
-                () => updateSettings({ swipeHintDismissed: true }),
+                () => updateSettings({ holdHintDismissed: true }),
                 'Could not dismiss the hint.'
               )
             }
@@ -1105,11 +1006,7 @@ export default function ActiveWorkoutScreen() {
           </Row>
         </>
       ) : (
-        <TintedCard
-          fill={colors.surfaceContainer}
-          padding={20}
-          spacing={space.md}
-        >
+        <Card padding={20} spacing={space.md}>
           <Text
             textStyle={{
               fontSize: 20,
@@ -1133,7 +1030,7 @@ export default function ActiveWorkoutScreen() {
               onPress={() => setPickerMode('add')}
             />
           </Row>
-        </TintedCard>
+        </Card>
       )}
       <BottomSheet
         isPresented={isMenuOpen}
@@ -1349,6 +1246,6 @@ export default function ActiveWorkoutScreen() {
           }, 'Could not add this Exercise.');
         }}
       />
-    </WorkoutFrame>
+    </DockedScreen>
   );
 }

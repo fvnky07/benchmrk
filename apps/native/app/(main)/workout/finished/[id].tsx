@@ -117,8 +117,8 @@ export default function WorkoutFinishedScreen() {
           tiles={[
             {
               label: 'Sets',
-              value: String(workout.progress.done),
-              unit: `of ${workout.progress.total}`,
+              value: String(workout.workingSets.done),
+              unit: `of ${workout.workingSets.total} planned`,
             },
             { label: 'Duration', value: formatClock(durationSeconds) },
           ]}

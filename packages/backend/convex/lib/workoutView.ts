@@ -4,6 +4,7 @@ import type { Doc } from '../_generated/dataModel';
 import type { QueryCtx } from '../_generated/server';
 import { type TimedSet, targetDuration, timeBreakdown } from '../domain/time';
 import { hasMachineSetup } from '../machineSetups';
+import { isWorkingSet } from './overload';
 import { recentDurations } from './time';
 import {
   progressOf,
@@ -97,12 +98,19 @@ export async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
             firstTouchedAt: set.firstTouchedAt ?? null,
           })),
         };
-        return { view, timed };
+        // Planned Working Sets: the unlogged ones of a skipped Exercise drop out.
+        const working = sets.filter(
+          (set) =>
+            isWorkingSet(set) &&
+            (set.completedAt !== undefined || !workoutExercise.skipped)
+        );
+        return { view, timed, working };
       }
     )
   );
   const exercises = rows.map((row) => row.view);
   const timedSets = rows.flatMap((row) => row.timed);
+  const workingSets = rows.flatMap((row) => row.working);
 
   return {
     _id: workout._id,
@@ -113,6 +121,11 @@ export async function workoutView(ctx: QueryCtx, workout: Doc<'workouts'>) {
     finishedAt: workout.finishedAt ?? null,
     finishReason: workout.finishReason ?? null,
     progress: await progressOf(ctx, workout._id),
+    /** Completed of planned Working Sets, as History and Workout Complete count them. */
+    workingSets: {
+      done: workingSets.filter((set) => set.completedAt !== undefined).length,
+      total: workingSets.length,
+    },
     rest: workout.rest
       ? {
           startedAt: workout.rest.startedAt,

@@ -12,12 +12,7 @@ const ADJUST_SECONDS = 15;
 const PULSE_FROM_SECONDS = 10;
 const PILL_HEIGHT = 40;
 
-export type RestState = {
-  startedAt: number;
-  endsAt: number;
-  plannedSeconds: number;
-  adjustedSeconds: number;
-};
+type RestState = { endsAt: number };
 
 type RestTimerProps = {
   rest: RestState | null;

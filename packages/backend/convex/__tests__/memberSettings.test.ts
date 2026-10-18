@@ -23,7 +23,7 @@ const DEFAULTS = {
   haptics: true,
   analyticsOptOut: false,
   quickActions: DEFAULT_QUICK_ACTIONS,
-  swipeHintDismissed: false,
+  holdHintDismissed: false,
   restEndSound: true,
   overloadTargets: true,
   targetsOffExerciseIds: [],

@@ -1,11 +1,17 @@
 import { Button, Column, Row, Spacer, Text } from '@expo/ui';
 
 import { font, textColor, useColors } from '@/lib/ui';
+import { accessibilityModifier } from '@/lib/ui/accessibility';
 
 export type SectionHeaderProps = Readonly<{
   title: string;
   supportingText?: string;
-  action?: Readonly<{ label: string; onPress: () => void }>;
+  action?: Readonly<{
+    label: string;
+    onPress: () => void;
+    /** What screen readers announce when `label` alone is ambiguous. */
+    accessibilityLabel?: string;
+  }>;
 }>;
 
 /** The heading above a group of cards, with an optional text action. */
@@ -41,6 +47,11 @@ export function SectionHeader({
           <Button
             variant="text"
             label={action.label}
+            modifiers={
+              action.accessibilityLabel
+                ? [accessibilityModifier(action.accessibilityLabel)]
+                : undefined
+            }
             onPress={action.onPress}
           />
         </>
