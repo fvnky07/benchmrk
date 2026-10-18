@@ -1,6 +1,6 @@
-import type { Theme } from '@react-navigation/native';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation, useQuery } from 'convex/react';
+import type { Theme } from 'expo-router';
 import {
   createContext,
   type ReactNode,

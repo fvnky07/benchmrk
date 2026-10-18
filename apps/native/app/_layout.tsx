@@ -2,10 +2,9 @@ import {
   type AuthClient as ConvexAuthClient,
   ConvexBetterAuthProvider,
 } from '@convex-dev/better-auth/react';
-import { ThemeProvider } from '@react-navigation/native';
 import { api } from '@repo/backend/convex/_generated/api';
 import { ConvexProvider, ConvexReactClient, useQuery } from 'convex/react';
-import { Stack } from 'expo-router';
+import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PostHogProvider } from 'posthog-react-native';
 import { type ReactNode, useEffect } from 'react';

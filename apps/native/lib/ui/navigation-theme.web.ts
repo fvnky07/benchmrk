@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 
 import type { ResolvedAppearance } from './appearance-state';
 

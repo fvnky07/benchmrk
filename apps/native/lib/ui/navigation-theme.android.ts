@@ -1,5 +1,5 @@
 import { getMaterialColors } from '@expo/ui/jetpack-compose';
-import { DefaultTheme, type Theme } from '@react-navigation/native';
+import { DefaultTheme, type Theme } from 'expo-router';
 
 import type { ResolvedAppearance } from './appearance-state';
 
