@@ -5,7 +5,7 @@ import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { groupEventText } from '@/lib/groups/event-text';
 import { useColors } from '@/lib/ui';
@@ -30,8 +30,14 @@ const ERROR_COPY: Record<string, string> = {
   OWN_EVENT: 'You can’t react to your own activity.',
 };
 
+/** Sample events for the web preview route; skips the live query when set. */
+export const GroupFeedPreview = createContext<readonly GroupEvent[] | null>(
+  null
+);
+
 export function useGroupFeed(): GroupFeed {
-  const events = useQuery(api.groups.events, {});
+  const preview = useContext(GroupFeedPreview);
+  const events = useQuery(api.groups.events, preview ? 'skip' : {});
   const fistBump = useMutation(api.reactions.fistBump);
   const [busyEvent, setBusyEvent] = useState<Id<'groupEvents'> | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -49,7 +55,14 @@ export function useGroupFeed(): GroupFeed {
     }
   };
 
-  return { events: events ?? [], busyEvent, errorMessage, bump };
+  return preview
+    ? {
+        events: preview,
+        busyEvent: null,
+        errorMessage: null,
+        bump: async () => {},
+      }
+    : { events: events ?? [], busyEvent, errorMessage, bump };
 }
 
 /** Only other members' finished Sets and met targets take a fist bump. */
