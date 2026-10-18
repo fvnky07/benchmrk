@@ -1046,6 +1046,8 @@ export default function ActiveWorkoutScreen() {
             focus={isKeypadOpen ? focus : null}
             showHint={!settings.swipeHintDismissed}
             onFocus={(setId, field) => moveFocus({ setId, field })}
+            // The keypad dock would cover the held Set's chips.
+            onHold={() => setIsKeypadOpen(false)}
             onFillFromTarget={(setId, field) => {
               moveFocus({ setId, field });
               void attempt(

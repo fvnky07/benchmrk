@@ -12,7 +12,14 @@ import { DockedScreen } from '@/components/native/docked-screen';
 import { PrimaryButton } from '@/components/native/primary-button';
 import { StatRow } from '@/components/native/stat-tile';
 import { SaveToRoutine } from '@/components/workout/save-to-routine';
-import { font, space, textColor, useColors, useContentWidth } from '@/lib/ui';
+import {
+  font,
+  space,
+  textColor,
+  useCardContentWidth,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
 import { durationDifference, formatMinutes } from '@/lib/workout/time';
 
@@ -20,6 +27,7 @@ export default function WorkoutFinishedScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const workoutId = params.id as Id<'workouts'>;
   const colors = useColors();
+  const chartWidth = useCardContentWidth();
   // The dock insets its content 12 from the edges, not the column's 24.
   const dockWidth = useContentWidth() + 2 * (space.screen - space.md);
   const workout = useQuery(api.workouts.get, { workoutId });
@@ -124,6 +132,7 @@ export default function WorkoutFinishedScreen() {
           <RNHostView matchContents>
             <Chart
               kind="stackedBar"
+              width={chartWidth}
               horizontal
               bars={[
                 {

@@ -4,7 +4,7 @@ import {
   accessibilityLabel,
 } from '@expo/ui/swift-ui/modifiers';
 import { Image } from 'expo-image';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 import { pillColors } from '@/components/native/pill-chip';
 import { accessibilityModifier, radius, size, useColors } from '@/lib/ui';
@@ -40,9 +40,12 @@ export function GroupChip({ members, onPress }: Readonly<GroupChipProps>) {
       }
     >
       <RNHostView matchContents>
-        <View
+        {/* Hosted React Native views take their own touches, so the avatars
+            open the Group themselves; the Row's onPress covers its padding. */}
+        <Pressable
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
+          onPress={onPress}
           style={{ flexDirection: 'row', alignItems: 'center' }}
         >
           {members.slice(0, 4).map((member, index) => (
@@ -73,7 +76,7 @@ export function GroupChip({ members, onPress }: Readonly<GroupChipProps>) {
               )}
             </View>
           ))}
-        </View>
+        </Pressable>
       </RNHostView>
     </Row>
   );

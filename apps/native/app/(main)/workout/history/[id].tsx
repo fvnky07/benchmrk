@@ -19,6 +19,7 @@ import {
   space,
   tabularDigits,
   textColor,
+  useCardContentWidth,
   useColors,
 } from '@/lib/ui';
 import { errorCode, formatClock, formatEffort } from '@/lib/workout/format';
@@ -81,6 +82,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 export default function WorkoutHistoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
+  const chartWidth = useCardContentWidth();
   const workout = useQuery(api.history.get, {
     workoutId: id as Id<'workouts'>,
   });
@@ -179,6 +181,7 @@ export default function WorkoutHistoryDetailScreen() {
         <RNHostView matchContents>
           <Chart
             kind="stackedBar"
+            width={chartWidth}
             horizontal
             bars={[
               {

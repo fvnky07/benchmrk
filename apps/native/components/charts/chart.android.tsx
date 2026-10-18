@@ -13,7 +13,7 @@ export function Chart(props: ChartProps) {
   const { resolvedAppearance } = useAppearance();
   const horizontal = props.kind === 'stackedBar' && (props.horizontal ?? false);
   const height = props.height ?? (horizontal ? 28 : 180);
-  const style = { height };
+  const style = { height, width: props.width };
 
   return (
     <View accessible accessibilityLabel={props.summary} style={style}>

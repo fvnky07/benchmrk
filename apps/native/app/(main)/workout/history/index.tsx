@@ -17,6 +17,7 @@ import {
   space,
   tabularDigits,
   textColor,
+  useCardContentWidth,
   useColors,
 } from '@/lib/ui';
 import { formatClock, weightInUnit } from '@/lib/workout/format';
@@ -82,6 +83,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 /** Sets or Volume per day, week or month of a range, and its top Exercises. */
 function WorkoutStats() {
   const colors = useColors();
+  const chartWidth = useCardContentWidth();
   const now = useNow(60_000);
   const [metric, setMetric] = useState<StatsMetric>('sets');
   const [range, setRange] = useState<StatsRange>('1W');
@@ -143,6 +145,7 @@ function WorkoutStats() {
             <RNHostView matchContents>
               <Chart
                 kind="bar"
+                width={chartWidth}
                 points={points}
                 tone="accent"
                 height={180}

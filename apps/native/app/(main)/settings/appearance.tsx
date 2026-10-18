@@ -84,11 +84,15 @@ export default function AppearanceScreen() {
             </Picker>
           </Column>
         </Column>
-        <CardRow
-          supportingText={`Your device is currently using ${systemAppearance === 'dark' ? 'dark' : 'light'} appearance.`}
-        >
-          System appearance
-        </CardRow>
+        {/* A Light or Dark preference is applied to the window, so the
+            device's own appearance is only observable while following it. */}
+        {preference === 'system' ? (
+          <CardRow
+            supportingText={`Your device is currently using ${systemAppearance === 'dark' ? 'dark' : 'light'} appearance.`}
+          >
+            System appearance
+          </CardRow>
+        ) : null}
       </Card>
       {hasStatus ? (
         <Card divided>

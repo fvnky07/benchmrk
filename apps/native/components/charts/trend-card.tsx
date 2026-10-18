@@ -3,7 +3,13 @@ import { RNHostView, Text } from '@expo/ui';
 import { Chart } from '@/components/charts/chart';
 import { Card } from '@/components/native/card';
 import { SectionHeader } from '@/components/native/section-header';
-import { font, space, textColor, useColors } from '@/lib/ui';
+import {
+  font,
+  space,
+  textColor,
+  useCardContentWidth,
+  useColors,
+} from '@/lib/ui';
 import { formatMinutes } from '@/lib/workout/time';
 
 type TrendPoint = { label: string; value: number; at: number };
@@ -43,6 +49,7 @@ function NotEnoughWorkouts() {
 }
 
 export function TrendCard({ duration, rest }: TrendCardProps) {
+  const chartWidth = useCardContentWidth();
   const firstDuration = duration[0];
   const lastDuration = duration[duration.length - 1];
   if (duration.length < 2 || !firstDuration || !lastDuration) {
@@ -64,6 +71,7 @@ export function TrendCard({ duration, rest }: TrendCardProps) {
         <RNHostView matchContents>
           <Chart
             kind="trend"
+            width={chartWidth}
             points={duration.map((point) => ({
               label: point.label,
               value: point.value / 60,
@@ -84,6 +92,7 @@ export function TrendCard({ duration, rest }: TrendCardProps) {
             <RNHostView matchContents>
               <Chart
                 kind="trend"
+                width={chartWidth}
                 points={rest.points.map((point) => ({
                   label: point.label,
                   value: point.value,

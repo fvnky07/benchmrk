@@ -62,6 +62,8 @@ type SetTableProps = {
   /** Opens the note composer on this Set. */
   onNote: (setId: Id<'sets'>) => void;
   onDelete: (setId: Id<'sets'>) => void;
+  /** A Set was held; its Note, Duplicate and Delete chips show under it. */
+  onHold: () => void;
   onOpenType: (setId: Id<'sets'>) => void;
   /** The Target column and the sparkle explain the target. */
   onOpenTarget: () => void;
@@ -125,6 +127,7 @@ export function SetTable({
   onDuplicate,
   onNote,
   onDelete,
+  onHold,
   onOpenType,
   onOpenTarget,
   onDismissHint,
@@ -143,8 +146,10 @@ export function SetTable({
     fontWeight: '600',
   } as const;
 
-  const hold = (setId: Id<'sets'>) =>
-    setHeldSetId((current) => (current === setId ? null : setId));
+  const hold = (setId: Id<'sets'>) => {
+    if (heldSetId !== setId) onHold();
+    setHeldSetId(heldSetId === setId ? null : setId);
+  };
   const release = (action: () => void) => {
     setHeldSetId(null);
     action();
