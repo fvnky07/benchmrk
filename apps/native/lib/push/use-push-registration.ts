@@ -31,7 +31,6 @@ export function registerThisDevice(
       await Notifications.setNotificationChannelAsync('group-invites', {
         name: 'Group invites',
         importance: Notifications.AndroidImportance.DEFAULT,
-        sound: 'default',
       });
     }
     const configuredProjectId: unknown =

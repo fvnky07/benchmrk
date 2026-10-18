@@ -20,7 +20,6 @@ export async function requestPushPermission() {
     await Notifications.setNotificationChannelAsync('group-invites', {
       name: 'Group invites',
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: 'default',
     });
   }
   return Notifications.requestPermissionsAsync();
