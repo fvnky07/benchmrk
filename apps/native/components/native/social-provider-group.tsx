@@ -13,7 +13,7 @@ import {
   type SocialProvider,
 } from '@/lib/auth/social';
 import { runPendingSocialAuth, useAuthStore } from '@/lib/auth/store';
-import { useAppearance } from '@/lib/ui';
+import { space, useAppearance } from '@/lib/ui';
 
 import { AuthDivider, AuthStatus, useAuthColumnWidth } from './auth-shell';
 
@@ -91,7 +91,7 @@ export function SocialProviderGroup({
   const divider = <AuthDivider />;
 
   return (
-    <Column spacing={12}>
+    <Column spacing={space.md}>
       {dividerPosition === 'before' ? divider : null}
       {isOffline ? (
         <AuthStatus

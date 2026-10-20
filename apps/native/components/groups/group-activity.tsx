@@ -1,9 +1,12 @@
-import { Button, Column, ListItem, Text } from '@expo/ui';
+import { Button, Column } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
+import { Card, CardRow } from '@/components/native/card';
+import { SectionHeader } from '@/components/native/section-header';
 import { groupEventText } from '@/lib/groups/event-text';
+import { space } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
@@ -36,33 +39,40 @@ export function GroupActivity() {
   };
 
   return (
-    <Column spacing={12}>
-      <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Activity</Text>
-      {events.map((event) => {
-        const line = groupEventText(event);
-        const canReact =
-          !event.isYou &&
-          (event.kind === 'setCompleted' || event.kind === 'targetMet');
-        const label = `Fist bump ${event.username ?? 'member'}`;
-        return (
-          <Column key={event.eventId} spacing={6}>
-            <Text>{line}</Text>
-            {canReact ? (
-              <Button
-                disabled={event.reacted || busyEvent === event.eventId}
-                label={event.reacted ? 'Fist bumped' : 'Fist bump'}
-                modifiers={[accessibilityModifier(label)]}
-                onPress={() => void react(event.eventId)}
-                variant="text"
-              />
-            ) : null}
-          </Column>
-        );
-      })}
+    <Column spacing={space.md}>
+      <SectionHeader title="Activity" />
+      <Card divided>
+        {events.map((event) => {
+          const canReact =
+            !event.isYou &&
+            (event.kind === 'setCompleted' || event.kind === 'targetMet');
+          const label = `Fist bump ${event.username ?? 'member'}`;
+          return (
+            <CardRow
+              key={event.eventId}
+              trailing={
+                canReact ? (
+                  <Button
+                    disabled={event.reacted || busyEvent === event.eventId}
+                    label={event.reacted ? 'Fist bumped' : 'Fist bump'}
+                    modifiers={[accessibilityModifier(label)]}
+                    onPress={() => void react(event.eventId)}
+                    variant="text"
+                  />
+                ) : undefined
+              }
+            >
+              {groupEventText(event)}
+            </CardRow>
+          );
+        })}
+      </Card>
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Couldn’t send fist bump
-        </ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>
+            Couldn’t send fist bump
+          </CardRow>
+        </Card>
       ) : null}
     </Column>
   );

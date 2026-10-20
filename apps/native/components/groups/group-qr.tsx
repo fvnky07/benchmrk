@@ -2,11 +2,13 @@ import { Column, RNHostView, Text } from '@expo/ui';
 import QRCode from 'qrcode';
 import { useMemo } from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { font, space, textColor, useColors } from '@/lib/ui';
 
 const QR_SIZE = 240;
 const QUIET_ZONE = 4;
 
 export function GroupQr({ link }: { link: string }) {
+  const colors = useColors();
   const { size, path } = useMemo(() => {
     const modules = QRCode.create(link, { errorCorrectionLevel: 'M' }).modules;
     const darkModules: string[] = [];
@@ -24,7 +26,7 @@ export function GroupQr({ link }: { link: string }) {
   }, [link]);
 
   return (
-    <Column spacing={12}>
+    <Column spacing={space.md}>
       <RNHostView matchContents>
         <Svg
           accessible
@@ -39,7 +41,14 @@ export function GroupQr({ link }: { link: string }) {
           <Path d={path} fill="#000000" />
         </Svg>
       </RNHostView>
-      <Text>{link}</Text>
+      <Text
+        textStyle={{
+          ...font.caption,
+          color: textColor(colors.onSurfaceVariant),
+        }}
+      >
+        {link}
+      </Text>
     </Column>
   );
 }

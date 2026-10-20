@@ -1,6 +1,15 @@
 import { RNHostView, Text } from '@expo/ui';
 
 import { Chart } from '@/components/charts/chart';
+import { Card } from '@/components/native/card';
+import { SectionHeader } from '@/components/native/section-header';
+import {
+  font,
+  space,
+  textColor,
+  useCardContentWidth,
+  useColors,
+} from '@/lib/ui';
 import { formatMinutes } from '@/lib/workout/time';
 
 type TrendPoint = { label: string; value: number; at: number };
@@ -22,11 +31,29 @@ function formatRest(seconds: number): string {
   return remainder === 0 ? duration : `${duration} ${remainder} s`;
 }
 
+/** "Trends appear after two Workouts" in a muted card. */
+function NotEnoughWorkouts() {
+  const colors = useColors();
+  return (
+    <Card padding={space.lg}>
+      <Text
+        textStyle={{
+          ...font.caption,
+          color: textColor(colors.onSurfaceVariant),
+        }}
+      >
+        Trends appear after two Workouts
+      </Text>
+    </Card>
+  );
+}
+
 export function TrendCard({ duration, rest }: TrendCardProps) {
+  const chartWidth = useCardContentWidth();
   const firstDuration = duration[0];
   const lastDuration = duration[duration.length - 1];
   if (duration.length < 2 || !firstDuration || !lastDuration) {
-    return <Text>Trends appear after two Workouts</Text>;
+    return <NotEnoughWorkouts />;
   }
 
   const firstRest = rest.points[0];
@@ -39,39 +66,46 @@ export function TrendCard({ duration, rest }: TrendCardProps) {
 
   return (
     <>
-      <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Duration</Text>
-      <RNHostView matchContents>
-        <Chart
-          kind="trend"
-          points={duration.map((point) => ({
-            label: point.label,
-            value: point.value / 60,
-          }))}
-          summary={durationSummary}
-        />
-      </RNHostView>
-      <Text>{durationSummary}</Text>
-      <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Average rest</Text>
+      <SectionHeader title="Duration" supportingText={durationSummary} />
+      <Card padding={space.lg}>
+        <RNHostView matchContents>
+          <Chart
+            kind="trend"
+            width={chartWidth}
+            points={duration.map((point) => ({
+              label: point.label,
+              value: point.value / 60,
+            }))}
+            summary={durationSummary}
+          />
+        </RNHostView>
+      </Card>
       {rest.points.length < 2 || restSummary === null ? (
-        <Text>Trends appear after two Workouts</Text>
+        <>
+          <SectionHeader title="Average rest" />
+          <NotEnoughWorkouts />
+        </>
       ) : (
         <>
-          <RNHostView matchContents>
-            <Chart
-              kind="trend"
-              points={rest.points.map((point) => ({
-                label: point.label,
-                value: point.value,
-              }))}
-              reference={
-                rest.plannedSeconds === null
-                  ? undefined
-                  : { label: 'Planned', value: rest.plannedSeconds }
-              }
-              summary={restSummary}
-            />
-          </RNHostView>
-          <Text>{restSummary}</Text>
+          <SectionHeader title="Average rest" supportingText={restSummary} />
+          <Card padding={space.lg}>
+            <RNHostView matchContents>
+              <Chart
+                kind="trend"
+                width={chartWidth}
+                points={rest.points.map((point) => ({
+                  label: point.label,
+                  value: point.value,
+                }))}
+                reference={
+                  rest.plannedSeconds === null
+                    ? undefined
+                    : { label: 'Planned', value: rest.plannedSeconds }
+                }
+                summary={restSummary}
+              />
+            </RNHostView>
+          </Card>
         </>
       )}
     </>

@@ -82,23 +82,40 @@ describe('Set row actions', () => {
   });
 });
 
-describe('swipe hint', () => {
+describe('hold hint', () => {
   test('shows until dismissed, then never again for that identity', async () => {
     const { t, member } = await memberWithRoutine();
     expect(
-      (await member.query(api.memberSettings.get, {}))?.swipeHintDismissed
+      (await member.query(api.memberSettings.get, {}))?.holdHintDismissed
     ).toBe(false);
 
     await member.mutation(api.memberSettings.update, {
-      swipeHintDismissed: true,
+      holdHintDismissed: true,
     });
 
     expect(
-      (await member.query(api.memberSettings.get, {}))?.swipeHintDismissed
+      (await member.query(api.memberSettings.get, {}))?.holdHintDismissed
     ).toBe(true);
     const other = t.withIdentity({ subject: 'member-b' });
     expect(
-      (await other.query(api.memberSettings.get, {}))?.swipeHintDismissed
+      (await other.query(api.memberSettings.get, {}))?.holdHintDismissed
     ).toBe(false);
+  });
+
+  test('still shows to a member who dismissed the old swipe hint', async () => {
+    const { t } = await memberWithRoutine();
+    await t.run((ctx) =>
+      ctx.db.insert('memberSettings', {
+        userId: 'member-c',
+        swipeHintDismissed: true,
+        updatedAt: Date.now(),
+      })
+    );
+
+    const settings = await t
+      .withIdentity({ subject: 'member-c' })
+      .query(api.memberSettings.get, {});
+    expect(settings?.holdHintDismissed).toBe(false);
+    expect(settings).not.toHaveProperty('swipeHintDismissed');
   });
 });

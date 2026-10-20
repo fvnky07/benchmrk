@@ -1,9 +1,12 @@
-import { Button, Column, ListItem, Row, Text } from '@expo/ui';
+import { Button, Column, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
+import { Card, CardRow } from '@/components/native/card';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
@@ -23,6 +26,7 @@ type InviteError = {
 };
 
 export function InviteInbox() {
+  const colors = useColors();
   const invites = useQuery(api.groupInvites.inbox, {});
   const events = useQuery(api.groupInvites.eventInbox, {});
   const dismissEvent = useMutation(api.groupInvites.dismissEvent);
@@ -84,33 +88,48 @@ export function InviteInbox() {
   }
 
   return (
-    <Column spacing={12}>
-      <Text textStyle={{ fontSize: 22, fontWeight: '600' }}>Group inbox</Text>
-      {events?.map((entry) => (
-        <Column key={entry.entryId} spacing={8}>
-          <ListItem>{entry.copy}</ListItem>
-          <Button
-            disabled={busy}
-            label="Dismiss"
-            modifiers={[accessibilityModifier(`Dismiss ${entry.copy}`)]}
-            variant="outlined"
-            onPress={() => void dismiss(entry.entryId)}
-          />
-          {eventError?.entryId === entry.entryId ? (
-            <ListItem supportingText={eventError.message}>
-              Couldn’t update notification
-            </ListItem>
-          ) : null}
-        </Column>
-      ))}
-      {invites?.map((invite) => (
-        <Column key={invite.inviteId} spacing={8}>
-          {invite.state === 'pending' ? (
-            <>
-              <ListItem>
+    <Column spacing={space.md}>
+      <SectionHeader title="Group inbox" />
+      <Card divided>
+        {events?.flatMap((entry) => [
+          <CardRow
+            key={entry.entryId}
+            trailing={
+              <Button
+                disabled={busy}
+                label="Dismiss"
+                modifiers={[accessibilityModifier(`Dismiss ${entry.copy}`)]}
+                variant="text"
+                onPress={() => void dismiss(entry.entryId)}
+              />
+            }
+          >
+            {entry.copy}
+          </CardRow>,
+          ...(eventError?.entryId === entry.entryId
+            ? [
+                <CardRow
+                  key={`${entry.entryId}-error`}
+                  supportingText={eventError.message}
+                >
+                  Couldn’t update notification
+                </CardRow>,
+              ]
+            : []),
+        ])}
+        {invites?.flatMap((invite) => [
+          invite.state === 'pending' ? (
+            <Column
+              key={invite.inviteId}
+              spacing={space.md}
+              style={{ padding: space.lg }}
+            >
+              <Text
+                textStyle={{ ...font.body, color: textColor(colors.onSurface) }}
+              >
                 {`${invite.inviterUsername} invited you to a Group`}
-              </ListItem>
-              <Row spacing={8}>
+              </Text>
+              <Row spacing={space.sm}>
                 <Button
                   disabled={busy}
                   label="Accept"
@@ -133,39 +152,47 @@ export function InviteInbox() {
                   onPress={() => void respond(invite.inviteId, 'decline')}
                 />
               </Row>
-            </>
+            </Column>
           ) : (
-            <>
-              <ListItem supportingText={`from ${invite.inviterUsername}`}>
-                {invite.state === 'expired'
-                  ? 'This invite has expired'
-                  : 'This Group has ended'}
-              </ListItem>
-              <Button
-                disabled={busy}
-                label="Dismiss"
-                modifiers={[
-                  accessibilityModifier(
-                    `Dismiss invite from ${invite.inviterUsername}`
-                  ),
-                ]}
-                variant="outlined"
-                onPress={() => void respond(invite.inviteId, 'decline')}
-              />
-            </>
-          )}
-          {inviteError?.inviteId === invite.inviteId ? (
-            <>
-              <ListItem supportingText={inviteError.message}>
-                Couldn’t update invite
-              </ListItem>
-              {inviteError.code === 'EMAIL_NOT_VERIFIED' ? (
-                <EmailVerificationRow />
-              ) : null}
-            </>
-          ) : null}
-        </Column>
-      ))}
+            <CardRow
+              key={invite.inviteId}
+              supportingText={`from ${invite.inviterUsername}`}
+              trailing={
+                <Button
+                  disabled={busy}
+                  label="Dismiss"
+                  modifiers={[
+                    accessibilityModifier(
+                      `Dismiss invite from ${invite.inviterUsername}`
+                    ),
+                  ]}
+                  variant="text"
+                  onPress={() => void respond(invite.inviteId, 'decline')}
+                />
+              }
+            >
+              {invite.state === 'expired'
+                ? 'This invite has expired'
+                : 'This Group has ended'}
+            </CardRow>
+          ),
+          ...(inviteError?.inviteId === invite.inviteId
+            ? [
+                <CardRow
+                  key={`${invite.inviteId}-error`}
+                  supportingText={inviteError.message}
+                >
+                  Couldn’t update invite
+                </CardRow>,
+              ]
+            : []),
+        ])}
+      </Card>
+      {inviteError?.code === 'EMAIL_NOT_VERIFIED' ? (
+        <Card>
+          <EmailVerificationRow />
+        </Card>
+      ) : null}
     </Column>
   );
 }

@@ -18,7 +18,10 @@ import type { WeightUnit } from '@repo/backend/convex/domain/units';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
 
-import { textColor, useColors } from '@/lib/ui';
+import { Card } from '@/components/native/card';
+import { PillChip } from '@/components/native/pill-chip';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, tabularDigits, textColor, useColors } from '@/lib/ui';
 import { formatEffort, weightInUnit } from '@/lib/workout/format';
 import {
   effortNotCheckedText,
@@ -60,6 +63,8 @@ export function TargetSheet({
   const dismissPlateau = useMutation(api.overload.dismissPlateau);
   const colors = useColors();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const muted = { ...font.caption, color: textColor(colors.onSurfaceVariant) };
+  const body = { ...font.body, color: textColor(colors.onSurface) };
 
   const run = async (action: () => Promise<unknown>, failure: string) => {
     onActivity();
@@ -71,17 +76,13 @@ export function TargetSheet({
     }
   };
 
-  const label = (text: string) => (
-    <Text
-      textStyle={{ fontSize: 13, color: textColor(colors.onSurfaceVariant) }}
-    >
-      {text}
-    </Text>
-  );
-
-  const body = () => {
+  const content = () => {
     if (!sheet || !workoutExerciseId) {
-      return <Text textStyle={{ fontSize: 17 }}>Loading target…</Text>;
+      return (
+        <Card padding={space.lg}>
+          <Text textStyle={muted}>Loading target…</Text>
+        </Card>
+      );
     }
     const { repRange, basis, lastTime, suggested } = sheet;
     const targeted =
@@ -105,56 +106,55 @@ export function TargetSheet({
         'Could not change the target.'
       );
     const step = weightInUnit(sheet.stepKg, units);
+    const showsTargets = targeted && sheet.targetsOn;
+    const editable = sheet.exerciseTargetsOn && !basis?.declined;
 
     return (
       <>
-        <Row spacing={8} alignment="center">
-          <Column spacing={2}>
-            <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-              Overload target
-            </Text>
-            <Text textStyle={{ fontSize: 15 }}>{sheet.exerciseName}</Text>
-          </Column>
-          <Spacer />
-          <Text textStyle={{ fontSize: 14 }}>
-            {`${repRange.min}–${repRange.max} reps`}
-          </Text>
-        </Row>
-        <Column spacing={4}>
-          {label('Last time')}
-          <Text textStyle={{ fontSize: 17 }}>
-            {lastTime
-              ? lastTime.map((set) => setSummary(set, units)).join(' · ')
-              : 'None yet'}
-          </Text>
-          {lastTime && targeted ? (
-            <Text
-              textStyle={{
-                fontSize: 13,
-                color: textColor(colors.onSurfaceVariant),
-              }}
-            >
+        <SectionHeader
+          title="Overload target"
+          supportingText={`${sheet.exerciseName} · ${repRange.min}–${repRange.max} reps`}
+        />
+        <Card divided>
+          <Column spacing={space.xs} style={{ padding: space.lg }}>
+            <Text textStyle={muted}>Last time</Text>
+            <Text textStyle={body} modifiers={tabularDigits()}>
               {lastTime
-                .map((set) =>
-                  set.rpe === null
-                    ? 'effort not checked'
-                    : `${effortScale} ${formatEffort(effortInScale(set.rpe, effortScale))}`
-                )
-                .join(' · ')}
+                ? lastTime.map((set) => setSummary(set, units)).join(' · ')
+                : 'None yet'}
             </Text>
-          ) : null}
-        </Column>
-        {!targeted ? (
-          <Text textStyle={{ fontSize: 15 }}>{TIMED_TEXT}</Text>
-        ) : !sheet.targetsOn ? (
-          <Text textStyle={{ fontSize: 15 }}>
-            Overload targets are off. Switch them on in Workout settings.
-          </Text>
-        ) : (
-          <>
-            <Column spacing={4}>
-              {label('Suggested next')}
-              <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
+            {lastTime && targeted ? (
+              <Text textStyle={muted}>
+                {lastTime
+                  .map((set) =>
+                    set.rpe === null
+                      ? 'effort not checked'
+                      : `${effortScale} ${formatEffort(effortInScale(set.rpe, effortScale))}`
+                  )
+                  .join(' · ')}
+              </Text>
+            ) : null}
+          </Column>
+          {!targeted ? (
+            <Column style={{ padding: space.lg }}>
+              <Text textStyle={body}>{TIMED_TEXT}</Text>
+            </Column>
+          ) : !sheet.targetsOn ? (
+            <Column style={{ padding: space.lg }}>
+              <Text textStyle={body}>
+                Overload targets are off. Switch them on in Workout settings.
+              </Text>
+            </Column>
+          ) : (
+            <Column spacing={space.xs} style={{ padding: space.lg }}>
+              <Text textStyle={muted}>Suggested next</Text>
+              <Text
+                textStyle={{
+                  ...font.bodyStrong,
+                  color: textColor(colors.onSurface),
+                }}
+                modifiers={tabularDigits()}
+              >
                 {!sheet.exerciseTargetsOn
                   ? 'Off for this Exercise'
                   : basis?.declined
@@ -166,150 +166,143 @@ export function TargetSheet({
                           .join(' · ')}
               </Text>
               {basis?.edited ? (
-                <Text textStyle={{ fontSize: 13 }}>
-                  Your own target for this Workout.
+                <Text textStyle={muted}>Your own target for this Workout.</Text>
+              ) : null}
+            </Column>
+          )}
+          {showsTargets && editable ? (
+            <Column spacing={space.md} style={{ padding: space.lg }}>
+              <Row spacing={space.sm} alignment="center">
+                <Text textStyle={body} modifiers={tabularDigits()}>
+                  {current.weightKg === null
+                    ? 'No weight'
+                    : `${weightInUnit(current.weightKg, units)} ${units}`}
+                </Text>
+                <Spacer flexible />
+                <PillChip
+                  label={`−${step} ${units}`}
+                  disabled={current.weightKg === null}
+                  onPress={() =>
+                    void edit({
+                      weightKg: steppedValue(
+                        'weight',
+                        current.weightKg,
+                        -1,
+                        sheet.stepKg
+                      ),
+                    })
+                  }
+                />
+                <PillChip
+                  label={`+${step} ${units}`}
+                  onPress={() =>
+                    void edit({
+                      weightKg: steppedValue(
+                        'weight',
+                        current.weightKg,
+                        1,
+                        sheet.stepKg
+                      ),
+                    })
+                  }
+                />
+              </Row>
+              <Row spacing={space.sm} alignment="center">
+                <Text textStyle={body} modifiers={tabularDigits()}>
+                  {`${current.reps} reps`}
+                </Text>
+                <Spacer flexible />
+                <PillChip
+                  label="−1 rep"
+                  disabled={current.reps <= 1}
+                  onPress={() => void edit({ reps: current.reps - 1 })}
+                />
+                <PillChip
+                  label="+1 rep"
+                  onPress={() => void edit({ reps: current.reps + 1 })}
+                />
+              </Row>
+            </Column>
+          ) : null}
+          {showsTargets && basis && sheet.exerciseTargetsOn ? (
+            <Column spacing={space.xs} style={{ padding: space.lg }}>
+              <Text textStyle={muted}>Why</Text>
+              <Text textStyle={body}>
+                {whyText(basis, repRange, effortScale)}
+              </Text>
+              {basis.effortNotChecked && lastTime ? (
+                <Text textStyle={body}>
+                  {effortNotCheckedText(unrated, lastTime.length)}
                 </Text>
               ) : null}
             </Column>
-            {sheet.exerciseTargetsOn && !basis?.declined ? (
-              <Column spacing={8}>
-                <Row spacing={8} alignment="center">
-                  <Text textStyle={{ fontSize: 15 }}>
-                    {current.weightKg === null
-                      ? 'No weight'
-                      : `${weightInUnit(current.weightKg, units)} ${units}`}
-                  </Text>
-                  <Spacer />
-                  <Button
-                    label={`−${step} ${units}`}
-                    variant="outlined"
-                    disabled={current.weightKg === null}
-                    onPress={() =>
-                      edit({
-                        weightKg: steppedValue(
-                          'weight',
-                          current.weightKg,
-                          -1,
-                          sheet.stepKg
-                        ),
-                      })
-                    }
-                  />
-                  <Button
-                    label={`+${step} ${units}`}
-                    variant="outlined"
-                    onPress={() =>
-                      edit({
-                        weightKg: steppedValue(
-                          'weight',
-                          current.weightKg,
-                          1,
-                          sheet.stepKg
-                        ),
-                      })
-                    }
-                  />
-                </Row>
-                <Row spacing={8} alignment="center">
-                  <Text textStyle={{ fontSize: 15 }}>
-                    {`${current.reps} reps`}
-                  </Text>
-                  <Spacer />
-                  <Button
-                    label="−1 rep"
-                    variant="outlined"
-                    disabled={current.reps <= 1}
-                    onPress={() => edit({ reps: current.reps - 1 })}
-                  />
-                  <Button
-                    label="+1 rep"
-                    variant="outlined"
-                    onPress={() => edit({ reps: current.reps + 1 })}
-                  />
-                </Row>
-              </Column>
-            ) : null}
-            {basis && sheet.exerciseTargetsOn ? (
-              <Column spacing={4}>
-                {label('Why')}
-                <Text textStyle={{ fontSize: 15 }}>
-                  {whyText(basis, repRange, effortScale)}
-                </Text>
-                {basis.effortNotChecked && lastTime ? (
-                  <Text textStyle={{ fontSize: 15 }}>
-                    {effortNotCheckedText(unrated, lastTime.length)}
-                  </Text>
-                ) : null}
-              </Column>
-            ) : null}
-            {basis?.plateau ? (
-              <Column
-                spacing={8}
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: colors.surfaceContainerHigh,
-                }}
-              >
-                <Text textStyle={{ fontSize: 15 }}>{PLATEAU_TEXT}</Text>
-                <Button
-                  label="Dismiss"
-                  variant="text"
-                  onPress={() =>
-                    run(
-                      () => dismissPlateau({ workoutExerciseId }),
-                      'Could not dismiss the Plateau.'
-                    )
-                  }
-                />
-              </Column>
-            ) : null}
-            <Column spacing={8}>
-              {basis?.edited || basis?.declined ? (
-                <Button
-                  label="Reset to suggestion"
-                  variant="outlined"
-                  onPress={() =>
-                    run(
-                      () => resetTargets({ workoutExerciseId }),
-                      'Could not reset the target.'
-                    )
-                  }
-                />
-              ) : null}
-              {sheet.exerciseTargetsOn &&
-              !basis?.declined &&
-              suggested.length > 0 ? (
-                <Button
-                  label="Decline for this Workout"
-                  variant="outlined"
-                  onPress={() =>
-                    run(
-                      () => declineTargets({ workoutExerciseId }),
-                      'Could not decline the target.'
-                    )
-                  }
-                />
-              ) : null}
-              <Switch
-                label={`Targets for ${sheet.exerciseName}`}
-                value={sheet.exerciseTargetsOn}
-                onValueChange={(enabled) =>
+          ) : null}
+        </Card>
+        {showsTargets && basis?.plateau ? (
+          <Card tone="high" padding={space.md} spacing={space.sm}>
+            <Text textStyle={body}>{PLATEAU_TEXT}</Text>
+            <Row>
+              <Button
+                label="Dismiss"
+                variant="text"
+                onPress={() =>
                   run(
-                    () =>
-                      setTargetsEnabled({
-                        exerciseId: sheet.exerciseId,
-                        enabled,
-                      }),
-                    'Could not switch targets for this Exercise.'
+                    () => dismissPlateau({ workoutExerciseId }),
+                    'Could not dismiss the Plateau.'
                   )
                 }
               />
-            </Column>
-          </>
-        )}
+            </Row>
+          </Card>
+        ) : null}
+        {showsTargets ? (
+          <Column spacing={space.sm}>
+            {basis?.edited || basis?.declined ? (
+              <PillChip
+                label="Reset to suggestion"
+                onPress={() =>
+                  void run(
+                    () => resetTargets({ workoutExerciseId }),
+                    'Could not reset the target.'
+                  )
+                }
+              />
+            ) : null}
+            {editable && suggested.length > 0 ? (
+              <PillChip
+                label="Decline for this Workout"
+                onPress={() =>
+                  void run(
+                    () => declineTargets({ workoutExerciseId }),
+                    'Could not decline the target.'
+                  )
+                }
+              />
+            ) : null}
+          </Column>
+        ) : null}
+        {showsTargets ? (
+          <Card padding={space.lg}>
+            <Switch
+              label={`Targets for ${sheet.exerciseName}`}
+              value={sheet.exerciseTargetsOn}
+              onValueChange={(enabled) =>
+                run(
+                  () =>
+                    setTargetsEnabled({
+                      exerciseId: sheet.exerciseId,
+                      enabled,
+                    }),
+                  'Could not switch targets for this Exercise.'
+                )
+              }
+            />
+          </Card>
+        ) : null}
         {errorMessage ? (
-          <Text textStyle={{ fontSize: 15 }}>{errorMessage}</Text>
+          <Text textStyle={{ ...font.caption, color: textColor(colors.error) }}>
+            {errorMessage}
+          </Text>
         ) : null}
       </>
     );
@@ -323,8 +316,11 @@ export function TargetSheet({
       snapPoints={['half', 'full']}
     >
       <ScrollView>
-        <Column spacing={16} style={{ padding: 16 }}>
-          {body()}
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+        >
+          {content()}
         </Column>
       </ScrollView>
     </BottomSheet>

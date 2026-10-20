@@ -1,12 +1,4 @@
-import {
-  BottomSheet,
-  Button,
-  Column,
-  ListItem,
-  Row,
-  ScrollView,
-  Text,
-} from '@expo/ui';
+import { BottomSheet, Button, Column, Row, ScrollView, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import type { WeightUnit } from '@repo/backend/convex/domain/units';
@@ -14,7 +6,11 @@ import { useMutation } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import { useEffect, useState } from 'react';
 
+import { Card } from '@/components/native/card';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import {
   errorCode,
   parseWeightKg,
@@ -66,6 +62,7 @@ export function RoutineExerciseEditor({
   units,
   onDismiss,
 }: Readonly<RoutineExerciseEditorProps>) {
+  const colors = useColors();
   const updateExercise = useMutation(api.routines.updateExercise);
   const moveExercise = useMutation(api.routines.moveExercise);
   const removeExercise = useMutation(api.routines.removeExercise);
@@ -198,93 +195,120 @@ export function RoutineExerciseEditor({
   return (
     <BottomSheet isPresented onDismiss={onDismiss} snapPoints={['full']}>
       <ScrollView>
-        <Column spacing={12}>
-          <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
+        <Column spacing={space.lg} style={{ padding: space.screen }}>
+          <Text
+            textStyle={{ ...font.heading, color: textColor(colors.onSurface) }}
+          >
             {routineExercise.name}
           </Text>
-          <NativeTextField
-            label="Target Sets"
-            keyboardType="number-pad"
-            value={targetSets}
-            onChangeText={setTargetSets}
-          />
-          <Row spacing={12}>
+          <Card padding={space.lg} spacing={space.md}>
             <NativeTextField
-              label="Rep range from"
+              label="Target Sets"
               keyboardType="number-pad"
-              value={repRangeMin}
-              onChangeText={setRepRangeMin}
+              value={targetSets}
+              onChangeText={setTargetSets}
             />
-            <NativeTextField
-              label="to"
-              keyboardType="number-pad"
-              value={repRangeMax}
-              onChangeText={setRepRangeMax}
-            />
-          </Row>
+            <Row spacing={space.md}>
+              <NativeTextField
+                label="Rep range from"
+                keyboardType="number-pad"
+                value={repRangeMin}
+                onChangeText={setRepRangeMin}
+              />
+              <NativeTextField
+                label="to"
+                keyboardType="number-pad"
+                value={repRangeMax}
+                onChangeText={setRepRangeMax}
+              />
+            </Row>
+          </Card>
           {tracksLoad ? (
             <>
-              <ListItem supportingText="Optional. Your first Workout starts from these until it becomes your baseline.">
-                Per-Set rep targets
-              </ListItem>
-              {Array.from({ length: setCount }, (_, index) => (
+              <SectionHeader
+                title="Per-Set rep targets"
+                supportingText="Optional. Your first Workout starts from these until it becomes your baseline."
+              />
+              {setCount > 0 ? (
+                <Card padding={space.lg} spacing={space.md}>
+                  {Array.from({ length: setCount }, (_, index) => (
+                    <NativeTextField
+                      // biome-ignore lint/suspicious/noArrayIndexKey: one field per Set position
+                      key={index}
+                      label={`Set ${index + 1}`}
+                      keyboardType="number-pad"
+                      placeholder="No target"
+                      value={setTargets[index] ?? ''}
+                      onChangeText={(text) =>
+                        setSetTargets((current) => {
+                          const next = [...current];
+                          next[index] = text;
+                          return next;
+                        })
+                      }
+                    />
+                  ))}
+                </Card>
+              ) : null}
+              <Card padding={space.lg} spacing={space.md}>
                 <NativeTextField
-                  // biome-ignore lint/suspicious/noArrayIndexKey: one field per Set position
-                  key={index}
-                  label={`Set ${index + 1}`}
-                  keyboardType="number-pad"
-                  placeholder="No target"
-                  value={setTargets[index] ?? ''}
-                  onChangeText={(text) =>
-                    setSetTargets((current) => {
-                      const next = [...current];
-                      next[index] = text;
-                      return next;
-                    })
-                  }
+                  label={`Starting weight (${units})`}
+                  keyboardType="decimal-pad"
+                  placeholder="None"
+                  value={startingWeight}
+                  onChangeText={setStartingWeight}
                 />
-              ))}
-              <NativeTextField
-                label={`Starting weight (${units})`}
-                keyboardType="decimal-pad"
-                placeholder="None"
-                value={startingWeight}
-                onChangeText={setStartingWeight}
-              />
-              <NativeTextField
-                label={`Weight step (${units})`}
-                keyboardType="decimal-pad"
-                value={step}
-                onChangeText={setStep}
-              />
+                <NativeTextField
+                  label={`Weight step (${units})`}
+                  keyboardType="decimal-pad"
+                  value={step}
+                  onChangeText={setStep}
+                />
+              </Card>
             </>
           ) : null}
-          {block ? (
-            <NativeTextField
-              label="Rest after each round (seconds)"
-              keyboardType="number-pad"
-              placeholder={`Default (${block.restSeconds} s)`}
-              value={blockRest}
-              onChangeText={setBlockRestDraft}
-            />
-          ) : (
-            <NativeTextField
-              label="Planned rest (seconds)"
-              keyboardType="number-pad"
-              placeholder={`Default (${routineExercise.restSeconds} s)`}
-              value={plannedRest}
-              onChangeText={setPlannedRest}
-            />
-          )}
+          <Card padding={space.lg}>
+            {block ? (
+              <NativeTextField
+                label="Rest after each round (seconds)"
+                keyboardType="number-pad"
+                placeholder={`Default (${block.restSeconds} s)`}
+                value={blockRest}
+                onChangeText={setBlockRestDraft}
+              />
+            ) : (
+              <NativeTextField
+                label="Planned rest (seconds)"
+                keyboardType="number-pad"
+                placeholder={`Default (${routineExercise.restSeconds} s)`}
+                value={plannedRest}
+                onChangeText={setPlannedRest}
+              />
+            )}
+          </Card>
           {errorMessage ? (
-            <ListItem supportingText={errorMessage}>Can’t save yet</ListItem>
+            <Card tone="high" padding={space.lg} spacing={space.xs}>
+              <Text
+                textStyle={{
+                  ...font.label,
+                  color: textColor(colors.onSurface),
+                }}
+              >
+                Can’t save yet
+              </Text>
+              <Text
+                textStyle={{ ...font.caption, color: textColor(colors.error) }}
+              >
+                {errorMessage}
+              </Text>
+            </Card>
           ) : null}
-          <Button
+          <PrimaryButton
             disabled={isSaving}
             label={isSaving ? 'Saving…' : 'Save'}
             onPress={save}
           />
-          <Row spacing={12}>
+          <Row spacing={space.md}>
             <Button
               disabled={isSaving || position === 0}
               label="Move up"

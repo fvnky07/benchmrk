@@ -1,5 +1,10 @@
-import { BottomSheet, Button, Column, Row, Spacer, Text } from '@expo/ui';
+import { BottomSheet, Column, Row, Text } from '@expo/ui';
 
+import { Card } from '@/components/native/card';
+import { PillChip } from '@/components/native/pill-chip';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, tabularDigits, textColor, useColors } from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
 
 const STEP_SECONDS = 15;
@@ -27,6 +32,9 @@ export function RestOptionsSheet({
   onSetDefault,
   onDismiss,
 }: Readonly<RestOptionsSheetProps>) {
+  const colors = useColors();
+  const muted = { ...font.caption, color: textColor(colors.onSurfaceVariant) };
+
   return (
     <BottomSheet
       isPresented={isPresented}
@@ -34,51 +42,59 @@ export function RestOptionsSheet({
       showDragIndicator
       snapPoints={['half']}
     >
-      <Column spacing={16} style={{ padding: 16 }}>
-        <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Rest</Text>
+      <Column
+        spacing={space.lg}
+        style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+      >
+        <SectionHeader title="Rest" />
         {isResting ? (
-          <Row spacing={8}>
-            <Button
-              label="−15 s"
-              variant="outlined"
-              onPress={() => onAdjust(-STEP_SECONDS)}
-            />
-            <Button
-              label="+15 s"
-              variant="outlined"
-              onPress={() => onAdjust(STEP_SECONDS)}
-            />
-            <Spacer />
-            <Button label="Skip rest" onPress={onSkip} />
-          </Row>
+          <Column spacing={space.md}>
+            <Row spacing={space.sm}>
+              <PillChip label="−15 s" onPress={() => onAdjust(-STEP_SECONDS)} />
+              <PillChip label="+15 s" onPress={() => onAdjust(STEP_SECONDS)} />
+            </Row>
+            <PrimaryButton label="Skip rest" onPress={onSkip} />
+          </Column>
         ) : (
-          <Text textStyle={{ fontSize: 15 }}>
-            Not resting. Rest starts when you log a Set.
-          </Text>
+          <Card padding={space.lg}>
+            <Text textStyle={muted}>
+              Not resting. Rest starts when you log a Set.
+            </Text>
+          </Card>
         )}
-        <Row spacing={8} alignment="center">
+        <Card padding={space.lg} spacing={space.md}>
           <Column spacing={2}>
-            <Text textStyle={{ fontSize: 15 }}>Default rest for</Text>
-            <Text textStyle={{ fontSize: 15, fontWeight: '700' }}>
+            <Text textStyle={muted}>Default rest for</Text>
+            <Text
+              textStyle={{
+                ...font.bodyStrong,
+                color: textColor(colors.onSurface),
+              }}
+            >
               {exerciseName}
             </Text>
           </Column>
-          <Spacer />
-          <Button
-            label="−"
-            variant="outlined"
-            disabled={defaultSeconds < STEP_SECONDS}
-            onPress={() => onSetDefault(defaultSeconds - STEP_SECONDS)}
-          />
-          <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
-            {formatClock(defaultSeconds)}
-          </Text>
-          <Button
-            label="+"
-            variant="outlined"
-            onPress={() => onSetDefault(defaultSeconds + STEP_SECONDS)}
-          />
-        </Row>
+          <Row alignment="center" spacing={space.md}>
+            <PillChip
+              label="−"
+              disabled={defaultSeconds < STEP_SECONDS}
+              onPress={() => onSetDefault(defaultSeconds - STEP_SECONDS)}
+            />
+            <Text
+              textStyle={{
+                ...font.section,
+                color: textColor(colors.onSurface),
+              }}
+              modifiers={tabularDigits()}
+            >
+              {formatClock(defaultSeconds)}
+            </Text>
+            <PillChip
+              label="+"
+              onPress={() => onSetDefault(defaultSeconds + STEP_SECONDS)}
+            />
+          </Row>
+        </Card>
       </Column>
     </BottomSheet>
   );

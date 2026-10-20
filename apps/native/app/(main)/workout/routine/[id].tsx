@@ -1,4 +1,4 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button, Column, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
@@ -6,16 +6,21 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { TrendCard } from '@/components/charts/trend-card';
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { RoutineExerciseEditor } from '@/components/workout/routine-exercise-editor';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import { formatWeight, parseWholeNumber } from '@/lib/workout/format';
 import { useStartWorkout } from '@/lib/workout/use-start-workout';
 
 export default function RoutineBuilderScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const routineId = params.id as Id<'routines'>;
+  const colors = useColors();
   const routine = useQuery(api.routines.get, { routineId });
   const trends = useQuery(
     api.trends.forRoutine,
@@ -47,7 +52,14 @@ export default function RoutineBuilderScreen() {
   if (routine === undefined || settings === undefined) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>Loading Routine…</Text>
+        <Text
+          textStyle={{
+            ...font.body,
+            color: textColor(colors.onSurfaceVariant),
+          }}
+        >
+          Loading Routine…
+        </Text>
       </NativeScreen>
     );
   }
@@ -55,7 +67,9 @@ export default function RoutineBuilderScreen() {
   if (routine === null || settings === null) {
     return (
       <NativeScreen>
-        <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
+        <Text
+          textStyle={{ ...font.heading, color: textColor(colors.onSurface) }}
+        >
           Routine not found
         </Text>
       </NativeScreen>
@@ -78,21 +92,28 @@ export default function RoutineBuilderScreen() {
       : minutes !== null && minutes > 0
         ? minutes * 60
         : undefined;
+  const caption = {
+    ...font.caption,
+    color: textColor(colors.onSurfaceVariant),
+  };
   return (
     <NativeScreen>
-      <NativeTextField label="Name" value={name} onChangeText={setName} />
-      {name.trim() && name.trim() !== routine.name ? (
-        <Button
-          label="Save name"
-          onPress={() =>
-            attempt(
-              () => rename({ routineId, name }),
-              'Could not rename this Routine.'
-            )
-          }
-        />
-      ) : null}
-      <Button
+      <Card padding={space.lg} spacing={space.sm}>
+        <NativeTextField label="Name" value={name} onChangeText={setName} />
+        {name.trim() && name.trim() !== routine.name ? (
+          <Button
+            label="Save name"
+            variant="text"
+            onPress={() =>
+              attempt(
+                () => rename({ routineId, name }),
+                'Could not rename this Routine.'
+              )
+            }
+          />
+        ) : null}
+      </Card>
+      <PrimaryButton
         disabled={routine.exercises.length === 0}
         label="Start Workout"
         onPress={() =>
@@ -102,105 +123,131 @@ export default function RoutineBuilderScreen() {
           )
         }
       />
-      <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>Exercises</Text>
+      <SectionHeader
+        title="Exercises"
+        action={{
+          label: 'Add',
+          accessibilityLabel: 'Add Exercise',
+          onPress: () => setIsPickerOpen(true),
+        }}
+      />
       {routine.exercises.length === 0 ? (
-        <ListItem supportingText="Add the Exercises you plan to do, in order.">
-          No Exercises yet
-        </ListItem>
+        <Card>
+          <CardRow supportingText="Add the Exercises you plan to do, in order.">
+            No Exercises yet
+          </CardRow>
+        </Card>
       ) : (
-        routine.exercises.map((exercise, index) => (
-          <ListItem
-            key={exercise._id}
-            onPress={() => setEditingIndex(index)}
-            supportingText={[
-              exercise.blockId !== null
-                ? `Alternating sets · rest ${routine.blocks.find((item) => item._id === exercise.blockId)?.restSeconds ?? exercise.restSeconds} s after each round`
-                : null,
-              `${exercise.targetSets} Sets`,
-              exercise.type === 'strength' || exercise.type === 'bodyweight'
-                ? `${exercise.repRangeMin}–${exercise.repRangeMax} reps`
-                : null,
-              exercise.startingWeightKg === null
-                ? null
-                : `from ${formatWeight(exercise.startingWeightKg, settings.units)}`,
-              exercise.blockId === null
-                ? `rest ${exercise.restSeconds} s`
-                : null,
-              exercise.linkedToNext ? 'alternates with the next' : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          >
-            {exercise.name}
-          </ListItem>
-        ))
+        <Card divided>
+          {routine.exercises.map((exercise, index) => (
+            <CardRow
+              key={exercise._id}
+              chevron
+              onPress={() => setEditingIndex(index)}
+              supportingText={[
+                exercise.blockId !== null
+                  ? `Alternating sets · rest ${routine.blocks.find((item) => item._id === exercise.blockId)?.restSeconds ?? exercise.restSeconds} s after each round`
+                  : null,
+                `${exercise.targetSets} Sets`,
+                exercise.type === 'strength' || exercise.type === 'bodyweight'
+                  ? `${exercise.repRangeMin}–${exercise.repRangeMax} reps`
+                  : null,
+                exercise.startingWeightKg === null
+                  ? null
+                  : `from ${formatWeight(exercise.startingWeightKg, settings.units)}`,
+                exercise.blockId === null
+                  ? `rest ${exercise.restSeconds} s`
+                  : null,
+                exercise.linkedToNext ? 'alternates with the next' : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            >
+              {exercise.name}
+            </CardRow>
+          ))}
+        </Card>
       )}
-      <Button
-        label="Add Exercise"
-        variant="outlined"
-        onPress={() => setIsPickerOpen(true)}
-      />
-      <NativeTextField
-        label="Target duration (minutes)"
-        keyboardType="number-pad"
-        placeholder={
-          routine.suggestedDurationSeconds === null
-            ? 'Suggested after 3 Workouts'
-            : `${Math.round(routine.suggestedDurationSeconds / 60)} from your recent Workouts`
-        }
-        value={targetMinutes}
-        onChangeText={setTargetMinutes}
-      />
-      {nextTargetSeconds !== undefined &&
-      nextTargetSeconds !== routine.targetDurationSeconds ? (
-        <Button
-          label="Save target duration"
-          onPress={() =>
-            attempt(
-              () =>
-                setTargetDuration({
-                  routineId,
-                  targetDurationSeconds: nextTargetSeconds,
-                }),
-              'Could not save the target duration.'
-            )
+      <Card padding={space.lg} spacing={space.sm}>
+        <NativeTextField
+          label="Target duration (minutes)"
+          keyboardType="number-pad"
+          placeholder={
+            routine.suggestedDurationSeconds === null
+              ? 'Suggested after 3 Workouts'
+              : `${Math.round(routine.suggestedDurationSeconds / 60)} from your recent Workouts`
           }
+          value={targetMinutes}
+          onChangeText={setTargetMinutes}
         />
-      ) : null}
+        {nextTargetSeconds !== undefined &&
+        nextTargetSeconds !== routine.targetDurationSeconds ? (
+          <Button
+            label="Save target duration"
+            variant="text"
+            onPress={() =>
+              attempt(
+                () =>
+                  setTargetDuration({
+                    routineId,
+                    targetDurationSeconds: nextTargetSeconds,
+                  }),
+                'Could not save the target duration.'
+              )
+            }
+          />
+        ) : null}
+      </Card>
       {trends === undefined ? (
-        <Text>Loading trends…</Text>
+        <Text textStyle={caption}>Loading trends…</Text>
       ) : (
         <TrendCard duration={trends.duration} rest={trends.rest} />
       )}
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Something went wrong</ListItem>
+        <Card tone="high" padding={space.lg} spacing={space.xs}>
+          <Text
+            textStyle={{ ...font.label, color: textColor(colors.onSurface) }}
+          >
+            Something went wrong
+          </Text>
+          <Text textStyle={{ ...font.caption, color: textColor(colors.error) }}>
+            {errorMessage}
+          </Text>
+        </Card>
       ) : null}
       {isConfirmingDelete ? (
-        <>
-          <ListItem supportingText="Past Workouts keep their Sets.">
-            Delete this Routine?
-          </ListItem>
-          <Button
-            label="Delete Routine"
-            onPress={() =>
-              attempt(async () => {
-                await removeRoutine({ routineId });
-                router.back();
-              }, 'Could not delete this Routine.')
-            }
-          />
-          <Button
-            label="Cancel"
-            variant="outlined"
-            onPress={() => setIsConfirmingDelete(false)}
-          />
-        </>
+        <Card tone="high" padding={space.lg} spacing={space.md}>
+          <Column spacing={space.xs}>
+            <Text
+              textStyle={{ ...font.label, color: textColor(colors.onSurface) }}
+            >
+              Delete this Routine?
+            </Text>
+            <Text textStyle={caption}>Past Workouts keep their Sets.</Text>
+          </Column>
+          <Row spacing={space.md}>
+            <Button
+              label="Delete Routine"
+              onPress={() =>
+                attempt(async () => {
+                  await removeRoutine({ routineId });
+                  router.back();
+                }, 'Could not delete this Routine.')
+              }
+            />
+            <Button
+              label="Cancel"
+              variant="outlined"
+              onPress={() => setIsConfirmingDelete(false)}
+            />
+          </Row>
+        </Card>
       ) : (
-        <Button
-          label="Delete Routine"
-          variant="text"
-          onPress={() => setIsConfirmingDelete(true)}
-        />
+        <Button variant="outlined" onPress={() => setIsConfirmingDelete(true)}>
+          <Text textStyle={{ ...font.label, color: textColor(colors.error) }}>
+            Delete Routine
+          </Text>
+        </Button>
       )}
       <ExercisePicker
         isPresented={isPickerOpen}

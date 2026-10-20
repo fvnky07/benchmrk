@@ -2,8 +2,13 @@ import { Button } from '@expo/ui';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { analytics } from '@/lib/analytics';
 import { authClient } from '@/lib/auth/client';
 
@@ -21,6 +26,7 @@ export default function VerifyTwoFactorScreen() {
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
+  const columnWidth = useAuthColumnWidth();
 
   const verify = async () => {
     const trimmed = code.trim();
@@ -54,6 +60,7 @@ export default function VerifyTwoFactorScreen() {
 
   return (
     <AuthShell
+      edges={['bottom']}
       title="Two-factor authentication"
       supportingText={
         factor === 'totp'
@@ -75,9 +82,10 @@ export default function VerifyTwoFactorScreen() {
         placeholder={factor === 'totp' ? '123456' : 'Backup code'}
         value={code}
       />
-      <Button
+      <PrimaryButton
         disabled={busy || code.trim() === ''}
         label={busy ? 'Checking…' : 'Verify'}
+        width={columnWidth}
         onPress={verify}
       />
       {errorMessage ? <AuthStatus message={errorMessage} tone="error" /> : null}

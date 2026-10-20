@@ -1,8 +1,12 @@
-import { Button } from '@expo/ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { storeLinkedSession } from '@/lib/auth/client';
 import { useAuth } from '@/lib/auth/hooks';
 
@@ -16,6 +20,7 @@ export default function MagicLinkScreen() {
     error?: string;
   }>();
   const { isAuthenticated } = useAuth();
+  const columnWidth = useAuthColumnWidth();
 
   useEffect(() => {
     if (cookie && !error) storeLinkedSession(cookie);
@@ -31,8 +36,9 @@ export default function MagicLinkScreen() {
         title="This sign-in link didn’t work"
         supportingText="It may have expired or already been used. Ask for a new one from Log in."
       >
-        <Button
+        <PrimaryButton
           label="Back to log in"
+          width={columnWidth}
           onPress={() => router.replace('/login')}
         />
       </AuthShell>

@@ -1,9 +1,12 @@
-import { Button, ListItem, Text } from '@expo/ui';
+import { Button } from '@expo/ui';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { Platform } from 'react-native';
 
+import { Card, CardRow } from '@/components/native/card';
 import { NativeScreen } from '@/components/native/native-screen';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { ScreenTitle } from '@/components/native/screen-title';
 import { useAuth } from '@/lib/auth/hooks';
 import { completePushProfileSetup } from '@/lib/push/profile-setup-push-step';
 import {
@@ -36,16 +39,18 @@ export default function PushPermissionScreen() {
   };
 
   return (
-    <NativeScreen>
+    <NativeScreen edges={['top', 'bottom']}>
       <Stack.Screen options={{ gestureEnabled: false }} />
-      <Text textStyle={{ fontSize: 30, fontWeight: '700' }}>
-        {PUSH_PERMISSION_TITLE}
-      </Text>
-      <Text textStyle={{ fontSize: 17 }}>{PUSH_PERMISSION_EXPLANATION}</Text>
+      <ScreenTitle
+        title={PUSH_PERMISSION_TITLE}
+        subtitle={PUSH_PERMISSION_EXPLANATION}
+      />
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Not completed</ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>Not completed</CardRow>
+        </Card>
       ) : null}
-      <Button
+      <PrimaryButton
         disabled={busy || !user}
         label={busy ? 'Continuing…' : 'Allow'}
         onPress={() => void continueSetup(true)}

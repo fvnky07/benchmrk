@@ -2,8 +2,13 @@ import { Button } from '@expo/ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { authClient } from '@/lib/auth/client';
 import { completePasswordReset } from '@/lib/auth/password-reset';
 import { passwordSchema } from '@/lib/schemas/auth';
@@ -26,6 +31,7 @@ export default function ResetPasswordScreen() {
   const [busy, setBusy] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const columnWidth = useAuthColumnWidth();
 
   if (error || !token) {
     return (
@@ -33,8 +39,9 @@ export default function ResetPasswordScreen() {
         title="This reset link didn’t work"
         supportingText="It may have expired or already been used. Ask for a new one."
       >
-        <Button
+        <PrimaryButton
           label="Request a new link"
+          width={columnWidth}
           onPress={() => router.replace('/forgot-password')}
         />
       </AuthShell>
@@ -47,7 +54,11 @@ export default function ResetPasswordScreen() {
         title="Password changed"
         supportingText="Every device was signed out. Log in with your new password."
       >
-        <Button label="Log in" onPress={() => router.replace('/login')} />
+        <PrimaryButton
+          label="Log in"
+          width={columnWidth}
+          onPress={() => router.replace('/login')}
+        />
       </AuthShell>
     );
   }
@@ -121,9 +132,10 @@ export default function ResetPasswordScreen() {
         secureTextEntry
         value={confirmPassword}
       />
-      <Button
+      <PrimaryButton
         disabled={busy}
         label={busy ? 'Saving…' : 'Change password'}
+        width={columnWidth}
         onPress={reset}
       />
       {status ? (

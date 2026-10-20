@@ -19,6 +19,12 @@ type ChartBase = {
   summary: string;
   /** Plot height in points/dp; each kind has a sensible default. */
   height?: number;
+  /**
+   * Plot width in points/dp. Charts sit in `RNHostView matchContents`, which
+   * gives its children no width, so the caller supplies one (usually
+   * `useCardContentWidth()`).
+   */
+  width: number;
 };
 
 export type ChartProps = ChartBase &

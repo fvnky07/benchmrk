@@ -2,8 +2,13 @@ import { Button } from '@expo/ui';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { authClient } from '@/lib/auth/client';
 import { authErrorCopy } from '@/lib/auth/error-copy';
 import { useAuthStore } from '@/lib/auth/store';
@@ -25,6 +30,7 @@ export default function ForgotPasswordScreen() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [emailError, setEmailError] = useState<string | undefined>();
+  const columnWidth = useAuthColumnWidth();
 
   const sendLink = async () => {
     setStatus(null);
@@ -67,6 +73,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <AuthShell
+      edges={['bottom']}
       title="Reset your password"
       supportingText="Enter the email you sign in with. Password recovery needs a verified email."
     >
@@ -84,9 +91,10 @@ export default function ForgotPasswordScreen() {
         placeholder="you@example.com"
         value={email}
       />
-      <Button
+      <PrimaryButton
         disabled={busy}
         label={busy ? 'Sending…' : 'Send reset link'}
+        width={columnWidth}
         onPress={sendLink}
       />
       {status ? (

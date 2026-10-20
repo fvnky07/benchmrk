@@ -1,9 +1,11 @@
-import { Button, Column, ListItem } from '@expo/ui';
+import { Column } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
+import { Card, CardRow } from '@/components/native/card';
 import { NativeTextField } from '@/components/native/native-text-field';
-import { accessibilityModifier } from '@/lib/ui/accessibility';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { space } from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 
 const ERROR_COPY: Record<string, string> = {
@@ -45,7 +47,7 @@ export function InviteByUsername() {
   };
 
   return (
-    <Column spacing={8}>
+    <Column spacing={space.md}>
       <NativeTextField
         autoCapitalize="none"
         autoCorrect={false}
@@ -57,15 +59,21 @@ export function InviteByUsername() {
         }}
         value={username}
       />
-      <Button
+      <PrimaryButton
+        accessibilityLabel="Invite by username"
         disabled={busy || username.trim() === ''}
         label="Invite"
-        modifiers={[accessibilityModifier('Invite by username')]}
         onPress={() => void invite()}
       />
-      {sent ? <ListItem>Invite sent</ListItem> : null}
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Couldn’t send invite</ListItem>
+      {sent || errorMessage ? (
+        <Card>
+          {sent ? <CardRow>Invite sent</CardRow> : null}
+          {errorMessage ? (
+            <CardRow supportingText={errorMessage}>
+              Couldn’t send invite
+            </CardRow>
+          ) : null}
+        </Card>
       ) : null}
     </Column>
   );

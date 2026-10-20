@@ -4,8 +4,13 @@ import { useAction } from 'convex/react';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { AuthShell, AuthStatus } from '@/components/native/auth-shell';
+import {
+  AuthShell,
+  AuthStatus,
+  useAuthColumnWidth,
+} from '@/components/native/auth-shell';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { SocialProviderGroup } from '@/components/native/social-provider-group';
 import { analytics } from '@/lib/analytics';
 import { authClient } from '@/lib/auth/client';
@@ -27,6 +32,7 @@ export default function LoginScreen() {
   const beginPending = useAuthStore((state) => state.beginPending);
   const endPending = useAuthStore((state) => state.endPending);
   const [status, setStatus] = useState<Status>(null);
+  const columnWidth = useAuthColumnWidth();
 
   const { errors, handleSubmit, clearError, hasSubmitted } = useFormValidation({
     schema: loginSchema,
@@ -97,6 +103,7 @@ export default function LoginScreen() {
 
   return (
     <AuthShell
+      edges={['bottom']}
       title="Log in"
       supportingText="Sign in with your email and password, or ask for a sign-in link if you joined the waitlist."
     >
@@ -136,11 +143,12 @@ export default function LoginScreen() {
         variant="text"
         onPress={() => router.push('/forgot-password')}
       />
-      <Button
+      <PrimaryButton
         disabled={pendingPath !== null}
         label={
           pendingPath === 'password' ? 'Signing in…' : 'Continue with email'
         }
+        width={columnWidth}
         onPress={signInWithPassword}
       />
       <Button

@@ -1,10 +1,12 @@
-import { Button, Column, ListItem, Text } from '@expo/ui';
+import { Button, Column, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
+import { Card, CardRow } from '@/components/native/card';
+import { SectionHeader } from '@/components/native/section-header';
 import { authClient } from '@/lib/auth/client';
 import {
   isAppleAvailable,
@@ -12,6 +14,7 @@ import {
   runSocialAuth,
   type SocialProvider,
 } from '@/lib/auth/social';
+import { font, space, textColor, useColors } from '@/lib/ui';
 
 type Method = 'credential' | SocialProvider;
 
@@ -35,9 +38,11 @@ async function fetchLinkedMethods(): Promise<Method[]> {
 
 /**
  * Every way the member can sign in. Providers are linked explicitly (ADR 0001)
- * and the last remaining method can't be unlinked.
+ * and the last remaining method can't be unlinked. Renders its own "Sign-in
+ * methods" heading and card.
  */
 export function SignInMethods() {
+  const colors = useColors();
   const config = useQuery(api.auth.getSocialAuthConfig);
   const [linked, setLinked] = useState<Method[] | null>(null);
   const [appleNative, setAppleNative] = useState(false);
@@ -88,66 +93,86 @@ export function SignInMethods() {
     });
 
   if (linked === null) {
-    return <Text textStyle={{ fontSize: 15 }}>Loading sign-in methods…</Text>;
+    return (
+      <Column spacing={space.sm}>
+        <SectionHeader title="Sign-in methods" />
+        <Card padding={space.lg}>
+          <Text
+            textStyle={{
+              ...font.caption,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
+            Loading sign-in methods…
+          </Text>
+        </Card>
+      </Column>
+    );
   }
 
   const isOnlyMethod = linked.length === 1;
-  const offered = (['apple', 'google'] as SocialProvider[]).filter(
+  const linkable = (['apple', 'google'] as SocialProvider[]).filter(
     (provider) =>
-      provider === 'apple'
+      !linked.includes(provider) &&
+      (provider === 'apple'
         ? isAppleAvailable(config, appleNative)
-        : isGoogleAvailable(config)
+        : isGoogleAvailable(config))
   );
 
   return (
-    <Column spacing={8}>
-      <Text textStyle={{ fontSize: 20, fontWeight: '600' }}>
-        Sign-in methods
-      </Text>
-      {linked.map((method) => (
-        <Column key={method} spacing={4}>
-          <ListItem
+    <Column spacing={space.sm}>
+      <SectionHeader title="Sign-in methods" />
+      <Card divided>
+        {linked.map((method) => (
+          <CardRow
+            key={method}
             supportingText={
               isOnlyMethod
                 ? 'Your only way to sign in, so it can’t be removed.'
                 : 'Linked'
             }
+            trailing={
+              method === 'credential' ? undefined : (
+                <Button
+                  disabled={busy !== null || isOnlyMethod}
+                  label={
+                    busy === method
+                      ? 'Unlinking…'
+                      : `Unlink ${METHOD_LABEL[method]}`
+                  }
+                  variant="text"
+                  onPress={() => void unlink(method)}
+                />
+              )
+            }
           >
             {METHOD_LABEL[method]}
-          </ListItem>
-          {method === 'credential' ? null : (
-            <Button
-              disabled={busy !== null || isOnlyMethod}
-              label={
-                busy === method
-                  ? 'Unlinking…'
-                  : `Unlink ${METHOD_LABEL[method]}`
-              }
-              variant="text"
-              onPress={() => void unlink(method)}
-            />
-          )}
-        </Column>
-      ))}
-      {offered
-        .filter((provider) => !linked.includes(provider))
-        .map((provider) => (
-          <Button
-            key={provider}
-            disabled={busy !== null}
-            label={
-              busy === provider
-                ? `Linking ${METHOD_LABEL[provider]}…`
-                : `Link ${METHOD_LABEL[provider]}`
-            }
-            variant="outlined"
-            onPress={() => void link(provider)}
-          />
+          </CardRow>
         ))}
+      </Card>
+      {linkable.length > 0 ? (
+        <Row spacing={space.sm}>
+          {linkable.map((provider) => (
+            <Button
+              key={provider}
+              disabled={busy !== null}
+              label={
+                busy === provider
+                  ? `Linking ${METHOD_LABEL[provider]}…`
+                  : `Link ${METHOD_LABEL[provider]}`
+              }
+              variant="outlined"
+              onPress={() => void link(provider)}
+            />
+          ))}
+        </Row>
+      ) : null}
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Couldn’t change sign-in
-        </ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>
+            Couldn’t change sign-in
+          </CardRow>
+        </Card>
       ) : null}
     </Column>
   );

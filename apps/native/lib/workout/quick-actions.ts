@@ -5,16 +5,16 @@ import InfoIcon from '@expo/material-symbols/info.xml';
 import SwapIcon from '@expo/material-symbols/swap_horiz.xml';
 import TuneIcon from '@expo/material-symbols/tune.xml';
 import WandIcon from '@expo/material-symbols/wand_stars.xml';
-import type { ButtonProps as SwiftButtonProps } from '@expo/ui/swift-ui';
+import type { IconProps } from '@expo/ui';
 import type { QuickActionId } from '@repo/backend/convex/memberSettings';
-import type { ImageSourcePropType } from 'react-native';
 
 export type { QuickActionId };
 
-export type QuickActionIcon = {
-  ios: NonNullable<SwiftButtonProps['systemImage']>;
-  android: ImageSourcePropType;
-};
+/** A cross-platform universal `Icon` name: an SF Symbol and a Material Symbol. */
+export type QuickActionIcon = Extract<
+  IconProps['name'],
+  { ios: unknown; android: unknown }
+>;
 
 /** Copy and icons for every configurable chip in the quick action row. */
 export const QUICK_ACTIONS: Record<

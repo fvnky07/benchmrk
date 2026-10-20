@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { api } from '../_generated/api';
-import type { TestMember } from './harness.testing';
+import type { Id } from '../_generated/dataModel';
+import type { TestBackend, TestMember } from './harness.testing';
 import {
   activeWorkout,
   exerciseId,
@@ -25,6 +26,55 @@ async function logFirst(member: TestMember, seconds: number) {
     weightKg: 60,
     reps: 8,
     effort: { scale: 'RPE', value: 8 },
+  });
+}
+
+/**
+ * Inserts completed Workouts for member-a straight into the tables, one per
+ * entry: it finishes at START + `finishedAfter` seconds with `sets` completed
+ * Bench Press Sets of 60 kg × 1.
+ */
+async function insertCompleted(
+  t: TestBackend,
+  workouts: readonly { finishedAfter: number; sets: number }[]
+) {
+  const benchId = await exerciseId(t, 'bench-press');
+  return t.run(async (ctx) => {
+    const ids: Id<'workouts'>[] = [];
+    for (const { finishedAfter, sets } of workouts) {
+      const finishedAt = START + finishedAfter * 1000;
+      const workoutId = await ctx.db.insert('workouts', {
+        userId: 'member-a',
+        name: 'Inserted',
+        status: 'completed',
+        startedAt: finishedAt - 60_000,
+        finishedAt,
+        finishReason: 'all_sets_done',
+      });
+      const workoutExerciseId = await ctx.db.insert('workoutExercises', {
+        workoutId,
+        exerciseId: benchId,
+        order: 0,
+        repRangeMin: 1,
+        repRangeMax: 1,
+        stepKg: 2.5,
+      });
+      for (let order = 0; order < sets; order++) {
+        await ctx.db.insert('sets', {
+          userId: 'member-a',
+          workoutId,
+          workoutExerciseId,
+          exerciseId: benchId,
+          order,
+          type: 'normal',
+          weightKg: 60,
+          reps: 1,
+          completedAt: finishedAt,
+        });
+      }
+      ids.push(workoutId);
+    }
+    return ids;
   });
 }
 
@@ -113,7 +163,147 @@ describe('Workout history', () => {
     ).rejects.toThrow('NOT_FOUND');
   });
 
-  test('detail preserves Set types, Effort, saved targets and notes; Last time excludes itself and later Workouts', async () => {
+  test('stats list only the member’s completed Workouts, oldest first, with Sets, Volume and Sets per Exercise', async () => {
+    const { t, member, routineId } = await memberWithRoutine();
+    const benchId = await exerciseId(t, 'bench-press');
+    const rowId = await exerciseId(t, 'bent-over-row');
+    const pullUpId = await exerciseId(t, 'pull-up');
+
+    const fullId = await member.mutation(api.workouts.start, { routineId });
+    for (const [index, set] of (await activeWorkout(member)).exercises
+      .flatMap((exercise) => exercise.sets)
+      .entries()) {
+      at(30 * (index + 1));
+      await member.mutation(api.workouts.completeSet, {
+        setId: set._id,
+        weightKg: 60,
+        reps: 8,
+      });
+    }
+    await member.mutation(api.workouts.end, {
+      workoutId: fullId,
+      reason: 'finish',
+    });
+
+    at(200);
+    const abandonedId = await member.mutation(api.workouts.start, {
+      routineId,
+    });
+    await member.mutation(api.workouts.end, {
+      workoutId: abandonedId,
+      reason: 'terminate',
+    });
+
+    const other = t.withIdentity({ subject: 'member-b' });
+    at(300);
+    const otherId = await other.mutation(api.workouts.start, {});
+    await other.mutation(api.workouts.addExercise, {
+      workoutId: otherId,
+      exerciseId: benchId,
+    });
+    await logFirst(other, 350);
+    await other.mutation(api.workouts.end, {
+      workoutId: otherId,
+      reason: 'terminate',
+    });
+
+    at(400);
+    const earlyId = await member.mutation(api.workouts.start, { routineId });
+    await member.mutation(api.workouts.addExercise, {
+      workoutId: earlyId,
+      exerciseId: pullUpId,
+    });
+    await logFirst(member, 450);
+    const pullUp = (await activeWorkout(member)).exercises.find(
+      (exercise) => exercise.exerciseId === pullUpId
+    )?.sets[0];
+    if (!pullUp) throw new Error('missing Pull-up Set');
+    at(480);
+    await member.mutation(api.workouts.completeSet, {
+      setId: pullUp._id,
+      weightKg: null,
+      reps: 10,
+    });
+    await member.mutation(api.workouts.end, {
+      workoutId: earlyId,
+      reason: 'terminate',
+    });
+    at(600);
+    await member.mutation(api.workouts.start, { routineId });
+
+    const full = {
+      workoutId: fullId,
+      finishedAt: START + 150_000,
+      sets: 5,
+      volumeKg: 5 * 60 * 8,
+      exercises: [
+        { exerciseId: benchId, name: 'Bench Press', sets: 2 },
+        { exerciseId: rowId, name: 'Bent-over Row', sets: 3 },
+      ],
+    };
+    const early = {
+      workoutId: earlyId,
+      finishedAt: START + 480_000,
+      sets: 2,
+      volumeKg: 60 * 8,
+      exercises: [
+        { exerciseId: benchId, name: 'Bench Press', sets: 1 },
+        { exerciseId: pullUpId, name: 'Pull-up', sets: 1 },
+      ],
+    };
+    expect(await member.query(api.history.stats, { since: null })).toEqual([
+      full,
+      early,
+    ]);
+    expect(
+      await member.query(api.history.stats, { since: START + 150_000 })
+    ).toEqual([full, early]);
+    expect(
+      await member.query(api.history.stats, { since: START + 150_001 })
+    ).toEqual([early]);
+    expect(
+      (await other.query(api.history.stats, { since: null })).map(
+        (workout) => workout.workoutId
+      )
+    ).toEqual([otherId]);
+  });
+
+  test('stats require a signed-in member', async () => {
+    const { t } = await memberWithRoutine();
+    await expect(t.query(api.history.stats, { since: null })).rejects.toThrow(
+      'NOT_AUTHENTICATED'
+    );
+  });
+
+  test('stats keep the newest 500 Workouts, still oldest first', async () => {
+    const { t, member } = await memberWithRoutine();
+    const ids = await insertCompleted(
+      t,
+      Array.from({ length: 501 }, (_, index) => ({
+        finishedAfter: index + 1,
+        sets: 1,
+      }))
+    );
+    const stats = await member.query(api.history.stats, { since: null });
+    expect(stats.map((workout) => workout.workoutId)).toEqual(ids.slice(1));
+  });
+
+  test('stats stop before the Workout whose Sets would pass 24,000 Sets read', async () => {
+    const { t, member } = await memberWithRoutine();
+    const [, newestId] = await insertCompleted(t, [
+      { finishedAfter: 1, sets: 1 },
+      { finishedAfter: 2, sets: 24_000 },
+    ]);
+    expect(await member.query(api.history.stats, { since: null })).toEqual([
+      expect.objectContaining({
+        workoutId: newestId,
+        sets: 24_000,
+        volumeKg: 24_000 * 60,
+      }),
+    ]);
+  }, 60_000);
+
+  test('detail preserves Set types, Effort, saved targets and notes; Last time excludes itself and later Workouts; every Sets count is Working Sets only', async () => {
     const { member, routineId } = await memberWithRoutine();
     const routine = await member.query(api.routines.get, { routineId });
     const benchRoutine = routine?.exercises[0];
@@ -236,6 +426,27 @@ describe('Workout history', () => {
       note: 'Felt strong today.',
       time: { workingSeconds: 100, restSeconds: 80, transitionSeconds: 70 },
     });
+    // Warm-up and Dropset Sets are logged but count nowhere: list, detail,
+    // stats and Workout Complete all see the normal and failure Sets only.
+    expect(detail.setsDone).toBe(2);
+    const listed = await member.query(api.history.list, {
+      paginationOpts: { numItems: 10, cursor: null },
+    });
+    expect(
+      listed.page.find((workout) => workout.workoutId === workoutId)?.setsDone
+    ).toBe(2);
+    expect(
+      (await member.query(api.history.stats, { since: null })).find(
+        (workout) => workout.workoutId === workoutId
+      )
+    ).toMatchObject({
+      sets: 2,
+      volumeKg: 60 * 8 + 60 * 7,
+      exercises: [{ exerciseId: bench.exerciseId, sets: 2 }],
+    });
+    expect(
+      (await member.query(api.workouts.get, { workoutId }))?.workingSets
+    ).toEqual({ done: 2, total: 4 });
     const benchDetail = detail.exercises.find(
       (exercise) => exercise.workoutExerciseId === bench._id
     );

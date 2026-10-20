@@ -1,3 +1,4 @@
+import AddIcon from '@expo/material-symbols/add.xml';
 import {
   BottomSheet,
   Button,
@@ -12,13 +13,20 @@ import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
 
+import { Card } from '@/components/native/card';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PillChip } from '@/components/native/pill-chip';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, tabularDigits, textColor, useColors } from '@/lib/ui';
 import {
   type MachinePositions,
   type MachineSetup,
   POSITION_KEYS,
   POSITIONS,
 } from '@/lib/workout/machine-setup';
+
+const ADD = { ios: 'plus', android: AddIcon } as const;
 
 type MachineSetupSheetProps = {
   /** The machine or cable Exercise being set up; null when closed. */
@@ -43,6 +51,7 @@ export function MachineSetupSheet({
 }: Readonly<MachineSetupSheetProps>) {
   const saveSetup = useMutation(api.machineSetups.save);
   const removeSetup = useMutation(api.machineSetups.remove);
+  const colors = useColors();
   const [positions, setPositions] = useState<MachinePositions>(
     exercise?.machineSetup?.positions ?? {}
   );
@@ -95,44 +104,65 @@ export function MachineSetupSheet({
       snapPoints={['half', 'full']}
     >
       <ScrollView>
-        <Column spacing={12} style={{ padding: 16 }}>
-          <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-            {`Machine setup · ${exercise?.name ?? ''}`}
-          </Text>
-          {POSITION_KEYS.map((key) => {
-            const { label, step, suffix } = POSITIONS[key];
-            const value = positions[key];
-            return (
-              <Row key={key} spacing={8} alignment="center">
-                <Column spacing={2}>
-                  <Text textStyle={{ fontSize: 15 }}>{label}</Text>
-                  <Text textStyle={{ fontSize: 17, fontWeight: '600' }}>
-                    {value === undefined ? 'Not set' : `${value}${suffix}`}
-                  </Text>
-                </Column>
-                <Spacer />
-                <Button
-                  label={`−${step}${suffix}`}
-                  variant="outlined"
-                  disabled={value === undefined}
-                  onPress={() => stepPosition(key, -1)}
-                />
-                <Button
-                  label={`+${step}${suffix}`}
-                  variant="outlined"
-                  onPress={() => stepPosition(key, 1)}
-                />
-              </Row>
-            );
-          })}
-          <Text textStyle={{ fontSize: 15, fontWeight: '700' }}>
-            Custom fields
-          </Text>
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+        >
+          <SectionHeader title={`Machine setup · ${exercise?.name ?? ''}`} />
+          <Card divided>
+            {POSITION_KEYS.map((key) => {
+              const { label, step, suffix } = POSITIONS[key];
+              const value = positions[key];
+              return (
+                <Row
+                  key={key}
+                  spacing={space.sm}
+                  alignment="center"
+                  style={{
+                    paddingHorizontal: space.lg,
+                    paddingVertical: space.md,
+                  }}
+                >
+                  <Column spacing={2}>
+                    <Text
+                      textStyle={{
+                        ...font.caption,
+                        color: textColor(colors.onSurfaceVariant),
+                      }}
+                    >
+                      {label}
+                    </Text>
+                    <Text
+                      textStyle={{
+                        ...font.bodyStrong,
+                        color: textColor(colors.onSurface),
+                      }}
+                      modifiers={tabularDigits()}
+                    >
+                      {value === undefined ? 'Not set' : `${value}${suffix}`}
+                    </Text>
+                  </Column>
+                  <Spacer flexible />
+                  <PillChip
+                    label={`−${step}${suffix}`}
+                    disabled={value === undefined}
+                    onPress={() => stepPosition(key, -1)}
+                  />
+                  <PillChip
+                    label={`+${step}${suffix}`}
+                    onPress={() => stepPosition(key, 1)}
+                  />
+                </Row>
+              );
+            })}
+          </Card>
+          <SectionHeader title="Custom fields" />
           {custom.map((field, index) => (
-            <Column
+            <Card
               // biome-ignore lint/suspicious/noArrayIndexKey: fields are edited in place by position
               key={index}
-              spacing={8}
+              padding={space.lg}
+              spacing={space.md}
             >
               <NativeTextField
                 label="Field"
@@ -158,33 +188,40 @@ export function MachineSetupSheet({
                   )
                 }
               />
-              <Button
-                label="Remove field"
-                variant="text"
-                onPress={() =>
-                  editCustom((current) =>
-                    current.filter((_, at) => at !== index)
-                  )
-                }
-              />
-            </Column>
+              <Row>
+                <PillChip
+                  label="Remove field"
+                  onPress={() =>
+                    editCustom((current) =>
+                      current.filter((_, at) => at !== index)
+                    )
+                  }
+                />
+              </Row>
+            </Card>
           ))}
-          <Button
-            label="Add field"
-            variant="outlined"
-            onPress={() =>
-              editCustom((current) => [...current, { label: '', value: '' }])
-            }
-          />
+          <Row>
+            <PillChip
+              label="Add field"
+              icon={ADD}
+              onPress={() =>
+                editCustom((current) => [...current, { label: '', value: '' }])
+              }
+            />
+          </Row>
           {errorMessage ? (
-            <Text textStyle={{ fontSize: 15 }}>{errorMessage}</Text>
+            <Text
+              textStyle={{ ...font.caption, color: textColor(colors.error) }}
+            >
+              {errorMessage}
+            </Text>
           ) : null}
-          <Button
+          <PrimaryButton
             label="Save setup"
             disabled={!hasValues || !exercise}
-            onPress={() =>
-              exercise &&
-              run(
+            onPress={() => {
+              if (!exercise) return;
+              void run(
                 () =>
                   saveSetup({
                     exerciseId: exercise.exerciseId,
@@ -192,8 +229,8 @@ export function MachineSetupSheet({
                     custom,
                   }),
                 'Could not save this Machine setup.'
-              )
-            }
+              );
+            }}
           />
           {exercise?.machineSetup ? (
             <Button

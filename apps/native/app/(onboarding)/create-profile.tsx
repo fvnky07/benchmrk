@@ -1,10 +1,10 @@
-import { Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useQuery } from 'convex/react';
 import { Redirect } from 'expo-router';
 
 import { ProfileForm } from '@/components/account/profile-form';
 import { NativeScreen } from '@/components/native/native-screen';
+import { ScreenTitle } from '@/components/native/screen-title';
 
 /** Profile setup saves the username before its final notification choice. */
 export default function CreateProfileScreen() {
@@ -13,13 +13,11 @@ export default function CreateProfileScreen() {
     return <Redirect href="/(onboarding)/push-permission" />;
   }
   return (
-    <NativeScreen>
-      <Text textStyle={{ fontSize: 30, fontWeight: '700' }}>
-        Complete your profile
-      </Text>
-      <Text textStyle={{ fontSize: 17 }}>
-        Choose a username. A photo and bio are optional.
-      </Text>
+    <NativeScreen edges={['top', 'bottom']}>
+      <ScreenTitle
+        title="Complete your profile"
+        subtitle="Choose a username. A photo and bio are optional."
+      />
       <ProfileForm mode="setup" />
     </NativeScreen>
   );

@@ -30,12 +30,12 @@ export function Chart(props: ChartProps) {
       accessible
       accessibilityLabel={props.summary}
       accessibilityRole="image"
-      style={{ height, width: '100%' }}
+      style={{ height, width: props.width }}
     >
       <Host
         colorScheme={resolvedAppearance}
         modifiers={[accessibilityHidden(true)]}
-        style={{ height, width: '100%' }}
+        style={{ height, width: props.width }}
       >
         {props.kind === 'stackedBar' ? (
           <StackedBarChart

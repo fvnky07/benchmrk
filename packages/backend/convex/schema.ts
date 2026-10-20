@@ -26,8 +26,8 @@ export const memberSettingsFields = {
   quickActions: v.array(
     v.object({ id: quickActionIdValidator, visible: v.boolean() })
   ),
-  /** The first-run "swipe right on a Set" hint was dismissed. */
-  swipeHintDismissed: v.boolean(),
+  /** The first-run "hold a Set for Note, Duplicate and Delete" hint was dismissed. */
+  holdHintDismissed: v.boolean(),
   /** Rest-end notifications play a sound. */
   restEndSound: v.boolean(),
   /** Overload targets everywhere; off suppresses computing and showing them. */
@@ -69,7 +69,7 @@ export const memberSettingsChangeFields = {
   haptics: v.optional(memberSettingsFields.haptics),
   analyticsOptOut: v.optional(memberSettingsFields.analyticsOptOut),
   quickActions: v.optional(memberSettingsFields.quickActions),
-  swipeHintDismissed: v.optional(memberSettingsFields.swipeHintDismissed),
+  holdHintDismissed: v.optional(memberSettingsFields.holdHintDismissed),
   restEndSound: v.optional(memberSettingsFields.restEndSound),
   overloadTargets: v.optional(memberSettingsFields.overloadTargets),
   targetsOffExerciseIds: v.optional(memberSettingsFields.targetsOffExerciseIds),
@@ -248,6 +248,10 @@ export default defineSchema({
   memberSettings: defineTable({
     userId: v.string(),
     ...memberSettingsChangeFields,
+    // Legacy first-run swipe hint flag, replaced by `holdHintDismissed` when
+    // Set rows lost their swipe actions. Nothing reads it; stored values are
+    // kept untouched.
+    swipeHintDismissed: v.optional(v.boolean()),
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 

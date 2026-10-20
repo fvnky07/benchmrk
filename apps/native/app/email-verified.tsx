@@ -1,8 +1,8 @@
-import { Button } from '@expo/ui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 
-import { AuthShell } from '@/components/native/auth-shell';
+import { AuthShell, useAuthColumnWidth } from '@/components/native/auth-shell';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { storeLinkedSession } from '@/lib/auth/client';
 
 /**
@@ -14,6 +14,7 @@ export default function EmailVerifiedScreen() {
     cookie?: string;
     error?: string;
   }>();
+  const columnWidth = useAuthColumnWidth();
 
   useEffect(() => {
     if (cookie && !error) storeLinkedSession(cookie);
@@ -24,14 +25,22 @@ export default function EmailVerifiedScreen() {
       title="This verification link didn’t work"
       supportingText="It may have expired or already been used. Ask for a new one from Settings → Manage account."
     >
-      <Button label="Continue" onPress={() => router.replace('/')} />
+      <PrimaryButton
+        label="Continue"
+        width={columnWidth}
+        onPress={() => router.replace('/')}
+      />
     </AuthShell>
   ) : (
     <AuthShell
       title="Email verified"
       supportingText="You can now create and join Groups, and recover your password if you need to."
     >
-      <Button label="Continue" onPress={() => router.replace('/')} />
+      <PrimaryButton
+        label="Continue"
+        width={columnWidth}
+        onPress={() => router.replace('/')}
+      />
     </AuthShell>
   );
 }

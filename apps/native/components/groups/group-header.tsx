@@ -1,3 +1,4 @@
+import PersonAddIcon from '@expo/material-symbols/person_add.xml';
 import {
   Button,
   Column,
@@ -11,9 +12,18 @@ import type { api } from '@repo/backend/convex/_generated/api';
 import type { FunctionReturnType } from 'convex/server';
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
-import { Text as NativeText, useWindowDimensions, View } from 'react-native';
+import { Text as NativeText, View } from 'react-native';
+import { Card } from '@/components/native/card';
+import { PillChip } from '@/components/native/pill-chip';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
-import { textColor, useColors } from '@/lib/ui';
+import {
+  font,
+  space,
+  tabularDigits,
+  textColor,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { formatClock } from '@/lib/workout/format';
 
@@ -23,7 +33,6 @@ type GroupHeaderProps = {
   group: GroupView;
   now: number;
   variant: 'full' | 'compact';
-  collapsed?: boolean;
   onBack?: () => void;
   onClose?: () => void;
   onExpand?: () => void;
@@ -33,6 +42,10 @@ type GroupHeaderProps = {
 
 const AVATAR_SIZE = 40;
 const AVATAR_OVERLAP = 12;
+const INVITE_ICON = {
+  ios: 'person.badge.plus',
+  android: PersonAddIcon,
+} as const;
 
 function MemberAvatars({
   group,
@@ -101,12 +114,42 @@ function MemberAvatars({
   );
 }
 
+/** A labelled pace bar: label and percentage above the progress track. */
+function PaceBar({
+  label,
+  fraction,
+  width,
+}: Readonly<{ label: string; fraction: number; width: number }>) {
+  const colors = useColors();
+  return (
+    <Column spacing={6}>
+      <Row alignment="center" style={{ width }}>
+        <Text
+          textStyle={{
+            ...font.label,
+            color: textColor(colors.onSurfaceVariant),
+          }}
+        >
+          {label}
+        </Text>
+        <Spacer flexible />
+        <Text
+          modifiers={tabularDigits()}
+          textStyle={{ ...font.label, color: textColor(colors.onSurface) }}
+        >{`${Math.round(fraction * 100)}%`}</Text>
+      </Row>
+      <Column style={{ width }}>
+        <WorkoutProgress fraction={fraction} />
+      </Column>
+    </Column>
+  );
+}
+
 /** The full-screen and drawer headers share member identity and actions. */
 export function GroupHeader({
   group,
   now,
   variant,
-  collapsed = false,
   onBack,
   onClose,
   onExpand,
@@ -114,7 +157,7 @@ export function GroupHeader({
   menu,
 }: Readonly<GroupHeaderProps>) {
   const colors = useColors();
-  const { width } = useWindowDimensions();
+  const contentWidth = useContentWidth();
   const together = `${formatClock((now - group.createdAt) / 1000)} together`;
   const yourProgress = group.members.find((member) => member.isYou)?.progress;
   const yourPace =
@@ -132,14 +175,21 @@ export function GroupHeader({
               : 0),
           0
         ) / group.members.length;
-  const paceWidth = Math.max(100, (width - 64) / 2);
 
   if (variant === 'compact') {
     return (
-      <Column spacing={8}>
-        <Row spacing={8} alignment="center">
-          <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>Group</Text>
-          <Spacer />
+      <Column spacing={space.md}>
+        <Row
+          spacing={space.sm}
+          alignment="center"
+          style={{ width: contentWidth }}
+        >
+          <Text
+            textStyle={{ ...font.heading, color: textColor(colors.onSurface) }}
+          >
+            Group
+          </Text>
+          <Spacer flexible />
           {onExpand ? (
             <Button label="Expand" variant="text" onPress={onExpand} />
           ) : null}
@@ -147,70 +197,70 @@ export function GroupHeader({
             <Button label="Close" variant="text" onPress={onClose} />
           ) : null}
         </Row>
-        <MemberAvatars group={group} width={width - 48} />
-        {menu}
-      </Column>
-    );
-  }
-
-  if (collapsed) {
-    return (
-      <Column spacing={8}>
-        <Row spacing={12} alignment="center">
-          <Column style={{ width: Math.max(80, width - 200) }}>
-            <MemberAvatars group={group} width={Math.max(80, width - 200)} />
-          </Column>
-          <Text textStyle={{ fontSize: 14, fontWeight: '600' }}>
-            {together}
-          </Text>
-        </Row>
+        <MemberAvatars group={group} width={contentWidth} />
         {menu}
       </Column>
     );
   }
 
   return (
-    <Column spacing={12}>
-      <Row spacing={8} alignment="center">
-        {onBack ? (
-          <Button
-            label="Workout"
-            variant="text"
-            modifiers={[accessibilityModifier('Back to your Workout')]}
-            onPress={onBack}
-          />
-        ) : null}
-        <Spacer />
-        {onInvite ? <Button label="Invite" onPress={onInvite} /> : null}
-      </Row>
-      <MemberAvatars group={group} width={width - 48} />
-      <Text textStyle={{ fontSize: 18, fontWeight: '700' }}>
-        {group.members.map((member) => member.username).join(', ')}
-      </Text>
-      <Text
-        textStyle={{ fontSize: 15, color: textColor(colors.onSurfaceVariant) }}
-      >
-        {`${yourProgress?.routineName ?? 'Your Workout'} · ${together}`}
-      </Text>
+    <Column spacing={space.lg}>
+      {onBack || onInvite ? (
+        <Row
+          spacing={space.sm}
+          alignment="center"
+          style={{ width: contentWidth }}
+        >
+          {onBack ? (
+            <Button
+              label="Workout"
+              variant="text"
+              modifiers={[accessibilityModifier('Back to your Workout')]}
+              onPress={onBack}
+            />
+          ) : null}
+          <Spacer flexible />
+          {onInvite ? (
+            <PillChip
+              icon={INVITE_ICON}
+              label="Invite"
+              selected
+              onPress={onInvite}
+            />
+          ) : null}
+        </Row>
+      ) : null}
+      <Column spacing={space.md}>
+        <MemberAvatars group={group} width={contentWidth} />
+        <Column spacing={2}>
+          <Text
+            textStyle={{ ...font.heading, color: textColor(colors.onSurface) }}
+          >
+            {group.members.map((member) => member.username).join(', ')}
+          </Text>
+          <Text
+            textStyle={{
+              ...font.caption,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
+            {`${yourProgress?.routineName ?? 'Your Workout'} · ${together}`}
+          </Text>
+        </Column>
+      </Column>
+      <Card padding={space.lg} spacing={space.md}>
+        <PaceBar
+          label="Your Pace"
+          fraction={yourPace}
+          width={contentWidth - space.lg * 2}
+        />
+        <PaceBar
+          label="Group average Pace"
+          fraction={groupPace}
+          width={contentWidth - space.lg * 2}
+        />
+      </Card>
       {menu}
-      <Row spacing={16}>
-        <Column spacing={6} style={{ width: paceWidth }}>
-          <Text
-            textStyle={{ fontSize: 14, fontWeight: '600' }}
-          >{`Your Pace ${Math.round(yourPace * 100)}%`}</Text>
-          <RNHostView matchContents style={{ width: paceWidth }}>
-            <WorkoutProgress fraction={yourPace} />
-          </RNHostView>
-        </Column>
-        <Column spacing={6} style={{ width: paceWidth }}>
-          <Text
-            textStyle={{ fontSize: 14, fontWeight: '600' }}
-          >{`Group average Pace ${Math.round(groupPace * 100)}%`}</Text>
-          <RNHostView matchContents style={{ width: paceWidth }}>
-            <WorkoutProgress fraction={groupPace} />
-          </RNHostView>
-        </Column>
-      </Row>
     </Column>
   );
 }

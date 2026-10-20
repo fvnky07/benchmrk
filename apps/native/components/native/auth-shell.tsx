@@ -1,51 +1,63 @@
 import { Column, Host, RNHostView, Row, ScrollView, Text } from '@expo/ui';
-import { type ReactNode, useEffect } from 'react';
-import { AccessibilityInfo, useWindowDimensions } from 'react-native';
+import { useEffect } from 'react';
+import { AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/native/brand-logo';
-import { textColor, useAppearance, useColors } from '@/lib/ui';
+import {
+  font,
+  space,
+  textColor,
+  useAppearance,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
+import {
+  type ScreenEdge,
+  type ScreenShellProps,
+  shellSafeAreaEdges,
+} from './native-screen';
 
 const CONTENT_MAX_WIDTH = 420;
-const OUTER_INSET = 24;
 const LOGO_SIZE = 56;
+const DEFAULT_EDGES: readonly ScreenEdge[] = ['top', 'bottom'];
 
-/** Width of the auth content column: the phone width minus insets, capped at 420pt. */
+/** Width of the auth content column: the content width, capped at 420pt. */
 export function useAuthColumnWidth(): number {
-  const { width } = useWindowDimensions();
-  return Math.min(width - OUTER_INSET * 2, CONTENT_MAX_WIDTH);
+  return Math.min(useContentWidth(), CONTENT_MAX_WIDTH);
 }
 
 /**
  * The shared layout of every authentication route: one native Host, a
  * scrollable centered column, the benchmrk logo, route heading and supporting
- * copy, the route's content, then the factual legal footer. The safe area
- * keeps headerless routes clear of the status and navigation bars; it adds
- * nothing below a native header.
+ * copy, the route's content, then the factual legal footer. `edges` defaults
+ * to top and bottom for header-less routes; routes under the auth Stack header
+ * pass `['bottom']`, because Android reports the full status-bar inset even
+ * below a native header and would pad the top twice.
  */
 export function AuthShell({
   title,
   supportingText,
   children,
-}: Readonly<{ title: string; supportingText: string; children: ReactNode }>) {
+  edges = DEFAULT_EDGES,
+}: ScreenShellProps & Readonly<{ title: string; supportingText: string }>) {
   const { resolvedAppearance } = useAppearance();
   const colors = useColors();
   const columnWidth = useAuthColumnWidth();
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView edges={shellSafeAreaEdges(edges)} style={{ flex: 1 }}>
       <Host colorScheme={resolvedAppearance} style={{ flex: 1 }}>
         <ScrollView showsIndicators>
-          <Column alignment="center" style={{ padding: OUTER_INSET }}>
-            <Column spacing={16} style={{ width: columnWidth }}>
+          <Column alignment="center" style={{ padding: space.screen }}>
+            <Column spacing={space.lg} style={{ width: columnWidth }}>
               <RNHostView matchContents>
                 <BrandLogo size={LOGO_SIZE} />
               </RNHostView>
-              <Column spacing={8}>
+              <Column spacing={space.sm}>
                 <Text
                   textStyle={{
-                    fontSize: 30,
-                    fontWeight: '700',
+                    ...font.title,
                     color: textColor(colors.onSurface),
                   }}
                 >
@@ -53,7 +65,7 @@ export function AuthShell({
                 </Text>
                 <Text
                   textStyle={{
-                    fontSize: 17,
+                    ...font.body,
                     color: textColor(colors.onSurface),
                   }}
                 >
@@ -63,7 +75,7 @@ export function AuthShell({
               {children}
               <Text
                 textStyle={{
-                  fontSize: 14,
+                  ...font.caption,
                   color: textColor(colors.onSurfaceVariant),
                   textAlign: 'center',
                 }}

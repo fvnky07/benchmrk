@@ -1,8 +1,9 @@
 import { Row, ScrollView } from '@expo/ui';
 import type { ReactNode } from 'react';
 
+import { PillChip } from '@/components/native/pill-chip';
+import { space } from '@/lib/ui';
 import { QUICK_ACTIONS, type QuickActionId } from '@/lib/workout/quick-actions';
-import { QuickActionChip } from './quick-action-chip';
 
 type QuickActionRowProps = {
   /** A fixed chip before the member's configurable chips. */
@@ -15,7 +16,7 @@ type QuickActionRowProps = {
   badges?: Partial<Record<QuickActionId, number>>;
 };
 
-/** The horizontally scrollable chip row under the Exercise title. */
+/** The horizontally scrollable pill row under the Exercise title. */
 export function QuickActionRow({
   leading,
   actions,
@@ -24,7 +25,7 @@ export function QuickActionRow({
 }: Readonly<QuickActionRowProps>) {
   return (
     <ScrollView direction="horizontal" showsIndicators={false}>
-      <Row spacing={8}>
+      <Row alignment="center" spacing={space.sm}>
         {leading}
         {actions.map(({ id, visible }) => {
           const onPress = handlers[id];
@@ -32,7 +33,7 @@ export function QuickActionRow({
           const { label, icon, iconOnly } = QUICK_ACTIONS[id];
           const count = badges[id] ?? 0;
           return (
-            <QuickActionChip
+            <PillChip
               key={id}
               label={count > 0 ? `${label} · ${count}` : label}
               icon={icon}

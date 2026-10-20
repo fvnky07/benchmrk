@@ -1,10 +1,19 @@
-import { Host, List, ListItem, Picker, Text } from '@expo/ui';
+import { Column, Picker, Text } from '@expo/ui';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { Card, CardRow } from '@/components/native/card';
+import { NativeScreen } from '@/components/native/native-screen';
 import { analytics } from '@/lib/analytics';
-import { type AppearancePreference, useAppearance } from '@/lib/ui';
+import {
+  type AppearancePreference,
+  font,
+  space,
+  textColor,
+  useAppearance,
+  useColors,
+} from '@/lib/ui';
 
 const THEME_OPTIONS: ReadonlyArray<{
   label: string;
@@ -16,14 +25,10 @@ const THEME_OPTIONS: ReadonlyArray<{
 ];
 
 export default function AppearanceScreen() {
+  const colors = useColors();
   const systemAppearance = useColorScheme();
-  const {
-    isLoadingPreference,
-    isSavingPreference,
-    preference,
-    resolvedAppearance,
-    setPreference,
-  } = useAppearance();
+  const { isLoadingPreference, isSavingPreference, preference, setPreference } =
+    useAppearance();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useFocusEffect(
@@ -52,50 +57,69 @@ export default function AppearanceScreen() {
     [isSavingPreference, preference, setPreference]
   );
 
+  const hasStatus = isLoadingPreference || isSavingPreference || errorMessage;
+
   return (
-    <Host colorScheme={resolvedAppearance} style={{ flex: 1 }}>
-      <List>
-        <ListItem supportingText="Choose whether Benchmrk follows your device appearance or stays light or dark. On Android 12 and later, controls use colors from your wallpaper.">
-          Appearance
-        </ListItem>
-        <Picker
-          selectedValue={preference}
-          onValueChange={handlePreferenceChange}
-          enabled={!isSavingPreference && !isLoadingPreference}
-        >
-          {THEME_OPTIONS.map((option) => (
-            <Picker.Item
-              key={option.value}
-              label={option.label}
-              value={option.value}
-            />
-          ))}
-        </Picker>
-        <ListItem
-          supportingText={`Your device is currently using ${systemAppearance === 'dark' ? 'dark' : 'light'} appearance.`}
-        >
-          System appearance
-        </ListItem>
-        {isLoadingPreference ? (
-          <ListItem supportingText="Loading your saved preference…">
+    <NativeScreen>
+      <Card divided>
+        <Column>
+          <CardRow supportingText="Choose whether Benchmrk follows your device appearance or stays light or dark. On Android 12 and later, controls use colors from your wallpaper.">
             Appearance
-          </ListItem>
+          </CardRow>
+          <Column
+            style={{ paddingHorizontal: space.lg, paddingBottom: space.md }}
+          >
+            <Picker
+              selectedValue={preference}
+              onValueChange={handlePreferenceChange}
+              enabled={!isSavingPreference && !isLoadingPreference}
+            >
+              {THEME_OPTIONS.map((option) => (
+                <Picker.Item
+                  key={option.value}
+                  label={option.label}
+                  value={option.value}
+                />
+              ))}
+            </Picker>
+          </Column>
+        </Column>
+        {/* A Light or Dark preference is applied to the window, so the
+            device's own appearance is only observable while following it. */}
+        {preference === 'system' ? (
+          <CardRow
+            supportingText={`Your device is currently using ${systemAppearance === 'dark' ? 'dark' : 'light'} appearance.`}
+          >
+            System appearance
+          </CardRow>
         ) : null}
-        {isSavingPreference ? (
-          <ListItem supportingText="Saving your appearance preference…">
-            Appearance
-          </ListItem>
-        ) : null}
-        {errorMessage ? (
-          <ListItem supportingText={errorMessage}>Could not save</ListItem>
-        ) : null}
-        <ListItem>
-          <Text textStyle={{ fontSize: 14 }}>
-            This setting affects this account only. Signed-out screens follow
-            your device.
-          </Text>
-        </ListItem>
-      </List>
-    </Host>
+      </Card>
+      {hasStatus ? (
+        <Card divided>
+          {isLoadingPreference ? (
+            <CardRow supportingText="Loading your saved preference…">
+              Appearance
+            </CardRow>
+          ) : null}
+          {isSavingPreference ? (
+            <CardRow supportingText="Saving your appearance preference…">
+              Appearance
+            </CardRow>
+          ) : null}
+          {errorMessage ? (
+            <CardRow supportingText={errorMessage}>Could not save</CardRow>
+          ) : null}
+        </Card>
+      ) : null}
+      <Text
+        textStyle={{
+          ...font.caption,
+          color: textColor(colors.onSurfaceVariant),
+        }}
+      >
+        This setting affects this account only. Signed-out screens follow your
+        device.
+      </Text>
+    </NativeScreen>
   );
 }

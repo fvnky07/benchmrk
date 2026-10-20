@@ -1,4 +1,5 @@
-import { Button, Column, ListItem } from '@expo/ui';
+import QrCodeScannerIcon from '@expo/material-symbols/qr_code_scanner.xml';
+import { Column, Icon } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -6,7 +7,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { EmailVerificationRow } from '@/components/account/email-verification-row';
+import { Card, CardRow } from '@/components/native/card';
 import { joinCodeFrom } from '@/lib/groups/join-code';
+import { space, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 import { errorCode } from '@/lib/workout/format';
 
@@ -19,8 +22,13 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 const SCAN_ACCESSIBILITY = [accessibilityModifier('Scan a Group QR code')];
+const SCAN_ICON = {
+  ios: 'qrcode.viewfinder',
+  android: QrCodeScannerIcon,
+} as const;
 
 export function ScanToJoin() {
+  const colors = useColors();
   const joinByCode = useMutation(api.groups.joinByCode);
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
@@ -124,25 +132,34 @@ export function ScanToJoin() {
   };
 
   return (
-    <Column spacing={8}>
-      <Button
-        disabled={busy || !available}
-        label="Scan QR"
-        modifiers={SCAN_ACCESSIBILITY}
-        onPress={() => void scan()}
-        variant="outlined"
-      />
-      {!available ? (
-        <ListItem supportingText="Scanning isn’t available on this device. Enter the code instead.">
+    <Column spacing={space.lg}>
+      <Card divided>
+        <CardRow
+          chevron={available && !busy}
+          leading={
+            <Icon name={SCAN_ICON} size={24} color={colors.onSurfaceVariant} />
+          }
+          modifiers={SCAN_ACCESSIBILITY}
+          supportingText={
+            available
+              ? undefined
+              : 'Scanning isn’t available on this device. Enter the code instead.'
+          }
+          onPress={busy || !available ? undefined : () => void scan()}
+        >
           Scan QR
-        </ListItem>
+        </CardRow>
+        {errorMessage ? (
+          <CardRow supportingText={errorMessage}>
+            Couldn’t join this Group
+          </CardRow>
+        ) : null}
+      </Card>
+      {needsVerification ? (
+        <Card>
+          <EmailVerificationRow />
+        </Card>
       ) : null}
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>
-          Couldn’t join this Group
-        </ListItem>
-      ) : null}
-      {needsVerification ? <EmailVerificationRow /> : null}
     </Column>
   );
 }

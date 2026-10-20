@@ -1,25 +1,21 @@
 import EditNoteIcon from '@expo/material-symbols/edit_note.xml';
 import KeepIcon from '@expo/material-symbols/keep.xml';
-import {
-  BottomSheet,
-  Button,
-  Column,
-  Icon,
-  ListItem,
-  Row,
-  Spacer,
-  Text,
-} from '@expo/ui';
+import { BottomSheet, Column, Icon, type IconProps, Row, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import type { ColorValue } from 'react-native';
 
 import { GroupChip } from '@/components/groups/group-chip';
 import { GroupDrawer } from '@/components/groups/group-drawer';
+import { Card, CardRow } from '@/components/native/card';
 import { DockedScreen } from '@/components/native/docked-screen';
 import { NativeScreen } from '@/components/native/native-screen';
+import { PillChip } from '@/components/native/pill-chip';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
 import { ExercisePicker } from '@/components/workout/exercise-picker';
 import { ExerciseStrip } from '@/components/workout/exercise-strip';
 import { ExerciseTitlePager } from '@/components/workout/exercise-title-pager';
@@ -35,9 +31,22 @@ import { SetTypeSheet } from '@/components/workout/set-type-sheet';
 import { StructureSheet } from '@/components/workout/structure-sheet';
 import { TargetSheet } from '@/components/workout/target-sheet';
 import { WorkoutProgress } from '@/components/workout/workout-progress';
+import {
+  fillRowWidth,
+  WorkoutTopBar,
+} from '@/components/workout/workout-top-bar';
 import { useHaptics } from '@/lib/haptics';
-import { textColor, useColors } from '@/lib/ui';
-import { formatClock, weightInUnit } from '@/lib/workout/format';
+import {
+  font,
+  fullWidthSurface,
+  radius,
+  space,
+  tabularDigits,
+  textColor,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
+import { weightInUnit } from '@/lib/workout/format';
 import { setupSummary } from '@/lib/workout/machine-setup';
 import { plateStrip } from '@/lib/workout/plates';
 import {
@@ -84,6 +93,8 @@ type Drafts = Record<string, Partial<Record<SetField, string>>>;
 
 const NOTE_ICON = { ios: 'note.text', android: EditNoteIcon } as const;
 const PIN_ICON = { ios: 'pin.fill', android: KeepIcon } as const;
+/** Room the "Keypad" pill takes beside "Log Set" in the collapsed dock. */
+const KEYPAD_PILL_ROOM = 108;
 
 /** A Working Set's target is visible only while targets are enabled. */
 function workingTarget(set: WorkoutSet, targetsEnabled: boolean) {
@@ -95,6 +106,61 @@ function workingTarget(set: WorkoutSet, targetsEnabled: boolean) {
 /** The target an empty field of an unlogged Working Set shows and logs. */
 function openTarget(set: WorkoutSet, targetsEnabled: boolean) {
   return set.completedAt === null ? workingTarget(set, targetsEnabled) : null;
+}
+
+/** A full-width tinted card: the idle prompt, Terminate confirmation, errors and Alternating sets. */
+function TintedCard({
+  fill,
+  padding,
+  spacing,
+  children,
+}: Readonly<{
+  fill: ColorValue;
+  padding: number;
+  spacing?: number;
+  children: ReactNode;
+}>) {
+  return (
+    <Column
+      spacing={spacing}
+      {...fullWidthSurface({
+        backgroundColor: fill,
+        borderRadius: radius.card,
+        padding,
+      })}
+    >
+      {children}
+    </Column>
+  );
+}
+
+/** A one-line note or setup row: icon, muted text, an optional pill. */
+function InfoRow({
+  icon,
+  text,
+  actionLabel,
+  onPress,
+}: Readonly<{
+  icon: IconProps['name'];
+  text: string;
+  actionLabel?: string;
+  onPress: () => void;
+}>) {
+  const colors = useColors();
+
+  return (
+    <Row alignment="center" spacing={space.sm} onPress={onPress}>
+      <Icon name={icon} size={16} color={colors.onSurfaceVariant} />
+      <Text
+        numberOfLines={2}
+        textStyle={{ fontSize: 14, color: textColor(colors.onSurfaceVariant) }}
+        modifiers={fillRowWidth()}
+      >
+        {text}
+      </Text>
+      {actionLabel ? <PillChip label={actionLabel} onPress={onPress} /> : null}
+    </Row>
+  );
 }
 
 export default function ActiveWorkoutScreen() {
@@ -143,6 +209,7 @@ export default function ActiveWorkoutScreen() {
   const haptic = useHaptics();
   const now = useNow();
   const colors = useColors();
+  const contentWidth = useContentWidth();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Drafts>({});
   const [chosenFocus, setChosenFocus] = useState<Focus | null>(null);
@@ -236,19 +303,32 @@ export default function ActiveWorkoutScreen() {
 
   if (workout === undefined || settings === undefined) {
     return (
-      <NativeScreen>
-        <Text textStyle={{ fontSize: 17 }}>Loading Workout…</Text>
+      <NativeScreen edges={['top']}>
+        <Card padding={space.lg}>
+          <Text
+            textStyle={{
+              ...font.caption,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
+            Loading Workout…
+          </Text>
+        </Card>
       </NativeScreen>
     );
   }
 
   if (workout === null || settings === null) {
     return (
-      <NativeScreen>
-        <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
-          No Workout in progress
-        </Text>
-        <Button label="Back to Workouts" onPress={() => router.back()} />
+      <NativeScreen edges={['top']}>
+        <Card padding={space.lg}>
+          <Text
+            textStyle={{ ...font.section, color: textColor(colors.onSurface) }}
+          >
+            No Workout in progress
+          </Text>
+        </Card>
+        <PrimaryButton label="Back to Workouts" onPress={() => router.back()} />
       </NativeScreen>
     );
   }
@@ -302,6 +382,9 @@ export default function ActiveWorkoutScreen() {
         ? { setId: nextSet._id, field: fields[0] }
         : null;
   const focusSet = exercise?.sets.find((set) => set._id === focus?.setId);
+  // Once every planned Set is logged, Finish takes the dock unless the member
+  // chose a Set to edit.
+  const isKeypadShown = isKeypadOpen && (!allDone || focusedSet !== undefined);
 
   // Every Workout edit goes through here, so each one moves the idle alert.
   const attempt = async (action: () => Promise<unknown>, failure: string) => {
@@ -426,14 +509,51 @@ export default function ActiveWorkoutScreen() {
     );
   finishFromIdle.current = finishNow;
 
-  const keypad =
-    focus && focusSet && isKeypadOpen ? (
+  // While a barbell weight is being edited: its per-side plate breakdown.
+  const editedWeightKg =
+    exercise?.equipment === 'barbell' &&
+    isKeypadShown &&
+    focusSet &&
+    focus?.field === 'weight'
+      ? (draftToStored('weight', draftOf(focusSet, 'weight'), units) ??
+        openTarget(focusSet, targetsEnabled)?.weightKg ??
+        null)
+      : null;
+
+  const progressFraction =
+    workout.progress.total === 0
+      ? 0
+      : workout.progress.done / workout.progress.total;
+  const pace =
+    settings.aheadBehind && workout.targetDurationSeconds
+      ? aheadBehind(
+          (now - workout.startedAt) / 1000,
+          workout.targetDurationSeconds,
+          progressFraction
+        )
+      : null;
+  // The dock spans the screen inside its 12pt inset.
+  const dockWidth = contentWidth + 2 * (space.screen - space.md);
+  const muted = { ...font.caption, color: textColor(colors.onSurfaceVariant) };
+
+  const dock =
+    focus && focusSet && isKeypadShown ? (
       <SetKeypad
+        width={dockWidth}
         target={`Set ${labels[exercise?.sets.indexOf(focusSet) ?? 0]} · ${FIELD_LABELS[focus.field]}`}
         field={focus.field}
         effortScale={effortScale}
         rpe={focusSet.rpe}
         isFailure={focusSet.type === 'failure'}
+        plateStrip={
+          editedWeightKg === null
+            ? null
+            : plateStrip(
+                weightInUnit(editedWeightKg, settings.plates.unit),
+                settings.plates
+              )
+        }
+        onOpenPlates={() => setIsPlatesOpen(true)}
         onKey={pressKey}
         onStep={step}
         onRate={(rpe) =>
@@ -464,162 +584,164 @@ export default function ActiveWorkoutScreen() {
         onLog={() => logSet(focusSet)}
         onHide={() => setIsKeypadOpen(false)}
       />
+    ) : allDone ? (
+      <PrimaryButton
+        label="Finish Workout"
+        width={dockWidth}
+        onPress={() => end('finish')}
+      />
     ) : focusSet ? (
-      <Row spacing={8}>
-        <Button
-          label="Show keypad"
-          variant="outlined"
-          onPress={() => setIsKeypadOpen(true)}
+      <Row alignment="center" spacing={space.sm}>
+        <PillChip label="Keypad" onPress={() => setIsKeypadOpen(true)} />
+        <PrimaryButton
+          label="Log Set"
+          width={dockWidth - KEYPAD_PILL_ROOM}
+          onPress={() => logSet(focusSet)}
         />
-        <Spacer />
-        <Button label="Log Set" onPress={() => logSet(focusSet)} />
       </Row>
     ) : null;
 
-  // While a barbell weight is being edited: its per-side plate breakdown.
-  const editedWeightKg =
-    exercise?.equipment === 'barbell' &&
-    isKeypadOpen &&
-    focusSet &&
-    focus?.field === 'weight'
-      ? (draftToStored('weight', draftOf(focusSet, 'weight'), units) ??
-        openTarget(focusSet, targetsEnabled)?.weightKg ??
-        null)
-      : null;
-  const plateStripRow =
-    editedWeightKg === null ? null : (
-      <Row
-        spacing={8}
-        alignment="center"
-        onPress={() => setIsPlatesOpen(true)}
-        style={{
-          padding: 10,
-          borderRadius: 10,
-          backgroundColor: colors.surfaceContainerHigh,
-        }}
-      >
-        <Text textStyle={{ fontSize: 14 }}>
-          {plateStrip(
-            weightInUnit(editedWeightKg, settings.plates.unit),
-            settings.plates
-          )}
-        </Text>
-      </Row>
-    );
-
   return (
     <DockedScreen
-      dock={
-        plateStripRow ? (
-          <Column spacing={8}>
-            {plateStripRow}
-            {keypad}
-          </Column>
-        ) : (
-          keypad
-        )
+      edges={['top']}
+      header={
+        <WorkoutTopBar
+          elapsedSeconds={(now - workout.startedAt) / 1000}
+          workoutName={workout.name}
+          rest={
+            exercise ? (
+              <RestTimer
+                rest={workout.rest}
+                plannedSeconds={exercisePlannedRest}
+                now={now}
+                onAdjust={(seconds) =>
+                  attempt(
+                    () => adjustRest({ workoutId: workout._id, seconds }),
+                    'Could not adjust rest.'
+                  )
+                }
+                onSkip={() =>
+                  attempt(
+                    () => skipRest({ workoutId: workout._id }),
+                    'Could not skip rest.'
+                  )
+                }
+                onReset={() =>
+                  attempt(
+                    () => resetRest({ workoutId: workout._id }),
+                    'Could not restart rest.'
+                  )
+                }
+                onOpenOptions={() => setIsRestSheetOpen(true)}
+              />
+            ) : null
+          }
+          onOpenExercises={() => setIsStructureOpen(true)}
+          onOpenMenu={() => setIsMenuOpen(true)}
+        />
       }
+      dock={dock}
+      dockFill={colors.surfaceContainer}
     >
-      <Row spacing={12} alignment="center">
-        <Button
-          label="Workout menu"
-          variant="text"
-          onPress={() => setIsMenuOpen(true)}
-        />
-        <Column spacing={2}>
-          <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
-            {workout.name}
-          </Text>
-          <Text textStyle={{ fontSize: 15 }}>
-            {formatClock((now - workout.startedAt) / 1000)}
-          </Text>
-        </Column>
-        <Spacer />
-        <Button
-          label="Group"
-          variant="text"
-          onPress={() => router.push('/workout/group')}
-        />
-        <Button
-          label="Exercises"
-          variant="text"
-          onPress={() => setIsStructureOpen(true)}
-        />
-        <Button
-          label="Terminate"
-          variant="text"
-          onPress={() => setIsConfirmingTerminate(true)}
-        />
-      </Row>
-      {workout.note ? (
-        <Row
-          spacing={6}
-          alignment="center"
-          onPress={() => setNoteTarget({ kind: 'workout' })}
-        >
-          <Icon name={NOTE_ICON} size={14} color={colors.onSurfaceVariant} />
-          <Text textStyle={{ fontSize: 14 }}>{workout.note}</Text>
-        </Row>
-      ) : null}
-      {stillWorkingOut.isIdle ? (
-        <Column spacing={8}>
-          <ListItem supportingText="Nothing has happened for 20 minutes.">
-            Still working out?
-          </ListItem>
-          <Row spacing={8}>
-            <Button label="Finish Workout" onPress={finishNow} />
-            <Button
-              label="Keep going"
-              variant="outlined"
-              onPress={stillWorkingOut.markActive}
-            />
-          </Row>
-        </Column>
-      ) : null}
-      <Row spacing={12} alignment="center">
-        <Column style={{ width: 260 }}>
-          <WorkoutProgress
-            fraction={
-              workout.progress.total === 0
-                ? 0
-                : workout.progress.done / workout.progress.total
-            }
-          />
-        </Column>
-        <Text textStyle={{ fontSize: 14 }}>
-          {`${workout.progress.done}/${workout.progress.total} Sets`}
+      <Column spacing={6}>
+        <WorkoutProgress fraction={progressFraction} />
+        <Text textStyle={muted} modifiers={tabularDigits()}>
+          {`${workout.progress.done}/${workout.progress.total} Sets${pace ? ` · ${pace}` : ''}`}
         </Text>
-        {settings.aheadBehind && workout.targetDurationSeconds ? (
-          <Text
-            textStyle={{
-              fontSize: 14,
-              color: textColor(colors.onSurfaceVariant),
-            }}
-          >
-            {aheadBehind(
-              (now - workout.startedAt) / 1000,
-              workout.targetDurationSeconds,
-              workout.progress.total === 0
-                ? 0
-                : workout.progress.done / workout.progress.total
-            )}
-          </Text>
-        ) : null}
-      </Row>
-      {isConfirmingTerminate ? (
-        <Column spacing={8}>
-          <ListItem
-            supportingText={`${workout.progress.done} of ${workout.progress.total} planned Sets are logged. Logged Sets are kept.`}
-          >
-            Terminate this Workout?
-          </ListItem>
-          <Button label="Terminate Workout" onPress={() => end('terminate')} />
-          <Button
-            label="Keep going"
-            variant="outlined"
-            onPress={() => setIsConfirmingTerminate(false)}
-          />
+      </Column>
+      {stillWorkingOut.isIdle || isConfirmingTerminate || errorMessage ? (
+        <Column spacing={space.sm}>
+          {stillWorkingOut.isIdle ? (
+            <TintedCard
+              fill={colors.secondaryContainer}
+              padding={space.lg}
+              spacing={space.md}
+            >
+              <Column spacing={2}>
+                <Text
+                  textStyle={{
+                    ...font.section,
+                    color: textColor(colors.onSecondaryContainer),
+                  }}
+                >
+                  Still working out?
+                </Text>
+                <Text
+                  textStyle={{
+                    fontSize: 15,
+                    color: textColor(colors.onSecondaryContainer),
+                  }}
+                >
+                  Nothing has happened for 20 minutes.
+                </Text>
+              </Column>
+              <Row spacing={space.sm}>
+                <PillChip label="Finish Workout" selected onPress={finishNow} />
+                <PillChip
+                  label="Keep going"
+                  onPress={stillWorkingOut.markActive}
+                />
+              </Row>
+            </TintedCard>
+          ) : null}
+          {isConfirmingTerminate ? (
+            <TintedCard
+              fill={colors.errorContainer}
+              padding={space.lg}
+              spacing={space.md}
+            >
+              <Column spacing={2}>
+                <Text
+                  textStyle={{
+                    ...font.section,
+                    color: textColor(colors.onErrorContainer),
+                  }}
+                >
+                  Terminate this Workout?
+                </Text>
+                <Text
+                  textStyle={{
+                    fontSize: 15,
+                    color: textColor(colors.onErrorContainer),
+                  }}
+                >
+                  {`${workout.progress.done} of ${workout.progress.total} planned Sets are logged. Logged Sets are kept.`}
+                </Text>
+              </Column>
+              <Row spacing={space.sm}>
+                <PillChip
+                  label="Terminate Workout"
+                  selected
+                  onPress={() => end('terminate')}
+                />
+                <PillChip
+                  label="Keep going"
+                  onPress={() => setIsConfirmingTerminate(false)}
+                />
+              </Row>
+            </TintedCard>
+          ) : null}
+          {errorMessage ? (
+            <TintedCard fill={colors.errorContainer} padding={space.lg}>
+              <Text
+                textStyle={{
+                  fontSize: 15,
+                  fontWeight: '600',
+                  color: textColor(colors.onErrorContainer),
+                }}
+              >
+                {errorMessage}
+              </Text>
+            </TintedCard>
+          ) : null}
         </Column>
+      ) : null}
+      {workout.note ? (
+        <InfoRow
+          icon={NOTE_ICON}
+          text={workout.note}
+          onPress={() => setNoteTarget({ kind: 'workout' })}
+        />
       ) : null}
       <ExerciseStrip
         exercises={workout.exercises.map((item, itemIndex) => ({
@@ -637,115 +759,91 @@ export default function ActiveWorkoutScreen() {
       />
       {exercise ? (
         <>
-          <Row spacing={8} alignment="center">
-            <ExerciseTitlePager
-              pages={workout.exercises.map((item) => {
-                const next = item.sets.findIndex(
-                  (set) => set.completedAt === null
-                );
-                return {
-                  key: item._id,
-                  name: item.name,
-                  status:
-                    next === -1
-                      ? `All ${item.sets.length} Sets logged`
-                      : `Set ${next + 1} of ${item.sets.length}`,
-                };
-              })}
-              selectedIndex={index}
-              onSelect={selectExercise}
-            />
-            <RestTimer
-              rest={workout.rest}
-              plannedSeconds={exercisePlannedRest}
-              now={now}
-              onAdjust={(seconds) =>
-                attempt(
-                  () => adjustRest({ workoutId: workout._id, seconds }),
-                  'Could not adjust rest.'
-                )
-              }
-              onSkip={() =>
-                attempt(
-                  () => skipRest({ workoutId: workout._id }),
-                  'Could not skip rest.'
-                )
-              }
-              onReset={() =>
-                attempt(
-                  () => resetRest({ workoutId: workout._id }),
-                  'Could not restart rest.'
-                )
-              }
-              onOpenOptions={() => setIsRestSheetOpen(true)}
-            />
-          </Row>
+          <ExerciseTitlePager
+            pages={workout.exercises.map((item) => {
+              const next = item.sets.findIndex(
+                (set) => set.completedAt === null
+              );
+              return {
+                key: item._id,
+                name: item.name,
+                status:
+                  next === -1
+                    ? `All ${item.sets.length} Sets logged`
+                    : `Set ${next + 1} of ${item.sets.length}`,
+              };
+            })}
+            selectedIndex={index}
+            onSelect={selectExercise}
+          />
           {partners.length > 0 ? (
-            <Row spacing={8} alignment="center">
-              <Column spacing={2}>
-                <Text textStyle={{ fontSize: 14, fontWeight: '600' }}>
-                  {`Alternating sets · Round ${roundNumber(workout, exercise._id) ?? (block?.roundsCompleted ?? 0) + 1}`}
-                </Text>
-                <Text textStyle={{ fontSize: 13 }}>
-                  {`With ${partners.map((partner) => partner.name).join(', ')}`}
-                </Text>
-              </Column>
-              <Spacer />
-              {stayOn !== null && workout.exercises[stayOn] ? (
-                <Button
-                  label={`Stay on ${workout.exercises[stayOn].name}`}
-                  variant="text"
-                  onPress={() => {
-                    setSelectedIndex(stayOn);
-                    setStayOn(null);
-                  }}
-                />
-              ) : canSkipForNow(workout, exercise._id) ? (
-                <Button
-                  label="Skip for now"
-                  variant="text"
-                  onPress={() =>
-                    attempt(async () => {
-                      const { next } = await skipForNow({
-                        workoutExerciseId: exercise._id,
-                      });
-                      const nextIndex = workout.exercises.findIndex(
-                        (item) => item._id === next
-                      );
-                      if (nextIndex >= 0) selectExercise(nextIndex);
-                    }, 'Could not skip this Exercise for now.')
-                  }
-                />
-              ) : null}
-            </Row>
+            <TintedCard fill={colors.secondaryContainer} padding={space.md}>
+              <Row alignment="center" spacing={space.md}>
+                <Column spacing={2} modifiers={fillRowWidth()}>
+                  <Text
+                    textStyle={{
+                      ...font.label,
+                      fontWeight: '700',
+                      color: textColor(colors.onSecondaryContainer),
+                    }}
+                  >
+                    {`Alternating sets · Round ${roundNumber(workout, exercise._id) ?? (block?.roundsCompleted ?? 0) + 1}`}
+                  </Text>
+                  <Text
+                    textStyle={{
+                      ...font.caption,
+                      color: textColor(colors.onSecondaryContainer),
+                    }}
+                  >
+                    {`With ${partners.map((partner) => partner.name).join(', ')}`}
+                  </Text>
+                </Column>
+                {stayOn !== null && workout.exercises[stayOn] ? (
+                  <PillChip
+                    label={`Stay on ${workout.exercises[stayOn].name}`}
+                    onPress={() => {
+                      setSelectedIndex(stayOn);
+                      setStayOn(null);
+                    }}
+                  />
+                ) : canSkipForNow(workout, exercise._id) ? (
+                  <PillChip
+                    label="Skip for now"
+                    onPress={() =>
+                      attempt(async () => {
+                        const { next } = await skipForNow({
+                          workoutExerciseId: exercise._id,
+                        });
+                        const nextIndex = workout.exercises.findIndex(
+                          (item) => item._id === next
+                        );
+                        if (nextIndex >= 0) selectExercise(nextIndex);
+                      }, 'Could not skip this Exercise for now.')
+                    }
+                  />
+                ) : null}
+              </Row>
+            </TintedCard>
           ) : null}
           {exercise.standingNote ? (
-            <Row
-              spacing={6}
-              alignment="center"
+            <InfoRow
+              icon={PIN_ICON}
+              text={exercise.standingNote}
               onPress={() =>
                 setNoteTarget({
                   kind: 'exercise',
                   workoutExerciseId: exercise._id,
                 })
               }
-            >
-              <Icon name={PIN_ICON} size={14} color={colors.onSurfaceVariant} />
-              <Text textStyle={{ fontSize: 14 }}>{exercise.standingNote}</Text>
-            </Row>
+            />
           ) : null}
           {usesMachineSetup && exercise.machineSetup ? (
-            <Row spacing={8} alignment="center">
-              <Text textStyle={{ fontSize: 14 }}>
-                {setupSummary(exercise.machineSetup)}
-              </Text>
-              <Spacer />
-              <Button
-                label="Edit setup"
-                variant="text"
-                onPress={() => setSetupFor(exercise._id)}
-              />
-            </Row>
+            <InfoRow
+              icon={NOTE_ICON}
+              text={setupSummary(exercise.machineSetup)}
+              actionLabel="Edit setup"
+              onPress={() => setSetupFor(exercise._id)}
+            />
           ) : null}
           <QuickActionRow
             leading={
@@ -846,9 +944,11 @@ export default function ActiveWorkoutScreen() {
             })}
             headings={fields.map((field) => fieldHeading(field, units))}
             effortScale={effortScale}
-            focus={isKeypadOpen ? focus : null}
-            showSwipeHint={!settings.swipeHintDismissed}
+            focus={isKeypadShown ? focus : null}
+            showHint={!settings.holdHintDismissed}
             onFocus={(setId, field) => moveFocus({ setId, field })}
+            // The keypad dock would cover the held Set's chips.
+            onHold={() => setIsKeypadOpen(false)}
             onFillFromTarget={(setId, field) => {
               moveFocus({ setId, field });
               void attempt(
@@ -885,73 +985,106 @@ export default function ActiveWorkoutScreen() {
             onOpenType={setTypeSheetSetId}
             onOpenTarget={() => setTargetSheetId(exercise._id)}
             targetHeading={showsPrevious ? 'Last time' : 'Target'}
-            onDismissSwipeHint={() =>
+            onDismissHint={() =>
               attempt(
-                () => updateSettings({ swipeHintDismissed: true }),
+                () => updateSettings({ holdHintDismissed: true }),
                 'Could not dismiss the hint.'
               )
             }
           />
-          <Button
-            label="Warm-up Set"
-            variant="text"
-            onPress={() =>
-              attempt(
-                () =>
-                  addSet({ workoutExerciseId: exercise._id, type: 'warmup' }),
-                'Could not add a Warm-up Set.'
-              )
-            }
-          />
+          <Row>
+            <PillChip
+              label="Warm-up Set"
+              onPress={() =>
+                attempt(
+                  () =>
+                    addSet({ workoutExerciseId: exercise._id, type: 'warmup' }),
+                  'Could not add a Warm-up Set.'
+                )
+              }
+            />
+          </Row>
         </>
       ) : (
-        <ListItem supportingText="Add an Exercise from the strip above to start logging Sets.">
-          No Exercises yet
-        </ListItem>
+        <Card padding={20} spacing={space.md}>
+          <Text
+            textStyle={{
+              fontSize: 20,
+              fontWeight: '700',
+              color: textColor(colors.onSurface),
+            }}
+          >
+            No Exercises yet
+          </Text>
+          <Text
+            textStyle={{
+              fontSize: 15,
+              color: textColor(colors.onSurfaceVariant),
+            }}
+          >
+            Add an Exercise to start logging Sets.
+          </Text>
+          <Row>
+            <PillChip
+              label="Add Exercise"
+              onPress={() => setPickerMode('add')}
+            />
+          </Row>
+        </Card>
       )}
-      {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Something went wrong</ListItem>
-      ) : null}
-      {allDone ? (
-        <Button label="Finish Workout" onPress={() => end('finish')} />
-      ) : null}
       <BottomSheet
         isPresented={isMenuOpen}
         onDismiss={() => setIsMenuOpen(false)}
       >
-        <Column spacing={12}>
-          <Text textStyle={{ fontSize: 22, fontWeight: '700' }}>
-            Workout menu
-          </Text>
-          <Button
-            label="Add Exercise"
-            onPress={() => {
-              setIsMenuOpen(false);
-              setPickerMode('add');
-            }}
-          />
-          {allDone ? (
-            <Button
-              label="Finish Workout"
+        <Column
+          spacing={space.lg}
+          style={{ paddingHorizontal: space.screen, paddingVertical: space.lg }}
+        >
+          <SectionHeader title="Workout menu" />
+          <Card divided>
+            <CardRow
               onPress={() => {
                 setIsMenuOpen(false);
-                end('finish');
+                setPickerMode('add');
               }}
-            />
-          ) : null}
-          <Button
-            label="Terminate Workout"
-            variant="text"
-            onPress={() => {
-              setIsMenuOpen(false);
-              setIsConfirmingTerminate(true);
-            }}
-          />
-          <Button
-            label="Keep going"
-            variant="outlined"
-            onPress={() => setIsMenuOpen(false)}
-          />
+            >
+              Add Exercise
+            </CardRow>
+            {allDone ? (
+              <CardRow
+                onPress={() => {
+                  setIsMenuOpen(false);
+                  void end('finish');
+                }}
+              >
+                Finish Workout
+              </CardRow>
+            ) : null}
+            <CardRow
+              chevron
+              onPress={() => {
+                setIsMenuOpen(false);
+                router.push('/workout/group');
+              }}
+            >
+              Group
+            </CardRow>
+            <CardRow
+              onPress={() => {
+                setIsMenuOpen(false);
+                setIsConfirmingTerminate(true);
+              }}
+            >
+              <Text
+                textStyle={{ ...font.body, color: textColor(colors.error) }}
+              >
+                Terminate Workout
+              </Text>
+            </CardRow>
+          </Card>
+          <Row>
+            <PillChip label="Keep going" onPress={() => setIsMenuOpen(false)} />
+          </Row>
         </Column>
       </BottomSheet>
       <GroupDrawer
@@ -1005,7 +1138,7 @@ export default function ActiveWorkoutScreen() {
         onDismiss={() => setNoteTarget(null)}
       />
       <MachineSetupSheet
-        key={setupFor ?? 'closed'}
+        key={`setup-${setupFor ?? 'closed'}`}
         onActivity={stillWorkingOut.markActive}
         exercise={
           workout.exercises.find((item) => item._id === setupFor) ?? null
@@ -1013,7 +1146,7 @@ export default function ActiveWorkoutScreen() {
         onDismiss={() => setSetupFor(null)}
       />
       <PlatesSheet
-        key={isPlatesOpen ? 'open' : 'closed'}
+        key={isPlatesOpen ? 'plates-open' : 'plates-closed'}
         isPresented={isPlatesOpen}
         onActivity={stillWorkingOut.markActive}
         inventory={settings.plates}

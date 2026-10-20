@@ -1,21 +1,18 @@
-import { Column, Text } from '@expo/ui';
+import TimerIcon from '@expo/material-symbols/timer.xml';
+import { Icon, Row, Text } from '@expo/ui';
 import { useEffect, useRef } from 'react';
 
 import { useHaptics } from '@/lib/haptics';
-import { textColor, useColors } from '@/lib/ui';
+import { space, tabularDigits, textColor, useColors } from '@/lib/ui';
 import { formatClock } from '@/lib/workout/format';
 import { GestureBox } from '@/modules/benchmrk-ui';
-import { RestRing } from './rest-ring';
 
+const TIMER = { ios: 'timer', android: TimerIcon } as const;
 const ADJUST_SECONDS = 15;
 const PULSE_FROM_SECONDS = 10;
+const PILL_HEIGHT = 40;
 
-export type RestState = {
-  startedAt: number;
-  endsAt: number;
-  plannedSeconds: number;
-  adjustedSeconds: number;
-};
+type RestState = { endsAt: number };
 
 type RestTimerProps = {
   rest: RestState | null;
@@ -29,9 +26,9 @@ type RestTimerProps = {
 };
 
 /**
- * The rest timer beside the Exercise title: a draining ring that pulses in the
- * last 10 s and turns green when rest is over. Tap for options, swipe for
- * ±15 s, long-press to restart the planned rest.
+ * The rest pill in the Workout top bar: a stopwatch and the time left, which
+ * pulses in the last 10 s, and a primary "Rest over" once rest ends. Tap for
+ * options, swipe for ±15 s, long-press to restart the planned rest.
  */
 export function RestTimer({
   rest,
@@ -54,14 +51,19 @@ export function RestTimer({
     wasResting.current = isResting;
   }, [haptic, isOver, isResting]);
 
-  const total = rest ? rest.plannedSeconds + rest.adjustedSeconds : 0;
   const clock = formatClock(Math.ceil(remaining ?? plannedSeconds));
-  const color =
+  const tone =
     remaining !== null && remaining <= PULSE_FROM_SECONDS
       ? Math.floor(remaining) % 2 === 0
         ? colors.error
         : colors.tertiary
       : colors.primary;
+  const fill = isOver ? colors.primary : colors.surfaceContainerHigh;
+  const ink = isOver
+    ? colors.onPrimary
+    : isResting
+      ? tone
+      : colors.onSurfaceVariant;
 
   const act = (id: string) => {
     if (id === 'options') onOpenOptions();
@@ -97,34 +99,24 @@ export function RestTimer({
       onSwipe={(direction) => act(direction === 1 ? 'add' : 'subtract')}
       onAction={act}
     >
-      <Column alignment="center" style={{ width: 64 }}>
-        {isResting ? (
-          <RestRing
-            fraction={total > 0 ? (remaining ?? 0) / total : 0}
-            label={clock}
-            color={color}
-          />
-        ) : isOver ? (
-          <Text
-            textStyle={{
-              fontSize: 15,
-              fontWeight: '700',
-              color: textColor(colors.secondary),
-            }}
-          >
-            ✓ Rest
-          </Text>
-        ) : (
-          <Text
-            textStyle={{
-              fontSize: 15,
-              color: textColor(colors.onSurfaceVariant),
-            }}
-          >
-            {clock}
-          </Text>
-        )}
-      </Column>
+      <Row
+        alignment="center"
+        spacing={6}
+        style={{
+          height: PILL_HEIGHT,
+          paddingHorizontal: space.md,
+          borderRadius: PILL_HEIGHT / 2,
+          backgroundColor: fill,
+        }}
+      >
+        <Icon name={TIMER} size={18} color={ink} />
+        <Text
+          textStyle={{ fontSize: 15, fontWeight: '700', color: textColor(ink) }}
+          modifiers={tabularDigits()}
+        >
+          {isOver ? 'Rest over' : clock}
+        </Text>
+      </Row>
     </GestureBox>
   );
 }

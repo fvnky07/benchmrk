@@ -1,7 +1,11 @@
-import { BottomSheet, Button, Column, ListItem, Text } from '@expo/ui';
+import { BottomSheet, Button, Column, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { useState } from 'react';
+import { Card, CardRow } from '@/components/native/card';
+import { PrimaryButton } from '@/components/native/primary-button';
+import { SectionHeader } from '@/components/native/section-header';
+import { font, space, textColor, useColors } from '@/lib/ui';
 import { accessibilityModifier } from '@/lib/ui/accessibility';
 
 import { errorCode } from '@/lib/workout/format';
@@ -36,6 +40,8 @@ export function MemberActionsSheet({
   isPresented: boolean;
   onDismiss: () => void;
 }>) {
+  const colors = useColors();
+  const mutedText = textColor(colors.onSurfaceVariant);
   const report = useMutation(api.safety.report);
   const block = useMutation(api.safety.block);
   const remove = useMutation(api.groups.remove);
@@ -71,96 +77,110 @@ export function MemberActionsSheet({
       showDragIndicator
       snapPoints={['half']}
     >
-      <Column spacing={16} style={{ padding: 24 }}>
+      <Column spacing={space.lg} style={{ padding: space.screen }}>
         {action === 'sent' ? (
-          <Text>Report sent. Thanks for telling us.</Text>
-        ) : (
-          <Text textStyle={{ fontSize: 20, fontWeight: '700' }}>
-            {action === 'report'
-              ? `Report ${username}`
-              : action === 'block'
-                ? `Block ${username}?`
-                : action === 'remove'
-                  ? 'Remove from Group?'
-                  : `Actions for ${username}`}
+          <Text
+            textStyle={{ ...font.body, color: textColor(colors.onSurface) }}
+          >
+            Report sent. Thanks for telling us.
           </Text>
+        ) : (
+          <SectionHeader
+            title={
+              action === 'report'
+                ? `Report ${username}`
+                : action === 'block'
+                  ? `Block ${username}?`
+                  : action === 'remove'
+                    ? 'Remove from Group?'
+                    : `Actions for ${username}`
+            }
+          />
         )}
         {action === 'menu' ? (
-          <>
-            <Button
-              label="Report"
+          <Card divided>
+            <CardRow
+              chevron
               modifiers={[accessibilityModifier(`Report ${username}`)]}
               onPress={() => setAction('report')}
-            />
-            <Button
-              label={`Block ${username}`}
+            >
+              Report
+            </CardRow>
+            <CardRow
+              chevron
               modifiers={[accessibilityModifier(`Block ${username}`)]}
               onPress={() => setAction('block')}
-              variant="outlined"
-            />
+            >
+              {`Block ${username}`}
+            </CardRow>
             {isHost ? (
-              <Button
-                label="Remove from Group"
+              <CardRow
+                chevron
                 modifiers={[
                   accessibilityModifier(`Remove ${username} from Group`),
                 ]}
                 onPress={() => setAction('remove')}
-                variant="outlined"
-              />
+              >
+                Remove from Group
+              </CardRow>
             ) : null}
-          </>
+          </Card>
         ) : null}
         {action === 'report' ? (
           <>
-            <Text>{`Why are you reporting ${username}?`}</Text>
-            {REASONS.map((reason) => (
-              <Button
-                key={reason.value}
-                disabled={busy}
-                label={reason.label}
-                modifiers={[accessibilityModifier(reason.label)]}
-                onPress={() =>
-                  void perform(
-                    () => report({ username, reason: reason.value }),
-                    true
-                  )
-                }
-                variant="outlined"
-              />
-            ))}
+            <Text textStyle={{ ...font.body, color: mutedText }}>
+              {`Why are you reporting ${username}?`}
+            </Text>
+            <Card divided>
+              {REASONS.map((reason) => (
+                <CardRow
+                  key={reason.value}
+                  chevron
+                  disabled={busy}
+                  modifiers={[accessibilityModifier(reason.label)]}
+                  onPress={() =>
+                    void perform(
+                      () => report({ username, reason: reason.value }),
+                      true
+                    )
+                  }
+                >
+                  {reason.label}
+                </CardRow>
+              ))}
+            </Card>
           </>
         ) : null}
         {action === 'block' ? (
           <>
-            <ListItem>
+            <Text textStyle={{ ...font.body, color: mutedText }}>
               You won’t see each other in Groups, and their invites won’t reach
               you.
-            </ListItem>
-            <Button
+            </Text>
+            <PrimaryButton
               disabled={busy}
               label={`Block ${username}`}
-              modifiers={[accessibilityModifier(`Block ${username}`)]}
               onPress={() => void perform(() => block({ username }))}
             />
           </>
         ) : null}
         {action === 'remove' ? (
           <>
-            <ListItem>
+            <Text textStyle={{ ...font.body, color: mutedText }}>
               {`${username} leaves this Group and can’t rejoin it. Their Workout carries on.`}
-            </ListItem>
-            <Button
+            </Text>
+            <PrimaryButton
+              accessibilityLabel={`Remove ${username} from Group`}
               disabled={busy}
               label="Remove from Group"
-              modifiers={[
-                accessibilityModifier(`Remove ${username} from Group`),
-              ]}
               onPress={() => void perform(() => remove({ username }))}
             />
           </>
         ) : null}
         {errorMessage ? (
-          <ListItem supportingText={errorMessage}>Couldn’t do that</ListItem>
+          <Card>
+            <CardRow supportingText={errorMessage}>Couldn’t do that</CardRow>
+          </Card>
         ) : null}
         {action !== 'sent' ? (
           <Button
@@ -170,11 +190,7 @@ export function MemberActionsSheet({
             variant="text"
           />
         ) : (
-          <Button
-            label="Done"
-            modifiers={[accessibilityModifier('Done')]}
-            onPress={dismiss}
-          />
+          <PrimaryButton label="Done" onPress={dismiss} />
         )}
       </Column>
     </BottomSheet>

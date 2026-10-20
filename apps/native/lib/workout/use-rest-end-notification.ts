@@ -23,10 +23,12 @@ async function ensureAndroidChannel(
   haptics: boolean
 ) {
   if (Platform.OS !== 'android') return;
+  // Android channels take the system notification sound when `sound` is
+  // omitted; a string names a bundled sound file, so 'default' is not found.
   await Notifications.setNotificationChannelAsync(channelId, {
     name: `Rest over${sound ? '' : ' (silent)'}${haptics ? '' : ' (no vibration)'}`,
     importance: Notifications.AndroidImportance.HIGH,
-    sound: sound ? 'default' : null,
+    ...(sound ? {} : { sound: null }),
     enableVibrate: haptics,
   });
 }

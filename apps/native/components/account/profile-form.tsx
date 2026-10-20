@@ -1,4 +1,6 @@
-import { Button, Column, ListItem, RNHostView, Row, Text } from '@expo/ui';
+import PhotoCameraIcon from '@expo/material-symbols/photo_camera.xml';
+import PhotoLibraryIcon from '@expo/material-symbols/photo_library.xml';
+import { Button, Column, RNHostView, Row, Spacer, Text } from '@expo/ui';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useMutation, useQuery } from 'convex/react';
@@ -6,13 +8,24 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
 
+import { Card, CardRow } from '@/components/native/card';
 import { NativeTextField } from '@/components/native/native-text-field';
+import { PillChip } from '@/components/native/pill-chip';
+import { PrimaryButton } from '@/components/native/primary-button';
 import { analytics } from '@/lib/analytics';
 import { authErrorCopy } from '@/lib/auth/error-copy';
-import { textColor, useColors } from '@/lib/ui';
+import {
+  font,
+  size,
+  space,
+  textColor,
+  useColors,
+  useContentWidth,
+} from '@/lib/ui';
 import { errorCode } from '@/lib/workout/format';
 
-const AVATAR_SIZE = 112;
+const CHOOSE_PHOTO_ICON = { ios: 'photo', android: PhotoLibraryIcon } as const;
+const TAKE_PHOTO_ICON = { ios: 'camera', android: PhotoCameraIcon } as const;
 const BIO_MAX_LENGTH = 150;
 const NAME_MAX_LENGTH = 50;
 
@@ -30,9 +43,52 @@ type ProfileFormProps = {
   onSaved?: () => void;
 };
 
+/** The member's photo as a 96pt circle, or their initials when there is none. */
+export function ProfileAvatar({
+  image,
+  initials,
+}: Readonly<{ image: string | null; initials: string }>) {
+  const colors = useColors();
+
+  if (image) {
+    return (
+      <RNHostView matchContents>
+        <Image
+          accessibilityLabel="Profile photo"
+          source={{ uri: image }}
+          style={{
+            width: size.avatar,
+            height: size.avatar,
+            borderRadius: size.avatar / 2,
+          }}
+        />
+      </RNHostView>
+    );
+  }
+
+  return (
+    <Column
+      alignment="center"
+      style={{
+        width: size.avatar,
+        height: size.avatar,
+        borderRadius: size.avatar / 2,
+        backgroundColor: colors.surfaceContainerHigh,
+      }}
+    >
+      <Spacer flexible />
+      <Text textStyle={{ ...font.title, color: textColor(colors.onSurface) }}>
+        {initials}
+      </Text>
+      <Spacer flexible />
+    </Column>
+  );
+}
+
 /** Name, username, bio and photo, for Profile setup and for editing in settings. */
 export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
   const colors = useColors();
+  const contentWidth = useContentWidth();
   const profile = useQuery(api.profile.getCurrentProfile);
   const suggested = useQuery(
     api.profile.suggestUsername,
@@ -170,92 +226,68 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
           ? 'Available'
           : 'Taken';
 
+  const caption = {
+    ...font.caption,
+    color: textColor(colors.onSurfaceVariant),
+  };
+
   return (
-    <Column spacing={16}>
-      <Row spacing={16} alignment="center">
-        {image ? (
-          <RNHostView matchContents>
-            <Image
-              accessibilityLabel="Profile photo"
-              source={{ uri: image }}
-              style={{
-                width: AVATAR_SIZE,
-                height: AVATAR_SIZE,
-                borderRadius: AVATAR_SIZE / 2,
-              }}
-            />
-          </RNHostView>
-        ) : (
-          <Column
-            alignment="center"
-            style={{
-              width: AVATAR_SIZE,
-              height: AVATAR_SIZE,
-              borderRadius: AVATAR_SIZE / 2,
-              backgroundColor: colors.surfaceContainerHigh,
-              paddingTop: 36,
-            }}
-          >
-            <Text textStyle={{ fontSize: 32, fontWeight: '700' }}>
-              {initials}
-            </Text>
-          </Column>
-        )}
-        <Column spacing={8}>
-          <Button
+    <Column spacing={space.lg}>
+      <Column
+        alignment="center"
+        spacing={space.md}
+        style={{ width: contentWidth }}
+      >
+        <ProfileAvatar image={image} initials={initials} />
+        <Row spacing={space.sm}>
+          <PillChip
             disabled={isUploading}
+            icon={CHOOSE_PHOTO_ICON}
             label="Choose photo"
-            variant="outlined"
             onPress={() => void pickPhoto('library')}
           />
-          <Button
+          <PillChip
             disabled={isUploading}
+            icon={TAKE_PHOTO_ICON}
             label="Take photo"
-            variant="outlined"
             onPress={() => void pickPhoto('camera')}
           />
-          {isUploading ? (
-            <Text textStyle={{ fontSize: 14 }}>Uploading…</Text>
-          ) : null}
-        </Column>
-      </Row>
-      <NativeTextField
-        autoCapitalize="words"
-        label="Name"
-        maxLength={NAME_MAX_LENGTH}
-        value={name}
-        onChangeText={setName}
-      />
-      <NativeTextField
-        autoCapitalize="none"
-        autoCorrect={false}
-        label="Username"
-        maxLength={20}
-        value={username}
-        onChangeText={(value) => setUsername(value.toLowerCase())}
-      />
-      <Text
-        textStyle={{ fontSize: 14, color: textColor(colors.onSurfaceVariant) }}
-      >
-        {usernameStatus}
-      </Text>
-      <NativeTextField
-        label="Bio (optional)"
-        maxLength={BIO_MAX_LENGTH}
-        multiline
-        numberOfLines={3}
-        value={bio}
-        onChangeText={setBio}
-      />
-      <Text
-        textStyle={{ fontSize: 14, color: textColor(colors.onSurfaceVariant) }}
-      >
-        {`${bio.length}/${BIO_MAX_LENGTH}`}
-      </Text>
+        </Row>
+        {isUploading ? <Text textStyle={caption}>Uploading…</Text> : null}
+      </Column>
+      <Card padding={space.lg} spacing={space.md}>
+        <NativeTextField
+          autoCapitalize="words"
+          label="Name"
+          maxLength={NAME_MAX_LENGTH}
+          value={name}
+          onChangeText={setName}
+        />
+        <NativeTextField
+          autoCapitalize="none"
+          autoCorrect={false}
+          label="Username"
+          maxLength={20}
+          value={username}
+          onChangeText={(value) => setUsername(value.toLowerCase())}
+        />
+        <Text textStyle={caption}>{usernameStatus}</Text>
+        <NativeTextField
+          label="Bio (optional)"
+          maxLength={BIO_MAX_LENGTH}
+          multiline
+          numberOfLines={3}
+          value={bio}
+          onChangeText={setBio}
+        />
+        <Text textStyle={caption}>{`${bio.length}/${BIO_MAX_LENGTH}`}</Text>
+      </Card>
       {errorMessage ? (
-        <ListItem supportingText={errorMessage}>Not saved</ListItem>
+        <Card>
+          <CardRow supportingText={errorMessage}>Not saved</CardRow>
+        </Card>
       ) : null}
-      <Button
+      <PrimaryButton
         disabled={
           isSaving || isUploading || isAvailable !== true || name.trim() === ''
         }
@@ -266,26 +298,36 @@ export function ProfileForm({ mode, onSaved }: Readonly<ProfileFormProps>) {
       />
       {mode === 'setup' && suggested ? (
         isConfirmingAssigned ? (
-          <Column spacing={8}>
-            <ListItem
-              supportingText={`Your username will be @${suggested}. You can change it later in settings.`}
-            >
-              Use this username?
-            </ListItem>
-            <Button
-              disabled={isSaving}
-              label={`Confirm @${suggested}`}
-              onPress={() => {
-                analytics.profileSkipped();
-                void save(suggested);
-              }}
-            />
-            <Button
-              label="Choose another"
-              variant="outlined"
-              onPress={() => setIsConfirmingAssigned(false)}
-            />
-          </Column>
+          <Card tone="high" padding={space.lg} spacing={space.md}>
+            <Column spacing={2}>
+              <Text
+                textStyle={{
+                  ...font.bodyStrong,
+                  color: textColor(colors.onSurface),
+                }}
+              >
+                Use this username?
+              </Text>
+              <Text textStyle={caption}>
+                {`Your username will be @${suggested}. You can change it later in settings.`}
+              </Text>
+            </Column>
+            <Column spacing={space.sm}>
+              <Button
+                disabled={isSaving}
+                label={`Confirm @${suggested}`}
+                onPress={() => {
+                  analytics.profileSkipped();
+                  void save(suggested);
+                }}
+              />
+              <Button
+                label="Choose another"
+                variant="outlined"
+                onPress={() => setIsConfirmingAssigned(false)}
+              />
+            </Column>
+          </Card>
         ) : (
           <Button
             label={`Skip and use @${suggested}`}
