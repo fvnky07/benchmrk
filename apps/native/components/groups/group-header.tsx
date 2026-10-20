@@ -138,9 +138,9 @@ function PaceBar({
           textStyle={{ ...font.label, color: textColor(colors.onSurface) }}
         >{`${Math.round(fraction * 100)}%`}</Text>
       </Row>
-      <RNHostView matchContents style={{ width }}>
+      <Column style={{ width }}>
         <WorkoutProgress fraction={fraction} />
-      </RNHostView>
+      </Column>
     </Column>
   );
 }

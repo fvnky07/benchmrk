@@ -288,9 +288,11 @@ function MemberBoxView({
                   Pace
                 </Text>
               </Row>
-              <RNHostView matchContents style={{ width: innerWidth }}>
+              {/* WorkoutProgress is a native Compose/SwiftUI view: it sits in
+                  the Column directly, never inside RNHostView. */}
+              <Column style={{ width: innerWidth }}>
                 <WorkoutProgress fraction={pace} />
-              </RNHostView>
+              </Column>
             </Column>
             <Text textStyle={{ ...font.bodyStrong, color: onSurface }}>
               {statusText(progress, now)}
