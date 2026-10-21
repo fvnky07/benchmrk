@@ -20,4 +20,4 @@
 
 ---
 
-By submitting this pull request, I agree to license my contribution under the [AGPL-3.0-or-later](../LICENSE) license.
+By submitting this pull request, I agree to license my contribution under the [AGPL-3.0-or-later](../LICENSE) license, and I will sign the [CLA](../CLA.md) when the bot asks (first-time contributors only).
