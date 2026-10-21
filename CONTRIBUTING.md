@@ -265,4 +265,6 @@ We may suggest changes — that's normal and not a rejection.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [GNU Affero General Public License v3.0 or later](./LICENSE).
+By contributing, you agree that your contributions will be licensed under the [GNU Affero General Public License v3.0 or later](./LICENSE). The project itself stays AGPL-3.0-or-later and public.
+
+First-time contributors also sign our [Contributor License Agreement](./CLA.md) once. When you open a pull request, the CLA Assistant bot comments with instructions; reply with the sign phrase it shows, `I have read the CLA Document and I hereby sign the CLA`. The bot records your GitHub username in a signature file on the `cla-signatures` branch and turns the check green, and you don't need to sign again for later pull requests. You keep your copyright; the CLA gives the maintainer a broad licence to your contribution, including the right to relicense it.

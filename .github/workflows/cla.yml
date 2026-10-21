@@ -1,0 +1,33 @@
+name: CLA Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, closed, synchronize]
+
+# Set explicitly in case the repository default token permissions are read-only.
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  statuses: write
+
+# This workflow runs with a write token on pull_request_target. Never add a
+# checkout of the pull request or run any of its code here.
+jobs:
+  cla:
+    name: CLA Assistant
+    runs-on: ubuntu-latest
+    steps:
+      - name: CLA Assistant
+        if: (github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target'
+        # v2.6.1 (ca4a40a7d1004f18d9960b404b97e5f30a505a08)
+        uses: contributor-assistant/github-action@v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-document: 'https://github.com/fvnky07/benchmrk/blob/main/CLA.md'
+          path-to-signatures: 'signatures/version1/cla.json'
+          branch: 'cla-signatures'
+          allowlist: fvnky07,dependabot[bot],*[bot]
